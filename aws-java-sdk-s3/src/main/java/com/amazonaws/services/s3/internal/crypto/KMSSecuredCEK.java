@@ -17,32 +17,18 @@
  */
 package com.amazonaws.services.s3.internal.crypto;
 
-/**
- * Internal class used to carry both the secured CEK and the key wrapping
- * algorithm, if any. Byte array cloning is intentionally skipped for
- * performance reasons.
- */
-class SecuredCEK {
-    /**
-     * The encrypted CEK either via key wrapping or simple encryption.
-     */
-    private final byte[] encrypted;
-    /**
-     * The key wrapping algorithm used, or null if the CEK is not secured via
-     * key wrapping.
-     */
-    private final String keyWrapAlgorithm;
+final class KMSSecuredCEK extends SecuredCEK {
+    static final String KEY_PROTECTION_MECHANISM = "kms";
 
-    SecuredCEK(byte[] encryptedKey, String keyWrapAlgorithm) {
-        this.encrypted = encryptedKey;
-        this.keyWrapAlgorithm = keyWrapAlgorithm;
+    KMSSecuredCEK(byte[] encryptedKeyBlob) {
+        super(encryptedKeyBlob, KEY_PROTECTION_MECHANISM);
     }
-
-    byte[] getEncrypted() {
-        return encrypted;
-    }
-
-    String getKeyWrapAlgorithm() {
-        return keyWrapAlgorithm;
+    
+    /**
+     * Returns true if the specified key wrapping algorithm is
+     * {@value #KEY_PROTECTION_MECHANISM}; false otherwise.
+     */
+    public static boolean isKMSKeyWrapped(String keyWrapAlgo) {
+        return KEY_PROTECTION_MECHANISM.equals(keyWrapAlgo);
     }
 }
