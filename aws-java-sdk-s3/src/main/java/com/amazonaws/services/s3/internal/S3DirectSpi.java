@@ -32,25 +32,25 @@ import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
 
 /**
- * Used to provide direct access to the underlying/original S3 client methods
- * free of any added cryptographic functionalities.
+ * A Service Provider Interface that allows direct access to the underlying
+ * non-encrypting S3 client of an S3 encryption client instance.
  */
-public abstract class S3Direct implements S3DirectSpi {
-    public abstract PutObjectResult putObject(PutObjectRequest req);
+public interface S3DirectSpi {
+    public PutObjectResult putObject(PutObjectRequest req);
 
-    public abstract S3Object getObject(GetObjectRequest req);
+    public S3Object getObject(GetObjectRequest req);
 
-    public abstract ObjectMetadata getObject(GetObjectRequest req, File dest);
+    public ObjectMetadata getObject(GetObjectRequest req, File dest);
 
-    public abstract CompleteMultipartUploadResult completeMultipartUpload(
+    public CompleteMultipartUploadResult completeMultipartUpload(
             CompleteMultipartUploadRequest req);
 
-    public abstract InitiateMultipartUploadResult initiateMultipartUpload(
+    public InitiateMultipartUploadResult initiateMultipartUpload(
             InitiateMultipartUploadRequest req);
 
-    public abstract UploadPartResult uploadPart(UploadPartRequest req);
+    public UploadPartResult uploadPart(UploadPartRequest req);
 
-    public abstract CopyPartResult copyPart(CopyPartRequest req);
+    public CopyPartResult copyPart(CopyPartRequest req);
 
-    public abstract void abortMultipartUpload(AbortMultipartUploadRequest req);
+    public void abortMultipartUpload(AbortMultipartUploadRequest req);
 }
