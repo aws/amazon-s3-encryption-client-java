@@ -14,29 +14,25 @@
  */
 package com.amazonaws.services.s3.model;
 
-import java.io.Serializable;
-
 import com.amazonaws.services.s3.AmazonS3;
 
 /**
- * Request object for the parameters to get a bucket's notification
+ * Request object for the parameters to delete a bucket's replication
  * configuration.
  *
- * @see AmazonS3#getBucketNotificationConfiguration(GetBucketNotificationConfigurationRequest)
+ * @see AmazonS3#deleteBucketReplicationConfiguration(DeleteBucketReplicationConfigurationRequest)
  */
-public class GetBucketNotificationConfigurationRequest extends
-        GenericBucketRequest implements Serializable {
+public class DeleteBucketReplicationConfigurationRequest extends GenericBucketRequest {
 
     /**
-     * Creates a new request object, ready to be executed to fetch the
-     * notification configuration for the specified bucket.
+     * Creates a new request object, ready to be executed to delete the
+     * replication configuration for the specified bucket.
      *
      * @param bucketName
-     *            The name of the bucket whose notification configuration is
-     *            being fetched.
+     *            The name of the bucket whose replication configuration is
+     *            being deleted.
      */
-    public GetBucketNotificationConfigurationRequest(String bucketName) {
+    public DeleteBucketReplicationConfigurationRequest(String bucketName) {
         super(bucketName);
     }
-
 }
