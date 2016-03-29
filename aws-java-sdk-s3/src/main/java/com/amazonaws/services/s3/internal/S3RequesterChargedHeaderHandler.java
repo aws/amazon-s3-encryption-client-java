@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2016-2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ import com.amazonaws.http.HttpResponse;
 import com.amazonaws.services.s3.Headers;
 
 /**
- * Header handler to pull the S3_VERSION_ID header out of the response. This
- * header is required for the copyPart and copyObject api methods.
+ * Header handler to pull the {@link Headers#REQUESTER_CHARGED_HEADER} header out of the response.
+ * This header is required for requests with {@link Headers#REQUESTER_PAYS_HEADER} header.
  */
-public class S3VersionHeaderHandler<T extends S3VersionResult> implements HeaderHandler<T> {
+public class S3RequesterChargedHeaderHandler<T extends S3RequesterChargedResult> implements HeaderHandler<T> {
 
     /*
      * (non-Javadoc)
@@ -32,6 +32,6 @@ public class S3VersionHeaderHandler<T extends S3VersionResult> implements Header
      */
     @Override
     public void handle(T result, HttpResponse response) {
-        result.setVersionId(response.getHeaders().get(Headers.S3_VERSION_ID));
+        result.setRequesterCharged(response.getHeaders().get(Headers.REQUESTER_CHARGED_HEADER) != null);
     }
 }
