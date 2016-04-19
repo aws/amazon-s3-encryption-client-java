@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2016-2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -13,13 +13,11 @@
  * permissions and limitations under the License.
  */
 package com.amazonaws.services.s3.model;
-import java.io.Serializable;
-
-import com.amazonaws.AmazonWebServiceRequest;
 
 /**
- * Request object for listing all the Amazon S3 buckets owned by a user.
+ * This interface is simply a marker to be implemented by operations which cannot be
+ * called by an accelerate enabled S3 client.
  */
-public class ListBucketsRequest extends AmazonWebServiceRequest implements
-        Serializable, S3AccelerateUnsupported {
+public interface S3AccelerateUnsupported {
+
 }
