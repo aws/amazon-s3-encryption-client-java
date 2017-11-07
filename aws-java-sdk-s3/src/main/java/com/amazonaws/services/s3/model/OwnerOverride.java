@@ -12,56 +12,39 @@
  * License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.amazonaws.services.s3.model.inventory;
+package com.amazonaws.services.s3.model;
 
 /**
- * The optional fields that can be included in the inventory results.
+ * The override value for the owner of the replica object.
  */
-public enum InventoryOptionalField {
+public enum OwnerOverride {
 
-    Size("Size"),
+    DESTINATION("Destination"),;
 
-    LastModifiedDate("LastModifiedDate"),
+    private final String id;
 
-    StorageClass("StorageClass"),
-
-    ETag("ETag"),
-
-    IsMultipartUploaded("IsMultipartUploaded"),
-
-    ReplicationStatus("ReplicationStatus"),
-
-    InventoryOptionalField("InventoryOptionalField"),
-
-    EncryptionStatus("EncryptionStatus"),;
-
-    private final String field;
-
-    InventoryOptionalField(String field) {
-        this.field = field;
+    OwnerOverride(String id) {
+        this.id = id;
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Enum#toString()
-     */
     @Override
     public String toString() {
-        return field;
+        return id;
     }
 
     /**
      * Use this in place of valueOf.
      *
      * @param value real value
-     * @return InventoryOptionalField corresponding to the value
+     * @return OwnerOverride corresponding to the value
      * @throws IllegalArgumentException If the specified value does not map to one of the known values in this enum.
      */
-    public static InventoryOptionalField fromValue(String value) {
+    public static OwnerOverride fromValue(String value) {
         if (value == null || "".equals(value)) {
             throw new IllegalArgumentException("Value cannot be null or empty!");
         }
 
-        for (InventoryOptionalField enumEntry : InventoryOptionalField.values()) {
+        for (OwnerOverride enumEntry : OwnerOverride.values()) {
             if (enumEntry.toString().equals(value)) {
                 return enumEntry;
             }

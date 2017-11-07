@@ -14,26 +14,29 @@
  */
 package com.amazonaws.services.s3.model.transform;
 
-import javax.xml.stream.events.XMLEvent;
-
-import com.amazonaws.services.s3.model.FilterRule;
+import com.amazonaws.services.s3.model.ServerSideEncryptionByDefault;
+import com.amazonaws.transform.SimpleTypeStaxUnmarshallers.StringStaxUnmarshaller;
 import com.amazonaws.transform.StaxUnmarshallerContext;
 import com.amazonaws.transform.Unmarshaller;
-import com.amazonaws.transform.SimpleTypeStaxUnmarshallers.StringStaxUnmarshaller;
+import javax.xml.stream.events.XMLEvent;
 
-class FilterRuleStaxUnmarshaller implements Unmarshaller<FilterRule, StaxUnmarshallerContext> {
+/**
+ * Unmarshaller for {@link ServerSideEncryptionByDefault}.
+ */
+class ServerSideEncryptionByDefaultStaxUnmarshaller
+    implements Unmarshaller<ServerSideEncryptionByDefault, StaxUnmarshallerContext> {
 
-    private static final FilterRuleStaxUnmarshaller instance = new FilterRuleStaxUnmarshaller();
+    private static final ServerSideEncryptionByDefaultStaxUnmarshaller instance = new ServerSideEncryptionByDefaultStaxUnmarshaller();
 
-    public static FilterRuleStaxUnmarshaller getInstance() {
+    public static ServerSideEncryptionByDefaultStaxUnmarshaller getInstance() {
         return instance;
     }
 
-    private FilterRuleStaxUnmarshaller() {
+    private ServerSideEncryptionByDefaultStaxUnmarshaller() {
     }
 
     @Override
-    public FilterRule unmarshall(StaxUnmarshallerContext context) throws Exception {
+    public ServerSideEncryptionByDefault unmarshall(StaxUnmarshallerContext context) throws Exception {
         int originalDepth = context.getCurrentDepth();
         int targetDepth = originalDepth + 1;
 
@@ -41,25 +44,27 @@ class FilterRuleStaxUnmarshaller implements Unmarshaller<FilterRule, StaxUnmarsh
             targetDepth += 1;
         }
 
-        FilterRule filter = new FilterRule();
+        ServerSideEncryptionByDefault sseByDefault = new ServerSideEncryptionByDefault();
 
         while (true) {
             XMLEvent xmlEvent = context.nextEvent();
             if (xmlEvent.isEndDocument()) {
-                return filter;
+                return sseByDefault;
             }
+
             if (xmlEvent.isAttribute() || xmlEvent.isStartElement()) {
-                if (context.testExpression("Name", targetDepth)) {
-                    filter.setName(StringStaxUnmarshaller.getInstance().unmarshall(context));
-                } else if (context.testExpression("Value", targetDepth)) {
-                    filter.setValue(StringStaxUnmarshaller.getInstance().unmarshall(context));
+                if (context.testExpression("SSEAlgorithm", targetDepth)) {
+                    sseByDefault.setSSEAlgorithm(StringStaxUnmarshaller.getInstance().unmarshall(context));
+                }
+                if (context.testExpression("KMSMasterKeyID", targetDepth)) {
+                    sseByDefault.setKMSMasterKeyID(StringStaxUnmarshaller.getInstance().unmarshall(context));
                 }
             } else if (xmlEvent.isEndElement()) {
                 if (context.getCurrentDepth() < originalDepth) {
-                    return filter;
+                    return sseByDefault;
                 }
             }
         }
-
     }
+
 }
