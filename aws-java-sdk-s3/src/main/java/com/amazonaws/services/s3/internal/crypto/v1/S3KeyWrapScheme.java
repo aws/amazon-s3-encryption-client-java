@@ -12,17 +12,19 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
+package com.amazonaws.services.s3.internal.crypto.v1;
 
 import java.security.Key;
 
-class S3KeyWrapScheme {
+import com.amazonaws.services.s3.internal.crypto.CryptoRuntime;
+
+public class S3KeyWrapScheme {
     /**
      * Used for backward compatibility where the encryption only mode has no
      * explicit key wrapping scheme.
      */
     static final S3KeyWrapScheme NONE = new S3KeyWrapScheme() {
-        String getKeyWrapAlgorithm(Key key) {
+        public String getKeyWrapAlgorithm(Key key) {
             return null;
         }
         @Override public String toString() { return "NONE"; }
@@ -35,7 +37,7 @@ class S3KeyWrapScheme {
      *            the key encrypting key, which is either an AES key or a public
      *            key
      */
-    String getKeyWrapAlgorithm(Key kek) {
+    public String getKeyWrapAlgorithm(Key kek) {
         String algorithm = kek.getAlgorithm();
         if (S3CryptoScheme.AES.equals(algorithm)) {
             return AESWrap;

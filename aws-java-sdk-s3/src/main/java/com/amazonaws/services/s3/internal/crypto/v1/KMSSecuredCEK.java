@@ -15,22 +15,27 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
+package com.amazonaws.services.s3.internal.crypto.v1;
 
 import java.util.Map;
 
 final class KMSSecuredCEK extends SecuredCEK {
-    static final String KEY_PROTECTION_MECHANISM = "kms";
+    static final String KEY_PROTECTION_MECHANISM_V1 = "kms";
+    static final String KEY_PROTECTION_MECHANISM_V2 = "kms+context";
 
     KMSSecuredCEK(byte[] encryptedKeyBlob, Map<String, String> matdesc) {
-        super(encryptedKeyBlob, KEY_PROTECTION_MECHANISM, matdesc);
+        super(encryptedKeyBlob, KEY_PROTECTION_MECHANISM_V1, matdesc);
     }
 
-    /**
-     * Returns true if the specified key wrapping algorithm is
-     * {@value #KEY_PROTECTION_MECHANISM}; false otherwise.
-     */
     public static boolean isKMSKeyWrapped(String keyWrapAlgo) {
-        return KEY_PROTECTION_MECHANISM.equals(keyWrapAlgo);
+        return isKMSV1KeyWrapped(keyWrapAlgo) || isKMSV2KeyWrapped(keyWrapAlgo);
+    }
+
+    public static boolean isKMSV1KeyWrapped(String keyWrapAlgo) {
+        return KEY_PROTECTION_MECHANISM_V1.equals(keyWrapAlgo);
+    }
+
+    public static boolean isKMSV2KeyWrapped(String keyWrapAlgo) {
+        return KEY_PROTECTION_MECHANISM_V2.equals(keyWrapAlgo);
     }
 }

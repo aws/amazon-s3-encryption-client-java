@@ -12,30 +12,33 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
+package com.amazonaws.services.s3.internal.crypto.v2;
 
 import static com.amazonaws.services.s3.model.CryptoMode.StrictAuthenticatedEncryption;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.s3.internal.S3Direct;
-import com.amazonaws.services.s3.model.CryptoConfiguration;
+import com.amazonaws.services.s3.internal.crypto.ContentCryptoScheme;
+import com.amazonaws.services.s3.model.CryptoConfigurationV2;
+import com.amazonaws.services.s3.model.CryptoMode;
+import com.amazonaws.services.s3.model.CryptoRangeGetMode;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.S3ObjectId;
 
 /**
  * Strict Authenticated encryption (AE) cryptographic module for the S3
  * encryption client.
  */
-class S3CryptoModuleAEStrict extends S3CryptoModuleAE {
+public class S3CryptoModuleAEStrict extends S3CryptoModuleAE {
     /**
      * @param cryptoConfig a read-only copy of the crypto configuration.
      */
-    S3CryptoModuleAEStrict(AWSKMS kms, S3Direct s3,
+    public S3CryptoModuleAEStrict(AWSKMS kms, S3Direct s3,
                            AWSCredentialsProvider credentialsProvider,
                            EncryptionMaterialsProvider encryptionMaterialsProvider,
-                           CryptoConfiguration cryptoConfig) {
-        super(kms, s3, credentialsProvider, encryptionMaterialsProvider,
-                cryptoConfig);
+                           CryptoConfigurationV2 cryptoConfig) {
+        super(kms, s3, credentialsProvider, encryptionMaterialsProvider, cryptoConfig);
         if (cryptoConfig.getCryptoMode() != StrictAuthenticatedEncryption)
             throw new IllegalArgumentException();
     }
@@ -44,12 +47,14 @@ class S3CryptoModuleAEStrict extends S3CryptoModuleAE {
         return true;
     }
 
-    protected void securityCheck(ContentCryptoMaterial cekMaterial,
-            S3ObjectWrapper retrieved) {
-        if (!ContentCryptoScheme.AES_GCM.equals(cekMaterial.getContentCryptoScheme())) {
+    @Override
+    protected void securityCheck(ContentCryptoMaterial cekMaterial, S3ObjectId objectId, boolean isRangeGet) {
+        // Note: a range get means AES_GCM won't be selected. We validate within the ContentCryptoMaterial class that
+        // the algorithm chosen is fit for the configured RangeGetMode.
+        if (!isRangeGet && !ContentCryptoScheme.AES_GCM.equals(cekMaterial.getContentCryptoScheme())) {
             throw new SecurityException("S3 object [bucket: "
-                    + retrieved.getBucketName() + ", key: "
-                    + retrieved.getKey()
+                    + objectId.getBucket() + ", key: "
+                    + objectId.getKey()
                     + "] not encrypted using authenticated encryption");
         }
     }

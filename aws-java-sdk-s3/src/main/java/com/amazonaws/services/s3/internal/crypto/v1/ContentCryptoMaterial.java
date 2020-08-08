@@ -12,14 +12,11 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
+package com.amazonaws.services.s3.internal.crypto.v1;
 
-import static com.amazonaws.services.s3.internal.crypto.KMSSecuredCEK.isKMSKeyWrapped;
+import static com.amazonaws.services.s3.Headers.AWS_CRYPTO_CEK_ALGORITHM;
 import static com.amazonaws.services.s3.model.ExtraMaterialsDescription.NONE;
 import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
-
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.util.StringUtils;
 import static com.amazonaws.util.Throwables.failure;
 
 import java.io.BufferedReader;
@@ -36,29 +33,39 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import com.amazonaws.SdkClientException;
 import com.amazonaws.AmazonWebServiceRequest;
+import com.amazonaws.SdkClientException;
+import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.model.DecryptRequest;
 import com.amazonaws.services.kms.model.DecryptResult;
 import com.amazonaws.services.kms.model.EncryptRequest;
 import com.amazonaws.services.kms.model.EncryptResult;
 import com.amazonaws.services.s3.Headers;
 import com.amazonaws.services.s3.KeyWrapException;
+import com.amazonaws.services.s3.internal.crypto.CipherLite;
+import com.amazonaws.services.s3.internal.crypto.ContentCryptoScheme;
+import com.amazonaws.services.s3.internal.crypto.JceEncryptionConstants;
+import com.amazonaws.services.s3.internal.crypto.keywrap.InternalKeyWrapAlgorithm;
+import com.amazonaws.services.s3.internal.crypto.keywrap.KMSKeyWrapperContext;
+import com.amazonaws.services.s3.internal.crypto.keywrap.KeyWrapper;
+import com.amazonaws.services.s3.internal.crypto.keywrap.KeyWrapperContext;
+import com.amazonaws.services.s3.internal.crypto.keywrap.KeyWrapperFactory;
 import com.amazonaws.services.s3.model.CryptoConfiguration;
 import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsAccessor;
+import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.ExtraMaterialsDescription;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.MaterialsDescriptionProvider;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.util.Base64;
+import com.amazonaws.util.StringUtils;
 import com.amazonaws.util.json.Jackson;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Cryptographic material used for client-side content encrypt/decryption in S3.
@@ -89,7 +96,7 @@ final class ContentCryptoMaterial {
      * secured via a key wrapping algorithm.
      * <p>
      * Note if the returned value is
-     * {@value KMSSecuredCEK#KEY_PROTECTION_MECHANISM}, it means the key is
+     * {@value KMSSecuredCEK#KEY_PROTECTION_MECHANISM_V1}, it means the key is
      * protected via KMS rather than a direct key-wrapping algorithm.
      */
     String getKeyWrappingAlgorithm() {
@@ -101,7 +108,7 @@ final class ContentCryptoMaterial {
      * otherwise.
      */
     private boolean usesKMSKey() {
-        return isKMSKeyWrapped(keyWrappingAlgorithm);
+        return KMSSecuredCEK.isKMSKeyWrapped(keyWrappingAlgorithm);
     }
 
     /**
@@ -228,9 +235,8 @@ final class ContentCryptoMaterial {
      * Returns the corresponding kek material description from the given json;
      * or null if the input is null.
      */
-    @SuppressWarnings("unchecked")
     private static Map<String, String> matdescFromJson(String json) {
-        Map<String, String> map = Jackson.fromJsonString(json, Map.class);
+        Map<String, String> map = Jackson.stringMapFromJsonString(json);
         return map == null ? null : Collections.unmodifiableMap(map);
     }
 
@@ -255,7 +261,34 @@ final class ContentCryptoMaterial {
     private static SecretKey cek(byte[] cekSecured, String keyWrapAlgo,
                                  EncryptionMaterials materials, Provider securityProvider,
                                  ContentCryptoScheme contentCryptoScheme, AWSKMS kms) {
-        if (isKMSKeyWrapped(keyWrapAlgo))
+        InternalKeyWrapAlgorithm internalKeyWrapAlgorithm = InternalKeyWrapAlgorithm.fromAlgorithmName(keyWrapAlgo);
+
+        if (internalKeyWrapAlgorithm != null && !internalKeyWrapAlgorithm.isV1Algorithm()) {
+            // handle v2 key-wrap algorithm for forward compatibility
+            KMSKeyWrapperContext kmsContext = null;
+
+            if (internalKeyWrapAlgorithm.isKMS()) {
+                Map<String, String> kmsMaterialsDescription =
+                    KMSMaterialsHandler.createKMSContextMaterialsDescription(materials.getMaterialsDescription(),
+                                                                      contentCryptoScheme.getCipherAlgorithm());
+                kmsContext = KMSKeyWrapperContext.builder()
+                                                 .kms(kms)
+                                                 .kmsMaterialsDescription(kmsMaterialsDescription)
+                                                 .build();
+            }
+
+            KeyWrapperContext context = KeyWrapperContext.builder()
+                                                         .cryptoProvider(securityProvider)
+                                                         .internalKeyWrapAlgorithm(internalKeyWrapAlgorithm)
+                                                         .materials(materials)
+                                                         .cekSecured(cekSecured)
+                                                         .contentCryptoScheme(contentCryptoScheme)
+                                                         .kmsKeyWrapperContext(kmsContext)
+                                                         .build();
+            return cekV2(context);
+        }
+
+        if (KMSSecuredCEK.isKMSKeyWrapped(keyWrapAlgo))
             return cekByKMS(cekSecured, keyWrapAlgo, materials, contentCryptoScheme, kms);
         Key kek;
         if (materials.getKeyPair() != null) {
@@ -297,6 +330,49 @@ final class ContentCryptoMaterial {
         } catch (Exception e) {
             throw failure(e, "Unable to decrypt symmetric key from object metadata");
         }
+    }
+
+    /**
+     * Unwrap a key that was wrapped using a v2 algorithm
+     */
+    private static SecretKey cekV2(KeyWrapperContext context) {
+        if (context.internalKeyWrapAlgorithm().isKMS()) {
+            validateKMSParameters(context);
+        }
+        Key kek = getDecryptionKeyFrom(context.materials());
+        String keyGeneratorAlgorithm = context.internalKeyWrapAlgorithm().isKMS() ?
+            context.contentCryptoScheme().getKeyGeneratorAlgorithm() :
+            kek.getAlgorithm();
+        KeyWrapper keyWrapper = KeyWrapperFactory.defaultInstance().createKeyWrapper(context);
+        return new SecretKeySpec(keyWrapper.unwrapCek(context.cekSecured(), kek), keyGeneratorAlgorithm);
+    }
+
+    private static void validateKMSParameters(KeyWrapperContext context) {
+        KMSKeyWrapperContext kmsKeyWrapperContext = context.kmsKeyWrapperContext();
+        if (kmsKeyWrapperContext == null) {
+            throw new IllegalStateException("Missing KMS parameters");
+        }
+        Map<String, String> kmsMaterialsDescription = kmsKeyWrapperContext.kmsMaterialsDescription();
+        if (kmsMaterialsDescription == null) {
+            throw new IllegalStateException("Key materials from KMS must contain description entries");
+        }
+        String cekAlgoFromMaterials = kmsMaterialsDescription.get(AWS_CRYPTO_CEK_ALGORITHM);
+        if (cekAlgoFromMaterials == null) {
+            throw new IllegalStateException("Could not find required description in key material: "
+                                                + AWS_CRYPTO_CEK_ALGORITHM);
+        }
+        String cekAlgoFromCryptoScheme = context.contentCryptoScheme().getCipherAlgorithm();
+        if (!cekAlgoFromMaterials.equals(cekAlgoFromCryptoScheme)) {
+            throw new IllegalStateException("Algorithm values from materials and metadata/instruction file don't match:"
+                                                + cekAlgoFromMaterials + ", " + cekAlgoFromCryptoScheme);
+        }
+    }
+
+    private static Key getDecryptionKeyFrom(EncryptionMaterials materials) {
+        if (materials.isKMSEnabled()) {
+            return null;
+        }
+        return materials.getKeyPair() != null ? materials.getKeyPair().getPrivate() : materials.getSymmetricKey();
     }
 
     /**
@@ -381,25 +457,34 @@ final class ContentCryptoMaterial {
         // Material description
         String matdescStr = userMeta.get(Headers.MATERIALS_DESCRIPTION);
         final String keyWrapAlgo = userMeta.get(Headers.CRYPTO_KEYWRAP_ALGORITHM);
-        final boolean isKMS = isKMSKeyWrapped(keyWrapAlgo);
-        final Map<String, String> core = matdescFromJson(matdescStr);
-        final Map<String, String> merged = isKMS || extra == null
-                                           ? core : extra.mergeInto(core);
-        final EncryptionMaterials materials;
-        if (isKMS) {
-            materials = new KMSEncryptionMaterials(
-                core.get(KMSEncryptionMaterials.CUSTOMER_MASTER_KEY_ID));
-            materials.addDescriptions(core);
-        } else {
-            materials = kekMaterialAccessor == null
-                        ? null
-                        : kekMaterialAccessor.getEncryptionMaterials(merged)
-            ;
+        final Map<String, String> coreMatDesc = matdescFromJson(matdescStr);
+
+        final boolean isKMSV1 = KMSSecuredCEK.isKMSV1KeyWrapped(keyWrapAlgo);
+        final boolean isKMSV2 = KMSSecuredCEK.isKMSV2KeyWrapped(keyWrapAlgo);
+        final Map<String, String> mergedMatDesc = isKMSV1 || isKMSV2 || extra == null ?
+                                                          coreMatDesc : extra.mergeInto(coreMatDesc);
+        EncryptionMaterials materials = null;
+        if (isKMSV1) {  // KMS V1 preserves using the CMK of the metadata matdesc to create new KMS materials
             if (materials == null) {
-                throw new SdkClientException(
-                    "Unable to retrieve the client encryption materials");
+                materials = new KMSEncryptionMaterials(coreMatDesc.get(KMSEncryptionMaterials.CUSTOMER_MASTER_KEY_ID));
+                materials.addDescriptions(coreMatDesc);
             }
+        } else if (isKMSV2) { //When decrypting V2 objects here in the V1 client, require usage of materials
+                              //Only the default method getEncryptionMaterials() works for KMS keys because of the
+                              //way CMK is stored in the matdesc and prohibits searching for multiple materials.
+            materials = (kekMaterialAccessor instanceof EncryptionMaterialsProvider) ?
+                                ((EncryptionMaterialsProvider) kekMaterialAccessor).getEncryptionMaterials() : null;
+            if (!(materials instanceof KMSEncryptionMaterials)) {
+                throw new SdkClientException("Retrieved materials not of expected type KMSEncryptionMaterials");
+            }
+        } else {
+            materials = kekMaterialAccessor.getEncryptionMaterials(mergedMatDesc);
         }
+
+        if (materials == null) {
+            throw new SdkClientException("Unable to retrieve the client encryption materials");
+        }
+
         // CEK algorithm
         String cekAlgo = userMeta.get(Headers.CRYPTO_CEK_ALGORITHM);
         boolean isRangeGet = range != null;
@@ -427,7 +512,7 @@ final class ContentCryptoMaterial {
             throw newKeyWrapException();
         SecretKey cek = cek(cekWrapped, keyWrapAlgo, materials,
                             securityProvider, contentCryptoScheme, kms);
-        return new ContentCryptoMaterial(merged, cekWrapped, keyWrapAlgo,
+        return new ContentCryptoMaterial(mergedMatDesc, cekWrapped, keyWrapAlgo,
                                          contentCryptoScheme.createCipherLite(cek, iv,
                                                                               Cipher.DECRYPT_MODE, securityProvider, alwaysUseSecurityProvider));
     }
@@ -500,29 +585,41 @@ final class ContentCryptoMaterial {
                 "Necessary encryption info not found in the instruction file "
                 + instFile);
         }
-        final String keyWrapAlgo = instFile.get(Headers.CRYPTO_KEYWRAP_ALGORITHM);
-        final boolean isKMS = isKMSKeyWrapped(keyWrapAlgo);
+
         // Material description
         String matdescStr = instFile.get(Headers.MATERIALS_DESCRIPTION);
-        final Map<String, String> core = matdescFromJson(matdescStr);
-        final Map<String, String> merged = extra == null || isKMS
-                                           ? core : extra.mergeInto(core);
-        EncryptionMaterials materials;
-        if (isKMS) {
-            materials = new KMSEncryptionMaterials(
-                core.get(KMSEncryptionMaterials.CUSTOMER_MASTER_KEY_ID));
-            materials.addDescriptions(core);
-        } else {
-            materials = kekMaterialAccessor == null
-                        ? null
-                        : kekMaterialAccessor.getEncryptionMaterials(merged);
+        final String keyWrapAlgo = instFile.get(Headers.CRYPTO_KEYWRAP_ALGORITHM);
+        final Map<String, String> coreMatDesc = matdescFromJson(matdescStr);
+
+        final boolean isKMSV1 = KMSSecuredCEK.isKMSV1KeyWrapped(keyWrapAlgo);
+        final boolean isKMSV2 = KMSSecuredCEK.isKMSV2KeyWrapped(keyWrapAlgo);
+        final Map<String, String> mergedMatDesc = isKMSV1 || isKMSV2 || extra == null ?
+                                                          coreMatDesc : extra.mergeInto(coreMatDesc);
+        EncryptionMaterials materials = null;
+        if (isKMSV1) {  // KMS V1 preserves using the CMK of the metadata matdesc to create new KMS materials
             if (materials == null) {
-                throw new SdkClientException(
-                    "Unable to retrieve the encryption materials that originally "
+                materials = new KMSEncryptionMaterials(coreMatDesc.get(KMSEncryptionMaterials.CUSTOMER_MASTER_KEY_ID));
+                materials.addDescriptions(coreMatDesc);
+            }
+        } else if (isKMSV2) { //When decrypting V2 objects here in the V1 client, require usage of materials
+                              //Only the default method getEncryptionMaterials() works for KMS keys because of the
+                              //way CMK is stored in the matdesc and prohibits searching for multiple materials.
+            materials = (kekMaterialAccessor instanceof EncryptionMaterialsProvider) ?
+                                ((EncryptionMaterialsProvider) kekMaterialAccessor).getEncryptionMaterials() : null;
+            if (!(materials instanceof KMSEncryptionMaterials)) {
+                throw new SdkClientException("Retrieved materials not of expected type KMSEncryptionMaterials");
+            }
+        } else {
+            materials = kekMaterialAccessor.getEncryptionMaterials(mergedMatDesc);
+        }
+
+        if (materials == null) {
+            throw new SdkClientException(
+                "Unable to retrieve the encryption materials that originally "
                     + "encrypted object corresponding to instruction file "
                     + instFile);
-            }
         }
+
         // CEK algorithm
         final String cekAlgo = instFile.get(Headers.CRYPTO_CEK_ALGORITHM);
         final boolean isRangeGet = range != null;
@@ -550,7 +647,7 @@ final class ContentCryptoMaterial {
             throw newKeyWrapException();
         SecretKey cek = cek(cekWrapped, keyWrapAlgo, materials,
                             securityProvider, contentCryptoScheme, kms);
-        return new ContentCryptoMaterial(merged, cekWrapped, keyWrapAlgo,
+        return new ContentCryptoMaterial(mergedMatDesc, cekWrapped, keyWrapAlgo,
                                          contentCryptoScheme.createCipherLite(cek, iv,
                                                                               Cipher.DECRYPT_MODE, securityProvider, alwaysUseSecurityProvider));
     }

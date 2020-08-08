@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
+package com.amazonaws.services.s3.internal.crypto.v2;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,8 +23,10 @@ import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.CopyPartRequest;
 import com.amazonaws.services.s3.model.CopyPartResult;
+import com.amazonaws.services.s3.model.CryptoConfigurationV2;
 import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.EncryptedGetObjectRequest;
+import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
@@ -42,9 +44,11 @@ import com.amazonaws.services.s3.model.UploadPartResult;
  * for use with the S3 encryption client.
  */
 public abstract class S3CryptoModule<T extends MultipartUploadContext> {
-    /**
-     * @return the result of the putting the S3 object.
-     */
+
+    public abstract CryptoConfigurationV2 getCryptoConfiguration();
+
+    public abstract EncryptionMaterialsProvider getEncryptionMaterialsProvider();
+
     public abstract PutObjectResult putObjectSecurely(PutObjectRequest req);
 
     public abstract S3Object getObjectSecurely(GetObjectRequest req);

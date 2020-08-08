@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
+package com.amazonaws.services.s3.internal.crypto.v1;
 
 import static com.amazonaws.services.s3.model.CryptoMode.EncryptionOnly;
 
@@ -23,6 +23,9 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.internal.SdkFilterInputStream;
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.s3.internal.S3Direct;
+import com.amazonaws.services.s3.internal.crypto.ByteRangeCapturingInputStream;
+import com.amazonaws.services.s3.internal.crypto.CipherLite;
+import com.amazonaws.services.s3.internal.crypto.CipherLiteInputStream;
 import com.amazonaws.services.s3.model.CryptoConfiguration;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -105,7 +108,7 @@ class S3CryptoModuleEO extends S3CryptoModuleBase<MultipartUploadCbcContext> {
 
     @Override
     final ByteRangeCapturingInputStream wrapForMultipart(
-            CipherLiteInputStream is, long partSize) {
+        CipherLiteInputStream is, long partSize) {
         int blockSize = contentCryptoScheme.getBlockSizeInBytes();
         return new ByteRangeCapturingInputStream(is, 
                 partSize - blockSize,

@@ -15,11 +15,13 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
+package com.amazonaws.services.s3.internal.crypto.v2;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+
+import com.amazonaws.services.s3.internal.crypto.keywrap.InternalKeyWrapAlgorithm;
 
 /**
  * Internal class used to carry both the secured CEK and the key wrapping
@@ -35,22 +37,22 @@ class SecuredCEK {
      * The key wrapping algorithm used, or null if the CEK is not secured via
      * key wrapping.
      */
-    private final String keyWrapAlgorithm;
+    private final InternalKeyWrapAlgorithm keyWrapAlgorithm;
 
     /** Unmodifiable material description. */
     private final Map<String,String> matdesc;
 
-    SecuredCEK(byte[] encryptedKey, String keyWrapAlgorithm, Map<String,String> matdesc) {
+    SecuredCEK(byte[] encryptedKey, InternalKeyWrapAlgorithm keyWrapAlgorithm, Map<String,String> matdesc) {
         this.encrypted = encryptedKey;
         this.keyWrapAlgorithm = keyWrapAlgorithm;
-        this.matdesc = Collections.unmodifiableMap(new TreeMap<String, String>(matdesc));
+        this.matdesc = Collections.unmodifiableMap(new TreeMap<>(matdesc));
     }
 
     byte[] getEncrypted() {
         return encrypted;
     }
 
-    String getKeyWrapAlgorithm() {
+    InternalKeyWrapAlgorithm getKeyWrapAlgorithm() {
         return keyWrapAlgorithm;
     }
 

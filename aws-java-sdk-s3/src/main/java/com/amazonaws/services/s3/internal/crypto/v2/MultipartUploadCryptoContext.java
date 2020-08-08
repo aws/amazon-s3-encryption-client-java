@@ -12,11 +12,11 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
-
-import com.amazonaws.annotation.GuardedBy;
+package com.amazonaws.services.s3.internal.crypto.v2;
 
 import com.amazonaws.SdkClientException;
+import com.amazonaws.annotation.GuardedBy;
+import com.amazonaws.services.s3.internal.crypto.CipherLite;
 
 class MultipartUploadCryptoContext extends MultipartUploadContext {
     private final ContentCryptoMaterial cekMaterial;

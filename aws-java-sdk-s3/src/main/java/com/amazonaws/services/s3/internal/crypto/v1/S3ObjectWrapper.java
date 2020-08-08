@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
+package com.amazonaws.services.s3.internal.crypto.v1;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.Headers;
+import com.amazonaws.services.s3.internal.crypto.ContentCryptoScheme;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectId;

@@ -12,15 +12,16 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3.internal.crypto;
+package com.amazonaws.services.s3.internal.crypto.v1;
 
+import com.amazonaws.services.s3.internal.crypto.ContentCryptoScheme;
 import com.amazonaws.services.s3.model.CryptoMode;
 
 /**
  * S3 cryptographic scheme that includes the content crypto scheme and key
  * wrapping scheme (for the content-encrypting-key).
  */
-final class S3CryptoScheme {
+public final class S3CryptoScheme {
     // http://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html
     // http://docs.oracle.com/javase/7/docs/technotes/guides/security/crypto/CryptoSpec.html#Key
     static final String AES = "AES";
@@ -35,20 +36,20 @@ final class S3CryptoScheme {
         this.kwScheme = kwScheme;
     }
 
-    ContentCryptoScheme getContentCryptoScheme() {
+    public ContentCryptoScheme getContentCryptoScheme() {
         return contentCryptoScheme;
     }
 
-    S3KeyWrapScheme getKeyWrapScheme() { return kwScheme; }
+    public S3KeyWrapScheme getKeyWrapScheme() { return kwScheme; }
 
     /**
      * Convenient method.
      */
-    static boolean isAesGcm(String cipherAlgorithm) {
+    public static boolean isAesGcm(String cipherAlgorithm) {
         return ContentCryptoScheme.AES_GCM.getCipherAlgorithm().equals(cipherAlgorithm);
     }
 
-    static S3CryptoScheme from(CryptoMode mode) {
+    public static S3CryptoScheme from(CryptoMode mode) {
         switch (mode) {
             case EncryptionOnly:
                 return new S3CryptoScheme(ContentCryptoScheme.AES_CBC,
