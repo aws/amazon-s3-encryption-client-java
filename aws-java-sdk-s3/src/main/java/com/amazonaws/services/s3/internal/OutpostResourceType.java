@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -12,38 +12,33 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.services.s3;
+
+package com.amazonaws.services.s3.internal;
+
 
 import com.amazonaws.annotation.SdkInternalApi;
-import com.amazonaws.services.s3.internal.S3OutpostResource;
+import com.amazonaws.util.StringUtils;
 
 /**
- * An enum representing the types of resources supported by S3. Each resource type below will have a
- * concrete implementation of {@link S3Resource}.
+ * An enum representing the types of resources supported by S3 outpost. Each resource type below will have a
+ * concrete implementation of {@link S3OutpostResource1}.
  */
 @SdkInternalApi
-public enum S3ResourceType {
-    /**
-     * A specific S3 bucket. Implemented by {@link S3BucketResource}.
-     */
-    BUCKET("bucket_name"),
-    /**
-     * An access point that fronts a bucket. Implemented by {@link S3AccessPointResource}.
-     */
-    ACCESS_POINT("accesspoint"),
-    /**
-     * A specific S3 object (bucket/access-point and key). Implemented by {@link S3ObjectResource}.
-     */
-    OBJECT("object"),
+public enum OutpostResourceType {
 
     /**
-     * An outpost access point. Implemented by {@link S3OutpostResource}.
+     * A specific S3 outpost bucket.
      */
-    OUTPOST("outpost");
+    OUTPOST_BUCKET("bucket"),
+
+    /**
+     * An outpost access point
+     */
+    OUTPOST_ACCESS_POINT("accesspoint");
 
     private final String value;
 
-    S3ResourceType(String value) {
+    OutpostResourceType(String value) {
         this.value = value;
     }
 
@@ -62,12 +57,12 @@ public enum S3ResourceType {
      * @return S3ResourceType corresponding to the value
      * @throws IllegalArgumentException If the specified value does not map to one of the known values in this enum.
      */
-    public static S3ResourceType fromValue(String value) {
-        if (value == null || "".equals(value)) {
-            throw new IllegalArgumentException("Value cannot be null or empty!");
+    public static OutpostResourceType fromValue(String value) {
+        if (StringUtils.isNullOrEmpty(value)) {
+            throw new IllegalArgumentException("value cannot be null or empty!");
         }
 
-        for (S3ResourceType enumEntry : S3ResourceType.values()) {
+        for (OutpostResourceType enumEntry : OutpostResourceType.values()) {
             if (enumEntry.toString().equals(value)) {
                 return enumEntry;
             }
