@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -14,45 +14,31 @@
  */
 package com.amazonaws.services.s3.internal;
 
+import static com.amazonaws.services.s3.S3ResourceType.OBJECT_LAMBDAS;
 import com.amazonaws.annotation.SdkInternalApi;
-import com.amazonaws.services.s3.EndpointParams;
 import com.amazonaws.services.s3.S3Resource;
-import com.amazonaws.services.s3.S3ResourceType;
 import com.amazonaws.util.ValidationUtils;
 
 /**
- * An {@link S3Resource} that represents an S3 outpost resource
+ * An {@link S3Resource} that represents an S3 Object Lambdas resource.
  */
 @SdkInternalApi
-public final class S3OutpostResource implements S3Resource {
-
+public final class S3ObjectLambdasResource implements S3Resource {
     private final String partition;
     private final String region;
     private final String accountId;
-    private final String outpostId;
+    private final String accessPointName;
 
-    private S3OutpostResource(Builder b) {
+    private S3ObjectLambdasResource(Builder b) {
         this.partition = ValidationUtils.assertStringNotEmpty(b.partition, "partition");
         this.region = ValidationUtils.assertStringNotEmpty(b.region, "region");
         this.accountId = ValidationUtils.assertStringNotEmpty(b.accountId, "accountId");
-        this.outpostId = ValidationUtils.assertStringNotEmpty(b.outpostId, "outpostId");
+        this.accessPointName = ValidationUtils.assertStringNotEmpty(b.accessPointName, "accessPointName");
     }
 
-    /**
-     * Get a new builder for this class.
-     * @return A newly initialized instance of a builder.
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Gets the resource type for this access point.
-     * @return This will always return "accesspoint".
-     */
     @Override
     public String getType() {
-        return S3ResourceType.OUTPOST.toString();
+        return OBJECT_LAMBDAS.toString();
     }
 
     @Override
@@ -60,39 +46,26 @@ public final class S3OutpostResource implements S3Resource {
         return null;
     }
 
-    /**
-     * Gets the AWS partition name associated with this access point (e.g.: 'aws').
-     * @return the name of the partition.
-     */
     @Override
     public String getPartition() {
-        return this.partition;
+        return partition;
     }
 
-    /**
-     * Gets the AWS region name associated with this bucket (e.g.: 'us-east-1').
-     * @return the name of the region.
-     */
     @Override
     public String getRegion() {
-        return this.region;
+        return region;
     }
 
-    /**
-     * Gets the AWS account ID associated with this bucket.
-     * @return the AWS account ID.
-     */
     @Override
     public String getAccountId() {
-        return this.accountId;
+        return accountId;
     }
 
     /**
-     * Gets the outpost ID
-     * @return the outpost ID.
+     * @return The name of the access point.
      */
-    public String getOutpostId() {
-        return this.outpostId;
+    public String getAccessPointName() {
+        return accessPointName;
     }
 
     @Override
@@ -100,12 +73,12 @@ public final class S3OutpostResource implements S3Resource {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        S3OutpostResource that = (S3OutpostResource) o;
+        S3ObjectLambdasResource that = (S3ObjectLambdasResource) o;
 
-        if (partition != null ? ! partition.equals(that.partition) : that.partition != null) return false;
-        if (region != null ? ! region.equals(that.region) : that.region != null) return false;
-        if (accountId != null ? ! accountId.equals(that.accountId) : that.accountId != null) return false;
-        return outpostId.equals(that.outpostId);
+        if (partition != null ? !partition.equals(that.partition) : that.partition != null) return false;
+        if (region != null ? !region.equals(that.region) : that.region != null) return false;
+        if (accountId != null ? !accountId.equals(that.accountId) : that.accountId != null) return false;
+        return accessPointName != null ? accessPointName.equals(that.accessPointName) : that.accessPointName == null;
     }
 
     @Override
@@ -113,18 +86,22 @@ public final class S3OutpostResource implements S3Resource {
         int result = partition != null ? partition.hashCode() : 0;
         result = 31 * result + (region != null ? region.hashCode() : 0);
         result = 31 * result + (accountId != null ? accountId.hashCode() : 0);
-        result = 31 * result + outpostId.hashCode();
+        result = 31 * result + (accessPointName != null ? accessPointName.hashCode() : 0);
         return result;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
      * A builder for {@link S3OutpostResource} objects.
      */
     public static final class Builder {
-        private String outpostId;
         private String partition;
         private String region;
         private String accountId;
+        private String accessPointName;
 
         private Builder() {
         }
@@ -154,18 +131,18 @@ public final class S3OutpostResource implements S3Resource {
         }
 
         /**
-         * The Id of the outpost
+         * The name of the access point.
          */
-        public Builder withOutpostId(String outpostId) {
-            this.outpostId = outpostId;
+        public Builder withAccessPointName(String accessPointName) {
+            this.accessPointName = accessPointName;
             return this;
         }
 
         /**
-         * Builds an instance of {@link S3OutpostResource}.
+         * Builds an instance of {@link S3ObjectLambdasResource}.
          */
-        public S3OutpostResource build() {
-            return new S3OutpostResource(this);
+        public S3ObjectLambdasResource build() {
+            return new S3ObjectLambdasResource(this);
         }
     }
 }
