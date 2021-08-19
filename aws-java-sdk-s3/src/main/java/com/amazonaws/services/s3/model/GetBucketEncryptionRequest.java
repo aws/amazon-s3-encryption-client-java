@@ -20,8 +20,8 @@ import java.io.Serializable;
  * Represents the input of a <code>GetBucketEncryption</code> operation.
  * </p>
  *
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/GetBucketEncryption" target="_top">AWS API
- * Documentation</a>
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/GetBucketEncryption" target="_top">
+ * Amazon Web Services API Documentation</a>
  */
 public class GetBucketEncryptionRequest extends AmazonWebServiceRequest implements Serializable, Cloneable, ExpectedBucketOwnerRequest {
 

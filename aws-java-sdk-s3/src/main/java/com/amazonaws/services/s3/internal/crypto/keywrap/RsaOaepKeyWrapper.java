@@ -73,7 +73,7 @@ public final class RsaOaepKeyWrapper implements KeyWrapper {
     /**
      * The cipher algorithm name is the string used to correctly configure the cipher provider.
      * Do not confuse with {@link InternalKeyWrapAlgorithm#algorithmName()} which is an agreed-upon term
-     * within AWS.
+     * within Amazon Web Services.
      */
     public static String cipherAlgorithm() {
         return CIPHER_ALGORITHM;

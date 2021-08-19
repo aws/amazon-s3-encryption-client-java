@@ -17,8 +17,8 @@ import java.io.Serializable;
 /**
  * Container for filters that define which source objects should be replicated.
  *
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/SourceSelectionCriteria" target="_top">AWS API
- * Documentation</a>
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/SourceSelectionCriteria" target="_top">
+ * Amazon Web Services API Documentation</a>
  */
 public class SourceSelectionCriteria implements Serializable, Cloneable {
 

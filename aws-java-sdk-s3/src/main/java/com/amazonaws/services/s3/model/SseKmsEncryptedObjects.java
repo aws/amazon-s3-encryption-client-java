@@ -17,8 +17,8 @@ import java.io.Serializable;
 /**
  * Container for filter information of selection of KMS Encrypted S3 objects.
  *
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/SseKmsEncryptedObjects" target="_top">AWS API
- * Documentation</a>
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/SseKmsEncryptedObjects" target="_top">
+ * Amazon Web Services API Documentation</a>
  */
 public class SseKmsEncryptedObjects implements Serializable, Cloneable {
 
@@ -26,12 +26,12 @@ public class SseKmsEncryptedObjects implements Serializable, Cloneable {
 
     /**
      * <p>
-     * Specifies whether Amazon S3 replicates objects created with server-side encryption using an AWS KMS key stored in
-     * AWS Key Management Service.
+     * Specifies whether Amazon S3 replicates objects created with server-side encryption using an Amazon Web Services KMS key stored in
+     * Amazon Web Services Key Management Service.
      * </p>
      *
-     * @return Specifies whether Amazon S3 replicates objects created with server-side encryption using an AWS KMS key
-     *         stored in AWS Key Management Service.
+     * @return Specifies whether Amazon S3 replicates objects created with server-side encryption using an Amazon Web Services KMS key
+     *         stored in Amazon Web Services Key Management Service.
      * @see SseKmsEncryptedObjectsStatus
      */
     public String getStatus() {
@@ -40,13 +40,13 @@ public class SseKmsEncryptedObjects implements Serializable, Cloneable {
 
     /**
      * <p>
-     * Specifies whether Amazon S3 replicates objects created with server-side encryption using an AWS KMS key
-     * stored in AWS Key Management Service.
+     * Specifies whether Amazon S3 replicates objects created with server-side encryption using an Amazon Web Services KMS key
+     * stored in Amazon Web Services Key Management Service.
      * </p>
      *
      * @param status
-     *        Specifies whether Amazon S3 replicates objects created with server-side encryption using an AWS KMS
-     *        key stored in AWS Key Management Service.
+     *        Specifies whether Amazon S3 replicates objects created with server-side encryption using an Amazon Web Services KMS
+     *        key stored in Amazon Web Services Key Management Service.
      * @see SseKmsEncryptedObjectsStatus
      */
     public void setStatus(String status) {
@@ -55,13 +55,13 @@ public class SseKmsEncryptedObjects implements Serializable, Cloneable {
 
     /**
      * <p>
-     * Specifies whether Amazon S3 replicates objects created with server-side encryption using an AWS KMS key
-     * stored in AWS Key Management Service.
+     * Specifies whether Amazon S3 replicates objects created with server-side encryption using an Amazon Web Services KMS key
+     * stored in Amazon Web Services Key Management Service.
      * </p>
      *
      * @param status
-     *        Specifies whether Amazon S3 replicates objects created with server-side encryption using an AWS KMS
-     *        key stored in AWS Key Management Service.
+     *        Specifies whether Amazon S3 replicates objects created with server-side encryption using an Amazon Web Services KMS
+     *        key stored in Amazon Web Services Key Management Service.
      * @see SseKmsEncryptedObjectsStatus
      * @return Returns a reference to this object so that method calls can be chained together.
      */

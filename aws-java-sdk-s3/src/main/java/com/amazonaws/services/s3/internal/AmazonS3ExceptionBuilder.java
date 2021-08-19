@@ -26,14 +26,14 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 public class AmazonS3ExceptionBuilder {
 
     /**
-     * The unique AWS identifier for the service request the caller made. The
-     * AWS request ID can uniquely identify the AWS request, and is used for
-     * reporting an error to AWS support team.
+     * The unique Amazon Web Services identifier for the service request the caller made. The
+     * Amazon Web Services request ID can uniquely identify the Amazon Web Services request, and is used for
+     * reporting an error to Amazon Web Services support team.
      */
     private String requestId;
 
     /**
-     * The AWS error code represented by this exception (ex:
+     * The Amazon Web Services error code represented by this exception (ex:
      * InvalidParameterValue).
      */
     private String errorCode;
@@ -68,15 +68,15 @@ public class AmazonS3ExceptionBuilder {
     private String errorResponseXml;
 
     /**
-     * Track proxy host if configured, in case error response came from proxy instead of AWS.
+     * Track proxy host if configured, in case error response came from proxy instead of Amazon Web Services.
      */
     private String proxyHost;
 
     /**
-     * Returns the AWS request ID that uniquely identifies the service request
+     * Returns the Amazon Web Services request ID that uniquely identifies the service request
      * the caller made.
      *
-     * @return The AWS request ID that uniquely identifies the service request
+     * @return The Amazon Web Services request ID that uniquely identifies the service request
      *         the caller made.
      */
     public String getRequestId() {
@@ -84,7 +84,7 @@ public class AmazonS3ExceptionBuilder {
     }
 
     /**
-     * Sets the AWS requestId for this exception.
+     * Sets the Amazon Web Services requestId for this exception.
      *
      * @param requestId
      *            The unique identifier for the service request the caller made.
@@ -94,19 +94,19 @@ public class AmazonS3ExceptionBuilder {
     }
 
     /**
-     * Sets the AWS error code represented by this exception.
+     * Sets the Amazon Web Services error code represented by this exception.
      *
      * @param errorCode
-     *            The AWS error code represented by this exception.
+     *            The Amazon Web Services error code represented by this exception.
      */
     public void setErrorCode(String errorCode) {
         this.errorCode = errorCode;
     }
 
     /**
-     * Returns the AWS error code represented by this exception.
+     * Returns the Amazon Web Services error code represented by this exception.
      *
-     * @return The AWS error code represented by this exception.
+     * @return The Amazon Web Services error code represented by this exception.
      */
     public String getErrorCode() {
         return errorCode;
@@ -268,9 +268,9 @@ public class AmazonS3ExceptionBuilder {
     }
 
     /**
-     * Returns the AWS error type information by looking at the HTTP status code
+     * Returns the Amazon Web Services error type information by looking at the HTTP status code
      * in the error response. S3 error responses don't explicitly declare a
-     * sender or client fault like other AWS services, so we have to use the
+     * sender or client fault like other Amazon Web Services services, so we have to use the
      * HTTP status code to infer this information.
      *
      * @param httpResponse

@@ -28,7 +28,10 @@ public class Encryption implements Serializable, Cloneable {
     private String encryptionType;
 
     /**
-     * Specifies the AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4. Documentation on configuring any of the officially supported AWS SDKs and CLI can be found at http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#specify-signature-version
+     * Specifies the Amazon Web Services KMS key ID to use for object encryption. All GET and PUT requests for an object
+     * protected by Amazon Web Services KMS will fail if not made via SSL or using SigV4. Documentation on configuring
+     * any of the officially supported Amazon Web Services SDKs and CLI can be found at
+     * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#specify-signature-version
      */
     private String kmsKeyId;
 
@@ -78,16 +81,16 @@ public class Encryption implements Serializable, Cloneable {
     /**
      * <p>
      * If the encryption type is <code>aws:kms</code>, this optional value specifies the ID of the symmetric customer
-     * managed AWS KMS CMK to use for encryption of job results. Amazon S3 only supports symmetric CMKs. For more
-     * information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using
-     * symmetric and asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     * managed Amazon Web Services KMS CMK to use for encryption of job results. Amazon S3 only supports symmetric CMKs.
+     * For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using
+     * symmetric and asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      * </p>
      *
      * @return If the encryption type is <code>aws:kms</code>, this optional value specifies the ID of the symmetric
-     *         customer managed AWS KMS CMK to use for encryption of job results. Amazon S3 only supports symmetric
-     *         CMKs. For more information, see <a
+     *         customer managed Amazon Web Services KMS CMK to use for encryption of job results. Amazon S3 only
+     *         supports symmetric CMKs. For more information, see <a
      *         href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric
-     *         and asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     *         and asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      */
     public String getKmsKeyId() {
         return kmsKeyId;
@@ -96,18 +99,18 @@ public class Encryption implements Serializable, Cloneable {
     /**
      * <p>
      * If the encryption type is <code>aws:kms</code>, this optional value specifies the ID of the symmetric
-     * customer managed AWS KMS CMK to use for encryption of job results. Amazon S3 only supports symmetric CMKs.
-     * For more information, see <a
+     * customer managed Amazon Web Services KMS CMK to use for encryption of job results. Amazon S3 only supports
+     * symmetric CMKs. For more information, see <a
      * href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric and
-     * asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     * asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      * </p>
      *
      * @param kmsKeyId
      *        If the encryption type is <code>aws:kms</code>, this optional value specifies the ID of the symmetric
-     *        customer managed AWS KMS CMK to use for encryption of job results. Amazon S3 only supports symmetric
-     *        CMKs. For more information, see <a
+     *        customer managed Amazon Web Services KMS CMK to use for encryption of job results. Amazon S3 only supports
+     *        symmetric CMKs. For more information, see <a
      *        href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric
-     *        and asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     *        and asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      */
     public void setKmsKeyId(String kmsKeyId) {
         this.kmsKeyId = kmsKeyId;
@@ -116,18 +119,18 @@ public class Encryption implements Serializable, Cloneable {
     /**
      * <p>
      * If the encryption type is <code>aws:kms</code>, this optional value specifies the ID of the symmetric
-     * customer managed AWS KMS CMK to use for encryption of job results. Amazon S3 only supports symmetric CMKs.
-     * For more information, see <a
+     * customer managed Amazon Web Services KMS CMK to use for encryption of job results. Amazon S3 only supports
+     * symmetric CMKs. For more information, see <a
      * href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric and
-     * asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     * asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      * </p>
      *
      * @param kmsKeyId
      *        If the encryption type is <code>aws:kms</code>, this optional value specifies the ID of the symmetric
-     *        customer managed AWS KMS CMK to use for encryption of job results. Amazon S3 only supports symmetric
-     *        CMKs. For more information, see <a
+     *        customer managed Amazon Web Services KMS CMK to use for encryption of job results. Amazon S3 only supports
+     *        symmetric CMKs. For more information, see <a
      *        href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric
-     *        and asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     *        and asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      * @return This object for method chaining.
      */
     public Encryption withKmsKeyId(String kmsKeyId) {

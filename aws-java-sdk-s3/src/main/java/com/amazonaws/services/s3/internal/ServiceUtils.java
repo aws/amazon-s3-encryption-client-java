@@ -59,7 +59,7 @@ import static com.amazonaws.util.IOUtils.closeQuietly;
 import static com.amazonaws.util.StringUtils.UTF8;
 
 /**
- * General utility methods used throughout the AWS S3 Java client.
+ * General utility methods used throughout the Amazon Web Services S3 Java client.
  */
 public class ServiceUtils {
     private static final Log LOG = LogFactory.getLog(ServiceUtils.class);

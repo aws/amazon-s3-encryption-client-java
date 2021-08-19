@@ -98,7 +98,7 @@ public enum InternalKeyWrapAlgorithm {
     }
 
     /**
-     * The String representation of the algorithm common to AWS independently of language used.
+     * The String representation of the algorithm common to Amazon Web Services independently of language used.
      */
     public String algorithmName() {
         return algorithmName;

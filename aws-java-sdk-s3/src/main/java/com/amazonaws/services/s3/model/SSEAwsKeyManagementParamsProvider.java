@@ -15,7 +15,7 @@
 package com.amazonaws.services.s3.model;
 
 /**
- * Implemented by classes that support the option of using SSE with AWS Key
+ * Implemented by classes that support the option of using SSE with Amazon Web Services Key
  * Management System.
  */
 public interface SSEAwsKeyManagementParamsProvider {

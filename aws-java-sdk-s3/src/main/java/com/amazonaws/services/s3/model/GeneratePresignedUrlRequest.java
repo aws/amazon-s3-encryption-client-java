@@ -29,10 +29,10 @@ import com.amazonaws.services.s3.AmazonS3;
  * </p>
  * <p>
  * Pre-signed URLs allow clients to form a URL for an Amazon S3 resource and
- * sign it with the current AWS security credentials.
+ * sign it with the current Amazon Web Services security credentials.
  * A pre-signed URL may be passed around for other users to access
  * the resource without providing them
- * access to an account's AWS security credentials.
+ * access to an account's Amazon Web Services security credentials.
  * </p>
  *
  * @see AmazonS3#generatePresignedUrl(GeneratePresignedUrlRequest)
@@ -51,7 +51,7 @@ public class GeneratePresignedUrlRequest extends AmazonWebServiceRequest
      * <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
      * </p>
      * <p>
-     * When using this operation using an access point through the AWS SDKs, you provide
+     * When using this operation using an access point through the Amazon Web Services SDKs, you provide
      * the access point ARN in place of the bucket name. For more information about access point
      * ARNs, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html\">
      * Using access points</a> in the <i>Amazon Simple Storage Service Developer Guide</i>.

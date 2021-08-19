@@ -23,7 +23,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.SSEAlgorithm;
 
 /**
- * Constants used by the AWS S3 Java client.
+ * Constants used by the Amazon Web Services S3 Java client.
  */
 public class Constants {
 

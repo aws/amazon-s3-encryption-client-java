@@ -24,7 +24,7 @@ public class HeadBucketResult implements Serializable {
     private String bucketRegion;
 
     /**
-     * Returns the AWS region where the bucket is located.
+     * Returns the Amazon Web Services region where the bucket is located.
      */
     public String getBucketRegion() {
         return bucketRegion;

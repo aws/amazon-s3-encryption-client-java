@@ -67,8 +67,8 @@ public class ServerSideEncryptionByDefault implements Serializable, Cloneable {
 
     /**
      * <p>
-     * AWS Key Management Service (KMS) customer AWS KMS key ID to use for the default encryption. This parameter is
-     * allowed if and only if <code>SSEAlgorithm</code> is set to <code>aws:kms</code>.
+     * Amazon Web Services Key Management Service (KMS) customer Amazon Web Services KMS key ID to use for the default
+     * encryption. This parameter is allowed if and only if <code>SSEAlgorithm</code> is set to <code>aws:kms</code>.
      * </p>
      * <p>
      * You can specify the key ID or the Amazon Resource Name (ARN) of the KMS key. However, if you are using encryption
@@ -95,12 +95,13 @@ public class ServerSideEncryptionByDefault implements Serializable, Cloneable {
      * <p>
      * Amazon S3 only supports symmetric KMS keys and not asymmetric KMS keys. For more information, see <a
      * href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric and
-     * asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     * asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      * </p>
      * </important>
      *
-     * @return AWS Key Management Service (KMS) customer AWS KMS key ID to use for the default encryption. This
-     *         parameter is allowed if and only if <code>SSEAlgorithm</code> is set to <code>aws:kms</code>.</p>
+     * @return Amazon Web Services Key Management Service (KMS) customer Amazon Web Services KMS key ID to use for the
+     *         default encryption. This parameter is allowed if and only if <code>SSEAlgorithm</code> is set to
+     *         <code>aws:kms</code>.</p>
      *         <p>
      *         You can specify the key ID or the Amazon Resource Name (ARN) of the KMS key. However, if you are using
      *         encryption with cross-account operations, you must use a fully qualified KMS key ARN. For more
@@ -127,7 +128,7 @@ public class ServerSideEncryptionByDefault implements Serializable, Cloneable {
      *         <p>
      *         Amazon S3 only supports symmetric KMS keys and not asymmetric KMS keys. For more information, see <a
      *         href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric
-     *         and asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     *         and asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      *         </p>
      */
     public String getKMSMasterKeyID() {
@@ -136,8 +137,8 @@ public class ServerSideEncryptionByDefault implements Serializable, Cloneable {
 
     /**
      * <p>
-     * AWS Key Management Service (KMS) customer AWS KMS key ID to use for the default encryption. This parameter is
-     * allowed if and only if <code>SSEAlgorithm</code> is set to <code>aws:kms</code>.
+     * Amazon Web Services Key Management Service (KMS) customer Amazon Web Services KMS key ID to use for the default
+     * encryption. This parameter is allowed if and only if <code>SSEAlgorithm</code> is set to <code>aws:kms</code>.
      * </p>
      * <p>
      * You can specify the key ID or the Amazon Resource Name (ARN) of the KMS key. However, if you are using
@@ -165,12 +166,12 @@ public class ServerSideEncryptionByDefault implements Serializable, Cloneable {
      * <p>
      * Amazon S3 only supports symmetric KMS keys and not asymmetric KMS keys. For more information, see <a
      * href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric and
-     * asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     * asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      * </p>
      * </important>
      *
      * @param kmsMasterKeyID
-     *        AWS Key Management Service (KMS) customer AWS KMS key ID to use for the default encryption. This
+     *        Amazon Web Services Key Management Service (KMS) customer Amazon Web Services KMS key ID to use for the default encryption. This
      *        parameter is allowed if and only if <code>SSEAlgorithm</code> is set to <code>aws:kms</code>.</p>
      *        <p>
      *        You can specify the key ID or the Amazon Resource Name (ARN) of the KMS key. However, if you are using
@@ -198,7 +199,7 @@ public class ServerSideEncryptionByDefault implements Serializable, Cloneable {
      *        <p>
      *        Amazon S3 only supports symmetric KMS keys and not asymmetric KMS keys. For more information, see <a
      *        href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric
-     *        and asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     *        and asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      *        </p>
      */
     public void setKMSMasterKeyID(String kmsMasterKeyID) {
@@ -207,7 +208,7 @@ public class ServerSideEncryptionByDefault implements Serializable, Cloneable {
 
     /**
      * <p>
-     * AWS Key Management Service (KMS) customer AWS KMS key ID to use for the default encryption. This parameter is
+     * Amazon Web Services Key Management Service (KMS) customer Amazon Web Services KMS key ID to use for the default encryption. This parameter is
      * allowed if and only if <code>SSEAlgorithm</code> is set to <code>aws:kms</code>.
      * </p>
      * <p>
@@ -236,12 +237,12 @@ public class ServerSideEncryptionByDefault implements Serializable, Cloneable {
      * <p>
      * Amazon S3 only supports symmetric KMS keys and not asymmetric KMS keys. For more information, see <a
      * href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric and
-     * asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     * asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      * </p>
      * </important>
      *
      * @param kmsMasterKeyID
-     *        AWS Key Management Service (KMS) customer AWS KMS key ID to use for the default encryption. This
+     *        Amazon Web Services Key Management Service (KMS) customer Amazon Web Services KMS key ID to use for the default encryption. This
      *        parameter is allowed if and only if <code>SSEAlgorithm</code> is set to <code>aws:kms</code>.</p>
      *        <p>
      *        You can specify the key ID or the Amazon Resource Name (ARN) of the KMS key. However, if you are using
@@ -269,7 +270,7 @@ public class ServerSideEncryptionByDefault implements Serializable, Cloneable {
      *        <p>
      *        Amazon S3 only supports symmetric KMS keys and not asymmetric KMS keys. For more information, see <a
      *        href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Using symmetric
-     *        and asymmetric keys</a> in the <i>AWS Key Management Service Developer Guide</i>.
+     *        and asymmetric keys</a> in the <i>Amazon Web Services Key Management Service Developer Guide</i>.
      *        </p>
      * @return Returns a reference to this object so that method calls can be chained together.
      */

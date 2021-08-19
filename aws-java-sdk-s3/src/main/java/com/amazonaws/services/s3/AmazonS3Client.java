@@ -446,7 +446,7 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
 
     private volatile AmazonS3Waiters waiters;
 
-    /** Provider for AWS credentials. */
+    /** Provider for Amazon Web Services credentials. */
     protected final AWSCredentialsProvider awsCredentialsProvider;
 
     /** Responsible for handling error responses from all S3 service calls. */
@@ -504,7 +504,8 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
      * <ul>
      * <li>Environment Variables - AWS_ACCESS_KEY_ID and AWS_SECRET_KEY</li>
      * <li>Java System Properties - aws.accessKeyId and aws.secretKey</li>
-     * <li>Credential profiles file at the default location (~/.aws/credentials) shared by all AWS SDKs and the AWS CLI</li>
+     * <li>Credential profiles file at the default location (~/.aws/credentials) shared by all Amazon Web Services SDKs
+     * and the Amazon Web Services CLI</li>
      * <li>Instance Profile Credentials - delivered through the Amazon EC2
      * metadata service</li>
      * </ul>
@@ -544,11 +545,11 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
     }
 
     /**
-     * Constructs a new Amazon S3 client using the specified AWS credentials to
+     * Constructs a new Amazon S3 client using the specified Amazon Web Services credentials to
      * access Amazon S3.
      *
      * @param awsCredentials
-     *            The AWS credentials to use when making requests to Amazon S3
+     *            The Amazon Web Services credentials to use when making requests to Amazon S3
      *            with this client.
      *
      * @see AmazonS3Client#AmazonS3Client()
@@ -561,11 +562,11 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
     }
 
     /**
-     * Constructs a new Amazon S3 client using the specified AWS credentials and
+     * Constructs a new Amazon S3 client using the specified Amazon Web Services credentials and
      * client configuration to access Amazon S3.
      *
      * @param awsCredentials
-     *            The AWS credentials to use when making requests to Amazon S3
+     *            The Amazon Web Services credentials to use when making requests to Amazon S3
      *            with this client.
      * @param clientConfiguration
      *            The client configuration options controlling how this client
@@ -582,12 +583,12 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
     }
 
     /**
-     * Constructs a new Amazon S3 client using the specified AWS credentials
+     * Constructs a new Amazon S3 client using the specified Amazon Web Services credentials
      * provider to access Amazon S3.
      *
      * @param credentialsProvider
-     *            The AWS credentials provider which will provide credentials
-     *            to authenticate requests with AWS services.
+     *            The Amazon Web Services credentials provider which will provide credentials
+     *            to authenticate requests with Amazon Web Services services.
      * @deprecated use {@link AmazonS3ClientBuilder#withCredentials(AWSCredentialsProvider)}
      */
     @Deprecated
@@ -596,12 +597,12 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
     }
 
     /**
-     * Constructs a new Amazon S3 client using the specified AWS credentials and
+     * Constructs a new Amazon S3 client using the specified Amazon Web Services credentials and
      * client configuration to access Amazon S3.
      *
      * @param credentialsProvider
-     *            The AWS credentials provider which will provide credentials
-     *            to authenticate requests with AWS services.
+     *            The Amazon Web Services credentials provider which will provide credentials
+     *            to authenticate requests with Amazon Web Services services.
      * @param clientConfiguration
      *            The client configuration options controlling how this client
      *            connects to Amazon S3 (e.g. proxy settings, retry counts, etc).
@@ -615,12 +616,12 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
     }
 
     /**
-     * Constructs a new Amazon S3 client using the specified AWS credentials,
+     * Constructs a new Amazon S3 client using the specified Amazon Web Services credentials,
      * client configuration and request metric collector to access Amazon S3.
      *
      * @param credentialsProvider
-     *            The AWS credentials provider which will provide credentials
-     *            to authenticate requests with AWS services.
+     *            The Amazon Web Services credentials provider which will provide credentials
+     *            to authenticate requests with Amazon Web Services services.
      * @param clientConfiguration
      *            The client configuration options controlling how this client
      *            connects to Amazon S3 (e.g. proxy settings, retry counts, etc).
@@ -637,12 +638,12 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
     }
 
     /**
-     * Constructs a new Amazon S3 client using the specified AWS credentials,
+     * Constructs a new Amazon S3 client using the specified Amazon Web Services credentials,
      * client configuration and request metric collector to access Amazon S3.
      *
      * @param credentialsProvider
-     *            The AWS credentials provider which will provide credentials
-     *            to authenticate requests with AWS services.
+     *            The Amazon Web Services credentials provider which will provide credentials
+     *            to authenticate requests with Amazon Web Services services.
      * @param clientConfiguration
      *            The client configuration options controlling how this client
      *            connects to Amazon S3 (e.g. proxy settings, retry counts, etc).
@@ -1805,7 +1806,7 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
         // Populate the SSE-C parameters to the request header
         populateSSE_C(request, putObjectRequest.getSSECustomerKey());
 
-        // Populate the SSE AWS KMS parameters to the request header
+        // Populate the SSE Amazon Web Services KMS parameters to the request header
         populateSSE_KMS(request,
                         putObjectRequest.getSSEAwsKeyManagementParams());
 
@@ -2046,7 +2047,7 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
 
         populateRequestWithCopyObjectParameters(request, copyObjectRequest);
 
-        // Populate the SSE AWS KMS parameters to the request header
+        // Populate the SSE Amazon Web Services KMS parameters to the request header
         populateSSE_KMS(request,
                 copyObjectRequest.getSSEAwsKeyManagementParams());
 
@@ -3688,7 +3689,7 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
         // Populate the SSE-C parameters to the request header
         populateSSE_C(request, initiateMultipartUploadRequest.getSSECustomerKey());
 
-        // Populate the SSE AWS KMS parameters to the request header
+        // Populate the SSE Amazon Web Services KMS parameters to the request header
         populateSSE_KMS(request,
                 initiateMultipartUploadRequest.getSSEAwsKeyManagementParams());
 
@@ -6338,7 +6339,7 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
 
     /**
      * Specifically made package access for testing.
-     * Used for internal consumption of AWS SDK.
+     * Used for internal consumption of Amazon Web Services SDK.
      *
      * Tries to determine the service endpoint for the bucket name.
      * Returns the endpoint configured in the client if the region cannot be determined.

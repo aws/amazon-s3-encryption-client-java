@@ -112,7 +112,7 @@ import org.apache.commons.logging.LogFactory;
  * <code>TransferManager</code> is responsible for managing resources such as
  * connections and threads; share a single instance of
  * <code>TransferManager</code> whenever possible. <code>TransferManager</code>,
- * like all the client classes in the AWS SDK for Java, is thread safe. Call
+ * like all the client classes in the Amazon Web Services SDK for Java, is thread safe. Call
  * <code> TransferManager.shutdownNow()</code> to release the resources once the
  * transfer is complete.
  * <p>
@@ -187,7 +187,7 @@ public class TransferManager {
      * threads. Reuse <code>TransferManager</code> and client objects and share
      * them throughout applications.
      * <p>
-     * TransferManager and all AWS client objects are thread safe.
+     * TransferManager and all Amazon Web Services client objects are thread safe.
      * @deprecated use {@link TransferManagerBuilder#defaultTransferManager()}
      */
     @Deprecated
@@ -197,16 +197,16 @@ public class TransferManager {
 
     /**
      * Constructs a new <code>TransferManager</code> and Amazon S3 client using
-     * the specified AWS security credentials provider.
+     * the specified Amazon Web Services security credentials provider.
      * <p>
      * <code>TransferManager</code> and client objects may pool connections and
      * threads. Reuse <code>TransferManager</code> and client objects and share
      * them throughout applications.
      * <p>
-     * TransferManager and all AWS client objects are thread safe.
+     * TransferManager and all Amazon Web Services client objects are thread safe.
      *
      * @param credentialsProvider
-     *            The AWS security credentials provider to use when making
+     *            The Amazon Web Services security credentials provider to use when making
      *            authenticated requests.
      * @deprecated use {@link TransferManagerBuilder#withS3Client(AmazonS3)} for example:
      * {@code TransferManagerBuilder.standard().withS3Client(AmazonS3ClientBuilder.standard.withCredentials(credentialsProvider).build()).build(); }
@@ -218,17 +218,17 @@ public class TransferManager {
 
     /**
      * Constructs a new <code>TransferManager</code> and Amazon S3 client using
-     * the specified AWS security credentials.
+     * the specified Amazon Web Services security credentials.
      * <p>
      * <code>TransferManager</code> and client objects
      * may pool connections and threads.
      * Reuse <code>TransferManager</code> and client objects
      * and share them throughout applications.
      * <p>
-     * TransferManager and all AWS client objects are thread safe.
+     * TransferManager and all Amazon Web Services client objects are thread safe.
      *
      * @param credentials
-     *            The AWS security credentials to use when making authenticated
+     *            The Amazon Web Services security credentials to use when making authenticated
      *            requests.
      * @deprecated use {@link TransferManagerBuilder#withS3Client(AmazonS3)} for example:
      * {@code TransferManagerBuilder.standard().withS3Client(AmazonS3ClientBuilder.standard.withCredentials(credentials).build()).build(); }
@@ -248,7 +248,7 @@ public class TransferManager {
      * Reuse <code>TransferManager</code> and client objects
      * and share them throughout applications.
      * <p>
-     * TransferManager and all AWS client objects are thread safe.
+     * TransferManager and all Amazon Web Services client objects are thread safe.
      * </p>
      *
      * @param s3
@@ -268,7 +268,7 @@ public class TransferManager {
      * threads. Reuse <code>TransferManager</code> and client objects and share
      * them throughout applications.
      * <p>
-     * TransferManager and all AWS client objects are thread safe.
+     * TransferManager and all Amazon Web Services client objects are thread safe.
      * <p>
      * By default, the thread pool will shutdown when the transfer manager
      * instance is garbage collected.
@@ -301,7 +301,7 @@ public class TransferManager {
      * threads. Reuse <code>TransferManager</code> and client objects and share
      * them throughout applications.
      * <p>
-     * TransferManager and all AWS client objects are thread safe.
+     * TransferManager and all Amazon Web Services client objects are thread safe.
      *
      * @param s3
      *            The client to use when making requests to Amazon S3.
@@ -412,9 +412,9 @@ public class TransferManager {
      * resources become available.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -460,9 +460,9 @@ public class TransferManager {
      * If resources are available, the upload will begin immediately, otherwise
      * it will be scheduled and started as soon as resources become available.
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -509,9 +509,9 @@ public class TransferManager {
      * resources become available.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -553,9 +553,9 @@ public class TransferManager {
      * available.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -601,9 +601,9 @@ public class TransferManager {
      * available.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -702,9 +702,9 @@ public class TransferManager {
      * add listeners for progress events, and wait for the download to complete.
      * </p>
      * <p>
-     * If you are downloading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are downloading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -741,9 +741,9 @@ public class TransferManager {
      * add listeners for progress events, and wait for the download to complete.
      * </p>
      * <p>
-     * If you are downloading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are downloading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -788,9 +788,9 @@ public class TransferManager {
      * add listeners for progress events, and wait for the download to complete.
      * </p>
      * <p>
-     * If you are downloading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are downloading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -825,9 +825,9 @@ public class TransferManager {
      * add listeners for progress events, and wait for the download to complete.
      * </p>
      * <p>
-     * If you are downloading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are downloading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -870,9 +870,9 @@ public class TransferManager {
      * add listeners for progress events, and wait for the download to complete.
      * </p>
      * <p>
-     * If you are downloading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are downloading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -912,9 +912,9 @@ public class TransferManager {
      * add listeners for progress events, and wait for the download to complete.
      * </p>
      * <p>
-     * If you are downloading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are downloading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -961,9 +961,9 @@ public class TransferManager {
      * add listeners for progress events, and wait for the download to complete.
      * </p>
      * <p>
-     * If you are downloading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are downloading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -1354,9 +1354,9 @@ public class TransferManager {
      * keyPrefix given to the destination directory given. All virtual
      * subdirectories will be downloaded recursively.
      * <p>
-     * If you are downloading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are downloading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -1526,9 +1526,9 @@ public class TransferManager {
      * just as when uploading individual files, so use with caution.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -1559,9 +1559,9 @@ public class TransferManager {
      * just as when uploading individual files, so use with caution.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -1596,9 +1596,9 @@ public class TransferManager {
      * just as when uploading individual files, so use with caution.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -1635,9 +1635,9 @@ public class TransferManager {
      * just as when uploading individual files, so use with caution.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -1687,9 +1687,9 @@ public class TransferManager {
      * just as when uploading individual files, so use with caution.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -1722,9 +1722,9 @@ public class TransferManager {
      * just as when uploading individual files, so use with caution.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -1760,9 +1760,9 @@ public class TransferManager {
      * just as when uploading individual files, so use with caution.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version
@@ -1802,9 +1802,9 @@ public class TransferManager {
      * just as when uploading individual files, so use with caution.
      * </p>
      * <p>
-     * If you are uploading <a href="http://aws.amazon.com/kms/">AWS
+     * If you are uploading <a href="http://aws.amazon.com/kms/">Amazon Web Services
      * KMS</a>-encrypted objects, you need to specify the correct region of the
-     * bucket on your client and configure AWS Signature Version 4 for added
+     * bucket on your client and configure Amazon Web Services Signature Version 4 for added
      * security. For more information on how to do this, see
      * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#
      * specify-signature-version

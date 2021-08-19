@@ -72,7 +72,7 @@ public abstract class AbstractS3ResponseHandler<T>
     }
 
     /**
-     * Parses the S3 response metadata (ex: AWS request ID) from the specified
+     * Parses the S3 response metadata (ex: Amazon Web Services request ID) from the specified
      * response, and returns a AmazonWebServiceResponse<T> object ready for the
      * result to be plugged in.
      *

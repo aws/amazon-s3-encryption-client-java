@@ -119,7 +119,7 @@ public enum Region {
      * The EU (Frankfurt) Amazon S3 Region. This region uses Amazon S3 servers
      * located in Frankfurt.
      * <p>
-     * The EU (Frankfurt) Region requires AWS V4 authentication, therefore when
+     * The EU (Frankfurt) Region requires Amazon Web Services V4 authentication, therefore when
      * accessing buckets inside this region, you need to explicitly configure
      * the "eu-central-1" endpoint for the AmazonS3Client in order to enable V4
      * signing:
@@ -140,7 +140,7 @@ public enum Region {
      * The EU (Stockholm) Amazon S3 Region. This region uses Amazon S3 servers
      * located in Stockholm.
      * <p>
-     * The EU (Stockholm) Region requires AWS V4 authentication, therefore when
+     * The EU (Stockholm) Region requires Amazon Web Services V4 authentication, therefore when
      * accessing buckets inside this region, you need to explicitly configure
      * the "eu-north-1" endpoint for the AmazonS3Client in order to enable V4
      * signing:
@@ -161,7 +161,7 @@ public enum Region {
      * The EU (Milan) Amazon S3 Region. This region uses Amazon S3 servers
      * located in Milan.
      * <p>
-     * The EU (Milan) Region requires AWS V4 authentication, therefore when
+     * The EU (Milan) Region requires Amazon Web Services V4 authentication, therefore when
      * accessing buckets inside this region, you need to explicitly configure
      * the "eu-south-1" endpoint for the AmazonS3Client in order to enable V4
      * signing:
@@ -429,7 +429,7 @@ public enum Region {
     }
 
     /**
-     * Returns the respective AWS region.
+     * Returns the respective Amazon Web Services region.
      */
     public com.amazonaws.regions.Region toAWSRegion() {
         String s3regionId = getFirstRegionId();

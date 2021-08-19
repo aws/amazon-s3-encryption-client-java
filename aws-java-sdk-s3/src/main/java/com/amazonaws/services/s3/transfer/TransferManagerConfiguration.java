@@ -240,7 +240,7 @@ public class TransferManagerConfiguration {
      * connection for the upload.
      *
      * This reversed the backward incompatibility with Hadoop 2.7 and S3A filesystem
-     * introduced in AWS SDK v1.7.6 by this pull request:
+     * introduced in Amazon Web Services SDK v1.7.6 by this pull request:
      * https://github.com/aws/aws-sdk-java/pull/201
      *
      * See details (on error message, and fix targeted for Hadoop 2.8) here:

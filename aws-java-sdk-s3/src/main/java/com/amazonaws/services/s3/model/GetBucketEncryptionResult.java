@@ -19,8 +19,8 @@ import java.io.Serializable;
  * Represents the output of a <code>GetBucketEncryption</code> operation.
  * </p>
  *
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/GetBucketEncryption" target="_top">AWS API
- * Documentation</a>
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/GetBucketEncryption" target="_top">
+ * Amazon Web Services API Documentation</a>
  */
 public class GetBucketEncryptionResult implements Serializable, Cloneable {
 

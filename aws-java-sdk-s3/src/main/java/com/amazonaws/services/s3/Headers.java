@@ -15,7 +15,7 @@
 package com.amazonaws.services.s3;
 
 /**
- * Common S3 HTTP header values used throughout the AWS S3 Java client.
+ * Common S3 HTTP header values used throughout the Amazon Web Services S3 Java client.
  */
 public interface Headers {
 
@@ -59,7 +59,7 @@ public interface Headers {
     /** S3's Multi-Factor Authentication header */
     String S3_MFA = "x-amz-mfa";
 
-    /** S3 response header for a request's AWS request ID */
+    /** S3 response header for a request's Amazon Web Services request ID */
     String REQUEST_ID = "x-amz-request-id";
 
     /** S3 response header for a request's extended debugging ID */
@@ -207,13 +207,13 @@ public interface Headers {
     String REQUESTER_CHARGED_HEADER = "x-amz-request-charged";
 
     /**
-     * Header in the request and response indicating the AWS Key Management
+     * Header in the request and response indicating the Amazon Web Services Key Management
      * System key id used for Server Side Encryption.
      */
     String SERVER_SIDE_ENCRYPTION_AWS_KMS_KEYID = "x-amz-server-side-encryption-aws-kms-key-id";
 
     /**
-     * AWS KMS Encryption Context to use for object encryption
+     * Amazon Web Services KMS Encryption Context to use for object encryption
      */
     String SERVER_SIDE_ENCRYPTION_AWS_KMS_CONTEXT= "x-amz-server-side-encryption-context";
 

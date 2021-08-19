@@ -216,7 +216,7 @@ public class PublicAccessBlockConfiguration implements Serializable, Cloneable {
     /**
      * <p>
      * Returns whether Amazon S3 should restrict public bucket policies for this bucket. Setting this element to
-     * <code>TRUE</code> restricts access to this bucket to only AWS service principals and authorized users within this
+     * <code>TRUE</code> restricts access to this bucket to only Amazon Web Services service principals and authorized users within this
      * account if the bucket has a public policy.
      * </p>
      * <p>
@@ -231,7 +231,7 @@ public class PublicAccessBlockConfiguration implements Serializable, Cloneable {
     /**
      * <p>
      * Specifies whether Amazon S3 should restrict public bucket policies for this bucket. Setting this element to
-     * <code>TRUE</code> restricts access to this bucket to only AWS service principals and authorized users within this
+     * <code>TRUE</code> restricts access to this bucket to only Amazon Web Services service principals and authorized users within this
      * account if the bucket has a public policy.
      * </p>
      * <p>
@@ -246,7 +246,7 @@ public class PublicAccessBlockConfiguration implements Serializable, Cloneable {
     /**
      * <p>
      * Specifies whether Amazon S3 should restrict public bucket policies for this bucket. Setting this element to
-     * <code>TRUE</code> restricts access to this bucket to only AWS service principals and authorized users within this
+     * <code>TRUE</code> restricts access to this bucket to only Amazon Web Services service principals and authorized users within this
      * account if the bucket has a public policy.
      * </p>
      * <p>

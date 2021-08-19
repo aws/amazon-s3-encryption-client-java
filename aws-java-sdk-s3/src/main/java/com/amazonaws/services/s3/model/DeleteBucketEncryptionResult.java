@@ -17,8 +17,8 @@ import java.io.Serializable;
 /**
  * Represents the output of a <code>DeleteBucketEncryption</code> operation.
  *
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/DeleteBucketEncryption" target="_top">AWS API
- * Documentation</a>
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/DeleteBucketEncryption" target="_top">
+ * Amazon Web Services API Documentation</a>
  */
 public class DeleteBucketEncryptionResult implements Serializable, Cloneable {
 

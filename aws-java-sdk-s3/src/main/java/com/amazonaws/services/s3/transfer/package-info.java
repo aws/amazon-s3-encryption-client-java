@@ -28,7 +28,7 @@
  *   <li>Increased throughput when multiple parts of an upload can be uploaded to Amazon S3 in parallel.
  * </ul>
  * <p>
- * The AmazonS3TransferProgress sample included in the AWS SDK for Java demonstrates how to use
+ * The AmazonS3TransferProgress sample included in the Amazon Web Services SDK for Java demonstrates how to use
  * TransferManager and how to track progress for uploads.
  * <p>
  * Using TransferManager to upload data to Amazon S3 is easy:

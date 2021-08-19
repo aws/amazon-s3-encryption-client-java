@@ -1027,7 +1027,7 @@ public class WriteGetObjectResponseRequest extends AmazonWebServiceRequest imple
     }
 
     /**
-     * Specify the ID of the AWS Key Management Service (AWS KMS) symmetric customer managed customer
+     * Specify the ID of the Amazon Web Services Key Management Service (KMS) symmetric customer managed customer
      * master key (CMK) that was used for stored in Amazon S3 object.
      *
      * @return this object for method chaining.
@@ -1037,7 +1037,7 @@ public class WriteGetObjectResponseRequest extends AmazonWebServiceRequest imple
         return this;
     }
     /**
-     * Specify the ID of the AWS Key Management Service (AWS KMS) symmetric customer managed customer
+     * Specify the ID of the Amazon Web Services Key Management Service (KMS) symmetric customer managed customer
      * master key (CMK) that was used for stored in Amazon S3 object.
      */
     public void setSSEKMSKeyId(String sSEKMSKeyId) {
@@ -1045,7 +1045,7 @@ public class WriteGetObjectResponseRequest extends AmazonWebServiceRequest imple
     }
 
     /**
-     * If present, specifies the ID of the AWS Key Management Service (AWS KMS) symmetric customer managed customer
+     * If present, specifies the ID of the Amazon Web Services Key Management Service (KMS) symmetric customer managed customer
      * master key (CMK) that was used for stored in Amazon S3 object.
      */
     public String getSSEKMSKeyId() {
@@ -1177,8 +1177,8 @@ public class WriteGetObjectResponseRequest extends AmazonWebServiceRequest imple
     }
 
     /**
-     * Indicate whether the object stored in Amazon S3 uses an S3 bucket key for server-side encryption with AWS KMS
-     * (SSE-KMS).
+     * Indicate whether the object stored in Amazon S3 uses an S3 bucket key for server-side encryption with Amazon Web
+     * Services KMS (SSE-KMS).
      *
      * @return This object for method chaining.
      */
@@ -1188,16 +1188,16 @@ public class WriteGetObjectResponseRequest extends AmazonWebServiceRequest imple
     }
 
     /**
-     * Indicate whether the object stored in Amazon S3 uses an S3 bucket key for server-side encryption with AWS KMS
-     * (SSE-KMS).
+     * Indicate whether the object stored in Amazon S3 uses an S3 bucket key for server-side encryption with Amazon Web
+     * Services KMS (SSE-KMS).
      */
     public void setBucketKeyEnabled(Boolean bucketKeyEnabled) {
         withBucketKeyEnabled(bucketKeyEnabled);
     }
 
     /**
-     * Indicates whether the object stored in Amazon S3 uses an S3 bucket key for server-side encryption with AWS KMS
-     * (SSE-KMS).
+     * Indicates whether the object stored in Amazon S3 uses an S3 bucket key for server-side encryption with Amazon Web
+     * Services KMS (SSE-KMS).
      */
     public Boolean getBucketKeyEnabled() {
         return bucketKeyEnabled;

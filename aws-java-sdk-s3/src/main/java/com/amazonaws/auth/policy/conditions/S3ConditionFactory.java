@@ -20,7 +20,7 @@ import com.amazonaws.services.s3.model.CannedAccessControlList;
 
 /**
  * Factory for creating access control policy conditions specific to Amazon S3.
- * This class provides access to the AWS access control policy condition keys
+ * This class provides access to the Amazon Web Services access control policy condition keys
  * specific to Amazon S3, as well as methods for quickly creating common S3
  * specific policy conditions such as
  * {@link #newCannedACLCondition(CannedAccessControlList)}.

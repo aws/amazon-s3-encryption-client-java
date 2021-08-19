@@ -90,7 +90,7 @@ public class S3AccessPointBuilder {
     }
 
     /**
-     * The AWS region hosting the Access Point.
+     * The Amazon Web Services region hosting the Access Point.
      */
     public void setRegion(String region) {
         this.region = region;
@@ -102,7 +102,7 @@ public class S3AccessPointBuilder {
     }
 
     /**
-     * The ID of the AWS Account the Access Point is associated with.
+     * The ID of the Amazon Web Services Account the Access Point is associated with.
      */
     public void setAccountId(String accountId) {
         this.accountId = accountId;

@@ -18,7 +18,7 @@ import com.amazonaws.auth.policy.Resource;
 import com.amazonaws.auth.policy.actions.S3Actions;
 
 /**
- * Represents one or more Amazon S3 objects involved in an AWS access control
+ * Represents one or more Amazon S3 objects involved in an Amazon Web Services access control
  * policy. S3 object resources can be fully specified (i.e. the full key) or you
  * can use the '*' wildcard to match multiple objects.
  * <p>
@@ -51,7 +51,7 @@ public class S3ObjectResource extends Resource {
 
 	/**
      * Constructs a new object resource that represents the specified objects.
-     * This constructor defaults to aws partition. Use {@link #S3ObjectResource(String, String, String)}
+     * This constructor defaults to the {@code aws} partition. Use {@link #S3ObjectResource(String, String, String)}
      * to specify other partitions if needed.
      * The keyPattern argument may contain the '*' wildcard to match multiple
      * objects. For example, an object resource created for bucket 'mybucket'

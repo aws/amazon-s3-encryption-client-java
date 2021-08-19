@@ -175,8 +175,8 @@ public class AmazonS3EncryptionClientV2 extends AmazonS3Client implements Amazon
     }
 
     /**
-     * Creates and returns a new instance of AWS KMS client in the case when
-     * an explicit AWS KMS client is not specified.
+     * Creates and returns a new instance of Amazon Web Services KMS client in the case when
+     * an explicit Amazon Web Services KMS client is not specified.
      */
     private AWSKMS newAWSKMSClient(
             AWSCredentialsProvider credentialsProvider,
@@ -207,7 +207,7 @@ public class AmazonS3EncryptionClientV2 extends AmazonS3Client implements Amazon
      * Returns the kmsClient that was supplied to this encryption client, or
      * null if it wasn't set.
      *
-     * @return an AWS KMS client
+     * @return an Amazon Web Services KMS client
      */
     public AWSKMS getKmsClient() {
         return isKMSClientInternal? null : kmsClient;
@@ -479,7 +479,7 @@ public class AmazonS3EncryptionClientV2 extends AmazonS3Client implements Amazon
 
         /**
          * Appends a user agent to the request's USER_AGENT_V1 client marker.
-         * This method is intended only for internal use by the AWS SDK.
+         * This method is intended only for internal use by the Amazon Web Services SDK.
          */
         final <X extends AmazonWebServiceRequest> X appendUserAgent(
             X request, String userAgent) {

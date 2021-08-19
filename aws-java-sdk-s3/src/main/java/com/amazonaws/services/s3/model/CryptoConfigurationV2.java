@@ -272,9 +272,9 @@ public class CryptoConfigurationV2 implements Cloneable,Serializable {
     }
 
     /**
-     * Returns the the KMS region explicitly specified for the AWS KMS client
+     * Returns the the KMS region explicitly specified for the Amazon Web Services KMS client
      * when such client is internally instantiated; or null if no explicit KMS
-     * region is specified. This KMS region parameter is ignored when the AWS
+     * region is specified. This KMS region parameter is ignored when the Amazon Web Services
      * KMS client of the S3 encryption client is explicitly passed in by the
      * users, instead of being implicitly created.
      */
@@ -283,10 +283,10 @@ public class CryptoConfigurationV2 implements Cloneable,Serializable {
     }
 
     /**
-     * Sets the KMS region for the AWS KMS client when such client is internally
+     * Sets the KMS region for the Amazon Web Services KMS client when such client is internally
      * instantiated instead of externally passed in by users; or null if no
      * explicit KMS region is explicitly configured.This KMS region parameter is
-     * ignored when the AWS KMS client of the S3 encryption client is explicitly
+     * ignored when the Amazon Web Services KMS client of the S3 encryption client is explicitly
      * passed in by the users, instead of being implicitly created.
      */
     public void setAwsKmsRegion(Region awsKmsRegion) {
@@ -294,10 +294,10 @@ public class CryptoConfigurationV2 implements Cloneable,Serializable {
     }
 
     /**
-     * Fluent API for setting the KMS region for the AWS KMS client when such
+     * Fluent API for setting the KMS region for the Amazon Web Services KMS client when such
      * client is internally instantiated instead of externally passed in by
      * users; or null if no explicit KMS region is explicitly configured.This
-     * KMS region parameter is ignored when the AWS KMS client of the S3
+     * KMS region parameter is ignored when the Amazon Web Services KMS client of the S3
      * encryption client is explicitly passed in by the users, instead of being
      * implicitly created.
      */

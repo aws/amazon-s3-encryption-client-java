@@ -18,7 +18,7 @@ import com.amazonaws.auth.policy.Resource;
 import com.amazonaws.auth.policy.actions.S3Actions;
 
 /**
- * Represents a bucket resource involved in an AWS access control policy. This
+ * Represents a bucket resource involved in an Amazon Web Services access control policy. This
  * resource <b>does not</b> include any of the objects stored in the bucket. It
  * represents <b>only the bucket itself</b>. This is the resource you want if
  * you're writing a policy that restricts access to listing the contents of a
@@ -55,7 +55,7 @@ public class S3BucketResource extends Resource {
      * but <b>not any of the contained objects</b>.
      *
      * @param bucketName
-     *            The name of the bucket represented by this AWS access control
+     *            The name of the bucket represented by this Amazon Web Services access control
      *            policy resource.
      */
     public S3BucketResource(String bucketName) {
@@ -69,7 +69,7 @@ public class S3BucketResource extends Resource {
      * @param partitionName
      *            The name of the partition in which the specified bucket is located.
      * @param bucketName
-     *            The name of the bucket represented by this AWS access control
+     *            The name of the bucket represented by this Amazon Web Services access control
      *            policy resource.
      */
     public S3BucketResource(String partitionName, String bucketName) {

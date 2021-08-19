@@ -34,8 +34,8 @@ public class GetObjectLockConfigurationRequest extends AmazonWebServiceRequest i
      * <p>
      * When using this action with an access point, you must direct requests to the access point hostname. The access
      * point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
-     * When using this action with an access point through the AWS SDKs, you provide the access point ARN in place of
-     * the bucket name. For more information about access point ARNs, see <a
+     * When using this action with an access point through the Amazon Web Services SDKs, you provide the access point
+     * ARN in place of the bucket name. For more information about access point ARNs, see <a
      * href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using access points</a> in
      * the <i>Amazon S3 User Guide</i>.
      * </p>
@@ -45,8 +45,8 @@ public class GetObjectLockConfigurationRequest extends AmazonWebServiceRequest i
      *         When using this action with an access point, you must direct requests to the access point hostname. The
      *         access point hostname takes the form
      *         <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this
-     *         action with an access point through the AWS SDKs, you provide the access point ARN in place of the bucket
-     *         name. For more information about access point ARNs, see <a
+     *         action with an access point through the Amazon Web Services SDKs, you provide the access point ARN in
+     *         place of the bucket name. For more information about access point ARNs, see <a
      *         href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using access
      *         points</a> in the <i>Amazon S3 User Guide</i>.
      */
@@ -62,8 +62,8 @@ public class GetObjectLockConfigurationRequest extends AmazonWebServiceRequest i
      * When using this action with an access point, you must direct requests to the access point hostname. The
      * access point hostname takes the form
      * <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this action
-     * with an access point through the AWS SDKs, you provide the access point ARN in place of the bucket name. For
-     * more information about access point ARNs, see <a
+     * with an access point through the Amazon Web Services SDKs, you provide the access point ARN in place of the
+     * bucket name. For more information about access point ARNs, see <a
      * href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using access points</a>
      * in the <i>Amazon S3 User Guide</i>.
      * </p>
@@ -74,8 +74,8 @@ public class GetObjectLockConfigurationRequest extends AmazonWebServiceRequest i
      *        When using this action with an access point, you must direct requests to the access point hostname.
      *        The access point hostname takes the form
      *        <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this
-     *        action with an access point through the AWS SDKs, you provide the access point ARN in place of the
-     *        bucket name. For more information about access point ARNs, see <a
+     *        action with an access point through the Amazon Web Services SDKs, you provide the access point ARN in
+     *        place of the bucket name. For more information about access point ARNs, see <a
      *        href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using access
      *        points</a> in the <i>Amazon S3 User Guide</i>.
      * @return Returns a reference to this object so that method calls can be chained together.
@@ -93,8 +93,8 @@ public class GetObjectLockConfigurationRequest extends AmazonWebServiceRequest i
      * When using this action with an access point, you must direct requests to the access point hostname. The
      * access point hostname takes the form
      * <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this action
-     * with an access point through the AWS SDKs, you provide the access point ARN in place of the bucket name. For
-     * more information about access point ARNs, see <a
+     * with an access point through the Amazon Web Services SDKs, you provide the access point ARN in place of the
+     * bucket name. For more information about access point ARNs, see <a
      * href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using access points</a>
      * in the <i>Amazon S3 User Guide</i>.
      * </p>
@@ -105,8 +105,8 @@ public class GetObjectLockConfigurationRequest extends AmazonWebServiceRequest i
      *        When using this action with an access point, you must direct requests to the access point hostname.
      *        The access point hostname takes the form
      *        <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this
-     *        action with an access point through the AWS SDKs, you provide the access point ARN in place of the
-     *        bucket name. For more information about access point ARNs, see <a
+     *        action with an access point through the Amazon Web Services SDKs, you provide the access point ARN in
+     *        place of the bucket name. For more information about access point ARNs, see <a
      *        href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using access
      *        points</a> in the <i>Amazon S3 User Guide</i>.
      */

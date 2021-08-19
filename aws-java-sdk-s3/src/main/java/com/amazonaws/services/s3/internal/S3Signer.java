@@ -88,7 +88,7 @@ public class S3Signer extends AbstractAWSSigner {
     }
 
     /**
-     * Constructs a new S3Signer to sign requests based on the AWS credentials,
+     * Constructs a new S3Signer to sign requests based on the Amazon Web Services credentials,
      * HTTP method and canonical S3 resource path.
      *
      * @param httpVerb
@@ -103,7 +103,7 @@ public class S3Signer extends AbstractAWSSigner {
     }
 
     /**
-     * Constructs a new S3Signer to sign requests based on the AWS credentials,
+     * Constructs a new S3Signer to sign requests based on the Amazon Web Services credentials,
      * HTTP method and canonical S3 resource path.
      *
      * @param httpVerb

@@ -18,7 +18,8 @@ import com.amazonaws.annotation.SdkInternalApi;
 import com.amazonaws.arn.AwsResource;
 
 /**
- * A representation of an AWS S3 resource. See {@link S3ResourceType} for a list and description of all valid types.
+ * A representation of an Amazon Web Services S3 resource. See {@link S3ResourceType} for a list and description of all
+ * valid types.
  */
 @SdkInternalApi
 public interface S3Resource extends AwsResource {

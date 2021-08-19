@@ -41,7 +41,7 @@ import static com.amazonaws.util.StringUtils.UTF8;
 
 /**
  * Response handler for S3 error responses. S3 error responses are different
- * from other AWS error responses in a few ways. Most error responses will
+ * from other Amazon Web Services error responses in a few ways. Most error responses will
  * contain an XML body, but not all (ex: error responses to HEAD requests will
  * not), so this error handler has to account for that. The actual XML error
  * response body is slightly different than other services like SimpleDB or EC2

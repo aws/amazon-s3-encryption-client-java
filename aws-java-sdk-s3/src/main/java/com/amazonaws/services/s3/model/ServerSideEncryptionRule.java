@@ -17,8 +17,8 @@ import java.io.Serializable;
 /**
  * SSE configuration rule.
  *
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/ServerSideEncryptionRule" target="_top">AWS API
- * Documentation</a>
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/ServerSideEncryptionRule" target="_top">
+ * Amazon Web Services API Documentation</a>
  */
 public class ServerSideEncryptionRule implements Serializable, Cloneable {
 

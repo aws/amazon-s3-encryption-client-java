@@ -162,7 +162,7 @@ final class ContentCryptoMaterial {
 
     /**
      * Returns the metadata in backward compatibility (old) format, so it can be
-     * read by older version of the AWS SDK.
+     * read by older version of the Amazon Web Services SDK.
      */
     private ObjectMetadata toObjectMetadataEO(ObjectMetadata metadata) {
         // If we generated a symmetric key to encrypt the data, store it in the
@@ -181,7 +181,7 @@ final class ContentCryptoMaterial {
 
     /**
      * Returns the json string in backward compatibility (old) format, so it can
-     * be read by older version of the AWS SDK.
+     * be read by older version of the Amazon Web Services SDK.
      */
     String toJsonString(CryptoMode mode) {
         return mode == CryptoMode.EncryptionOnly && !usesKMSKey()
@@ -898,7 +898,7 @@ final class ContentCryptoMaterial {
      * @param kms
      *            reference to the KMS client
      * @param req
-     *            the originating AWS service request
+     *            the originating Amazon Web Services service request
      */
     private static ContentCryptoMaterial doCreate(SecretKey cek, byte[] iv,
                                                   EncryptionMaterials kekMaterials,

@@ -34,7 +34,7 @@ import java.io.InputStream;
 import static com.amazonaws.auth.internal.SignerConstants.X_AMZ_CONTENT_SHA256;
 
 /**
- * AWS4 signer implementation for AWS S3
+ * AWS4 signer implementation for Amazon Web Services S3
  */
 public class AWSS3V4Signer extends AWS4Signer {
     private static final String CONTENT_SHA_256 = "STREAMING-AWS4-HMAC-SHA256-PAYLOAD";

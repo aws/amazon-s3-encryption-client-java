@@ -61,7 +61,7 @@ public final class S3OutpostResource implements S3Resource {
     }
 
     /**
-     * Gets the AWS partition name associated with this access point (e.g.: 'aws').
+     * Gets the Amazon Web Services partition name associated with this access point (e.g.: 'aws').
      * @return the name of the partition.
      */
     @Override
@@ -70,7 +70,7 @@ public final class S3OutpostResource implements S3Resource {
     }
 
     /**
-     * Gets the AWS region name associated with this bucket (e.g.: 'us-east-1').
+     * Gets the Amazon Web Services region name associated with this bucket (e.g.: 'us-east-1').
      * @return the name of the region.
      */
     @Override
@@ -79,8 +79,8 @@ public final class S3OutpostResource implements S3Resource {
     }
 
     /**
-     * Gets the AWS account ID associated with this bucket.
-     * @return the AWS account ID.
+     * Gets the Amazon Web Services account ID associated with this bucket.
+     * @return the Amazon Web Services account ID.
      */
     @Override
     public String getAccountId() {
@@ -130,7 +130,7 @@ public final class S3OutpostResource implements S3Resource {
         }
 
         /**
-         * The AWS partition associated with the access point.
+         * The Amazon Web Services partition associated with the access point.
          */
         public Builder withPartition(String partition) {
             this.partition = partition;
@@ -138,7 +138,7 @@ public final class S3OutpostResource implements S3Resource {
         }
 
         /**
-         * The AWS region associated with the access point.
+         * The Amazon Web Services region associated with the access point.
          */
         public Builder withRegion(String region) {
             this.region = region;
@@ -146,7 +146,7 @@ public final class S3OutpostResource implements S3Resource {
         }
 
         /**
-         * The AWS account ID associated with the access point.
+         * The Amazon Web Services account ID associated with the access point.
          */
         public Builder withAccountId(String accountId) {
             this.accountId = accountId;

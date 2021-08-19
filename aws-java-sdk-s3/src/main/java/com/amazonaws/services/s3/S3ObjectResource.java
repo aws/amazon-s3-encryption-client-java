@@ -50,7 +50,7 @@ public final class S3ObjectResource implements S3Resource {
     }
 
     /**
-     * Gets the AWS partition name associated with the S3 object (e.g.: 'aws').
+     * Gets the Amazon Web Services partition name associated with the S3 object (e.g.: 'aws').
      * @return the name of the partition.
      */
     @Override
@@ -59,7 +59,7 @@ public final class S3ObjectResource implements S3Resource {
     }
 
     /**
-     * Gets the AWS region name associated with the S3 object (e.g.: 'us-east-1').
+     * Gets the Amazon Web Services region name associated with the S3 object (e.g.: 'us-east-1').
      * @return the name of the region or null if the region has not been specified (e.g. the resource is in the
      * global namespace).
      */
@@ -69,8 +69,8 @@ public final class S3ObjectResource implements S3Resource {
     }
 
     /**
-     * Gets the AWS account ID associated with the S3 object.
-     * @return the AWS account ID or null if the account ID has not been specified.
+     * Gets the Amazon Web Services account ID associated with the S3 object.
+     * @return the Amazon Web Services account ID or null if the account ID has not been specified.
      */
     @Override
     public String getAccountId() {

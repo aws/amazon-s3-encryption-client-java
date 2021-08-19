@@ -28,7 +28,7 @@ public interface ServerSideEncryptionResult {
 
     /**
      * Returns the server-side encryption algorithm if the object is encrypted
-     * using AWS-managed keys. Otherwise returns null.
+     * using Amazon Web Services-managed keys. Otherwise returns null.
      */
     public String getSSEAlgorithm();
 
@@ -74,7 +74,7 @@ public interface ServerSideEncryptionResult {
     public void setSSECustomerKeyMd5(String md5Digest);
 
     /**
-     * Indicates whether the object uses an S3 Bucket Key for server-side encryption with AWS KMS (SSE-KMS).
+     * Indicates whether the object uses an S3 Bucket Key for server-side encryption with Amazon Web Services KMS (SSE-KMS).
      */
     public Boolean getBucketKeyEnabled();
 

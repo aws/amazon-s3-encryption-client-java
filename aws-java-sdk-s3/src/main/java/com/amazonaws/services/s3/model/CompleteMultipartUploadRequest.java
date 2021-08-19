@@ -27,7 +27,7 @@ import com.amazonaws.services.s3.AmazonS3;
  * <p>
  * If you are performing a complete multipart upload for <a
  * href="http://aws.amazon.com/kms/">KMS</a>-encrypted objects, you need to
- * specify the correct region of the bucket on your client and configure AWS
+ * specify the correct region of the bucket on your client and configure Amazon Web Services
  * Signature Version 4 for added security. For more information on how to do
  * this, see
  * http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#specify
@@ -49,7 +49,7 @@ public class CompleteMultipartUploadRequest extends AmazonWebServiceRequest impl
      * <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
      * </p>
      * <p>
-     * When using this operation using an access point through the AWS SDKs, you provide
+     * When using this operation using an access point through the Amazon Web Services SDKs, you provide
      * the access point ARN in place of the bucket name. For more information about access point
      * ARNs, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/using-access-points.html\">
      * Using access points</a> in the <i>Amazon Simple Storage Service Developer Guide</i>.

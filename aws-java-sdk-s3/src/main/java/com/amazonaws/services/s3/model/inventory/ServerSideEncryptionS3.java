@@ -17,7 +17,7 @@ import java.io.Serializable;
 /**
  * Implementation of {@link InventoryEncryption} for server side encryption with S3 managed keys.
  *
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/SSES3" target="_top">AWS API
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/SSES3" target="_top">Amazon Web Services API
  * Documentation</a>
  */
 public class ServerSideEncryptionS3 implements InventoryEncryption, Serializable, Cloneable {

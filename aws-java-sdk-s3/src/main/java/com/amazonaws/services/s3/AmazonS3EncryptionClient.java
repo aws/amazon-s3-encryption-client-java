@@ -262,13 +262,13 @@ public class AmazonS3EncryptionClient extends AmazonS3Client implements
 
     /**
      * <p>
-     * Constructs a new Amazon S3 Encryption client using the specified AWS credentials to
+     * Constructs a new Amazon S3 Encryption client using the specified Amazon Web Services credentials to
      * access Amazon S3.  Object contents will be encrypted and decrypted with the encryption
      * materials provided.
      * </p>
      *
      * @param credentials
-     *            The AWS credentials to use when making requests to Amazon S3
+     *            The Amazon Web Services credentials to use when making requests to Amazon S3
      *            with this client.
      * @param encryptionMaterials
      *            The encryption materials to be used to encrypt and decrypt data.
@@ -284,13 +284,13 @@ public class AmazonS3EncryptionClient extends AmazonS3Client implements
 
     /**
      * <p>
-     * Constructs a new Amazon S3 Encryption client using the specified AWS credentials to
+     * Constructs a new Amazon S3 Encryption client using the specified Amazon Web Services credentials to
      * access Amazon S3.  Object contents will be encrypted and decrypted with the encryption
      * materials provided.
      * </p>
      *
      * @param credentials
-     *            The AWS credentials to use when making requests to Amazon S3
+     *            The Amazon Web Services credentials to use when making requests to Amazon S3
      *            with this client.
      * @param encryptionMaterialsProvider
      *            A provider for the encryption materials to be used to encrypt and decrypt data.
@@ -306,14 +306,14 @@ public class AmazonS3EncryptionClient extends AmazonS3Client implements
 
     /**
      * <p>
-     * Constructs a new Amazon S3 Encryption client using the specified AWS credentials to
+     * Constructs a new Amazon S3 Encryption client using the specified Amazon Web Services credentials to
      * access Amazon S3.  Object contents will be encrypted and decrypted with the encryption
      * materials provided.
      * </p>
      *
      * @param credentialsProvider
-     *            The AWS credentials provider which will provide credentials
-     *            to authenticate requests with AWS services.
+     *            The Amazon Web Services credentials provider which will provide credentials
+     *            to authenticate requests with Amazon Web Services services.
      * @param encryptionMaterialsProvider
      *            A provider for the encryption materials to be used to encrypt and decrypt data.
      * @deprecated use {@link AmazonS3EncryptionClientBuilder#withEncryptionMaterials(EncryptionMaterialsProvider)} and
@@ -329,14 +329,14 @@ public class AmazonS3EncryptionClient extends AmazonS3Client implements
 
     /**
      * <p>
-     * Constructs a new Amazon S3 Encryption client using the specified AWS credentials to
+     * Constructs a new Amazon S3 Encryption client using the specified Amazon Web Services credentials to
      * access Amazon S3.  Object contents will be encrypted and decrypted with the encryption
      * materials provided.  The encryption implementation of the provided crypto provider will
      * be used to encrypt and decrypt data.
      * </p>
      *
      * @param credentials
-     *            The AWS credentials to use when making requests to Amazon S3
+     *            The Amazon Web Services credentials to use when making requests to Amazon S3
      *            with this client.
      * @param encryptionMaterials
      *            The encryption materials to be used to encrypt and decrypt data.
@@ -356,14 +356,14 @@ public class AmazonS3EncryptionClient extends AmazonS3Client implements
 
     /**
      * <p>
-     * Constructs a new Amazon S3 Encryption client using the specified AWS credentials to
+     * Constructs a new Amazon S3 Encryption client using the specified Amazon Web Services credentials to
      * access Amazon S3.  Object contents will be encrypted and decrypted with the encryption
      * materials provided.  The encryption implementation of the provided crypto provider will
      * be used to encrypt and decrypt data.
      * </p>
      *
      * @param credentials
-     *            The AWS credentials to use when making requests to Amazon S3
+     *            The Amazon Web Services credentials to use when making requests to Amazon S3
      *            with this client.
      * @param encryptionMaterialsProvider
      *            A provider for the encryption materials to be used to encrypt and decrypt data.
@@ -383,15 +383,15 @@ public class AmazonS3EncryptionClient extends AmazonS3Client implements
 
     /**
      * <p>
-     * Constructs a new Amazon S3 Encryption client using the specified AWS credentials to
+     * Constructs a new Amazon S3 Encryption client using the specified Amazon Web Services credentials to
      * access Amazon S3.  Object contents will be encrypted and decrypted with the encryption
      * materials provided.  The encryption implementation of the provided crypto provider will
      * be used to encrypt and decrypt data.
      * </p>
      *
      * @param credentialsProvider
-     *            The AWS credentials provider which will provide credentials
-     *            to authenticate requests with AWS services.
+     *            The Amazon Web Services credentials provider which will provide credentials
+     *            to authenticate requests with Amazon Web Services services.
      * @param encryptionMaterialsProvider
      *            A provider for the encryption materials to be used to encrypt and decrypt data.
      * @param cryptoConfig
@@ -411,14 +411,14 @@ public class AmazonS3EncryptionClient extends AmazonS3Client implements
 
     /**
      * <p>
-     * Constructs a new Amazon S3 Encryption client using the specified AWS credentials and
+     * Constructs a new Amazon S3 Encryption client using the specified Amazon Web Services credentials and
      * client configuration to access Amazon S3.  Object contents will be encrypted and decrypted
      * with the encryption materials provided. The crypto provider and storage mode denoted in
      * the specified crypto configuration will be used to encrypt and decrypt data.
      * </p>
      *
      * @param credentials
-     *            The AWS credentials to use when making requests to Amazon S3
+     *            The Amazon Web Services credentials to use when making requests to Amazon S3
      *            with this client.
      * @param encryptionMaterials
      *            The encryption materials to be used to encrypt and decrypt data.
@@ -542,8 +542,8 @@ public class AmazonS3EncryptionClient extends AmazonS3Client implements
     }
 
     /**
-     * Creates and returns a new instance of AWS KMS client in the case when
-     * an explicit AWS KMS client is not specified.
+     * Creates and returns a new instance of Amazon Web Services KMS client in the case when
+     * an explicit Amazon Web Services KMS client is not specified.
      */
     private AWSKMSClient newAWSKMSClient(
             AWSCredentialsProvider credentialsProvider,
@@ -753,7 +753,7 @@ public class AmazonS3EncryptionClient extends AmazonS3Client implements
 
         /**
          * Appends a user agent to the request's USER_AGENT_V1 client marker.
-         * This method is intended only for internal use by the AWS SDK.
+         * This method is intended only for internal use by the Amazon Web Services SDK.
          */
         final <X extends AmazonWebServiceRequest> X appendUserAgent(
             X request, String userAgent) {

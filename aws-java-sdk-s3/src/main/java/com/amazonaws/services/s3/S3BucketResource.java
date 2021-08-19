@@ -59,7 +59,7 @@ public final class S3BucketResource implements S3Resource {
     }
 
     /**
-     * Gets the AWS partition name associated with this bucket (e.g.: 'aws').
+     * Gets the Amazon Web Services partition name associated with this bucket (e.g.: 'aws').
      * @return the name of the partition.
      */
     @Override
@@ -68,7 +68,7 @@ public final class S3BucketResource implements S3Resource {
     }
 
     /**
-     * Gets the AWS region name associated with this bucket (e.g.: 'us-east-1').
+     * Gets the Amazon Web Services region name associated with this bucket (e.g.: 'us-east-1').
      * @return the name of the region or null if the region has not been specified (e.g. the resource is in the
      * global namespace).
      */
@@ -78,8 +78,8 @@ public final class S3BucketResource implements S3Resource {
     }
 
     /**
-     * Gets the AWS account ID associated with this bucket.
-     * @return the AWS account ID or null if the account ID has not been specified.
+     * Gets the Amazon Web Services account ID associated with this bucket.
+     * @return the Amazon Web Services account ID or null if the account ID has not been specified.
      */
     @Override
     public String getAccountId() {
@@ -130,7 +130,7 @@ public final class S3BucketResource implements S3Resource {
         }
 
         /**
-         * The AWS partition associated with the bucket.
+         * The Amazon Web Services partition associated with the bucket.
          */
         public Builder withPartition(String partition) {
             setPartition(partition);
@@ -142,7 +142,7 @@ public final class S3BucketResource implements S3Resource {
         }
 
         /**
-         * The AWS region associated with the bucket. This property is optional.
+         * The Amazon Web Services region associated with the bucket. This property is optional.
          */
         public Builder withRegion(String region) {
             setRegion(region);
@@ -154,7 +154,7 @@ public final class S3BucketResource implements S3Resource {
         }
 
         /**
-         * The AWS account ID associated with the bucket. This property is optional.
+         * The Amazon Web Services account ID associated with the bucket. This property is optional.
          */
         public Builder withAccountId(String accountId) {
             setAccountId(accountId);

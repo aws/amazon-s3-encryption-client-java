@@ -19,8 +19,8 @@ import java.io.Serializable;
 /**
  * Container for information regarding the access control for replicas.
  *
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/AccessControlTranslation" target="_top">AWS API
- * Documentation</a>
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/AccessControlTranslation" target="_top">
+ * Amazon Web Services API Documentation</a>
  */
 public class AccessControlTranslation implements Serializable, Cloneable {
 

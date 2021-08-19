@@ -20,8 +20,8 @@ import java.util.List;
 /**
  * Container for server-side encryption configuration rules. Currently S3 supports one rule only.
  *
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/ServerSideEncryptionConfiguration" target="_top">AWS API
- * Documentation</a>
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/ServerSideEncryptionConfiguration" target="_top">
+ * Amazon Web Services API Documentation</a>
  */
 public class ServerSideEncryptionConfiguration implements Serializable, Cloneable {
 
