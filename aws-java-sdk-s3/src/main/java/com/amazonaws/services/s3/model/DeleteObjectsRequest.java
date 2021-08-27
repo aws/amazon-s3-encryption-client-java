@@ -463,16 +463,16 @@ public class DeleteObjectsRequest extends AmazonWebServiceRequest implements Ser
     }
 
     /**
-     * Specifies whether you want to delete this object even if it has a Governance-type Object Lock in place. You must
-     * have sufficient permissions to perform this operation.
+     * <p>Specifies whether you want to delete this object even if it has a Governance-type Object Lock in place. To use this
+     * header, you must have the <code>s3:PutBucketPublicAccessBlock</code> permission.</p>
      */
     public boolean getBypassGovernanceRetention() {
         return bypassGovernanceRetention;
     }
 
     /**
-     * Specifies whether you want to delete this object even if it has a Governance-type Object Lock in place. You must
-     * have sufficient permissions to perform this operation.
+     * <p>Specifies whether you want to delete this object even if it has a Governance-type Object Lock in place. To use this
+     * header, you must have the <code>s3:PutBucketPublicAccessBlock</code> permission.</p>
      */
     public DeleteObjectsRequest withBypassGovernanceRetention(boolean bypassGovernanceRetention) {
         this.bypassGovernanceRetention = bypassGovernanceRetention;
@@ -480,8 +480,8 @@ public class DeleteObjectsRequest extends AmazonWebServiceRequest implements Ser
     }
 
     /**
-     * Specifies whether you want to delete this object even if it has a Governance-type Object Lock in place. You must
-     * have sufficient permissions to perform this operation.
+     * <p>Specifies whether you want to delete this object even if it has a Governance-type Object Lock in place. To use this
+     * header, you must have the <code>s3:PutBucketPublicAccessBlock</code> permission.</p>
      */
     public void setBypassGovernanceRetention(boolean bypassGovernanceRetention) {
         withBypassGovernanceRetention(bypassGovernanceRetention);
