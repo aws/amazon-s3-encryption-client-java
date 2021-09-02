@@ -5124,6 +5124,13 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
     private void validateS3ResourceArn(Arn resourceArn, com.amazonaws.regions.Region clientRegion) {
         String clientPartition = (clientRegion == null) ? null : clientRegion.getPartition();
 
+        if (isMultiRegionAccessPointArn(resourceArn.toString())) {
+            throw new IllegalArgumentException("AWS SDK for Java version 1.x does not support passing a multi-region access point "
+                                               + "Amazon Resource Names (ARNs) as a bucket parameter to an S3 operation. "
+                                               + "If this functionality is required by your application, please upgrade to "
+                                               + "AWS SDK for Java version 2.x");
+        }
+
         if (clientPartition == null || !clientPartition.equals(resourceArn.getPartition())) {
             throw new IllegalArgumentException("The partition field of the ARN being passed as a bucket parameter to "
                     + "an S3 operation does not match the partition the S3 client has been configured with. Provided "
@@ -5515,6 +5522,10 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
 
     private boolean isObjectLambdasRequest(AmazonWebServiceRequest request) {
         return request instanceof WriteGetObjectResponseRequest;
+    }
+
+    private boolean isMultiRegionAccessPointArn(String s) {
+        return s.contains(":global");
     }
 
     private boolean isArn(String s) {
