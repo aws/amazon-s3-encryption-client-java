@@ -51,6 +51,7 @@ import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleFilterPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleTagPredicate;
+import com.amazonaws.services.s3.model.metrics.MetricsAccessPointArnPredicate;
 import com.amazonaws.services.s3.model.metrics.MetricsAndOperator;
 import com.amazonaws.services.s3.model.metrics.MetricsConfiguration;
 import com.amazonaws.services.s3.model.metrics.MetricsFilter;
@@ -3101,6 +3102,8 @@ public class XmlResponsesSaxParser {
                     filter.setPredicate(new MetricsTagPredicate(new Tag(currentTagKey, currentTagValue)));
                     currentTagKey = null;
                     currentTagValue = null;
+                } else if (name.equals("AccessPointArn")) {
+                    filter.setPredicate(new MetricsAccessPointArnPredicate(getText()));
                 } else if (name.equals("And")) {
                     filter.setPredicate(new MetricsAndOperator(andOperandsList));
                     andOperandsList = null;
@@ -3123,6 +3126,8 @@ public class XmlResponsesSaxParser {
                             new Tag(currentTagKey, currentTagValue)));
                     currentTagKey = null;
                     currentTagValue = null;
+                } else if (name.equals("AccessPointArn")) {
+                    andOperandsList.add(new MetricsAccessPointArnPredicate(getText()));
                 }
             }
 
@@ -3231,6 +3236,8 @@ public class XmlResponsesSaxParser {
                 } else if (name.equals("And")) {
                     currentFilter.setPredicate(new MetricsAndOperator(andOperandsList));
                     andOperandsList = null;
+                }else if (name.equals("AccessPointArn")) {
+                    currentFilter.setPredicate(new MetricsAccessPointArnPredicate(getText()));
                 }
             }
 
@@ -3249,6 +3256,8 @@ public class XmlResponsesSaxParser {
                     andOperandsList.add(new MetricsTagPredicate(new Tag(currentTagKey, currentTagValue)));
                     currentTagKey = null;
                     currentTagValue = null;
+                } else if (name.equals("AccessPointArn")) {
+                    andOperandsList.add(new MetricsAccessPointArnPredicate(getText()));
                 }
             }
 

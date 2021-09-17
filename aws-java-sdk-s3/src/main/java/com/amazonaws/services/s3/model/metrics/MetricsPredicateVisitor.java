@@ -39,4 +39,10 @@ public interface MetricsPredicateVisitor {
      * {@link MetricsAndOperator} is visited.
      */
     public void visit(MetricsAndOperator metricsAndOperator);
+
+    /**
+     * Implement this method to add behaviour performed when
+     * {@link MetricsAccessPointArnPredicate} is visited.
+     */
+    public void visit(MetricsAccessPointArnPredicate metricsAccessPointArnPredicate);
 }

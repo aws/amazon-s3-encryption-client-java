@@ -90,6 +90,7 @@ import com.amazonaws.services.s3.model.lifecycle.LifecycleFilterPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecyclePredicateVisitor;
 import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleTagPredicate;
+import com.amazonaws.services.s3.model.metrics.MetricsAccessPointArnPredicate;
 import com.amazonaws.services.s3.model.metrics.MetricsAndOperator;
 import com.amazonaws.services.s3.model.metrics.MetricsConfiguration;
 import com.amazonaws.services.s3.model.metrics.MetricsFilter;
@@ -1326,6 +1327,11 @@ public class BucketConfigurationXmlFactory {
             }
             xml.end();
         }
+
+        @Override
+        public void visit(MetricsAccessPointArnPredicate metricsAccessPointArnPredicate) {
+            writeAccessPointArn(xml, metricsAccessPointArnPredicate.getAccessPointArn());
+        }
     }
 
     private void addBooleanParameterIfNotNull(XmlWriter xml, String xmlTagName, Boolean value) {
@@ -1344,4 +1350,7 @@ public class BucketConfigurationXmlFactory {
         xml.end();
     }
 
+    static void writeAccessPointArn(final XmlWriter xml, final String accessPointArn) {
+        addParameterIfNotNull(xml, "AccessPointArn", accessPointArn);
+    }
 }

@@ -15,12 +15,14 @@
 package com.amazonaws.services.s3.model.transform;
 
 import com.amazonaws.services.s3.internal.XmlWriter;
+import com.amazonaws.services.s3.model.metrics.MetricsAccessPointArnPredicate;
 import com.amazonaws.services.s3.model.metrics.MetricsAndOperator;
 import com.amazonaws.services.s3.model.metrics.MetricsFilterPredicate;
 import com.amazonaws.services.s3.model.metrics.MetricsPredicateVisitor;
 import com.amazonaws.services.s3.model.metrics.MetricsPrefixPredicate;
 import com.amazonaws.services.s3.model.metrics.MetricsTagPredicate;
 
+import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactory.writeAccessPointArn;
 import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writePrefix;
 import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writeTag;
 
@@ -48,5 +50,10 @@ class MetricsPredicateVisitorImpl implements MetricsPredicateVisitor {
             predicate.accept(this);
         }
         xml.end();
+    }
+
+    @Override
+    public void visit(MetricsAccessPointArnPredicate metricsAccessPointArnPredicate) {
+        writeAccessPointArn(xml, metricsAccessPointArnPredicate.getAccessPointArn());
     }
 }

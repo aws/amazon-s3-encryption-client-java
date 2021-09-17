@@ -17,8 +17,9 @@ package com.amazonaws.services.s3.model.metrics;
 import java.util.List;
 
 /**
- * A logical AND of predicates, which is used in evaluating a metrics filter.
- * The operator must have at least two predicates.
+ *
+ * A conjunction (logical AND) of predicates, which is used in evaluating a metrics filter. The operator must have at
+ * least two predicates, and an object must match all of the predicates in order for the filter to apply.
  *
  * The {@link MetricsAndOperator} can contain at most one {@link MetricsPrefixPredicate} and
  * any number of {@link MetricsTagPredicate}s.

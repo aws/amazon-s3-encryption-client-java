@@ -20,8 +20,8 @@ import java.io.Serializable;
  * The filter used to describe a set of objects to include for metrics.
  * The metrics configuration will only include objects that meet the filter's criteria.
  *
- * A filter contains one of {@link MetricsPrefixPredicate}, {@link MetricsTagPredicate}
- * or {@link MetricsAndOperator}.
+ * A filter contains one of {@link MetricsPrefixPredicate}, {@link MetricsTagPredicate},
+ * {@link MetricsAccessPointArnPredicate} or {@link MetricsAndOperator}.
  */
 public class MetricsFilter implements Serializable {
 
