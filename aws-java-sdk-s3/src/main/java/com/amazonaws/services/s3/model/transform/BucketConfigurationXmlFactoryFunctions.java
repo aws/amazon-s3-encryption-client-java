@@ -24,9 +24,9 @@ final class BucketConfigurationXmlFactoryFunctions {
     private BucketConfigurationXmlFactoryFunctions() {
     }
 
-    static void addParameterIfNotNull(final XmlWriter xml, final String xmlTagName, final String value) {
+    static void addParameterIfNotNull(final XmlWriter xml, final String xmlTagName, final Object value) {
         if (value != null) {
-            xml.start(xmlTagName).value(value).end();
+            xml.start(xmlTagName).value(String.valueOf(value)).end();
         }
     }
 
@@ -42,5 +42,13 @@ final class BucketConfigurationXmlFactoryFunctions {
         xml.start("Key").value(tag.getKey()).end();
         xml.start("Value").value(tag.getValue()).end();
         xml.end();
+    }
+
+    static void writeObjectSizeGreaterThan(final XmlWriter xml, final Long value) {
+        addParameterIfNotNull(xml, "ObjectSizeGreaterThan", value);
+    }
+
+    static void writeObjectSizeLessThan(final XmlWriter xml, final Long value) {
+        addParameterIfNotNull(xml, "ObjectSizeLessThan", value);
     }
 }

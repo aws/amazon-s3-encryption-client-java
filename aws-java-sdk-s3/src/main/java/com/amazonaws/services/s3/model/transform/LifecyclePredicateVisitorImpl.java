@@ -14,15 +14,19 @@
  */
 package com.amazonaws.services.s3.model.transform;
 
+import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writeObjectSizeGreaterThan;
+import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writeObjectSizeLessThan;
+import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writePrefix;
+import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writeTag;
+
 import com.amazonaws.services.s3.internal.XmlWriter;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleAndOperator;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleFilterPredicate;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleObjectSizeGreaterThanPredicate;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleObjectSizeLessThanPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecyclePredicateVisitor;
 import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleTagPredicate;
-
-import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writePrefix;
-import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writeTag;
 
 class LifecyclePredicateVisitorImpl implements LifecyclePredicateVisitor {
     private final XmlWriter xml;
@@ -39,6 +43,16 @@ class LifecyclePredicateVisitorImpl implements LifecyclePredicateVisitor {
     @Override
     public void visit(LifecycleTagPredicate lifecycleTagPredicate) {
         writeTag(xml, lifecycleTagPredicate.getTag());
+    }
+
+    @Override
+    public void visit(LifecycleObjectSizeGreaterThanPredicate lifecycleObjectSizeGreaterThanPredicate) {
+        writeObjectSizeGreaterThan(xml, lifecycleObjectSizeGreaterThanPredicate.getObjectSizeGreaterThan());
+    }
+
+    @Override
+    public void visit(LifecycleObjectSizeLessThanPredicate lifecycleObjectSizeLessThanPredicate) {
+        writeObjectSizeLessThan(xml, lifecycleObjectSizeLessThanPredicate.getObjectSizeLessThan());
     }
 
     @Override

@@ -38,6 +38,18 @@ public interface LifecyclePredicateVisitor {
 
     /**
      * Implement this method to add behaviour performed when
+     * {@link LifecycleObjectSizeGreaterThanPredicate} is visited.
+     */
+    public void visit(LifecycleObjectSizeGreaterThanPredicate lifecycleObjectSizeGreaterThanPredicate);
+
+    /**
+     * Implement this method to add behaviour performed when
+     * {@link LifecycleObjectSizeLessThanPredicate} is visited.
+     */
+    public void visit(LifecycleObjectSizeLessThanPredicate lifecycleObjectSizeLessThanPredicate);
+
+    /**
+     * Implement this method to add behaviour performed when
      * {@link LifecycleAndOperator} is visited.
      */
     public void visit(LifecycleAndOperator lifecycleAndOperator);

@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.model.*;
 
 import static com.amazonaws.util.StringUtils.UTF8;
 
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.NoncurrentVersionExpiration;
 import com.amazonaws.services.s3.model.intelligenttiering.IntelligentTieringAccessTier;
 import com.amazonaws.services.s3.model.intelligenttiering.IntelligentTieringAndOperator;
 import com.amazonaws.services.s3.model.intelligenttiering.IntelligentTieringConfiguration;
@@ -49,6 +50,8 @@ import java.util.Map;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleAndOperator;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleFilterPredicate;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleObjectSizeGreaterThanPredicate;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleObjectSizeLessThanPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleTagPredicate;
 import com.amazonaws.services.s3.model.metrics.MetricsAccessPointArnPredicate;
@@ -2758,6 +2761,7 @@ public class XmlResponsesSaxParser {
         private Rule currentRule;
         private Transition currentTransition;
         private NoncurrentVersionTransition currentNcvTransition;
+        private NoncurrentVersionExpiration ncvExpiration;
         private AbortIncompleteMultipartUpload abortIncompleteMultipartUpload;
         private LifecycleFilter currentFilter;
         private List<LifecycleFilterPredicate> andOperandsList;
@@ -2784,6 +2788,8 @@ public class XmlResponsesSaxParser {
                     currentTransition = new Transition();
                 } else if (name.equals("NoncurrentVersionTransition")) {
                     currentNcvTransition = new NoncurrentVersionTransition();
+                } else if (name.equals("NoncurrentVersionExpiration")) {
+                    ncvExpiration = new NoncurrentVersionExpiration();
                 } else if (name.equals("AbortIncompleteMultipartUpload")) {
                     abortIncompleteMultipartUpload = new
                             AbortIncompleteMultipartUpload();
@@ -2824,6 +2830,9 @@ public class XmlResponsesSaxParser {
                     currentRule.addNoncurrentVersionTransition(
                             currentNcvTransition);
                     currentNcvTransition = null;
+                } else if (name.equals("NoncurrentVersionExpiration")) {
+                    currentRule.setNoncurrentVersionExpiration(ncvExpiration);
+                    ncvExpiration = null;
                 } else if (name.equals("AbortIncompleteMultipartUpload")) {
                     currentRule.setAbortIncompleteMultipartUpload(abortIncompleteMultipartUpload);
                     abortIncompleteMultipartUpload = null;
@@ -2859,8 +2868,9 @@ public class XmlResponsesSaxParser {
 
             else if (in("LifecycleConfiguration", "Rule", "NoncurrentVersionExpiration")) {
                 if (name.equals("NoncurrentDays")) {
-                    currentRule.setNoncurrentVersionExpirationInDays(
-                            Integer.parseInt(getText()));
+                    ncvExpiration.setDays(Integer.parseInt(getText()));
+                } else if (name.equals("NewerNoncurrentVersions")) {
+                    ncvExpiration.setNewerNoncurrentVersions(Integer.parseInt(getText()));
                 }
             }
 
@@ -2869,6 +2879,8 @@ public class XmlResponsesSaxParser {
                     currentNcvTransition.setStorageClass(getText());
                 } else if (name.equals("NoncurrentDays")) {
                     currentNcvTransition.setDays(Integer.parseInt(getText()));
+                } else if (name.equals("NewerNoncurrentVersions")) {
+                    currentNcvTransition.setNewerNoncurrentVersions(Integer.parseInt(getText()));
                 }
             }
 
@@ -2886,6 +2898,10 @@ public class XmlResponsesSaxParser {
                     currentFilter.setPredicate(new LifecycleTagPredicate(new Tag(currentTagKey, currentTagValue)));
                     currentTagKey = null;
                     currentTagValue = null;
+                } else if (name.equals("ObjectSizeGreaterThan")) {
+                    currentFilter.setPredicate(new LifecycleObjectSizeGreaterThanPredicate(Long.parseLong(getText())));
+                } else if (name.equals("ObjectSizeLessThan")) {
+                    currentFilter.setPredicate(new LifecycleObjectSizeLessThanPredicate(Long.parseLong(getText())));
                 } else if (name.equals("And")) {
                     currentFilter.setPredicate(new LifecycleAndOperator(andOperandsList));
                     andOperandsList = null;
@@ -2907,6 +2923,10 @@ public class XmlResponsesSaxParser {
                     andOperandsList.add(new LifecycleTagPredicate(new Tag(currentTagKey, currentTagValue)));
                     currentTagKey = null;
                     currentTagValue = null;
+                } else if (name.equals("ObjectSizeGreaterThan")) {
+                    andOperandsList.add(new LifecycleObjectSizeGreaterThanPredicate(Long.parseLong(getText())));
+                } else if (name.equals("ObjectSizeLessThan")) {
+                    andOperandsList.add(new LifecycleObjectSizeLessThanPredicate(Long.parseLong(getText())));
                 }
             }
 

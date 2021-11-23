@@ -15,6 +15,8 @@
 package com.amazonaws.services.s3.model.transform;
 
 import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.addParameterIfNotNull;
+import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writeObjectSizeGreaterThan;
+import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writeObjectSizeLessThan;
 import static com.amazonaws.services.s3.model.transform.BucketConfigurationXmlFactoryFunctions.writePrefix;
 
 import com.amazonaws.SdkClientException;
@@ -25,6 +27,7 @@ import com.amazonaws.services.s3.model.AccessControlTranslation;
 import com.amazonaws.services.s3.model.BucketAccelerateConfiguration;
 import com.amazonaws.services.s3.model.BucketCrossOriginConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.NoncurrentVersionExpiration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.NoncurrentVersionTransition;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Transition;
@@ -87,6 +90,8 @@ import com.amazonaws.services.s3.model.inventory.ServerSideEncryptionS3;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleAndOperator;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleFilterPredicate;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleObjectSizeGreaterThanPredicate;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleObjectSizeLessThanPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecyclePredicateVisitor;
 import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleTagPredicate;
@@ -600,6 +605,7 @@ public class BucketConfigurationXmlFactory {
 
         addTransitions(xml, rule.getTransitions());
         addNoncurrentTransitions(xml, rule.getNoncurrentVersionTransitions());
+        addNoncurrentExpiration(xml, rule.getNoncurrentVersionExpiration());
 
         if (hasCurrentExpirationPolicy(rule)) {
             // The rule attributes below are mutually exclusive, the service will throw an error if
@@ -615,15 +621,6 @@ public class BucketConfigurationXmlFactory {
                 xml.start("ExpiredObjectDeleteMarker").value("true").end();
             }
             xml.end(); // </Expiration>
-        }
-
-        if (rule.getNoncurrentVersionExpirationInDays() != -1) {
-            xml.start("NoncurrentVersionExpiration");
-            xml.start("NoncurrentDays")
-                .value(Integer.toString(
-                    rule.getNoncurrentVersionExpirationInDays()))
-                .end();
-            xml.end(); // </NoncurrentVersionExpiration>
         }
 
         if (rule.getAbortIncompleteMultipartUpload() != null) {
@@ -679,13 +676,36 @@ public class BucketConfigurationXmlFactory {
                     xml.value(Integer.toString(t.getDays()));
                     xml.end();
                 }
-
+                if (t.getNewerNoncurrentVersions() != -1) {
+                    xml.start("NewerNoncurrentVersions");
+                    xml.value(Integer.toString(t.getNewerNoncurrentVersions()));
+                    xml.end();
+                }
                 xml.start("StorageClass");
                 xml.value(t.getStorageClassAsString());
                 xml.end(); // </StorageClass>
                 xml.end(); // </NoncurrentVersionTransition>
             }
         }
+    }
+
+    private void addNoncurrentExpiration(XmlWriter xml, NoncurrentVersionExpiration expiration) {
+        if (expiration == null) {
+            return;
+        }
+
+        xml.start("NoncurrentVersionExpiration");
+        if (expiration.getDays() != -1) {
+            xml.start("NoncurrentDays");
+            xml.value(Integer.toString(expiration.getDays()));
+            xml.end();
+        }
+        if (expiration.getNewerNoncurrentVersions() != -1) {
+            xml.start("NewerNoncurrentVersions");
+            xml.value(Integer.toString(expiration.getNewerNoncurrentVersions()));
+            xml.end();
+        }
+        xml.end(); // </NoncurrentVersionExpiration>
     }
 
     private void writeLifecycleFilter(XmlWriter xml, LifecycleFilter filter) {
@@ -771,6 +791,16 @@ public class BucketConfigurationXmlFactory {
         @Override
         public void visit(LifecycleTagPredicate lifecycleTagPredicate) {
             writeTag(xml, lifecycleTagPredicate.getTag());
+        }
+
+        @Override
+        public void visit(LifecycleObjectSizeGreaterThanPredicate lifecycleObjectSizeGreaterThanPredicate) {
+            writeObjectSizeGreaterThan(xml, lifecycleObjectSizeGreaterThanPredicate.getObjectSizeGreaterThan());
+        }
+
+        @Override
+        public void visit(LifecycleObjectSizeLessThanPredicate lifecycleObjectSizeLessThanPredicate) {
+            writeObjectSizeLessThan(xml, lifecycleObjectSizeLessThanPredicate.getObjectSizeLessThan());
         }
 
         @Override

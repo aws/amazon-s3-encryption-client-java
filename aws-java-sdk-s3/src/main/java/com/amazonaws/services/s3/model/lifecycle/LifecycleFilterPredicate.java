@@ -22,6 +22,8 @@ import java.io.Serializable;
  *
  * @see LifecyclePrefixPredicate
  * @see LifecycleTagPredicate
+ * @see LifecycleObjectSizeGreaterThanPredicate
+ * @see LifecycleObjectSizeLessThanPredicate
  * @see LifecycleAndOperator
  */
 public abstract class LifecycleFilterPredicate implements Serializable {
