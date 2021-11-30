@@ -30,6 +30,8 @@ public class SetBucketNotificationConfigurationRequest extends AmazonWebServiceR
 
     private String expectedBucketOwner;
 
+    private Boolean skipDestinationValidation;
+
     /**
      * @deprecated Use SetBucketNotificationConfigurationRequest(String, BucketNotificationConfiguration) instead.
      */
@@ -188,6 +190,28 @@ public class SetBucketNotificationConfigurationRequest extends AmazonWebServiceR
     public SetBucketNotificationConfigurationRequest withBucketName(
             String bucketName) {
         setBucketName(bucketName);
+        return this;
+    }
+
+    /**
+     * Skips validation of SQS, SNS, and Lambda destinations
+     */
+    public Boolean getSkipDestinationValidation() {
+        return skipDestinationValidation;
+    }
+
+    /**
+     * Skips validation of SQS, SNS, and Lambda destinations
+     */
+    public void setSkipDestinationValidation(Boolean skipDestinationValidation) {
+        this.skipDestinationValidation = skipDestinationValidation;
+    }
+
+    /**
+     * Skips validation of SQS, SNS, and Lambda destinations
+     */
+    public SetBucketNotificationConfigurationRequest withSkipDestinationValidation(Boolean skipDestinationValidation) {
+        this.skipDestinationValidation = skipDestinationValidation;
         return this;
     }
 }

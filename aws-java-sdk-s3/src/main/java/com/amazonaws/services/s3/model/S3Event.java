@@ -49,7 +49,27 @@ public enum S3Event {
 
     ReplicationOperationMissedThreshold("s3:Replication:OperationMissedThreshold"),
 
-    ReplicationOperationReplicatedAfterThreshold("s3:Replication:OperationReplicationAfterThreshold")
+    ReplicationOperationReplicatedAfterThreshold("s3:Replication:OperationReplicatedAfterThreshold"),
+
+    ObjectRestoreDelete("s3:ObjectRestore:Delete"),
+
+    LifecycleTransition("s3:LifecycleTransition"),
+
+    IntelligentTiering("s3:IntelligentTiering"),
+
+    ObjectAclPut("s3:ObjectAcl:Put"),
+
+    LifecycleExpiration("s3:LifecycleExpiration:*"),
+
+    LifecycleExpirationDelete("s3:LifecycleExpiration:Delete"),
+
+    LifecycleExpirationDeleteMarkerCreated("s3:LifecycleExpiration:DeleteMarkerCreated"),
+
+    ObjectTagging("s3:ObjectTagging:*"),
+
+    ObjectTaggingPut("s3:ObjectTagging:Put"),
+
+    ObjectTaggingDelete("s3:ObjectTagging:Delete")
     ;
 
     private final String event;

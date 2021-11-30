@@ -16,8 +16,10 @@
  * permissions and limitations under the License.
  */
 package com.amazonaws.services.s3.model;
-import java.io.Serializable;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.util.json.Jackson;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,9 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.util.json.Jackson;
 
 /**
  * <p>
@@ -61,6 +60,8 @@ import com.amazonaws.util.json.Jackson;
 public class BucketNotificationConfiguration implements Serializable {
 
     private Map<String, NotificationConfiguration> configurations = null;
+
+    private EventBridgeConfiguration eventBridgeConfiguration;
 
     /**
      * <p>
@@ -274,6 +275,28 @@ public class BucketNotificationConfiguration implements Serializable {
             }
         }
         return topicConfigs;
+    }
+
+    /**
+     * Enables delivery of all bucket events to Amazon EventBridge.
+     */
+    public EventBridgeConfiguration getEventBridgeConfiguration() {
+        return eventBridgeConfiguration;
+    }
+
+    /**
+     * Enables delivery of all bucket events to Amazon EventBridge.
+     */
+    public void setEventBridgeConfiguration(EventBridgeConfiguration eventBridgeConfiguration) {
+        this.eventBridgeConfiguration = eventBridgeConfiguration;
+    }
+
+    /**
+     * Enables delivery of all bucket events to Amazon EventBridge.
+     */
+    public BucketNotificationConfiguration withEventBridgeConfiguration(EventBridgeConfiguration eventBridgeConfiguration) {
+        this.eventBridgeConfiguration = eventBridgeConfiguration;
+        return this;
     }
 
     @Override

@@ -2794,6 +2794,7 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
 
         String bucketName = setBucketNotificationConfigurationRequest.getBucketName();
         BucketNotificationConfiguration bucketNotificationConfiguration = setBucketNotificationConfigurationRequest.getNotificationConfiguration();
+        Boolean skipDestinationValidation = setBucketNotificationConfigurationRequest.getSkipDestinationValidation();
 
         rejectNull(bucketName,
                 "The bucket name parameter must be specified when setting bucket notification configuration.");
@@ -2803,6 +2804,9 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
         Request<SetBucketNotificationConfigurationRequest> request = createRequest(bucketName, null, setBucketNotificationConfigurationRequest, HttpMethodName.PUT);
         request.addHandlerContext(HandlerContextKey.OPERATION_NAME, "PutBucketNotificationConfiguration");
         request.addParameter("notification", null);
+        if (skipDestinationValidation != null) {
+            request.addHeader("x-amz-skip-destination-validation", Boolean.toString(skipDestinationValidation));
+        }
 
         byte[] bytes = bucketConfigurationXmlFactory.convertToXmlByteArray(bucketNotificationConfiguration);
         request.setContent(new ByteArrayInputStream(bytes));

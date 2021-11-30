@@ -41,6 +41,7 @@ import com.amazonaws.services.s3.model.CORSRule;
 import com.amazonaws.services.s3.model.CORSRule.AllowedMethods;
 import com.amazonaws.services.s3.model.CloudFunctionConfiguration;
 import com.amazonaws.services.s3.model.DeleteMarkerReplication;
+import com.amazonaws.services.s3.model.EventBridgeConfiguration;
 import com.amazonaws.services.s3.model.ExistingObjectReplication;
 import com.amazonaws.services.s3.model.Filter;
 import com.amazonaws.services.s3.model.FilterRule;
@@ -242,6 +243,14 @@ public class BucketConfigurationXmlFactory {
                 xml.end();
             }
         }
+
+        EventBridgeConfiguration eventBridgeConfiguration =
+                notificationConfiguration.getEventBridgeConfiguration();
+        if (eventBridgeConfiguration != null) {
+            xml.start("EventBridgeConfiguration");
+            xml.end();
+        }
+
         xml.end();
         return xml.getBytes();
     }
