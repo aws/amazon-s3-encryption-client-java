@@ -257,6 +257,8 @@ public interface Headers {
 
     String OBJECT_LOCK_ENABLED_FOR_BUCKET = "x-amz-bucket-object-lock-enabled";
 
+    String OBJECT_OWNERSHIP = "x-amz-object-ownership";
+
     String BYPASS_GOVERNANCE_RETENTION = "x-amz-bypass-governance-retention";
 
     String REQUEST_ROUTE = "x-amz-request-route";

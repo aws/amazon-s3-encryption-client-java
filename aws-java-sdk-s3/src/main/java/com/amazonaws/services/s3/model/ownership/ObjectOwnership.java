@@ -26,12 +26,19 @@ package com.amazonaws.services.s3.model.ownership;
  *     ObjectWriter - The uploading account will own the object if the object is uploaded with
  *     the <code>bucket-owner-full-control</code> canned ACL.
  * </p>
+ * <p>
+ *     BucketOwnerEnforced - ACLs are disabled, and the bucket owner owns all the objects in the bucket.
+ *     Objects can only be uploaded to the bucket if they have no ACL or the
+ *     <code>bucket-owner-full-control</code> canned ACL.
+ * </p>
  */
 public enum ObjectOwnership {
 
     BucketOwnerPreferred("BucketOwnerPreferred"),
 
-    ObjectWriter("ObjectWriter")
+    ObjectWriter("ObjectWriter"),
+    
+    BucketOwnerEnforced("BucketOwnerEnforced"),
     ;
 
     public static ObjectOwnership fromValue(String s3OwnershipString) throws IllegalArgumentException {

@@ -13,6 +13,7 @@
  * permissions and limitations under the License.
  */
 package com.amazonaws.services.s3.model;
+import com.amazonaws.services.s3.model.ownership.ObjectOwnership;
 import java.io.Serializable;
 
 import com.amazonaws.AmazonWebServiceRequest;
@@ -46,6 +47,8 @@ public class CreateBucketRequest extends AmazonWebServiceRequest implements
     private AccessControlList accessControlList;
 
     private boolean objectLockEnabled;
+    
+    private String objectOwnership;
 
     /**
      * Constructs a new {@link CreateBucketRequest},
@@ -242,5 +245,44 @@ public class CreateBucketRequest extends AmazonWebServiceRequest implements
      */
     public void setObjectLockEnabledForBucket(boolean objectLockEnabled) {
         withObjectLockEnabledForBucket(objectLockEnabled);
+    }
+
+    /**
+     * Returns the optional object ownership for the new bucket.
+     */
+    public String getObjectOwnership() {
+        return objectOwnership;
+    }
+
+    /**
+     * Sets the optional object ownership for the new bucket. Returns this {@link CreateBucketRequest},
+     * enabling additional method calls to be chained together.
+     */
+    public CreateBucketRequest withObjectOwnership(String objectOwnership) {
+        setObjectOwnership(objectOwnership);
+        return this;
+    }
+
+    /**
+     * Sets the optional object ownership for the new bucket. Returns this {@link CreateBucketRequest},
+     * enabling additional method calls to be chained together.
+     */
+    public CreateBucketRequest withObjectOwnership(ObjectOwnership objectOwnership) {
+        setObjectOwnership(objectOwnership);
+        return this;
+    }
+
+    /**
+     * Sets the optional object ownership for the new bucket.
+     */
+    public void setObjectOwnership(String objectOwnership) {
+        this.objectOwnership = objectOwnership;
+    }
+
+    /**
+     * Sets the optional object ownership for the new bucket.
+     */
+    public void setObjectOwnership(ObjectOwnership objectOwnership) {
+        setObjectOwnership(objectOwnership.toString());
     }
 }

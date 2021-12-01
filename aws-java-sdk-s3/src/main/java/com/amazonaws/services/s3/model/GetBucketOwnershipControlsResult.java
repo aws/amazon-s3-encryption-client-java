@@ -24,7 +24,7 @@ import java.io.Serializable;
  */
 public class GetBucketOwnershipControlsResult implements Serializable {
 
-    /** The <code>OwnershipControls</code> (BucketOwnerPreferred or ObjectWriter) currently in effect for this Amazon S3 bucket. */
+    /** The <code>OwnershipControls</code> currently in effect for this Amazon S3 bucket. */
     private OwnershipControls OwnershipControls;
 
     /**

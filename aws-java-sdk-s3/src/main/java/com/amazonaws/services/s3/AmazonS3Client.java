@@ -1123,6 +1123,10 @@ public class AmazonS3Client extends AmazonWebServiceClient implements AmazonS3 {
         if (createBucketRequest.getObjectLockEnabledForBucket()) {
             request.addHeader(Headers.OBJECT_LOCK_ENABLED_FOR_BUCKET, "true");
         }
+        
+        if (createBucketRequest.getObjectOwnership() != null) {
+            request.addHeader(Headers.OBJECT_OWNERSHIP, createBucketRequest.getObjectOwnership());
+        }
 
         invoke(request, voidResponseHandler, bucketName, null);
 

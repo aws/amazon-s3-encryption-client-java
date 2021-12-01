@@ -39,7 +39,7 @@ public class SetBucketOwnershipControlsRequest extends AmazonWebServiceRequest i
 
     private String expectedBucketOwner;
 
-    /** <p>The <code>OwnershipControls</code> (BucketOwnerPreferred or ObjectWriter) that you want to apply to this Amazon S3 bucket.</p> */
+    /** <p>The <code>OwnershipControls</code> that you want to apply to this Amazon S3 bucket.</p> */
     private OwnershipControls OwnershipControls;
 
     public SetBucketOwnershipControlsRequest() {
