@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -213,6 +213,18 @@ public enum Region {
      * </p>
      */
     AP_Sydney("ap-southeast-2"),
+
+    /**
+     * The Asia Pacific (Jakarta) Region. This region uses Amazon S3 servers
+     * located in Jakarta, Indonesia.
+     * <p>
+     * When using buckets in this region, set the client endpoint to
+     * <code>s3-ap-southeast-3.amazonaws.com</code> on all requests to these buckets
+     * to reduce any latency experienced after the first hour of creating a
+     * bucket in this region.
+     * </p>
+     */
+    AP_Jakarta("ap-southeast-3"),
 
     /**
      * The Asia Pacific (Tokyo) Region. This region uses Amazon S3 servers
