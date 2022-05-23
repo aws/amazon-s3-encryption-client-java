@@ -1,11 +1,6 @@
-## My Project
+## Amazon S3 Encryption Client
 
-TODO: Fill this README out!
-
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
+This library provides an S3 client that supports client-side encryption.
 
 ## Security
 
