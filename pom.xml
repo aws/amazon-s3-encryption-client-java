@@ -5,13 +5,13 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>software.amazon.encryption</groupId>
-  <artifactId>s3-client</artifactId>
+  <artifactId>s3</artifactId>
   <version>3.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>AWS S3 Encryption Client</name>
   <description>The AWS S3 Encryption Client provides client-side encryption for S3</description>
-  <url>https://github.com/aws/aws-s33c-java</url>
+  <url>https://github.com/aws/aws-s3-encryption-client-java</url>
 
   <licenses>
     <license>
@@ -51,7 +51,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.17.154</version>
+        <version>2.17.204</version>
         <optional>true</optional>
         <type>pom</type>
         <scope>import</scope>
@@ -80,14 +80,14 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
-      <version>2.17.154</version>
+      <version>2.17.204</version>
       <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>kms</artifactId>
-      <version>2.17.154</version>
+      <version>2.17.204</version>
       <optional>true</optional>
     </dependency>
   </dependencies>
