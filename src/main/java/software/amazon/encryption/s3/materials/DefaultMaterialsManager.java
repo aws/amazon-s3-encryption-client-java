@@ -2,6 +2,7 @@ package software.amazon.encryption.s3.materials;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.Map;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -25,7 +26,7 @@ public class DefaultMaterialsManager {
                 .plaintextDataKey(key.getEncoded())
                 .build();
 
-        return _keyring.OnEncrypt(materials);
+        return _keyring.onEncrypt(materials);
     }
 
     private SecretKey generateDataKey() {
@@ -40,7 +41,22 @@ public class DefaultMaterialsManager {
         return generator.generateKey();
     }
 
+    public DecryptionMaterials getDecryptionMaterials(DecryptionMaterialsRequest request) {
+        DecryptionMaterials materials = DecryptionMaterials.builder()
+                .algorithmSuiteId(request.algorithmSuiteId)
+                .encryptionContext(request.encryptionContext)
+                .build();
+
+        return _keyring.onDecrypt(materials, request.encryptedDataKeys);
+    }
+
     public static class EncryptionMaterialsRequest {
+        public Map<String, String> encryptionContext;
+    }
+
+    public static class DecryptionMaterialsRequest {
+        public int algorithmSuiteId;
+        public List<EncryptedDataKey> encryptedDataKeys;
         public Map<String, String> encryptionContext;
     }
 }
