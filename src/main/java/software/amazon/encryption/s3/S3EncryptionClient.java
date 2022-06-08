@@ -2,13 +2,11 @@ package software.amazon.encryption.s3;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.spec.InvalidParameterSpecException;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,7 +19,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -44,17 +41,18 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.DefaultMaterialsManager;
-import software.amazon.encryption.s3.materials.DefaultMaterialsManager.DecryptionMaterialsRequest;
-import software.amazon.encryption.s3.materials.DefaultMaterialsManager.EncryptionMaterialsRequest;
+import software.amazon.encryption.s3.materials.DecryptionMaterialsRequest;
+import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
+import software.amazon.encryption.s3.materials.MaterialsManager;
 
 public class S3EncryptionClient implements S3Client {
 
     private final S3Client _wrappedClient;
-    private final DefaultMaterialsManager _materialsManager;
+    private final MaterialsManager _materialsManager;
 
-    public S3EncryptionClient(S3Client client, DefaultMaterialsManager materialsManager) {
+    public S3EncryptionClient(S3Client client, MaterialsManager materialsManager) {
         _wrappedClient = client;
         _materialsManager = materialsManager;
     }

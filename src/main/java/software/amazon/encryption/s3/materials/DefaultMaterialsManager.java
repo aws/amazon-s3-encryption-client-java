@@ -2,12 +2,11 @@ package software.amazon.encryption.s3.materials;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.List;
-import java.util.Map;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
-public class DefaultMaterialsManager {
+public class DefaultMaterialsManager implements MaterialsManager {
     // TODO: allow this to be configurable?
     private final SecureRandom _secureRandom = new SecureRandom();
     private final Keyring _keyring;
@@ -21,7 +20,7 @@ public class DefaultMaterialsManager {
         SecretKey key = generateDataKey();
 
         EncryptionMaterials materials = EncryptionMaterials.builder()
-                .algorithmSuiteId(0x0078)
+                .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_NO_KDF)
                 .encryptionContext(request.encryptionContext)
                 .plaintextDataKey(key.getEncoded())
                 .build();
@@ -43,20 +42,11 @@ public class DefaultMaterialsManager {
 
     public DecryptionMaterials getDecryptionMaterials(DecryptionMaterialsRequest request) {
         DecryptionMaterials materials = DecryptionMaterials.builder()
-                .algorithmSuiteId(request.algorithmSuiteId)
+                .algorithmSuite(request.algorithmSuite)
                 .encryptionContext(request.encryptionContext)
                 .build();
 
         return _keyring.onDecrypt(materials, request.encryptedDataKeys);
     }
 
-    public static class EncryptionMaterialsRequest {
-        public Map<String, String> encryptionContext;
-    }
-
-    public static class DecryptionMaterialsRequest {
-        public int algorithmSuiteId;
-        public List<EncryptedDataKey> encryptedDataKeys;
-        public Map<String, String> encryptionContext;
-    }
 }

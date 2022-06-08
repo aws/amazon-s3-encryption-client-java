@@ -5,12 +5,13 @@ import java.util.List;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 final public class EncryptionMaterials {
 
     // Identifies what sort of crypto algorithms we want to use
     // In ESDK, this is an enum
-    private final int _algorithmSuiteId;
+    private final AlgorithmSuite _algorithmSuite;
 
     // Additional information passed into encrypted that is required on decryption as well
     // Should NOT contain sensitive information
@@ -24,7 +25,7 @@ final public class EncryptionMaterials {
 
 
     private EncryptionMaterials(Builder builder) {
-        this._algorithmSuiteId = builder._algorithmSuiteId;
+        this._algorithmSuite = builder._algorithmSuite;
         this._encryptionContext = builder._encryptionContext;
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._plaintextDataKey = builder._plaintextDataKey;
@@ -34,8 +35,8 @@ final public class EncryptionMaterials {
         return new Builder();
     }
 
-    public int algorithmSuiteId() {
-        return _algorithmSuiteId;
+    public AlgorithmSuite algorithmSuite() {
+        return _algorithmSuite;
     }
 
     public Map<String, String> encryptionContext() {
@@ -56,7 +57,7 @@ final public class EncryptionMaterials {
 
     public Builder toBuilder() {
         return new Builder()
-                .algorithmSuiteId(_algorithmSuiteId)
+                .algorithmSuite(_algorithmSuite)
                 .encryptionContext(_encryptionContext)
                 .encryptedDataKeys(_encryptedDataKeys)
                 .plaintextDataKey(_plaintextDataKey);
@@ -64,7 +65,7 @@ final public class EncryptionMaterials {
 
     static public class Builder {
 
-        private int _algorithmSuiteId = -1;
+        private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private byte[] _plaintextDataKey = null;
@@ -72,8 +73,8 @@ final public class EncryptionMaterials {
         private Builder() {
         }
 
-        public Builder algorithmSuiteId(int id) {
-            _algorithmSuiteId = id;
+        public Builder algorithmSuite(AlgorithmSuite algorithmSuite) {
+            _algorithmSuite = algorithmSuite;
             return this;
         }
 

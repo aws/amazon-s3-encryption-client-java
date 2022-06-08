@@ -1,26 +1,26 @@
 package software.amazon.encryption.s3.materials;
 
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 public class AESKeyring implements Keyring {
 
+    private static final String KEY_ALGORITHM = "AES";
     private static final String KEY_PROVIDER_ID = "AES/GCM";
     private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
-    private static final int IV_LENGTH_IN_BYTES = 12;
-    private static final int TAG_LENGTH_IN_BYTES = 16;
-    private static final int TAG_LENGTH_IN_BITS = TAG_LENGTH_IN_BYTES * 8;
+    private static final int NONCE_LENGTH_BYTES = 12;
+    private static final int TAG_LENGTH_BYTES = 16;
+    private static final int TAG_LENGTH_BITS = TAG_LENGTH_BYTES * 8;
     private final SecretKey _wrappingKey;
 
     public AESKeyring(SecretKey wrappingKey) {
-        if (!wrappingKey.getAlgorithm().equals("AES")) {
+        if (!wrappingKey.getAlgorithm().equals(KEY_ALGORITHM)) {
             // TODO: throw?
         }
 
@@ -34,24 +34,24 @@ public class AESKeyring implements Keyring {
         try {
             SecureRandom secureRandom = new SecureRandom();
 
-            byte[] iv = new byte[IV_LENGTH_IN_BYTES];
-            secureRandom.nextBytes(iv);
-            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, iv);
+            AlgorithmSuite algorithmSuite = materials.algorithmSuite();
+            byte[] nonce = new byte[NONCE_LENGTH_BYTES];
+            secureRandom.nextBytes(nonce);
+            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
 
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, _wrappingKey, gcmParameterSpec, secureRandom);
 
             // this is the CONTENT encryption, not the wrapping encryption
-            // TODO: get this from encryption context or preferably algorithm suite
-            cipher.updateAAD("AES/GCM/NoPadding".getBytes(StandardCharsets.UTF_8));
+            cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
 
             // The encrypted data key is the IV prepended to the ciphertext
-            iv = cipher.getIV();
+            nonce = cipher.getIV();
             byte[] ciphertext = cipher.doFinal(materials.plaintextDataKey());
 
-            byte[] encodedBytes = new byte[iv.length + ciphertext.length];
-            System.arraycopy(iv, 0, encodedBytes, 0, iv.length);
-            System.arraycopy(ciphertext, 0, encodedBytes, iv.length, ciphertext.length);
+            byte[] encodedBytes = new byte[nonce.length + ciphertext.length];
+            System.arraycopy(nonce, 0, encodedBytes, 0, nonce.length);
+            System.arraycopy(ciphertext, 0, encodedBytes, nonce.length, ciphertext.length);
 
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(KEY_PROVIDER_ID)
@@ -65,30 +65,12 @@ public class AESKeyring implements Keyring {
                     .encryptedDataKeys(encryptedDataKeys)
                     .build();
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Unable to AES/GCM/NoPadding wrap", e);
+            throw new UnsupportedOperationException("Unable to " + CIPHER_ALGORITHM + " wrap", e);
         }
     }
 
     @Override
     public DecryptionMaterials onDecrypt(final DecryptionMaterials materials, List<EncryptedDataKey> encryptedDataKeys) {
-        /*
-        ByteBuffer encryptedCekBuff = ByteBuffer.wrap(encryptedCek);
-        // Split the IV from the front of the ciphertext
-        byte[] iv = new byte[IV_LENGTH_IN_BYTES];
-        byte[] taggedCek = new byte[encryptedCek.length - IV_LENGTH_IN_BYTES];
-        encryptedCekBuff.get(iv);
-        encryptedCekBuff.get(taggedCek);
-
-        Cipher cipher = this.cipherProvider.createCipher();
-        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, iv);
-        try {
-            cipher.init(Cipher.DECRYPT_MODE, key, gcmParameterSpec);
-            cipher.updateAAD(this.cekAlgorithm.getBytes(StandardCharsets.UTF_8));
-            return cipher.doFinal(taggedCek);
-        } catch (Exception e) {
-            throw failure(e, "An exception was thrown when attempting to decrypt the Content Encryption Key");
-        }
-         */
         if (materials.plaintextDataKey() != null) {
             return materials;
         }
@@ -99,25 +81,26 @@ public class AESKeyring implements Keyring {
             }
 
             byte[] encodedBytes = encryptedDataKey.ciphertext();
-            byte[] iv = new byte[IV_LENGTH_IN_BYTES];
-            byte[] ciphertext = new byte[encodedBytes.length - iv.length];
+            byte[] nonce = new byte[NONCE_LENGTH_BYTES];
+            byte[] ciphertext = new byte[encodedBytes.length - nonce.length];
 
-            System.arraycopy(encodedBytes, 0, iv, 0, iv.length);
-            System.arraycopy(encodedBytes, iv.length, ciphertext, 0, ciphertext.length);
+            System.arraycopy(encodedBytes, 0, nonce, 0, nonce.length);
+            System.arraycopy(encodedBytes, nonce.length, ciphertext, 0, ciphertext.length);
 
-            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, iv);
+
+            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
             try {
                 final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
                 cipher.init(Cipher.DECRYPT_MODE, _wrappingKey, gcmParameterSpec);
                 // this is the CONTENT encryption, not the wrapping encryption
-                // TODO: get this from encryption context or preferably algorithm suite
-                cipher.updateAAD("AES/GCM/NoPadding".getBytes(StandardCharsets.UTF_8));
+                AlgorithmSuite algorithmSuite = materials.algorithmSuite();
+                cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
                 byte[] plaintext = cipher.doFinal(ciphertext);
 
                 return materials.toBuilder().plaintextDataKey(plaintext).build();
             } catch (Exception e) {
                 // TODO: maybe this should fall through?
-                throw new UnsupportedOperationException("Unable to AES/GCM/NoPadding unwrap", e);
+                throw new UnsupportedOperationException("Unable to " + CIPHER_ALGORITHM + " unwrap", e);
             }
         }
 
