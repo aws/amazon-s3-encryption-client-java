@@ -21,7 +21,7 @@ public class DefaultMaterialsManager implements MaterialsManager {
 
         EncryptionMaterials materials = EncryptionMaterials.builder()
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_NO_KDF)
-                .encryptionContext(request.encryptionContext)
+                .encryptionContext(request.encryptionContext())
                 .plaintextDataKey(key.getEncoded())
                 .build();
 
@@ -42,11 +42,11 @@ public class DefaultMaterialsManager implements MaterialsManager {
 
     public DecryptionMaterials getDecryptionMaterials(DecryptionMaterialsRequest request) {
         DecryptionMaterials materials = DecryptionMaterials.builder()
-                .algorithmSuite(request.algorithmSuite)
-                .encryptionContext(request.encryptionContext)
+                .algorithmSuite(request.algorithmSuite())
+                .encryptionContext(request.encryptionContext())
                 .build();
 
-        return _keyring.onDecrypt(materials, request.encryptedDataKeys);
+        return _keyring.onDecrypt(materials, request.encryptedDataKeys());
     }
 
 }

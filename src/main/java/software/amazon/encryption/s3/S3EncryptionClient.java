@@ -39,6 +39,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.utils.IoUtils;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.DefaultMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptionMaterialsRequest;
@@ -62,7 +63,8 @@ public class S3EncryptionClient implements S3Client {
             throws AwsServiceException, SdkClientException, S3Exception {
 
         // Get content encryption key
-        EncryptionMaterials materials = _materialsManager.getEncryptionMaterials(new EncryptionMaterialsRequest());
+        EncryptionMaterials materials = _materialsManager.getEncryptionMaterials(EncryptionMaterialsRequest.builder()
+                .build());
         SecretKey contentKey = materials.dataKey();
         // Encrypt content
         byte[] iv = new byte[12]; // default GCM IV length
@@ -164,15 +166,20 @@ public class S3EncryptionClient implements S3Client {
 
         // Get decryption materials
         final String contentEncryptionAlgorithm = metadata.get("x-amz-cek-alg");
-        int algorithmSuiteId = 0;
+        AlgorithmSuite algorithmSuite = null;
         if (contentEncryptionAlgorithm.equals("AES/GCM/NoPadding")) {
-            algorithmSuiteId = 0x0078;
+            algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_NO_KDF;;
         }
 
-        DecryptionMaterialsRequest request = new DecryptionMaterialsRequest();
-        request.encryptionContext = encryptionContext;
-        request.algorithmSuiteId = algorithmSuiteId;
-        request.encryptedDataKeys = encryptedDataKeys;
+        if (algorithmSuite == null) {
+            throw new RuntimeException("Unknown content encryption algorithm: " + contentEncryptionAlgorithm);
+        }
+
+        DecryptionMaterialsRequest request = DecryptionMaterialsRequest.builder()
+                .algorithmSuite(algorithmSuite)
+                .encryptedDataKeys(encryptedDataKeys)
+                .encryptionContext(encryptionContext)
+                .build();
         DecryptionMaterials materials = _materialsManager.getDecryptionMaterials(request);
 
         // Get content encryption information
@@ -202,8 +209,6 @@ public class S3EncryptionClient implements S3Client {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-//        return _wrappedClient.getObject(getObjectRequest, responseTransformer);
     }
 
     @Override

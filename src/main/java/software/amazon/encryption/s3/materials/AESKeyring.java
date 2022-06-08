@@ -9,6 +9,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
+/**
+ * AESKeyring will use an AES key to wrap the data key used to encrypt content.
+ */
 public class AESKeyring implements Keyring {
 
     private static final String KEY_ALGORITHM = "AES";
@@ -21,7 +24,7 @@ public class AESKeyring implements Keyring {
 
     public AESKeyring(SecretKey wrappingKey) {
         if (!wrappingKey.getAlgorithm().equals(KEY_ALGORITHM)) {
-            // TODO: throw?
+            throw new IllegalArgumentException("Invalid algorithm '" + wrappingKey.getAlgorithm() + "', expecting " + KEY_ALGORITHM);
         }
 
         _wrappingKey = wrappingKey;
@@ -29,7 +32,9 @@ public class AESKeyring implements Keyring {
 
     @Override
     public EncryptionMaterials onEncrypt(EncryptionMaterials materials) {
-        // TODO: handle a null plaintext data key
+        if (materials.plaintextDataKey() == null) {
+            throw new IllegalStateException("Missing data key to wrap");
+        }
 
         try {
             SecureRandom secureRandom = new SecureRandom();
@@ -44,11 +49,9 @@ public class AESKeyring implements Keyring {
 
             // this is the CONTENT encryption, not the wrapping encryption
             cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
-
-            // The encrypted data key is the IV prepended to the ciphertext
-            nonce = cipher.getIV();
             byte[] ciphertext = cipher.doFinal(materials.plaintextDataKey());
 
+            // The encrypted data key is the nonce prepended to the ciphertext
             byte[] encodedBytes = new byte[nonce.length + ciphertext.length];
             System.arraycopy(nonce, 0, encodedBytes, 0, nonce.length);
             System.arraycopy(ciphertext, 0, encodedBytes, nonce.length, ciphertext.length);
@@ -99,7 +102,6 @@ public class AESKeyring implements Keyring {
 
                 return materials.toBuilder().plaintextDataKey(plaintext).build();
             } catch (Exception e) {
-                // TODO: maybe this should fall through?
                 throw new UnsupportedOperationException("Unable to " + CIPHER_ALGORITHM + " unwrap", e);
             }
         }
