@@ -7,6 +7,7 @@ import java.util.List;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 /**
@@ -74,7 +75,7 @@ public class AESKeyring implements Keyring {
                     .encryptedDataKeys(encryptedDataKeys)
                     .build();
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Unable to " + CIPHER_ALGORITHM + " wrap", e);
+            throw new S3EncryptionClientException("Unable to " + CIPHER_ALGORITHM + " wrap", e);
         }
     }
 
@@ -108,7 +109,7 @@ public class AESKeyring implements Keyring {
 
                 return materials.toBuilder().plaintextDataKey(plaintext).build();
             } catch (Exception e) {
-                throw new UnsupportedOperationException("Unable to " + CIPHER_ALGORITHM + " unwrap", e);
+                throw new S3EncryptionClientException("Unable to " + CIPHER_ALGORITHM + " unwrap", e);
             }
         }
 
@@ -123,7 +124,7 @@ public class AESKeyring implements Keyring {
 
         public Builder wrappingKey(SecretKey wrappingKey) {
             if (!wrappingKey.getAlgorithm().equals(KEY_ALGORITHM)) {
-                throw new IllegalArgumentException("Invalid algorithm '" + wrappingKey.getAlgorithm() + "', expecting " + KEY_ALGORITHM);
+                throw new S3EncryptionClientException("Invalid algorithm '" + wrappingKey.getAlgorithm() + "', expecting " + KEY_ALGORITHM);
             }
             _wrappingKey = wrappingKey;
             return this;
