@@ -10,7 +10,6 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 final public class EncryptionMaterials {
 
     // Identifies what sort of crypto algorithms we want to use
-    // In ESDK, this is an enum
     private final AlgorithmSuite _algorithmSuite;
 
     // Additional information passed into encrypted that is required on decryption as well
@@ -19,10 +18,6 @@ final public class EncryptionMaterials {
 
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final byte[] _plaintextDataKey;
-
-    // Unused in here since signing is not supported
-    // private final byte[] _signingKey;
-
 
     private EncryptionMaterials(Builder builder) {
         this._algorithmSuite = builder._algorithmSuite;

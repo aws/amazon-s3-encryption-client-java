@@ -17,10 +17,6 @@ final public class DecryptionMaterials {
 
     private final byte[] _plaintextDataKey;
 
-    // Unused in here since signing is not supported
-    // private final byte[] _signingKey;
-
-
     private DecryptionMaterials(Builder builder) {
         this._algorithmSuite = builder._algorithmSuite;
         this._encryptionContext = builder._encryptionContext;

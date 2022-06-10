@@ -76,16 +76,13 @@ public class S3EncryptionClient implements S3Client {
         final Cipher cipher;
         try {
             cipher = Cipher.getInstance(contentEncryptionAlgorithm);
-            //GCMParameterSpec defaultSpec = cipher.getParameters().getParameterSpec(GCMParameterSpec.class);
             cipher.init(Cipher.ENCRYPT_MODE, contentKey, new GCMParameterSpec(128, iv));
         } catch (NoSuchAlgorithmException
                  | NoSuchPaddingException
                  | InvalidAlgorithmParameterException
                  | InvalidKeyException e) {
             throw new RuntimeException(e);
-        }/* catch (InvalidParameterSpecException e) {
-            throw new RuntimeException(e);
-        }*/
+        }
 
         byte[] ciphertext;
         try {
