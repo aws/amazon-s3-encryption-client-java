@@ -62,6 +62,8 @@ public class S3EncryptionClient implements S3Client {
     public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody)
             throws AwsServiceException, SdkClientException, S3Exception {
 
+        // TODO: This is proof-of-concept code and needs to be refactored
+
         // Get content encryption key
         EncryptionMaterials materials = _materialsManager.getEncryptionMaterials(EncryptionMaterialsRequest.builder()
                 .build());
@@ -129,6 +131,9 @@ public class S3EncryptionClient implements S3Client {
     @Override
     public <T> T getObject(GetObjectRequest getObjectRequest, ResponseTransformer<GetObjectResponse, T> responseTransformer)
             throws NoSuchKeyException, InvalidObjectStateException, AwsServiceException, SdkClientException, S3Exception {
+
+        // TODO: This is proof-of-concept code and needs to be refactored
+
         ResponseInputStream<GetObjectResponse> objectStream =  _wrappedClient.getObject(getObjectRequest);
         byte[] output;
         try {

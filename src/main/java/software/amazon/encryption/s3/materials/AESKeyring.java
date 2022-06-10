@@ -20,20 +20,26 @@ public class AESKeyring implements Keyring {
     private static final int NONCE_LENGTH_BYTES = 12;
     private static final int TAG_LENGTH_BYTES = 16;
     private static final int TAG_LENGTH_BITS = TAG_LENGTH_BYTES * 8;
+
+    private final DataKeyGenerator _dataKeyGenerator;
     private final SecretKey _wrappingKey;
 
-    public AESKeyring(SecretKey wrappingKey) {
-        if (!wrappingKey.getAlgorithm().equals(KEY_ALGORITHM)) {
-            throw new IllegalArgumentException("Invalid algorithm '" + wrappingKey.getAlgorithm() + "', expecting " + KEY_ALGORITHM);
-        }
+    private AESKeyring(Builder builder) {
+        _dataKeyGenerator = builder._dataKeyGenerator;
+        _wrappingKey = builder._wrappingKey;
+    }
 
-        _wrappingKey = wrappingKey;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
     public EncryptionMaterials onEncrypt(EncryptionMaterials materials) {
         if (materials.plaintextDataKey() == null) {
-            throw new IllegalStateException("Missing data key to wrap");
+            SecretKey dataKey = _dataKeyGenerator.generateDataKey(materials.algorithmSuite());
+            materials = materials.toBuilder()
+                    .plaintextDataKey(dataKey.getEncoded())
+                    .build();
         }
 
         try {
@@ -107,5 +113,29 @@ public class AESKeyring implements Keyring {
         }
 
         return materials;
+    }
+
+    public static class Builder {
+        private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
+        private SecretKey _wrappingKey;
+
+        private Builder() {}
+
+        public Builder wrappingKey(SecretKey wrappingKey) {
+            if (!wrappingKey.getAlgorithm().equals(KEY_ALGORITHM)) {
+                throw new IllegalArgumentException("Invalid algorithm '" + wrappingKey.getAlgorithm() + "', expecting " + KEY_ALGORITHM);
+            }
+            _wrappingKey = wrappingKey;
+            return this;
+        }
+
+        public Builder dataKeyGenerator(DataKeyGenerator dataKeyGenerator) {
+            _dataKeyGenerator = dataKeyGenerator;
+            return this;
+        }
+
+        public AESKeyring build() {
+            return new AESKeyring(this);
+        }
     }
 }

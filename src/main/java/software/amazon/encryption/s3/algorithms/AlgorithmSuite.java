@@ -39,6 +39,14 @@ public enum AlgorithmSuite {
         this._cipherMaxContentLengthBits = cipherMaxContentLengthBits;
     }
 
+    public String dataKeyAlgorithm() {
+        return _dataKeyAlgorithm;
+    }
+
+    public int dataKeyLengthBits() {
+        return _dataKeyLengthBits;
+    }
+
     public String cipherName() {
         return _cipherName;
     }
