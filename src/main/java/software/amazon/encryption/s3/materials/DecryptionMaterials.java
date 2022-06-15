@@ -52,7 +52,7 @@ final public class DecryptionMaterials {
 
     static public class Builder {
 
-        private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_NO_KDF;
+        private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private byte[] _plaintextDataKey = null;
 

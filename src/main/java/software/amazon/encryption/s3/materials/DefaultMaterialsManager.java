@@ -1,9 +1,5 @@
 package software.amazon.encryption.s3.materials;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 public class DefaultMaterialsManager implements MaterialsManager {
@@ -16,14 +12,14 @@ public class DefaultMaterialsManager implements MaterialsManager {
 
     public EncryptionMaterials getEncryptionMaterials(EncryptionMaterialsRequest request) {
         EncryptionMaterials materials = EncryptionMaterials.builder()
-                .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_NO_KDF)
+                .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .encryptionContext(request.encryptionContext())
                 .build();
 
         return _keyring.onEncrypt(materials);
     }
 
-    public DecryptionMaterials getDecryptionMaterials(DecryptionMaterialsRequest request) {
+    public DecryptionMaterials decryptMaterials(DecryptMaterialsRequest request) {
         DecryptionMaterials materials = DecryptionMaterials.builder()
                 .algorithmSuite(request.algorithmSuite())
                 .encryptionContext(request.encryptionContext())

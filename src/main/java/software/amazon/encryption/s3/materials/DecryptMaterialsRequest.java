@@ -4,15 +4,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.materials.EncryptionMaterials.Builder;
 
-public class DecryptionMaterialsRequest {
+public class DecryptMaterialsRequest {
 
     private final AlgorithmSuite _algorithmSuite;
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final Map<String, String> _encryptionContext;
 
-    private DecryptionMaterialsRequest(Builder builder) {
+    private DecryptMaterialsRequest(Builder builder) {
         this._algorithmSuite = builder._algorithmSuite;
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._encryptionContext = builder._encryptionContext;
@@ -36,7 +35,7 @@ public class DecryptionMaterialsRequest {
 
     static public class Builder {
 
-        private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_NO_KDF;
+        private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
 
@@ -62,8 +61,8 @@ public class DecryptionMaterialsRequest {
             return this;
         }
 
-        public DecryptionMaterialsRequest build() {
-            return new DecryptionMaterialsRequest(this);
+        public DecryptMaterialsRequest build() {
+            return new DecryptMaterialsRequest(this);
         }
     }
 }

@@ -22,12 +22,14 @@ public class AESKeyring implements Keyring {
     private static final int TAG_LENGTH_BYTES = 16;
     private static final int TAG_LENGTH_BITS = TAG_LENGTH_BYTES * 8;
 
-    private final DataKeyGenerator _dataKeyGenerator;
     private final SecretKey _wrappingKey;
+    private final SecureRandom _secureRandom;
+    private final DataKeyGenerator _dataKeyGenerator;
 
     private AESKeyring(Builder builder) {
-        _dataKeyGenerator = builder._dataKeyGenerator;
         _wrappingKey = builder._wrappingKey;
+        _secureRandom = builder._secureRandom;
+        _dataKeyGenerator = builder._dataKeyGenerator;
     }
 
     public static Builder builder() {
@@ -44,17 +46,14 @@ public class AESKeyring implements Keyring {
         }
 
         try {
-            SecureRandom secureRandom = new SecureRandom();
-
-            AlgorithmSuite algorithmSuite = materials.algorithmSuite();
             byte[] nonce = new byte[NONCE_LENGTH_BYTES];
-            secureRandom.nextBytes(nonce);
+            _secureRandom.nextBytes(nonce);
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
 
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, _wrappingKey, gcmParameterSpec, secureRandom);
+            cipher.init(Cipher.ENCRYPT_MODE, _wrappingKey, gcmParameterSpec, _secureRandom);
 
-            // this is the CONTENT encryption, not the wrapping encryption
+            AlgorithmSuite algorithmSuite = materials.algorithmSuite();
             cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
             byte[] ciphertext = cipher.doFinal(materials.plaintextDataKey());
 
@@ -97,12 +96,11 @@ public class AESKeyring implements Keyring {
             System.arraycopy(encodedBytes, 0, nonce, 0, nonce.length);
             System.arraycopy(encodedBytes, nonce.length, ciphertext, 0, ciphertext.length);
 
-
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
             try {
                 final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
                 cipher.init(Cipher.DECRYPT_MODE, _wrappingKey, gcmParameterSpec);
-                // this is the CONTENT encryption, not the wrapping encryption
+
                 AlgorithmSuite algorithmSuite = materials.algorithmSuite();
                 cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
                 byte[] plaintext = cipher.doFinal(ciphertext);
@@ -117,8 +115,9 @@ public class AESKeyring implements Keyring {
     }
 
     public static class Builder {
-        private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
         private SecretKey _wrappingKey;
+        private SecureRandom _secureRandom = new SecureRandom();
+        private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
 
         private Builder() {}
 
@@ -127,6 +126,11 @@ public class AESKeyring implements Keyring {
                 throw new S3EncryptionClientException("Invalid algorithm '" + wrappingKey.getAlgorithm() + "', expecting " + KEY_ALGORITHM);
             }
             _wrappingKey = wrappingKey;
+            return this;
+        }
+
+        public Builder secureRandom(SecureRandom secureRandom) {
+            _secureRandom = secureRandom;
             return this;
         }
 

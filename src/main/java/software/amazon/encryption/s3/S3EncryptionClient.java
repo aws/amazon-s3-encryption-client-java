@@ -41,8 +41,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
-import software.amazon.encryption.s3.materials.DefaultMaterialsManager;
-import software.amazon.encryption.s3.materials.DecryptionMaterialsRequest;
+import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
@@ -170,19 +169,19 @@ public class S3EncryptionClient implements S3Client {
         final String contentEncryptionAlgorithm = metadata.get("x-amz-cek-alg");
         AlgorithmSuite algorithmSuite = null;
         if (contentEncryptionAlgorithm.equals("AES/GCM/NoPadding")) {
-            algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_NO_KDF;;
+            algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;;
         }
 
         if (algorithmSuite == null) {
             throw new RuntimeException("Unknown content encryption algorithm: " + contentEncryptionAlgorithm);
         }
 
-        DecryptionMaterialsRequest request = DecryptionMaterialsRequest.builder()
+        DecryptMaterialsRequest request = DecryptMaterialsRequest.builder()
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKeys(encryptedDataKeys)
                 .encryptionContext(encryptionContext)
                 .build();
-        DecryptionMaterials materials = _materialsManager.getDecryptionMaterials(request);
+        DecryptionMaterials materials = _materialsManager.decryptMaterials(request);
 
         // Get content encryption information
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), "AES");
