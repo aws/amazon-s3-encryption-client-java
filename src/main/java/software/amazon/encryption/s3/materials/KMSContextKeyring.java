@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3.materials;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
@@ -12,7 +11,6 @@ import software.amazon.awssdk.services.kms.model.DecryptResponse;
 import software.amazon.awssdk.services.kms.model.EncryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.materials.AESKeyring.Builder;
 
 /**
  * AESKeyring will call to KMS to wrap the data key used to encrypt content.
@@ -47,7 +45,7 @@ public class KMSContextKeyring implements Keyring {
         }
 
         if (materials.encryptionContext().containsKey(ENCRYPTION_CONTEXT_ALGORITHM_KEY)) {
-            throw new IllegalStateException(ENCRYPTION_CONTEXT_ALGORITHM_KEY + " is a reserved key for the S3 encryption client");
+            throw new S3EncryptionClientException(ENCRYPTION_CONTEXT_ALGORITHM_KEY + " is a reserved key for the S3 encryption client");
         }
 
         TreeMap<String, String> encryptionContext = new TreeMap<>(materials.encryptionContext());
@@ -76,7 +74,7 @@ public class KMSContextKeyring implements Keyring {
                     .encryptedDataKeys(encryptedDataKeys)
                     .build();
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Unable to " + KEY_PROVIDER_ID + " wrap", e);
+            throw new S3EncryptionClientException("Unable to " + KEY_PROVIDER_ID + " wrap", e);
         }
     }
 
@@ -102,7 +100,7 @@ public class KMSContextKeyring implements Keyring {
 
                 return materials.toBuilder().plaintextDataKey(response.plaintext().asByteArray()).build();
             } catch (Exception e) {
-                throw new UnsupportedOperationException("Unable to " + KEY_PROVIDER_ID + " unwrap", e);
+                throw new S3EncryptionClientException("Unable to " + KEY_PROVIDER_ID + " unwrap", e);
             }
         }
 
