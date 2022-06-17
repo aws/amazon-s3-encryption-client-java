@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 import javax.crypto.SecretKey;
+import software.amazon.awssdk.core.ApiName;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.model.DecryptRequest;
@@ -11,6 +12,7 @@ import software.amazon.awssdk.services.kms.model.DecryptResponse;
 import software.amazon.awssdk.services.kms.model.EncryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.internal.ApiNameVersion;
 
 /**
  * AESKeyring will call to KMS to wrap the data key used to encrypt content.
@@ -20,6 +22,8 @@ public class KMSContextKeyring implements Keyring {
     private static final String KEY_PROVIDER_ID = "kms+context";
 
     private static final String ENCRYPTION_CONTEXT_ALGORITHM_KEY = "aws:x-amz-cek-alg";
+
+    private static final ApiName API_NAME = ApiNameVersion.apiNameWithVersion();
 
     private final KmsClient _kmsClient;
     private final String _wrappingKeyId;
@@ -56,6 +60,7 @@ public class KMSContextKeyring implements Keyring {
                     .keyId(_wrappingKeyId)
                     .encryptionContext(encryptionContext)
                     .plaintext(SdkBytes.fromByteArray(materials.plaintextDataKey()))
+                    .overrideConfiguration(builder -> builder.addApiName(API_NAME))
                     .build();
 
             EncryptResponse response = _kmsClient.encrypt(request);
@@ -94,6 +99,7 @@ public class KMSContextKeyring implements Keyring {
                         .keyId(_wrappingKeyId)
                         .encryptionContext(materials.encryptionContext())
                         .ciphertextBlob(SdkBytes.fromByteArray(encryptedDataKey.ciphertext()))
+                        .overrideConfiguration(builder -> builder.addApiName(API_NAME))
                         .build();
 
                 DecryptResponse response = _kmsClient.decrypt(request);
