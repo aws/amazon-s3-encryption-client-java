@@ -74,7 +74,7 @@ public class AESKeyring implements Keyring {
                     .encryptedDataKeys(encryptedDataKeys)
                     .build();
         } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to " + CIPHER_ALGORITHM + " wrap", e);
+            throw new S3EncryptionClientException("Unable to " + KEY_PROVIDER_ID + " wrap", e);
         }
     }
 
@@ -107,7 +107,7 @@ public class AESKeyring implements Keyring {
 
                 return materials.toBuilder().plaintextDataKey(plaintext).build();
             } catch (Exception e) {
-                throw new S3EncryptionClientException("Unable to " + CIPHER_ALGORITHM + " unwrap", e);
+                throw new S3EncryptionClientException("Unable to " + KEY_PROVIDER_ID + " unwrap", e);
             }
         }
 
