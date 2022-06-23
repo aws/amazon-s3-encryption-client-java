@@ -17,7 +17,7 @@ import software.amazon.encryption.s3.internal.ApiNameVersion;
 /**
  * AESKeyring will call to KMS to wrap the data key used to encrypt content.
  */
-public class KMSContextKeyring implements Keyring {
+public class KmsContextKeyring implements Keyring {
 
     private static final String KEY_PROVIDER_ID = "kms+context";
 
@@ -29,7 +29,7 @@ public class KMSContextKeyring implements Keyring {
     private final String _wrappingKeyId;
     private final DataKeyGenerator _dataKeyGenerator;
 
-    public KMSContextKeyring(Builder builder) {
+    public KmsContextKeyring(Builder builder) {
         _kmsClient = builder._kmsClient;
         _wrappingKeyId = builder._wrappingKeyId;
         _dataKeyGenerator = builder._dataKeyGenerator;
@@ -135,8 +135,8 @@ public class KMSContextKeyring implements Keyring {
             return this;
         }
 
-        public KMSContextKeyring build() {
-            return new KMSContextKeyring(this);
+        public KmsContextKeyring build() {
+            return new KmsContextKeyring(this);
         }
     }
 }

@@ -13,7 +13,7 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 /**
  * AESKeyring will use an AES key to wrap the data key used to encrypt content.
  */
-public class AESKeyring implements Keyring {
+public class AesGcmKeyring implements Keyring {
 
     private static final String KEY_ALGORITHM = "AES";
     private static final String KEY_PROVIDER_ID = "AES/GCM";
@@ -26,7 +26,7 @@ public class AESKeyring implements Keyring {
     private final SecureRandom _secureRandom;
     private final DataKeyGenerator _dataKeyGenerator;
 
-    private AESKeyring(Builder builder) {
+    private AesGcmKeyring(Builder builder) {
         _wrappingKey = builder._wrappingKey;
         _secureRandom = builder._secureRandom;
         _dataKeyGenerator = builder._dataKeyGenerator;
@@ -139,8 +139,8 @@ public class AESKeyring implements Keyring {
             return this;
         }
 
-        public AESKeyring build() {
-            return new AESKeyring(this);
+        public AesGcmKeyring build() {
+            return new AesGcmKeyring(this);
         }
     }
 }
