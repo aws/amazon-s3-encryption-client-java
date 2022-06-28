@@ -25,7 +25,7 @@ class Example {
                 .build();
 
         MaterialsManager materialsManager = new DefaultMaterialsManager(keyring);
-        S3EncryptionClient v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = S3EncryptionClient.builder()
                 .materialsManager(materialsManager)
                 .build();
     }
@@ -52,7 +52,7 @@ class Example {
                 .build();
 
         MaterialsManager materialsManager = new DefaultMaterialsManager(keyring);
-        S3EncryptionClient v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = S3EncryptionClient.builder()
                 .materialsManager(materialsManager)
                 .build();
     }
@@ -79,7 +79,7 @@ class Example {
                 .build();
 
         MaterialsManager materialsManager = new DefaultMaterialsManager(keyring);
-        S3EncryptionClient v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = S3EncryptionClient.builder()
                 .materialsManager(materialsManager)
                 .build();
     }
