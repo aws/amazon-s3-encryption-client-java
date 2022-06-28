@@ -32,6 +32,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.MetadataKey;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
@@ -81,8 +82,8 @@ public class S3EncryptionClient implements S3Client {
 
         // Build encrypted data key
         Base64.Decoder decoder = Base64.getDecoder();
-        byte[] edkCiphertext = decoder.decode(metadata.get("x-amz-key-v2"));
-        String keyProviderId = metadata.get("x-amz-wrap-alg");
+        byte[] edkCiphertext = decoder.decode(metadata.get(MetadataKey.ENCRYPTED_DATA_KEY));
+        String keyProviderId = metadata.get(MetadataKey.ENCRYPTED_DATA_KEY_ALGORITHM);
         EncryptedDataKey edk = EncryptedDataKey.builder()
                 .ciphertext(edkCiphertext)
                 .keyProviderId(keyProviderId)
@@ -91,7 +92,7 @@ public class S3EncryptionClient implements S3Client {
 
         // Get encryption context
         final Map<String, String> encryptionContext = new HashMap<>();
-        final String jsonEncryptionContext = metadata.get("x-amz-matdesc");
+        final String jsonEncryptionContext = metadata.get(MetadataKey.ENCRYPTED_DATA_KEY_CONTEXT);
         try {
             JsonNodeParser parser = JsonNodeParser.create();
             JsonNode objectNode = parser.parse(jsonEncryptionContext);
@@ -104,7 +105,7 @@ public class S3EncryptionClient implements S3Client {
         }
 
         // Get decryption materials
-        final String contentEncryptionAlgorithm = metadata.get("x-amz-cek-alg");
+        final String contentEncryptionAlgorithm = metadata.get(MetadataKey.CONTENT_CIPHER);
         AlgorithmSuite algorithmSuite = null;
         if (contentEncryptionAlgorithm.equals("AES/GCM/NoPadding")) {
             algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
@@ -124,8 +125,8 @@ public class S3EncryptionClient implements S3Client {
 
         // Get content encryption information
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), "AES");
-        final int tagLength = Integer.parseInt(metadata.get("x-amz-tag-len"));
-        byte[] iv = decoder.decode(metadata.get("x-amz-iv"));
+        final int tagLength = Integer.parseInt(metadata.get(MetadataKey.CONTENT_CIPHER_TAG_LENGTH));
+        byte[] iv = decoder.decode(metadata.get(MetadataKey.CONTENT_NONCE));
         final Cipher cipher;
         byte[] plaintext;
         try {
