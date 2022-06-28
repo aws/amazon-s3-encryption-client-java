@@ -44,9 +44,13 @@ public class S3EncryptionClient implements S3Client {
     private final S3Client _wrappedClient;
     private final MaterialsManager _materialsManager;
 
-    public S3EncryptionClient(S3Client client, MaterialsManager materialsManager) {
-        _wrappedClient = client;
-        _materialsManager = materialsManager;
+    private S3EncryptionClient(Builder builder) {
+        _wrappedClient = builder._wrappedClient;
+        _materialsManager = builder._materialsManager;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -160,5 +164,26 @@ public class S3EncryptionClient implements S3Client {
     @Override
     public void close() {
         _wrappedClient.close();
+    }
+
+    public static class Builder {
+        private S3Client _wrappedClient = S3Client.builder().build();
+        private MaterialsManager _materialsManager;
+
+        private Builder() {}
+
+        public Builder wrappedClient(S3Client wrappedClient) {
+            this._wrappedClient = wrappedClient;
+            return this;
+        }
+
+        public Builder materialsManager(MaterialsManager materialsManager) {
+            this._materialsManager = materialsManager;
+            return this;
+        }
+
+        public S3EncryptionClient build() {
+            return new S3EncryptionClient(this);
+        }
     }
 }
