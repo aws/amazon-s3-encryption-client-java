@@ -81,7 +81,7 @@ public class AesGcmKeyring implements Keyring {
     @Override
     public DecryptionMaterials onDecrypt(final DecryptionMaterials materials, List<EncryptedDataKey> encryptedDataKeys) {
         if (materials.plaintextDataKey() != null) {
-            return materials;
+            throw new S3EncryptionClientException("Decryption materials already contains a plaintext data key.");
         }
 
         for (EncryptedDataKey encryptedDataKey : encryptedDataKeys) {
