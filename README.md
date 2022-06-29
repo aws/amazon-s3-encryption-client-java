@@ -86,6 +86,41 @@ class Example {
 }
 ```
 
+#### V1 Key Materials Provider to V3 AES/GCM Materials Manager, Legacy AESWrap Keyring, and Keyring
+Since legacy algorithms are supported for decryption only, a non-legacy keyring is required for any writes.
+```java
+class Example {
+    public static void main(String[] args) {
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(256);
+        SecretKey aesKey = keyGen.generateKey();
+        
+        // V1
+        EncryptionMaterialsProvider materialsProvider = new StaticEncryptionMaterialsProvider(new EncryptionMaterials(aesKey));
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        // V3
+        // Create the non-legacy keyring first
+        Keyring keyring = AesGcmKeyring.builder()
+                .wrappingKey(aesKey)
+                .build();
+        
+        // Create the legacy keyring, passing in the non-legacy keyring
+        keyring = AesWrapKeyring.builder()
+                .wrappingKey(aesKey)
+                .nonLegacyKeyring(keyring)
+                .build();
+
+        MaterialsManager materialsManager = new DefaultMaterialsManager(keyring);
+        S3Client v3Client = S3EncryptionClient.builder()
+                .materialsManager(materialsManager)
+                .build();
+    }
+}
+```
+
 ### Legacy Algorithms and Modes
 #### Content Encryption
 * AES/CBC
