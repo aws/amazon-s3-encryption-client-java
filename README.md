@@ -114,7 +114,6 @@ class Example {
         
         Keyring legacyKeyring = AesWrapKeyring.builder()
                 .wrappingKey(aesKey)
-                .nonLegacyKeyring(keyring)
                 .build();
 
         MaterialsManager materialsManager = LegacyDecryptMaterialsManager.builder()

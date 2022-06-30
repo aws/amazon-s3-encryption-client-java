@@ -10,6 +10,10 @@ import software.amazon.encryption.s3.materials.MaterialsManager;
 
 /**
  * This class supports legacy decrypt as well as non-legacy encrypt and decrypt.
+ *
+ * It will only use the non-legacy keyring for encrypt.
+ * For decrypt, it will attempt to use the legacy keyring first.
+ * If the legacy keyring fails to decrypt, the non-legacy keyring will be used.
  */
 public class LegacyDecryptMaterialsManager implements MaterialsManager {
     private final Keyring _keyring;
