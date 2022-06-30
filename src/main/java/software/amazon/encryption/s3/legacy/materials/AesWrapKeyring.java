@@ -21,11 +21,9 @@ public class AesWrapKeyring implements Keyring {
     private static final String CIPHER_ALGORITHM = "AESWrap";
 
     private final SecretKey _wrappingKey;
-    private final Keyring _nonLegacyKeyring;
 
     private AesWrapKeyring(Builder builder) {
         _wrappingKey = builder._wrappingKey;
-        _nonLegacyKeyring = builder._nonLegacyKeyring;
     }
 
     public static Builder builder() {
@@ -34,15 +32,13 @@ public class AesWrapKeyring implements Keyring {
 
     @Override
     public EncryptionMaterials onEncrypt(EncryptionMaterials materials) {
-        return _nonLegacyKeyring.onEncrypt(materials);
+        throw new S3EncryptionClientException("Encrypt not supported for " + KEY_PROVIDER_ID);
     }
 
     @Override
     public DecryptionMaterials onDecrypt(DecryptionMaterials materials, List<EncryptedDataKey> encryptedDataKeys) {
-        materials = _nonLegacyKeyring.onDecrypt(materials, encryptedDataKeys);
-
         if (materials.plaintextDataKey() != null) {
-            return materials;
+            throw new S3EncryptionClientException("Decryption materials already contains a plaintext data key.");
         }
 
         for (EncryptedDataKey encryptedDataKey : encryptedDataKeys) {
@@ -67,7 +63,6 @@ public class AesWrapKeyring implements Keyring {
 
     public static class Builder {
         private SecretKey _wrappingKey;
-        private Keyring _nonLegacyKeyring;
 
         private Builder() {}
 
@@ -79,15 +74,7 @@ public class AesWrapKeyring implements Keyring {
             return this;
         }
 
-        public Builder nonLegacyKeyring(Keyring nonLegacyKeyring) {
-            _nonLegacyKeyring = nonLegacyKeyring;
-            return this;
-        }
-
         public AesWrapKeyring build() {
-            if (_nonLegacyKeyring == null) {
-                // TODO: should we warn or throw an exception if no encryption method is supported?
-            }
             return new AesWrapKeyring(this);
         }
     }

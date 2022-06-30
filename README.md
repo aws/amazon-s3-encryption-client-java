@@ -24,7 +24,9 @@ class Example {
                 .wrappingKeyId(KMS_WRAPPING_KEY_ID)
                 .build();
 
-        MaterialsManager materialsManager = new DefaultMaterialsManager(keyring);
+        MaterialsManager materialsManager = DefaultMaterialsManager.builder()
+                .keyring(keyring)
+                .build();
         S3Client v3Client = S3EncryptionClient.builder()
                 .materialsManager(materialsManager)
                 .build();
@@ -51,7 +53,9 @@ class Example {
                 .wrappingKey(aesKey)
                 .build();
 
-        MaterialsManager materialsManager = new DefaultMaterialsManager(keyring);
+        MaterialsManager materialsManager = DefaultMaterialsManager.builder()
+                .keyring(keyring)
+                .build();
         S3Client v3Client = S3EncryptionClient.builder()
                 .materialsManager(materialsManager)
                 .build();
@@ -78,7 +82,9 @@ class Example {
                 .wrappingKeyPair(rsaKey)
                 .build();
 
-        MaterialsManager materialsManager = new DefaultMaterialsManager(keyring);
+        MaterialsManager materialsManager = DefaultMaterialsManager.builder()
+                .keyring(keyring)
+                .build();
         S3Client v3Client = S3EncryptionClient.builder()
                 .materialsManager(materialsManager)
                 .build();
@@ -102,18 +108,19 @@ class Example {
                 .build();
 
         // V3
-        // Create the non-legacy keyring first
         Keyring keyring = AesGcmKeyring.builder()
                 .wrappingKey(aesKey)
                 .build();
         
-        // Create the legacy keyring, passing in the non-legacy keyring
-        keyring = AesWrapKeyring.builder()
+        Keyring legacyKeyring = AesWrapKeyring.builder()
                 .wrappingKey(aesKey)
                 .nonLegacyKeyring(keyring)
                 .build();
 
-        MaterialsManager materialsManager = new DefaultMaterialsManager(keyring);
+        MaterialsManager materialsManager = LegacyDecryptMaterialsManager.builder()
+                .keyring(keyring)
+                .legacyKeyring(legacyKeyring)
+                .build();
         S3Client v3Client = S3EncryptionClient.builder()
                 .materialsManager(materialsManager)
                 .build();
