@@ -6,8 +6,12 @@ public class DefaultMaterialsManager implements MaterialsManager {
     private final Keyring _keyring;
 
 
-    public DefaultMaterialsManager(Keyring keyring) {
-        _keyring = keyring;
+    private DefaultMaterialsManager(Builder builder) {
+        _keyring = builder._keyring;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public EncryptionMaterials getEncryptionMaterials(EncryptionMaterialsRequest request) {
@@ -28,4 +32,18 @@ public class DefaultMaterialsManager implements MaterialsManager {
         return _keyring.onDecrypt(materials, request.encryptedDataKeys());
     }
 
+    public static class Builder {
+        private Keyring _keyring;
+
+        private Builder() {}
+
+        public Builder keyring(Keyring keyring) {
+            this._keyring = keyring;
+            return this;
+        }
+
+        public DefaultMaterialsManager build() {
+            return new DefaultMaterialsManager(this);
+        }
+    }
 }

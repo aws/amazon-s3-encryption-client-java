@@ -9,7 +9,7 @@ public enum AlgorithmSuite {
             128,
             96,
             128,
-            Constants.GCM_MAX_CONTENT_LENGTH_BITS);
+            AlgorithmConstants.GCM_MAX_CONTENT_LENGTH_BITS);
 
     private int _id;
     private String _dataKeyAlgorithm;
@@ -49,6 +49,10 @@ public enum AlgorithmSuite {
 
     public String cipherName() {
         return _cipherName;
+    }
+
+    public int cipherTagLengthBits() {
+        return _cipherTagLengthBits;
     }
 
     public int nonceLengthBytes() {
