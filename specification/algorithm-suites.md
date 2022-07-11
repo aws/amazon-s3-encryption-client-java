@@ -48,7 +48,7 @@ The following table includes the algorithm suites supported by the S3EC and thei
 The value `00 00` is reserved and MUST NOT be used as an Algorithm Suite ID in the future.
 
 | Algorithm Suite ID (hex) | Encryption Algorithm | Encryption Algorithm Mode | Encryption Key Length (bits) | IV Length (bits) | Authentication Tag Length (bits) |
-|--------------------------| -------------------- |---------------------------|------------------------------|------------------|----------------------------------|
+|--------------------------|----------------------|---------------------------|------------------------------|------------------|----------------------------------|
 | 00 78                    | AES                  | GCM                       | 256                          | 96               | 128                              |
 | 00 70                    | AES                  | CBC                       | 256                          | 128              | 0                                |
 
