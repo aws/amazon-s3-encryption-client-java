@@ -77,8 +77,7 @@ The encryption materials returned MUST include the following:
     - If the encryption materials request contains an algorithm suite, the encryption materials returned SHOULD contain the same algorithm suite.
 - Plaintext Data Key
 - [Encrypted Data Keys](structures.md#encrypted-data-keys)
-    - Every encrypted data key in this list MUST correspond to the above plaintext data key.
-    - Currently, only one encrypted data key is supported, any further are ignored
+    - There MUST be only one encrypted data key, and it MUST correspond to the above plaintext data key.
 - [Encryption Context](structures.md#encryption-context)
     - The MM MAY modify the encryption context.
 

@@ -52,6 +52,8 @@ The value `00 00` is reserved and MUST NOT be used as an Algorithm Suite ID in t
 | 00 78                    | AES                  | GCM                       | 256                          | 96               | 128                              |
 | 00 70                    | AES                  | CBC                       | 256                          | 128              | 0                                |
 
+### Default Algorithm Suite
+The default algorithm suite MUST be 0x0078.
 
 ## Structure
 
@@ -80,7 +82,7 @@ The length of the authentication tag MUST equal the authentication tag length sp
 
 #### Supported Encryption Algorithm Modes
 
-- [GCM](#gcm)
+- [GCM](#gcm) - Default
 - [CBC](#cbc) - Decrypt Only
 
 ### Encryption Key Length
@@ -94,16 +96,6 @@ The length of the initialization vector (IV) used with the encryption algorithm.
 ### Authentication Tag Length
 
 The length of the authentication tag used with AEAD.
-
-### Encryption Key Derivation Algorithm
-
-This key derivation algorithm defines what key derivation function (KDF) to use for encryption key generation.
-The specified KDF algorithm MUST be used to generate the encryption algorithm encryption key input.
-
-#### Supported Key Commitment Values
-
-- True
-- False
 
 ## Security Considerations
 
