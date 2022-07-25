@@ -2,11 +2,11 @@ package software.amazon.encryption.s3.materials;
 
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
-public class DefaultMaterialsManager implements MaterialsManager {
+public class DefaultCryptoMaterialsManager implements CryptographicMaterialsManager {
     private final Keyring _keyring;
 
 
-    private DefaultMaterialsManager(Builder builder) {
+    private DefaultCryptoMaterialsManager(Builder builder) {
         _keyring = builder._keyring;
     }
 
@@ -42,8 +42,8 @@ public class DefaultMaterialsManager implements MaterialsManager {
             return this;
         }
 
-        public DefaultMaterialsManager build() {
-            return new DefaultMaterialsManager(this);
+        public DefaultCryptoMaterialsManager build() {
+            return new DefaultCryptoMaterialsManager(this);
         }
     }
 }

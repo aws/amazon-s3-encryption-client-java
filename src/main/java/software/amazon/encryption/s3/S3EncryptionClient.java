@@ -34,19 +34,19 @@ import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.MetadataKey;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
+import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
-import software.amazon.encryption.s3.materials.MaterialsManager;
 
 public class S3EncryptionClient implements S3Client {
 
     private final S3Client _wrappedClient;
-    private final MaterialsManager _materialsManager;
+    private final CryptographicMaterialsManager _cryptoMaterialsManager;
 
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
-        _materialsManager = builder._materialsManager;
+        _cryptoMaterialsManager = builder._cryptoMaterialsManager;
     }
 
     public static Builder builder() {
@@ -59,7 +59,7 @@ public class S3EncryptionClient implements S3Client {
 
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
                 .s3Client(_wrappedClient)
-                .materialsManager(_materialsManager)
+                .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .build();
 
         return pipeline.putObject(putObjectRequest, requestBody);
@@ -125,7 +125,7 @@ public class S3EncryptionClient implements S3Client {
                 .encryptedDataKeys(encryptedDataKeys)
                 .encryptionContext(encryptionContext)
                 .build();
-        DecryptionMaterials materials = _materialsManager.decryptMaterials(request);
+        DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(request);
 
         // Get content encryption information
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), "AES");
@@ -168,7 +168,7 @@ public class S3EncryptionClient implements S3Client {
 
     public static class Builder {
         private S3Client _wrappedClient = S3Client.builder().build();
-        private MaterialsManager _materialsManager;
+        private CryptographicMaterialsManager _cryptoMaterialsManager;
 
         private Builder() {}
 
@@ -177,8 +177,8 @@ public class S3EncryptionClient implements S3Client {
             return this;
         }
 
-        public Builder materialsManager(MaterialsManager materialsManager) {
-            this._materialsManager = materialsManager;
+        public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
+            this._cryptoMaterialsManager = cryptoMaterialsManager;
             return this;
         }
 

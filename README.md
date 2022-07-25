@@ -24,11 +24,11 @@ class Example {
                 .wrappingKeyId(KMS_WRAPPING_KEY_ID)
                 .build();
 
-        MaterialsManager materialsManager = DefaultMaterialsManager.builder()
+        CryptographicMaterialsManager cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
                 .keyring(keyring)
                 .build();
         S3Client v3Client = S3EncryptionClient.builder()
-                .materialsManager(materialsManager)
+                .cryptoMaterialsManager(cryptographicMaterialsManager)
                 .build();
     }
 }
@@ -53,11 +53,11 @@ class Example {
                 .wrappingKey(aesKey)
                 .build();
 
-        MaterialsManager materialsManager = DefaultMaterialsManager.builder()
+        CryptographicMaterialsManager cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
                 .keyring(keyring)
                 .build();
         S3Client v3Client = S3EncryptionClient.builder()
-                .materialsManager(materialsManager)
+                .cryptoMaterialsManager(cryptoMaterialsManager)
                 .build();
     }
 }
@@ -82,11 +82,11 @@ class Example {
                 .wrappingKeyPair(rsaKey)
                 .build();
 
-        MaterialsManager materialsManager = DefaultMaterialsManager.builder()
+        CryptographicMaterialsManager cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
                 .keyring(keyring)
                 .build();
         S3Client v3Client = S3EncryptionClient.builder()
-                .materialsManager(materialsManager)
+                .cryptoMaterialsManager(cryptoMaterialsManager)
                 .build();
     }
 }
@@ -94,13 +94,15 @@ class Example {
 
 #### V1 Key Materials Provider to V3 AES/GCM Materials Manager, Legacy AESWrap Keyring, and Keyring
 Since legacy algorithms are supported for decryption only, a non-legacy keyring is required for any writes.
+
 ```java
 class Example {
+
     public static void main(String[] args) {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         SecretKey aesKey = keyGen.generateKey();
-        
+
         // V1
         EncryptionMaterialsProvider materialsProvider = new StaticEncryptionMaterialsProvider(new EncryptionMaterials(aesKey));
         AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
@@ -111,17 +113,17 @@ class Example {
         Keyring keyring = AesGcmKeyring.builder()
                 .wrappingKey(aesKey)
                 .build();
-        
+
         Keyring legacyKeyring = AesWrapKeyring.builder()
                 .wrappingKey(aesKey)
                 .build();
 
-        MaterialsManager materialsManager = LegacyDecryptMaterialsManager.builder()
+        CryptographicMaterialsManager cryptoMaterialsManager = LegacyDecryptCryptoMaterialsManager.builder()
                 .keyring(keyring)
                 .legacyKeyring(legacyKeyring)
                 .build();
         S3Client v3Client = S3EncryptionClient.builder()
-                .materialsManager(materialsManager)
+                .cryptoMaterialsManager(cryptoMaterialsManager)
                 .build();
     }
 }

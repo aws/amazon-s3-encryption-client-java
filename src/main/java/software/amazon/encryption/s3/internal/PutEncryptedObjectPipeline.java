@@ -8,14 +8,14 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
-import software.amazon.encryption.s3.materials.MaterialsManager;
 
 public class PutEncryptedObjectPipeline {
 
     final private S3Client _s3Client;
-    final private MaterialsManager _materialsManager;
+    final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private ContentEncryptionStrategy _contentEncryptionStrategy;
     final private MetadataEncodingStrategy _metadataEncodingStrategy;
 
@@ -23,13 +23,13 @@ public class PutEncryptedObjectPipeline {
 
     private PutEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
-        this._materialsManager = builder._materialsManager;
+        this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._metadataEncodingStrategy = builder._metadataEncodingStrategy;
     }
 
     public PutObjectResponse putObject(PutObjectRequest request, RequestBody requestBody) {
-        EncryptionMaterials materials = _materialsManager.getEncryptionMaterials(
+        EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(
                 EncryptionMaterialsRequest.builder()
                         .build());
 
@@ -63,7 +63,7 @@ public class PutEncryptedObjectPipeline {
 
     public static class Builder {
         private S3Client _s3Client;
-        private MaterialsManager _materialsManager;
+        private CryptographicMaterialsManager _cryptoMaterialsManager;
         private ContentEncryptionStrategy _contentEncryptionStrategy =
                 AesGcmContentEncryptionStrategy
                         .builder()
@@ -80,8 +80,8 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
-        public Builder materialsManager(MaterialsManager materialsManager) {
-            this._materialsManager = materialsManager;
+        public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
+            this._cryptoMaterialsManager = cryptoMaterialsManager;
             return this;
         }
 

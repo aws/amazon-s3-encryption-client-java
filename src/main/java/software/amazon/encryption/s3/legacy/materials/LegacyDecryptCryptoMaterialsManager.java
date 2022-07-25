@@ -1,12 +1,12 @@
 package software.amazon.encryption.s3.legacy.materials;
 
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
 import software.amazon.encryption.s3.materials.Keyring;
-import software.amazon.encryption.s3.materials.MaterialsManager;
 
 /**
  * This class supports legacy decrypt as well as non-legacy encrypt and decrypt.
@@ -15,11 +15,11 @@ import software.amazon.encryption.s3.materials.MaterialsManager;
  * For decrypt, it will attempt to use the legacy keyring first.
  * If the legacy keyring fails to decrypt, the non-legacy keyring will be used.
  */
-public class LegacyDecryptMaterialsManager implements MaterialsManager {
+public class LegacyDecryptCryptoMaterialsManager implements CryptographicMaterialsManager {
     private final Keyring _keyring;
     private Keyring _legacyKeyring;
 
-    private LegacyDecryptMaterialsManager(Builder builder) {
+    private LegacyDecryptCryptoMaterialsManager(Builder builder) {
         _keyring = builder._keyring;
         _legacyKeyring = builder._legacyKeyring;
     }
@@ -69,9 +69,9 @@ public class LegacyDecryptMaterialsManager implements MaterialsManager {
             return this;
         }
 
-        public LegacyDecryptMaterialsManager build() {
+        public LegacyDecryptCryptoMaterialsManager build() {
             // TODO: warn if both keyrings are not set
-            return new LegacyDecryptMaterialsManager(this);
+            return new LegacyDecryptCryptoMaterialsManager(this);
         }
     }
 }
