@@ -1,5 +1,6 @@
 package software.amazon.encryption.s3.legacy.materials;
 
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
@@ -15,11 +16,11 @@ import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
  * For decrypt, it will attempt to use the legacy keyring first.
  * If the legacy keyring fails to decrypt, the non-legacy keyring will be used.
  */
-public class LegacyDecryptMaterialsManager implements CryptographicMaterialsManager {
+public class LegacyDecryptCryptoMaterialsManager implements CryptographicMaterialsManager {
     private final Keyring _keyring;
-    private Keyring _legacyKeyring;
+    private LegacyKeyring _legacyKeyring;
 
-    private LegacyDecryptMaterialsManager(Builder builder) {
+    private LegacyDecryptCryptoMaterialsManager(Builder builder) {
         _keyring = builder._keyring;
         _legacyKeyring = builder._legacyKeyring;
     }
@@ -55,23 +56,26 @@ public class LegacyDecryptMaterialsManager implements CryptographicMaterialsMana
 
     public static class Builder {
         private Keyring _keyring;
-        private Keyring _legacyKeyring;
+        private LegacyKeyring _legacyKeyring;
 
         private Builder() {}
 
         public Builder keyring(Keyring keyring) {
+            if (keyring instanceof LegacyKeyring) {
+                throw new S3EncryptionClientException("Cannot use a legacy keyring here, please configure and use an active keyring here");
+            }
             this._keyring = keyring;
             return this;
         }
 
-        public Builder legacyKeyring(Keyring legacyKeyring) {
+        public Builder legacyKeyring(LegacyKeyring legacyKeyring) {
             this._legacyKeyring = legacyKeyring;
             return this;
         }
 
-        public LegacyDecryptMaterialsManager build() {
+        public LegacyDecryptCryptoMaterialsManager build() {
             // TODO: warn if both keyrings are not set
-            return new LegacyDecryptMaterialsManager(this);
+            return new LegacyDecryptCryptoMaterialsManager(this);
         }
     }
 }
