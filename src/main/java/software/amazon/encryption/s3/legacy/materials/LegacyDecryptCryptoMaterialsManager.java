@@ -1,5 +1,6 @@
 package software.amazon.encryption.s3.legacy.materials;
 
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
@@ -17,7 +18,7 @@ import software.amazon.encryption.s3.materials.Keyring;
  */
 public class LegacyDecryptCryptoMaterialsManager implements CryptographicMaterialsManager {
     private final Keyring _keyring;
-    private Keyring _legacyKeyring;
+    private LegacyKeyring _legacyKeyring;
 
     private LegacyDecryptCryptoMaterialsManager(Builder builder) {
         _keyring = builder._keyring;
@@ -55,16 +56,19 @@ public class LegacyDecryptCryptoMaterialsManager implements CryptographicMateria
 
     public static class Builder {
         private Keyring _keyring;
-        private Keyring _legacyKeyring;
+        private LegacyKeyring _legacyKeyring;
 
         private Builder() {}
 
         public Builder keyring(Keyring keyring) {
+            if (keyring instanceof LegacyKeyring) {
+                throw new S3EncryptionClientException("Cannot use a legacy keyring here, please configure and use an active keyring here");
+            }
             this._keyring = keyring;
             return this;
         }
 
-        public Builder legacyKeyring(Keyring legacyKeyring) {
+        public Builder legacyKeyring(LegacyKeyring legacyKeyring) {
             this._legacyKeyring = legacyKeyring;
             return this;
         }

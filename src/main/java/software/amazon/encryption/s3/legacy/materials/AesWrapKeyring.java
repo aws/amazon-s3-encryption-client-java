@@ -14,7 +14,7 @@ import software.amazon.encryption.s3.materials.Keyring;
  * AesWrapKeyring is a legacy, decrypt-only keyring and will use an AES key to unwrap the data key
  * used to encrypt content.
  */
-public class AesWrapKeyring implements Keyring {
+public class AesWrapKeyring implements Keyring, LegacyKeyring {
 
     private static final String KEY_ALGORITHM = "AES";
     private static final String KEY_PROVIDER_ID = "AESWrap";
