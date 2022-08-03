@@ -17,7 +17,7 @@ public class PutEncryptedObjectPipeline {
     final private S3Client _s3Client;
     final private MaterialsManager _materialsManager;
     final private ContentEncryptionStrategy _contentEncryptionStrategy;
-    final private MetadataEncodingStrategy _metadataEncodingStrategy;
+    final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
 
     public static Builder builder() { return new Builder(); }
 
@@ -25,7 +25,7 @@ public class PutEncryptedObjectPipeline {
         this._s3Client = builder._s3Client;
         this._materialsManager = builder._materialsManager;
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
-        this._metadataEncodingStrategy = builder._metadataEncodingStrategy;
+        this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
     }
 
     public PutObjectResponse putObject(PutObjectRequest request, RequestBody requestBody) {
@@ -41,35 +41,20 @@ public class PutEncryptedObjectPipeline {
         }
         EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, input);
 
-        request = _metadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
+        request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
 
         return _s3Client.putObject(request, RequestBody.fromBytes(encryptedContent.ciphertext));
-    }
-
-    public static class EncryptedContent{
-        public byte[] ciphertext;
-        public byte[] nonce;
-    }
-
-    @FunctionalInterface
-    public interface ContentEncryptionStrategy {
-        EncryptedContent encryptContent(EncryptionMaterials materials, byte[] content);
-    }
-
-    @FunctionalInterface
-    public interface MetadataEncodingStrategy {
-        PutObjectRequest encodeMetadata(EncryptionMaterials materials, EncryptedContent encryptedContent, PutObjectRequest request);
     }
 
     public static class Builder {
         private S3Client _s3Client;
         private MaterialsManager _materialsManager;
         private ContentEncryptionStrategy _contentEncryptionStrategy =
-                AesGcmContentEncryptionStrategy
+                AesGcmContentStrategy
                         .builder()
                         .build();
-        private MetadataEncodingStrategy _metadataEncodingStrategy =
-                ObjectMetadataMetadataEncodingStrategy
+        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy =
+                S3ObjectMetadataStrategy
                         .builder()
                         .build();
 
@@ -90,8 +75,8 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
-        public Builder metadataEncodingStrategy(MetadataEncodingStrategy strategy) {
-            this._metadataEncodingStrategy = strategy;
+        public Builder metadataEncodingStrategy(ContentMetadataEncodingStrategy strategy) {
+            this._contentMetadataEncodingStrategy = strategy;
             return this;
         }
 
