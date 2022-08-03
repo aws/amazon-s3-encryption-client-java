@@ -17,7 +17,7 @@ import java.util.List;
  * used to encrypt content.
  */
 
-public class RsaEcbKeyring implements Keyring{
+public class RsaEcbKeyring implements Keyring, LegacyKeyring {
 
     private static final String KEY_ALGORITHM = "RSA";
     private static final String KEY_PROVIDER_ID = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
