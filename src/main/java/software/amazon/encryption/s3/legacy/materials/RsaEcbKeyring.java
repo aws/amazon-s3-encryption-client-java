@@ -13,7 +13,7 @@ import java.security.KeyPair;
 import java.util.List;
 
 /**
- * RsaWrapKeyring is a legacy, decrypt-only keyring and will use an RSA Public key to unwrap the data key
+ * RsaEcbKeyring is a legacy, decrypt-only keyring and will use an RSA Public key to unwrap the data key
  * used to encrypt content.
  */
 
