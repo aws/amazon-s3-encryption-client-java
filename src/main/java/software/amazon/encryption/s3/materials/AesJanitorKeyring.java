@@ -4,9 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -161,11 +159,16 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
         return _wrappingKey;
     }
 
-    public static class Builder extends S3JanitorKeyring.Builder<S3JanitorKeyring> {
+    public static class Builder extends S3JanitorKeyring.Builder<S3JanitorKeyring, Builder> {
         private SecretKey _wrappingKey;
 
         private Builder() {
             super();
+        }
+
+        @Override
+        protected Builder builder() {
+            return this;
         }
 
         public Builder wrappingKey(SecretKey wrappingKey) {
@@ -173,7 +176,7 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
                 throw new S3EncryptionClientException("Invalid algorithm: " + wrappingKey.getAlgorithm() + ", expecting " + KEY_ALGORITHM);
             }
             _wrappingKey = wrappingKey;
-            return this;
+            return builder();
         }
 
         public AesJanitorKeyring build() {

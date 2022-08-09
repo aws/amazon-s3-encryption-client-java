@@ -1,18 +1,12 @@
 package software.amazon.encryption.s3.materials;
 
-import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 /**
  * This is the AES Janitor keyring because it can open many doors with one key
@@ -23,7 +17,7 @@ abstract public class S3JanitorKeyring implements Keyring {
     private final SecureRandom _secureRandom;
     private final DataKeyGenerator _dataKeyGenerator;
 
-    protected S3JanitorKeyring(Builder<S3JanitorKeyring> builder) {
+    protected S3JanitorKeyring(Builder<?,?> builder) {
         _enableLegacyModes = builder._enableLegacyModes;
         _secureRandom = builder._secureRandom;
         _dataKeyGenerator = builder._dataKeyGenerator;
@@ -95,7 +89,7 @@ abstract public class S3JanitorKeyring implements Keyring {
 
     abstract protected Key unwrappingKey();
 
-    abstract public static class Builder<KeyringT extends Keyring> {
+    abstract public static class Builder<KeyringT extends S3JanitorKeyring, BuilderT extends Builder<KeyringT, BuilderT>> {
         private boolean _enableLegacyModes = false;
         private SecureRandom _secureRandom = new SecureRandom();
         private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
@@ -103,19 +97,21 @@ abstract public class S3JanitorKeyring implements Keyring {
 
         protected Builder() {}
 
-        public Builder enableLegacyModes(boolean shouldEnableLegacyModes) {
+        protected abstract BuilderT builder();
+
+        public BuilderT enableLegacyModes(boolean shouldEnableLegacyModes) {
             this._enableLegacyModes = shouldEnableLegacyModes;
-            return this;
+            return builder();
         }
 
-        public Builder secureRandom(SecureRandom secureRandom) {
+        public BuilderT secureRandom(SecureRandom secureRandom) {
             _secureRandom = secureRandom;
-            return this;
+            return builder();
         }
 
-        public Builder dataKeyGenerator(DataKeyGenerator dataKeyGenerator) {
+        public BuilderT dataKeyGenerator(DataKeyGenerator dataKeyGenerator) {
             _dataKeyGenerator = dataKeyGenerator;
-            return this;
+            return builder();
         }
 
         abstract public KeyringT build();

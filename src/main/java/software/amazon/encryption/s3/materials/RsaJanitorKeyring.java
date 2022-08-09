@@ -6,13 +6,10 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.spec.MGF1ParameterSpec;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource.PSpecified;
 import javax.crypto.spec.SecretKeySpec;
@@ -166,11 +163,16 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
         return _wrappingKeyPair.getPrivate();
     }
 
-    public static class Builder extends S3JanitorKeyring.Builder<S3JanitorKeyring> {
+    public static class Builder extends S3JanitorKeyring.Builder<S3JanitorKeyring, Builder> {
         private KeyPair _wrappingKeyPair;
 
         private Builder() {
             super();
+        }
+
+        @Override
+        protected Builder builder() {
+            return this;
         }
 
         public Builder wrappingKeyPair(KeyPair wrappingKeyPair) {
@@ -178,7 +180,7 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
                 throw new S3EncryptionClientException("Invalid algorithm '" + wrappingKeyPair.getPublic().getAlgorithm() + "', expecting " + KEY_ALGORITHM);
             }
             _wrappingKeyPair = wrappingKeyPair;
-            return this;
+            return builder();
         }
 
         public RsaJanitorKeyring build() {
