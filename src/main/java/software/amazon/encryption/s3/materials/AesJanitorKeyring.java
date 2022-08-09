@@ -17,7 +17,7 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 /**
  * This is the AES Janitor keyring because it can open many doors with one key
  */
-public class AesJanitorKeyring implements Keyring {
+public class AesJanitorKeyring extends S3JanitorKeyring {
 
     private static final String KEY_ALGORITHM = "AES";
 
@@ -131,15 +131,10 @@ public class AesJanitorKeyring implements Keyring {
     }
 
     private final SecretKey _wrappingKey;
-    private final boolean _enableLegacyModes;
-    private final SecureRandom _secureRandom;
-    private final DataKeyGenerator _dataKeyGenerator;
 
     private AesJanitorKeyring(Builder builder) {
+        super(builder);
         _wrappingKey = builder._wrappingKey;
-        _enableLegacyModes = builder._enableLegacyModes;
-        _secureRandom = builder._secureRandom;
-        _dataKeyGenerator = builder._dataKeyGenerator;
     }
 
     public static Builder builder() {
@@ -147,91 +142,37 @@ public class AesJanitorKeyring implements Keyring {
     }
 
     @Override
-    public EncryptionMaterials onEncrypt(EncryptionMaterials materials) {
-        if (materials.plaintextDataKey() == null) {
-            SecretKey dataKey = _dataKeyGenerator.generateDataKey(materials.algorithmSuite());
-            materials = materials.toBuilder()
-                    .plaintextDataKey(dataKey.getEncoded())
-                    .build();
-        }
-
-        EncryptDataKeyStrategy encryptStrategy = AES_GCM;
-        try {
-            byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, _wrappingKey, materials);
-            EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
-                    .keyProviderId(encryptStrategy.keyProviderId())
-                    .ciphertext(ciphertext)
-                    .build();
-
-            List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
-            encryptedDataKeys.add(encryptedDataKey);
-
-            return materials.toBuilder()
-                    .encryptedDataKeys(encryptedDataKeys)
-                    .build();
-        } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to " + encryptStrategy.keyProviderId() + " wrap", e);
-        }
+    protected EncryptDataKeyStrategy encryptStrategy() {
+        return AES_GCM;
     }
 
     @Override
-    public DecryptionMaterials onDecrypt(final DecryptionMaterials materials, List<EncryptedDataKey> encryptedDataKeys) {
-        if (materials.plaintextDataKey() != null) {
-            throw new S3EncryptionClientException("Decryption materials already contains a plaintext data key.");
-        }
-
-        // TODO: error if more than one encrypted data key
-        for (EncryptedDataKey encryptedDataKey : encryptedDataKeys) {
-            final String keyProviderId = encryptedDataKey.keyProviderId();
-            DecryptDataKeyStrategy decryptStrategy = DECRYPT_STRATEGIES.get(keyProviderId);
-            if (decryptStrategy == null) {
-                continue;
-            }
-
-            if (decryptStrategy.isLegacy() && !_enableLegacyModes) {
-                throw new S3EncryptionClientException("Enable legacy modes to use legacy key wrap: " + keyProviderId);
-            }
-
-            try {
-                byte[] plaintext = decryptStrategy.decryptDataKey(_wrappingKey, materials, encryptedDataKey);
-                return materials.toBuilder().plaintextDataKey(plaintext).build();
-            } catch (Exception e) {
-                throw new S3EncryptionClientException("Unable to " + decryptStrategy.keyProviderId() + " unwrap", e);
-            }
-        }
-
-        return materials;
+    protected Key wrappingKey() {
+        return _wrappingKey;
     }
 
-    public static class Builder {
+    @Override
+    protected Map<String, DecryptDataKeyStrategy> decryptStrategies() {
+        return DECRYPT_STRATEGIES;
+    }
+
+    @Override
+    protected Key unwrappingKey() {
+        return _wrappingKey;
+    }
+
+    public static class Builder extends S3JanitorKeyring.Builder<S3JanitorKeyring> {
         private SecretKey _wrappingKey;
-        private boolean _enableLegacyModes = false;
-        private SecureRandom _secureRandom = new SecureRandom();
-        private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
 
-
-        private Builder() {}
+        private Builder() {
+            super();
+        }
 
         public Builder wrappingKey(SecretKey wrappingKey) {
             if (!wrappingKey.getAlgorithm().equals(KEY_ALGORITHM)) {
                 throw new S3EncryptionClientException("Invalid algorithm: " + wrappingKey.getAlgorithm() + ", expecting " + KEY_ALGORITHM);
             }
             _wrappingKey = wrappingKey;
-            return this;
-        }
-
-        public Builder enableLegacyModes(boolean shouldEnableLegacyModes) {
-            this._enableLegacyModes = shouldEnableLegacyModes;
-            return this;
-        }
-
-        public Builder secureRandom(SecureRandom secureRandom) {
-            _secureRandom = secureRandom;
-            return this;
-        }
-
-        public Builder dataKeyGenerator(DataKeyGenerator dataKeyGenerator) {
-            _dataKeyGenerator = dataKeyGenerator;
             return this;
         }
 
