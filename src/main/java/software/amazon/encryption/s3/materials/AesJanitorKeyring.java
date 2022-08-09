@@ -21,16 +21,7 @@ public class AesJanitorKeyring implements Keyring {
 
     private static final String KEY_ALGORITHM = "AES";
 
-    private interface DecryptStrategy {
-        boolean isLegacy();
-
-        String keyProviderId();
-
-        byte[] decrypt(SecretKey wrappingKey, DecryptionMaterials materials, EncryptedDataKey encryptedDataKey)
-                throws GeneralSecurityException;
-    }
-
-    private static final DecryptStrategy AES = new DecryptStrategy() {
+    private static final DecryptDataKeyStrategy AES = new DecryptDataKeyStrategy() {
         @Override
         public boolean isLegacy() {
             return true;
@@ -42,15 +33,15 @@ public class AesJanitorKeyring implements Keyring {
         }
 
         @Override
-        public byte[] decrypt(SecretKey wrappingKey, DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
+        public byte[] decryptDataKey(Key unwrappingKey, DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
             Cipher cipher = Cipher.getInstance("AES");
-            cipher.init(Cipher.DECRYPT_MODE, wrappingKey);
+            cipher.init(Cipher.DECRYPT_MODE, unwrappingKey);
 
             return cipher.doFinal(encryptedDataKey.ciphertext());
         }
     };
 
-    private static final DecryptStrategy AES_WRAP = new DecryptStrategy() {
+    private static final DecryptDataKeyStrategy AES_WRAP = new DecryptDataKeyStrategy() {
         @Override
         public boolean isLegacy() {
             return true;
@@ -62,10 +53,10 @@ public class AesJanitorKeyring implements Keyring {
         }
 
         @Override
-        public byte[] decrypt(SecretKey wrappingKey, DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
+        public byte[] decryptDataKey(Key unwrappingKey, DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
             final String cipherAlgorithm = "AESWrap";
             final Cipher cipher = Cipher.getInstance(cipherAlgorithm);
-            cipher.init(Cipher.UNWRAP_MODE, wrappingKey);
+            cipher.init(Cipher.UNWRAP_MODE, unwrappingKey);
 
             Key plaintextKey = cipher.unwrap(encryptedDataKey.ciphertext(), cipherAlgorithm, Cipher.SECRET_KEY);
             return plaintextKey.getEncoded();
@@ -78,7 +69,7 @@ public class AesJanitorKeyring implements Keyring {
     private static final int TAG_LENGTH_BYTES = 16;
     private static final int TAG_LENGTH_BITS = TAG_LENGTH_BYTES * 8;
 
-    private static final DecryptStrategy AES_GCM = new DecryptStrategy() {
+    private static final DecryptDataKeyStrategy AES_GCM = new DecryptDataKeyStrategy() {
         @Override
         public boolean isLegacy() {
             return false;
@@ -90,7 +81,7 @@ public class AesJanitorKeyring implements Keyring {
         }
 
         @Override
-        public byte[] decrypt(SecretKey wrappingKey, DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
+        public byte[] decryptDataKey(Key unwrappingKey, DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
             byte[] encodedBytes = encryptedDataKey.ciphertext();
             byte[] nonce = new byte[NONCE_LENGTH_BYTES];
             byte[] ciphertext = new byte[encodedBytes.length - nonce.length];
@@ -100,7 +91,7 @@ public class AesJanitorKeyring implements Keyring {
 
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
             final Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, wrappingKey, gcmParameterSpec);
+            cipher.init(Cipher.DECRYPT_MODE, unwrappingKey, gcmParameterSpec);
 
             AlgorithmSuite algorithmSuite = materials.algorithmSuite();
             cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
@@ -108,7 +99,7 @@ public class AesJanitorKeyring implements Keyring {
         }
     };
 
-    private static final Map<String, DecryptStrategy> DECRYPT_STRATEGIES = new HashMap<>();
+    private static final Map<String, DecryptDataKeyStrategy> DECRYPT_STRATEGIES = new HashMap<>();
     static {
         DECRYPT_STRATEGIES.put(AES.keyProviderId(), AES);
         DECRYPT_STRATEGIES.put(AES_WRAP.keyProviderId(), AES_WRAP);
@@ -179,9 +170,10 @@ public class AesJanitorKeyring implements Keyring {
             throw new S3EncryptionClientException("Decryption materials already contains a plaintext data key.");
         }
 
+        // TODO: error if more than one encrypted data key
         for (EncryptedDataKey encryptedDataKey : encryptedDataKeys) {
             final String keyProviderId = encryptedDataKey.keyProviderId();
-            DecryptStrategy decryptStrategy = DECRYPT_STRATEGIES.get(keyProviderId);
+            DecryptDataKeyStrategy decryptStrategy = DECRYPT_STRATEGIES.get(keyProviderId);
             if (decryptStrategy == null) {
                 continue;
             }
@@ -191,7 +183,7 @@ public class AesJanitorKeyring implements Keyring {
             }
 
             try {
-                byte[] plaintext = decryptStrategy.decrypt(_wrappingKey, materials, encryptedDataKey);
+                byte[] plaintext = decryptStrategy.decryptDataKey(_wrappingKey, materials, encryptedDataKey);
                 return materials.toBuilder().plaintextDataKey(plaintext).build();
             } catch (Exception e) {
                 throw new S3EncryptionClientException("Unable to " + KEY_PROVIDER_ID + " unwrap", e);
