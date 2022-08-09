@@ -63,13 +63,14 @@ public class AesJanitorKeyring implements Keyring {
         }
     };
 
-    private static final String KEY_PROVIDER_ID = "AES/GCM";
-    private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
-    private static final int NONCE_LENGTH_BYTES = 12;
-    private static final int TAG_LENGTH_BYTES = 16;
-    private static final int TAG_LENGTH_BITS = TAG_LENGTH_BYTES * 8;
+    private static final DataKeyStrategy AES_GCM = new DataKeyStrategy() {
 
-    private static final DecryptDataKeyStrategy AES_GCM = new DecryptDataKeyStrategy() {
+        private static final String KEY_PROVIDER_ID = "AES/GCM";
+        private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
+        private static final int NONCE_LENGTH_BYTES = 12;
+        private static final int TAG_LENGTH_BYTES = 16;
+        private static final int TAG_LENGTH_BITS = TAG_LENGTH_BYTES * 8;
+
         @Override
         public boolean isLegacy() {
             return false;
@@ -77,7 +78,30 @@ public class AesJanitorKeyring implements Keyring {
 
         @Override
         public String keyProviderId() {
-            return "AES/GCM";
+            return KEY_PROVIDER_ID;
+        }
+
+        @Override
+        public byte[] encryptDataKey(SecureRandom secureRandom, Key wrappingKey,
+                EncryptionMaterials materials)
+                throws GeneralSecurityException {
+            byte[] nonce = new byte[NONCE_LENGTH_BYTES];
+            secureRandom.nextBytes(nonce);
+            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
+
+            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, wrappingKey, gcmParameterSpec, secureRandom);
+
+            AlgorithmSuite algorithmSuite = materials.algorithmSuite();
+            cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
+            byte[] ciphertext = cipher.doFinal(materials.plaintextDataKey());
+
+            // The encrypted data key is the nonce prepended to the ciphertext
+            byte[] encodedBytes = new byte[nonce.length + ciphertext.length];
+            System.arraycopy(nonce, 0, encodedBytes, 0, nonce.length);
+            System.arraycopy(ciphertext, 0, encodedBytes, nonce.length, ciphertext.length);
+
+            return encodedBytes;
         }
 
         @Override
@@ -131,26 +155,12 @@ public class AesJanitorKeyring implements Keyring {
                     .build();
         }
 
+        EncryptDataKeyStrategy encryptStrategy = AES_GCM;
         try {
-            byte[] nonce = new byte[NONCE_LENGTH_BYTES];
-            _secureRandom.nextBytes(nonce);
-            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
-
-            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, _wrappingKey, gcmParameterSpec, _secureRandom);
-
-            AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-            cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
-            byte[] ciphertext = cipher.doFinal(materials.plaintextDataKey());
-
-            // The encrypted data key is the nonce prepended to the ciphertext
-            byte[] encodedBytes = new byte[nonce.length + ciphertext.length];
-            System.arraycopy(nonce, 0, encodedBytes, 0, nonce.length);
-            System.arraycopy(ciphertext, 0, encodedBytes, nonce.length, ciphertext.length);
-
+            byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, _wrappingKey, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
-                    .keyProviderId(KEY_PROVIDER_ID)
-                    .ciphertext(encodedBytes)
+                    .keyProviderId(encryptStrategy.keyProviderId())
+                    .ciphertext(ciphertext)
                     .build();
 
             List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
@@ -160,7 +170,7 @@ public class AesJanitorKeyring implements Keyring {
                     .encryptedDataKeys(encryptedDataKeys)
                     .build();
         } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to " + KEY_PROVIDER_ID + " wrap", e);
+            throw new S3EncryptionClientException("Unable to " + encryptStrategy.keyProviderId() + " wrap", e);
         }
     }
 
@@ -186,7 +196,7 @@ public class AesJanitorKeyring implements Keyring {
                 byte[] plaintext = decryptStrategy.decryptDataKey(_wrappingKey, materials, encryptedDataKey);
                 return materials.toBuilder().plaintextDataKey(plaintext).build();
             } catch (Exception e) {
-                throw new S3EncryptionClientException("Unable to " + KEY_PROVIDER_ID + " unwrap", e);
+                throw new S3EncryptionClientException("Unable to " + decryptStrategy.keyProviderId() + " unwrap", e);
             }
         }
 

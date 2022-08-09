@@ -17,7 +17,6 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource.PSpecified;
 import javax.crypto.spec.SecretKeySpec;
 import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.materials.AesJanitorKeyring.Builder;
 
 /**
  * RsaOaepKeyring will use an RSA public key to wrap the data key used to encrypt content.
@@ -51,15 +50,17 @@ public class RsaJanitorKeyring implements Keyring {
         }
     };
 
-    private static final String KEY_PROVIDER_ID = "RSA-OAEP-SHA1";
-    private static final String CIPHER_ALGORITHM = "RSA/ECB/OAEPPadding";
-    private static final String DIGEST_NAME = "SHA-1";
-    private static final String MGF_NAME = "MGF1";
-    private static final MGF1ParameterSpec MGF_PARAMETER_SPEC = new MGF1ParameterSpec(DIGEST_NAME);
-    private static final OAEPParameterSpec OAEP_PARAMETER_SPEC =
-            new OAEPParameterSpec(DIGEST_NAME, MGF_NAME, MGF_PARAMETER_SPEC, PSpecified.DEFAULT);
+    private static final DataKeyStrategy RSA_OAEP = new DataKeyStrategy() {
 
-    private static final DecryptDataKeyStrategy RSA_OAEP = new DecryptDataKeyStrategy() {
+        private static final String KEY_PROVIDER_ID = "RSA-OAEP-SHA1";
+        private static final String CIPHER_ALGORITHM = "RSA/ECB/OAEPPadding";
+        private static final String DIGEST_NAME = "SHA-1";
+        private static final String MGF_NAME = "MGF1";
+
+        // Java 8 doesn't support static class fields in inner classes
+        private final MGF1ParameterSpec MGF_PARAMETER_SPEC = new MGF1ParameterSpec(DIGEST_NAME);
+        private final OAEPParameterSpec OAEP_PARAMETER_SPEC =
+                new OAEPParameterSpec(DIGEST_NAME, MGF_NAME, MGF_PARAMETER_SPEC, PSpecified.DEFAULT);
 
         @Override
         public boolean isLegacy() {
@@ -69,6 +70,26 @@ public class RsaJanitorKeyring implements Keyring {
         @Override
         public String keyProviderId() {
             return KEY_PROVIDER_ID;
+        }
+
+        @Override
+        public byte[] encryptDataKey(SecureRandom secureRandom, Key wrappingKey,
+                EncryptionMaterials materials) throws GeneralSecurityException {
+            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            cipher.init(Cipher.WRAP_MODE, wrappingKey, OAEP_PARAMETER_SPEC, secureRandom);
+
+            // Create a pseudo-data key with the content encryption appended to the data key
+            byte[] dataKey = materials.plaintextDataKey();
+            byte[] dataCipherName = materials.algorithmSuite().cipherName().getBytes(
+                    StandardCharsets.UTF_8);
+            byte[] pseudoDataKey = new byte[1 + dataKey.length + dataCipherName.length];
+
+            pseudoDataKey[0] = (byte)dataKey.length;
+            System.arraycopy(dataKey, 0, pseudoDataKey, 1, dataKey.length);
+            System.arraycopy(dataCipherName, 0, pseudoDataKey, 1 + dataKey.length, dataCipherName.length);
+
+            byte[] ciphertext = cipher.wrap(new SecretKeySpec(pseudoDataKey, materials.algorithmSuite().dataKeyAlgorithm()));
+            return ciphertext;
         }
 
         @Override
@@ -138,24 +159,12 @@ public class RsaJanitorKeyring implements Keyring {
                     .build();
         }
 
+        EncryptDataKeyStrategy encryptStrategy = RSA_OAEP;
         try {
-            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.WRAP_MODE, _wrappingKeyPair.getPublic(), OAEP_PARAMETER_SPEC, _secureRandom);
-
-            // Create a pseudo-data key with the content encryption appended to the data key
-            byte[] dataKey = materials.plaintextDataKey();
-            byte[] dataCipherName = materials.algorithmSuite().cipherName().getBytes(
-                    StandardCharsets.UTF_8);
-            byte[] pseudoDataKey = new byte[1 + dataKey.length + dataCipherName.length];
-
-            pseudoDataKey[0] = (byte)dataKey.length;
-            System.arraycopy(dataKey, 0, pseudoDataKey, 1, dataKey.length);
-            System.arraycopy(dataCipherName, 0, pseudoDataKey, 1 + dataKey.length, dataCipherName.length);
-
-            byte[] ciphertext = cipher.wrap(new SecretKeySpec(pseudoDataKey, materials.algorithmSuite().dataKeyAlgorithm()));
+            byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, _wrappingKeyPair.getPublic(), materials);
 
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
-                    .keyProviderId(KEY_PROVIDER_ID)
+                    .keyProviderId(encryptStrategy.keyProviderId())
                     .ciphertext(ciphertext)
                     .build();
 
@@ -166,7 +175,7 @@ public class RsaJanitorKeyring implements Keyring {
                     .encryptedDataKeys(encryptedDataKeys)
                     .build();
         } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to " + KEY_PROVIDER_ID + " wrap", e);
+            throw new S3EncryptionClientException("Unable to " + encryptStrategy.keyProviderId() + " wrap", e);
         }
     }
 
@@ -191,7 +200,7 @@ public class RsaJanitorKeyring implements Keyring {
                 byte[] plaintext = decryptStrategy.decryptDataKey(_wrappingKeyPair.getPrivate(), materials, encryptedDataKey);
                 return materials.toBuilder().plaintextDataKey(plaintext).build();
             } catch (Exception e) {
-                throw new S3EncryptionClientException("Unable to " + KEY_PROVIDER_ID + " unwrap", e);
+                throw new S3EncryptionClientException("Unable to " + decryptStrategy.keyProviderId() + " unwrap", e);
             }
         }
 
