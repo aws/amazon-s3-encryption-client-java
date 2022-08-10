@@ -34,7 +34,7 @@ abstract public class S3JanitorKeyring implements Keyring {
 
         EncryptDataKeyStrategy encryptStrategy = encryptStrategy();
         try {
-            byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, wrappingKey(), materials);
+            byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(encryptStrategy.keyProviderId())
                     .ciphertext(ciphertext)
@@ -52,8 +52,6 @@ abstract public class S3JanitorKeyring implements Keyring {
     }
 
     abstract protected EncryptDataKeyStrategy encryptStrategy();
-
-    abstract protected Key wrappingKey();
 
     @Override
     public DecryptionMaterials onDecrypt(final DecryptionMaterials materials, List<EncryptedDataKey> encryptedDataKeys) {
@@ -78,7 +76,7 @@ abstract public class S3JanitorKeyring implements Keyring {
         }
 
         try {
-            byte[] plaintext = decryptStrategy.decryptDataKey(unwrappingKey(), materials, encryptedDataKey);
+            byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey);
             return materials.toBuilder().plaintextDataKey(plaintext).build();
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to " + keyProviderId + " unwrap", e);
@@ -86,8 +84,6 @@ abstract public class S3JanitorKeyring implements Keyring {
     }
 
     abstract protected Map<String,DecryptDataKeyStrategy> decryptStrategies();
-
-    abstract protected Key unwrappingKey();
 
     abstract public static class Builder<KeyringT extends S3JanitorKeyring, BuilderT extends Builder<KeyringT, BuilderT>> {
         private boolean _enableLegacyModes = false;

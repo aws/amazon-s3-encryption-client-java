@@ -22,7 +22,9 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
 
     private static final String KEY_ALGORITHM = "RSA";
 
-    private static final DecryptDataKeyStrategy RSA_ECB = new DecryptDataKeyStrategy() {
+    private final KeyPair _wrappingKeyPair;
+
+    private final DecryptDataKeyStrategy _rsaEcbStrategy = new DecryptDataKeyStrategy() {
         private static final String KEY_PROVIDER_ID = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
         private static final String CIPHER_ALGORITHM = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
 
@@ -37,9 +39,9 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
         }
 
         @Override
-        public byte[] decryptDataKey(Key unwrappingKey, DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
+        public byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.UNWRAP_MODE, unwrappingKey);
+            cipher.init(Cipher.UNWRAP_MODE, _wrappingKeyPair.getPrivate());
 
             Key plaintextKey = cipher.unwrap(encryptedDataKey.ciphertext(), CIPHER_ALGORITHM, Cipher.SECRET_KEY);
 
@@ -47,7 +49,7 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
         }
     };
 
-    private static final DataKeyStrategy RSA_OAEP = new DataKeyStrategy() {
+    private final DataKeyStrategy _rsaOaepStrategy = new DataKeyStrategy() {
 
         private static final String KEY_PROVIDER_ID = "RSA-OAEP-SHA1";
         private static final String CIPHER_ALGORITHM = "RSA/ECB/OAEPPadding";
@@ -70,10 +72,10 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
         }
 
         @Override
-        public byte[] encryptDataKey(SecureRandom secureRandom, Key wrappingKey,
+        public byte[] encryptDataKey(SecureRandom secureRandom,
                 EncryptionMaterials materials) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.WRAP_MODE, wrappingKey, OAEP_PARAMETER_SPEC, secureRandom);
+            cipher.init(Cipher.WRAP_MODE, _wrappingKeyPair.getPublic(), OAEP_PARAMETER_SPEC, secureRandom);
 
             // Create a pseudo-data key with the content encryption appended to the data key
             byte[] dataKey = materials.plaintextDataKey();
@@ -90,9 +92,9 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
         }
 
         @Override
-        public byte[] decryptDataKey(Key unwrappingKey, DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
+        public byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.UNWRAP_MODE, unwrappingKey, OAEP_PARAMETER_SPEC);
+            cipher.init(Cipher.UNWRAP_MODE, _wrappingKeyPair.getPrivate(), OAEP_PARAMETER_SPEC);
 
             String dataKeyAlgorithm = materials.algorithmSuite().dataKeyAlgorithm();
             Key pseudoDataKey = cipher.unwrap(encryptedDataKey.ciphertext(), dataKeyAlgorithm, Cipher.SECRET_KEY);
@@ -125,17 +127,15 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
         }
     };
 
-    private static final Map<String, DecryptDataKeyStrategy> DECRYPT_STRATEGIES = new HashMap<>();
-    static {
-        DECRYPT_STRATEGIES.put(RSA_ECB.keyProviderId(), RSA_ECB);
-        DECRYPT_STRATEGIES.put(RSA_OAEP.keyProviderId(), RSA_OAEP);
-    }
-
-    private final KeyPair _wrappingKeyPair;
+    private final Map<String, DecryptDataKeyStrategy> decryptStrategies = new HashMap<>();
 
     private RsaJanitorKeyring(Builder builder) {
         super(builder);
+
         _wrappingKeyPair = builder._wrappingKeyPair;
+
+        decryptStrategies.put(_rsaEcbStrategy.keyProviderId(), _rsaEcbStrategy);
+        decryptStrategies.put(_rsaOaepStrategy.keyProviderId(), _rsaOaepStrategy);
     }
 
     public static Builder builder() {
@@ -145,22 +145,12 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
 
     @Override
     protected EncryptDataKeyStrategy encryptStrategy() {
-        return RSA_OAEP;
-    }
-
-    @Override
-    protected Key wrappingKey() {
-        return _wrappingKeyPair.getPublic();
+        return _rsaOaepStrategy;
     }
 
     @Override
     protected Map<String, DecryptDataKeyStrategy> decryptStrategies() {
-        return DECRYPT_STRATEGIES;
-    }
-
-    @Override
-    protected Key unwrappingKey() {
-        return _wrappingKeyPair.getPrivate();
+        return decryptStrategies;
     }
 
     public static class Builder extends S3JanitorKeyring.Builder<S3JanitorKeyring, Builder> {
