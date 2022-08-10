@@ -22,6 +22,10 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
     private final SecretKey _wrappingKey;
 
     private final DecryptDataKeyStrategy _aesStrategy = new DecryptDataKeyStrategy() {
+
+        private static final String KEY_PROVIDER_ID = "AES";
+        private static final String CIPHER_ALGORITHM = "AES";
+
         @Override
         public boolean isLegacy() {
             return true;
@@ -29,12 +33,12 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
 
         @Override
         public String keyProviderId() {
-            return "AES";
+            return KEY_PROVIDER_ID;
         }
 
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
-            Cipher cipher = Cipher.getInstance("AES");
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, _wrappingKey);
 
             return cipher.doFinal(encryptedDataKey.ciphertext());
@@ -42,6 +46,10 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
     };
 
     private final DecryptDataKeyStrategy _aesWrapStrategy = new DecryptDataKeyStrategy() {
+
+        private static final String KEY_PROVIDER_ID = "AESWrap";
+        private static final String CIPHER_ALGORITHM = "AESWrap";
+
         @Override
         public boolean isLegacy() {
             return true;
@@ -49,16 +57,15 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
 
         @Override
         public String keyProviderId() {
-            return "AESWrap";
+            return KEY_PROVIDER_ID;
         }
 
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
-            final String cipherAlgorithm = "AESWrap";
-            final Cipher cipher = Cipher.getInstance(cipherAlgorithm);
+            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.UNWRAP_MODE, _wrappingKey);
 
-            Key plaintextKey = cipher.unwrap(encryptedDataKey.ciphertext(), cipherAlgorithm, Cipher.SECRET_KEY);
+            Key plaintextKey = cipher.unwrap(encryptedDataKey.ciphertext(), CIPHER_ALGORITHM, Cipher.SECRET_KEY);
             return plaintextKey.getEncoded();
         }
     };
@@ -149,7 +156,7 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
         return decryptStrategies;
     }
 
-    public static class Builder extends S3JanitorKeyring.Builder<S3JanitorKeyring, Builder> {
+    public static class Builder extends S3JanitorKeyring.Builder<AesJanitorKeyring, Builder> {
         private SecretKey _wrappingKey;
 
         private Builder() {
