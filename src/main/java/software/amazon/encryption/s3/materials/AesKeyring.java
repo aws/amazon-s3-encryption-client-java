@@ -13,9 +13,10 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 /**
- * This is the AES Janitor keyring because it can open many doors with one key
+ * This keyring can wrap keys with the active keywrap algorithm and
+ * unwrap with the active and legacy algorithms for AES keys.
  */
-public class AesJanitorKeyring extends S3JanitorKeyring {
+public class AesKeyring extends S3Keyring {
 
     private static final String KEY_ALGORITHM = "AES";
 
@@ -132,7 +133,7 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
 
     private final Map<String, DecryptDataKeyStrategy> decryptStrategies = new HashMap<>();
 
-    private AesJanitorKeyring(Builder builder) {
+    private AesKeyring(Builder builder) {
         super(builder);
 
         _wrappingKey = builder._wrappingKey;
@@ -156,7 +157,7 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
         return decryptStrategies;
     }
 
-    public static class Builder extends S3JanitorKeyring.Builder<AesJanitorKeyring, Builder> {
+    public static class Builder extends S3Keyring.Builder<AesKeyring, Builder> {
         private SecretKey _wrappingKey;
 
         private Builder() {
@@ -176,8 +177,8 @@ public class AesJanitorKeyring extends S3JanitorKeyring {
             return builder();
         }
 
-        public AesJanitorKeyring build() {
-            return new AesJanitorKeyring(this);
+        public AesKeyring build() {
+            return new AesKeyring(this);
         }
     }
 }

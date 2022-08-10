@@ -1,13 +1,9 @@
 package software.amazon.encryption.s3.materials;
 
-import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import javax.crypto.SecretKey;
 import software.amazon.awssdk.core.ApiName;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kms.KmsClient;
@@ -17,12 +13,12 @@ import software.amazon.awssdk.services.kms.model.EncryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.internal.ApiNameVersion;
-import software.amazon.encryption.s3.materials.AesJanitorKeyring.Builder;
 
 /**
- * KmsJanitorKeyring will encrypt with KMS and the encryption context and can handle legacy KMS decrypt.
+ * This keyring can wrap keys with the active keywrap algorithm and
+ * unwrap with the active and legacy algorithms for KMS keys.
  */
-public class KmsJanitorKeyring extends S3JanitorKeyring {
+public class KmsKeyring extends S3Keyring {
 
     private static final ApiName API_NAME = ApiNameVersion.apiNameWithVersion();
 
@@ -109,7 +105,7 @@ public class KmsJanitorKeyring extends S3JanitorKeyring {
 
     private final Map<String, DecryptDataKeyStrategy> decryptStrategies = new HashMap<>();
 
-    public KmsJanitorKeyring(Builder builder) {
+    public KmsKeyring(Builder builder) {
         super(builder);
 
         _kmsClient = builder._kmsClient;
@@ -133,8 +129,8 @@ public class KmsJanitorKeyring extends S3JanitorKeyring {
         return decryptStrategies;
     }
 
-    public static class Builder extends S3JanitorKeyring.Builder<KmsJanitorKeyring, Builder> {
-        private KmsClient _kmsClient;
+    public static class Builder extends S3Keyring.Builder<KmsKeyring, Builder> {
+        private KmsClient _kmsClient = KmsClient.builder().build();
         private String _wrappingKeyId;
 
         private Builder() { super(); }
@@ -154,8 +150,8 @@ public class KmsJanitorKeyring extends S3JanitorKeyring {
             return this;
         }
 
-        public KmsJanitorKeyring build() {
-            return new KmsJanitorKeyring(this);
+        public KmsKeyring build() {
+            return new KmsKeyring(this);
         }
     }
 }

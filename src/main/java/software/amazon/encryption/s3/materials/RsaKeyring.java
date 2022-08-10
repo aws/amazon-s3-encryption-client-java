@@ -16,9 +16,10 @@ import javax.crypto.spec.SecretKeySpec;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 /**
- * RsaOaepKeyring will use an RSA public key to wrap the data key used to encrypt content.
+ * This keyring can wrap keys with the active keywrap algorithm and
+ * unwrap with the active and legacy algorithms for RSA keys.
  */
-public class RsaJanitorKeyring extends S3JanitorKeyring {
+public class RsaKeyring extends S3Keyring {
 
     private static final String KEY_ALGORITHM = "RSA";
 
@@ -129,7 +130,7 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
 
     private final Map<String, DecryptDataKeyStrategy> decryptStrategies = new HashMap<>();
 
-    private RsaJanitorKeyring(Builder builder) {
+    private RsaKeyring(Builder builder) {
         super(builder);
 
         _wrappingKeyPair = builder._wrappingKeyPair;
@@ -153,7 +154,7 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
         return decryptStrategies;
     }
 
-    public static class Builder extends S3JanitorKeyring.Builder<S3JanitorKeyring, Builder> {
+    public static class Builder extends S3Keyring.Builder<S3Keyring, Builder> {
         private KeyPair _wrappingKeyPair;
 
         private Builder() {
@@ -173,8 +174,8 @@ public class RsaJanitorKeyring extends S3JanitorKeyring {
             return builder();
         }
 
-        public RsaJanitorKeyring build() {
-            return new RsaJanitorKeyring(this);
+        public RsaKeyring build() {
+            return new RsaKeyring(this);
         }
     }
 

@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3.materials;
 
-import java.security.Key;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,15 +8,16 @@ import javax.crypto.SecretKey;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 /**
- * This is the AES Janitor keyring because it can open many doors with one key
+ * This serves as the base class for all the keyrings in the S3 encryption client.
+ * Shared functionality is all performed here.
  */
-abstract public class S3JanitorKeyring implements Keyring {
+abstract public class S3Keyring implements Keyring {
 
     private final boolean _enableLegacyModes;
     private final SecureRandom _secureRandom;
     private final DataKeyGenerator _dataKeyGenerator;
 
-    protected S3JanitorKeyring(Builder<?,?> builder) {
+    protected S3Keyring(Builder<?,?> builder) {
         _enableLegacyModes = builder._enableLegacyModes;
         _secureRandom = builder._secureRandom;
         _dataKeyGenerator = builder._dataKeyGenerator;
@@ -85,7 +85,7 @@ abstract public class S3JanitorKeyring implements Keyring {
 
     abstract protected Map<String,DecryptDataKeyStrategy> decryptStrategies();
 
-    abstract public static class Builder<KeyringT extends S3JanitorKeyring, BuilderT extends Builder<KeyringT, BuilderT>> {
+    abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
         private boolean _enableLegacyModes = false;
         private SecureRandom _secureRandom = new SecureRandom();
         private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();

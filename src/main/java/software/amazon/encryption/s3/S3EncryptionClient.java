@@ -1,5 +1,8 @@
 package software.amazon.encryption.s3;
 
+import java.security.KeyPair;
+import java.security.SecureRandom;
+import javax.crypto.SecretKey;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -11,14 +14,14 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
-import software.amazon.encryption.s3.legacy.materials.LegacyDecryptCryptoMaterialsManager;
-import software.amazon.encryption.s3.legacy.materials.LegacyKeyring;
+import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
-import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
-import software.amazon.encryption.s3.materials.DecryptionMaterials;
+import software.amazon.encryption.s3.materials.DataKeyGenerator;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
-import software.amazon.encryption.s3.materials.EncryptedDataKey;
+import software.amazon.encryption.s3.materials.DefaultDataKeyGenerator;
 import software.amazon.encryption.s3.materials.Keyring;
+import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.materials.RsaKeyring;
 
 public class S3EncryptionClient implements S3Client {
 
@@ -74,6 +77,9 @@ public class S3EncryptionClient implements S3Client {
         private S3Client _wrappedClient = S3Client.builder().build();
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
+        private SecretKey _aesKey;
+        private KeyPair _rsaKeyPair;
+        private String _kmsKeyId;
         private boolean _enableLegacyModes = false;
 
         private Builder() {}
@@ -83,14 +89,63 @@ public class S3EncryptionClient implements S3Client {
             return this;
         }
 
-        public Builder keyring(Keyring keyring) {
-            this._keyring = keyring;
+        public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
+            this._cryptoMaterialsManager = cryptoMaterialsManager;
+            checkKeyOptions();
+
             return this;
         }
 
-        public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
-            this._cryptoMaterialsManager = cryptoMaterialsManager;
+        public Builder keyring(Keyring keyring) {
+            this._keyring = keyring;
+            checkKeyOptions();
+
             return this;
+        }
+
+        public Builder aesKey(SecretKey aesKey) {
+            this._aesKey = aesKey;
+            checkKeyOptions();
+
+            return this;
+        }
+
+        public Builder rsaKeyPair(KeyPair rsaKeyPair) {
+            this._rsaKeyPair = rsaKeyPair;
+            checkKeyOptions();
+
+            return this;
+        }
+
+        public Builder kmsKeyId(String kmsKeyId) {
+            this._kmsKeyId = kmsKeyId;
+            checkKeyOptions();
+
+            return this;
+        }
+
+        // We only want one way to use a key, if more than one is set, throw an error
+        private void checkKeyOptions() {
+            if (onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
+                return;
+            }
+
+            throw new S3EncryptionClientException("Only one may be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
+        }
+
+        private boolean onlyOneNonNull(Object... values) {
+            boolean haveOneNonNull = false;
+            for (Object o : values) {
+                if (o != null) {
+                    if (haveOneNonNull) {
+                        return false;
+                    }
+
+                    haveOneNonNull = true;
+                }
+            }
+
+            return haveOneNonNull;
         }
 
         public Builder enableLegacyModes(boolean shouldEnableLegacyModes) {
@@ -99,22 +154,33 @@ public class S3EncryptionClient implements S3Client {
         }
 
         public S3EncryptionClient build() {
-            if (_keyring != null && _cryptoMaterialsManager != null) {
-                throw new S3EncryptionClientException("Only one of: a keyring or a crypto materials manager can be supplied");
+            if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
+                throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
             }
 
-            if (_keyring != null) {
-                if (_keyring instanceof LegacyKeyring) {
-                    throw new S3EncryptionClientException("Configure manually a crypto materials manager when using a legacy keyring");
+            if (_keyring == null) {
+                if (_aesKey != null) {
+                    _keyring = AesKeyring.builder()
+                            .wrappingKey(_aesKey)
+                            .enableLegacyModes(_enableLegacyModes)
+                            .build();
+                } else if (_rsaKeyPair != null) {
+                    _keyring = RsaKeyring.builder()
+                            .wrappingKeyPair(_rsaKeyPair)
+                            .enableLegacyModes(_enableLegacyModes)
+                            .build();
+                } else if (_kmsKeyId != null) {
+                    _keyring = KmsKeyring.builder()
+                            .wrappingKeyId(_kmsKeyId)
+                            .enableLegacyModes(_enableLegacyModes)
+                            .build();
                 }
+            }
 
-                this._cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
+            if (_cryptoMaterialsManager == null) {
+                _cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
                         .keyring(_keyring)
                         .build();
-            }
-
-            if (!_enableLegacyModes && _cryptoMaterialsManager instanceof LegacyDecryptCryptoMaterialsManager) {
-                throw new S3EncryptionClientException("Enable legacy modes to use a legacy crypto materials manager");
             }
 
             return new S3EncryptionClient(this);
