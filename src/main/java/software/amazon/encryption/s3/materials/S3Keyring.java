@@ -34,6 +34,9 @@ abstract public class S3Keyring implements Keyring {
 
         EncryptDataKeyStrategy encryptStrategy = encryptStrategy();
         try {
+            // Allow encrypt strategy to modify the materials if necessary
+            materials = encryptStrategy.modifyMaterials(materials);
+
             byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(encryptStrategy.keyProviderId())

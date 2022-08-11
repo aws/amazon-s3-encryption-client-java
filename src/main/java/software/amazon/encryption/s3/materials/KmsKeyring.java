@@ -1,6 +1,7 @@
 package software.amazon.encryption.s3.materials;
 
 import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -69,14 +70,23 @@ public class KmsKeyring extends S3Keyring {
         }
 
         @Override
-        public byte[] encryptDataKey(SecureRandom secureRandom, EncryptionMaterials materials) {
+        public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
             if (materials.encryptionContext().containsKey(ENCRYPTION_CONTEXT_ALGORITHM_KEY)) {
                 throw new S3EncryptionClientException(ENCRYPTION_CONTEXT_ALGORITHM_KEY + " is a reserved key for the S3 encryption client");
             }
 
-            TreeMap<String, String> encryptionContext = new TreeMap<>(materials.encryptionContext());
+            Map<String, String> encryptionContext = new HashMap<>(materials.encryptionContext());
             encryptionContext.put(ENCRYPTION_CONTEXT_ALGORITHM_KEY, materials.algorithmSuite().cipherName());
 
+            return materials.toBuilder()
+                    .encryptionContext(encryptionContext)
+                    .build();
+        }
+
+        @Override
+        public byte[] encryptDataKey(SecureRandom secureRandom, EncryptionMaterials materials) {
+            // Convert to TreeMap for sorting of keys
+            TreeMap<String, String> encryptionContext = new TreeMap<>(materials.encryptionContext());
             EncryptRequest request = EncryptRequest.builder()
                     .keyId(_wrappingKeyId)
                     .encryptionContext(encryptionContext)
