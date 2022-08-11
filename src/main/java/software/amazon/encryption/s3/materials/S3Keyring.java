@@ -1,5 +1,6 @@
 package software.amazon.encryption.s3.materials;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,8 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
  * Shared functionality is all performed here.
  */
 abstract public class S3Keyring implements Keyring {
+
+    public static final String KEY_PROVIDER_ID = "S3Keyring";
 
     private final boolean _enableLegacyModes;
     private final SecureRandom _secureRandom;
@@ -39,7 +42,8 @@ abstract public class S3Keyring implements Keyring {
 
             byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
-                    .keyProviderId(encryptStrategy.keyProviderId())
+                    .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
+                    .keyProviderInfo(encryptStrategy.keyProviderInfo().getBytes(StandardCharsets.UTF_8))
                     .ciphertext(ciphertext)
                     .build();
 
@@ -50,7 +54,7 @@ abstract public class S3Keyring implements Keyring {
                     .encryptedDataKeys(encryptedDataKeys)
                     .build();
         } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to " + encryptStrategy.keyProviderId() + " wrap", e);
+            throw new S3EncryptionClientException("Unable to " + encryptStrategy.keyProviderInfo() + " wrap", e);
         }
     }
 
@@ -68,21 +72,26 @@ abstract public class S3Keyring implements Keyring {
 
         EncryptedDataKey encryptedDataKey = encryptedDataKeys.get(0);
         final String keyProviderId = encryptedDataKey.keyProviderId();
+        if (!KEY_PROVIDER_ID.equals(keyProviderId)) {
+            throw new S3EncryptionClientException("Unknown key provider: " + keyProviderId);
+        }
 
-        DecryptDataKeyStrategy decryptStrategy = decryptStrategies().get(keyProviderId);
+        String keyProviderInfo = new String(encryptedDataKey.keyProviderInfo(), StandardCharsets.UTF_8);
+
+        DecryptDataKeyStrategy decryptStrategy = decryptStrategies().get(keyProviderInfo);
         if (decryptStrategy == null) {
-            throw new S3EncryptionClientException("Unknown key wrap: " + keyProviderId);
+            throw new S3EncryptionClientException("Unknown key wrap: " + keyProviderInfo);
         }
 
         if (decryptStrategy.isLegacy() && !_enableLegacyModes) {
-            throw new S3EncryptionClientException("Enable legacy modes to use legacy key wrap: " + keyProviderId);
+            throw new S3EncryptionClientException("Enable legacy modes to use legacy key wrap: " + keyProviderInfo);
         }
 
         try {
             byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey);
             return materials.toBuilder().plaintextDataKey(plaintext).build();
         } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to " + keyProviderId + " unwrap", e);
+            throw new S3EncryptionClientException("Unable to " + keyProviderInfo + " unwrap", e);
         }
     }
 

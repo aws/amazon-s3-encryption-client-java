@@ -203,6 +203,30 @@ public class S3EncryptionClientTest {
     }
 
     @Test
+    public void AesGcmV3toV3() {
+        final String BUCKET_KEY = "aes-gcm-v3-to-v3";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // Asserts
+        final String input = "AesGcmV3toV3";
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .build(), RequestBody.fromString(input));
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(
+                GetObjectRequest.builder()
+                        .bucket(BUCKET)
+                        .key(BUCKET_KEY).build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+    }
+
+    @Test
     public void RsaEcbV1toV3() {
         final String BUCKET_KEY = "rsa-ecb-v1-to-v3";
 
@@ -318,6 +342,30 @@ public class S3EncryptionClientTest {
                 .build(), RequestBody.fromString(input));
 
         String output = v2Client.getObjectAsString(BUCKET, BUCKET_KEY);
+        assertEquals(input, output);
+    }
+
+    @Test
+    public void RsaOaepV3toV3() {
+        final String BUCKET_KEY = "rsa-oaep-v3-to-v3";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .rsaKeyPair(RSA_KEY_PAIR)
+                .build();
+
+        // Asserts
+        final String input = "RsaOaepV3toV3";
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .build(), RequestBody.fromString(input));
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(
+                GetObjectRequest.builder()
+                        .bucket(BUCKET)
+                        .key(BUCKET_KEY).build());
+        String output = objectResponse.asUtf8String();
         assertEquals(input, output);
     }
 
@@ -449,6 +497,31 @@ public class S3EncryptionClientTest {
                 .build(), RequestBody.fromString(input));
 
         String output = v2Client.getObjectAsString(BUCKET, BUCKET_KEY);
+        assertEquals(input, output);
+    }
+
+    @Test
+    public void KmsContextV3toV3() {
+        final String BUCKET_KEY = "kms-context-v3-to-v3";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_MASTER_KEY)
+                .enableLegacyModes(true)
+                .build();
+
+        // Asserts
+        final String input = "KmsContextV3toV3";
+        // TODO: need to add encryption context to the V3 request somehow
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .build(), RequestBody.fromString(input));
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(GetObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY).build());
+        String output = objectResponse.asUtf8String();
         assertEquals(input, output);
     }
 }

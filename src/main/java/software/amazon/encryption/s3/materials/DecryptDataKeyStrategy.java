@@ -5,7 +5,7 @@ import java.security.GeneralSecurityException;
 public interface DecryptDataKeyStrategy {
     boolean isLegacy();
 
-    String keyProviderId();
+    String keyProviderInfo();
 
     byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey)
             throws GeneralSecurityException;

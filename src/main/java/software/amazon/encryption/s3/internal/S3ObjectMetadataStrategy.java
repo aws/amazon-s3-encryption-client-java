@@ -15,6 +15,7 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
+import software.amazon.encryption.s3.materials.S3Keyring;
 
 /**
  * This stores encryption metadata in the S3 object metadata.
@@ -43,7 +44,7 @@ public class S3ObjectMetadataStrategy implements ContentMetadataEncodingStrategy
         metadata.put(MetadataKey.CONTENT_NONCE, _encoder.encodeToString(encryptedContent.nonce));
         metadata.put(MetadataKey.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
         metadata.put(MetadataKey.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
-        metadata.put(MetadataKey.ENCRYPTED_DATA_KEY_ALGORITHM, edk.keyProviderId());
+        metadata.put(MetadataKey.ENCRYPTED_DATA_KEY_ALGORITHM, new String(edk.keyProviderInfo(), StandardCharsets.UTF_8));
 
         try (JsonWriter jsonWriter = JsonWriter.create()) {
             jsonWriter.writeStartObject();
@@ -59,32 +60,6 @@ public class S3ObjectMetadataStrategy implements ContentMetadataEncodingStrategy
         }
 
         return request.toBuilder().metadata(metadata).build();
-    }
-
-    public PutObjectRequest encodeMetadata(ContentMetadata contentMetadata, PutObjectRequest request) {
-        Map<String,String> requestMetadata = new HashMap<>(request.metadata());
-        EncryptedDataKey edk = contentMetadata.encryptedDataKey();
-        requestMetadata.put(MetadataKey.ENCRYPTED_DATA_KEY_V2, _encoder.encodeToString(edk.ciphertext()));
-        requestMetadata.put(MetadataKey.CONTENT_NONCE, _encoder.encodeToString(
-                contentMetadata.contentNonce()));
-        requestMetadata.put(MetadataKey.CONTENT_CIPHER, contentMetadata.algorithmSuite().cipherName());
-        requestMetadata.put(MetadataKey.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(contentMetadata.algorithmSuite().cipherTagLengthBits()));
-        requestMetadata.put(MetadataKey.ENCRYPTED_DATA_KEY_ALGORITHM, edk.keyProviderId());
-
-        try (JsonWriter jsonWriter = JsonWriter.create()) {
-            jsonWriter.writeStartObject();
-            for (Entry<String,String> entry : contentMetadata.encryptedDataKeyContext().entrySet()) {
-                jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
-            }
-            jsonWriter.writeEndObject();
-
-            String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
-            requestMetadata.put(MetadataKey.ENCRYPTED_DATA_KEY_CONTEXT, jsonEncryptionContext);
-        } catch (JsonGenerationException e) {
-            throw new S3EncryptionClientException("Cannot serialize encryption context to JSON.", e);
-        }
-
-        return request.toBuilder().metadata(requestMetadata).build();
     }
 
     @Override
@@ -106,14 +81,18 @@ public class S3ObjectMetadataStrategy implements ContentMetadataEncodingStrategy
 
         // Do algorithm suite dependent decoding
         byte[] edkCiphertext;
-        String keyProviderId;
+
+        // Currently, this is not stored within the metadata,
+        // signal to keyring(s) intended for S3EC
+        final String keyProviderId = S3Keyring.KEY_PROVIDER_ID;
+        String keyProviderInfo;
         switch (algorithmSuite) {
             case ALG_AES_256_CBC_IV16_NO_KDF:
                 // Extract encrypted data key ciphertext
                 edkCiphertext = _decoder.decode(metadata.get(MetadataKey.ENCRYPTED_DATA_KEY_V1));
 
                 // Hardcode the key provider id to match what V1 does
-                keyProviderId = "AES";
+                keyProviderInfo = "AES";
 
                 break;
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
@@ -127,7 +106,7 @@ public class S3ObjectMetadataStrategy implements ContentMetadataEncodingStrategy
 
                 // Extract encrypted data key ciphertext and provider id
                 edkCiphertext = _decoder.decode(metadata.get(MetadataKey.ENCRYPTED_DATA_KEY_V2));
-                keyProviderId = metadata.get(MetadataKey.ENCRYPTED_DATA_KEY_ALGORITHM);
+                keyProviderInfo = metadata.get(MetadataKey.ENCRYPTED_DATA_KEY_ALGORITHM);
 
                 break;
             default:
@@ -139,6 +118,7 @@ public class S3ObjectMetadataStrategy implements ContentMetadataEncodingStrategy
         EncryptedDataKey edk = EncryptedDataKey.builder()
                 .ciphertext(edkCiphertext)
                 .keyProviderId(keyProviderId)
+                .keyProviderInfo(keyProviderInfo.getBytes(StandardCharsets.UTF_8))
                 .build();
 
         // Get encrypted data key encryption context

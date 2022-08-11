@@ -1,7 +1,6 @@
 package software.amazon.encryption.s3.materials;
 
 import java.security.SecureRandom;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -28,7 +27,7 @@ public class KmsKeyring extends S3Keyring {
 
     private final DecryptDataKeyStrategy _kmsStrategy = new DecryptDataKeyStrategy() {
 
-        private static final String KEY_PROVIDER_ID = "kms";
+        private static final String KEY_PROVIDER_INFO = "kms";
 
         @Override
         public boolean isLegacy() {
@@ -36,8 +35,8 @@ public class KmsKeyring extends S3Keyring {
         }
 
         @Override
-        public String keyProviderId() {
-            return KEY_PROVIDER_ID;
+        public String keyProviderInfo() {
+            return KEY_PROVIDER_INFO;
         }
 
         @Override
@@ -56,7 +55,7 @@ public class KmsKeyring extends S3Keyring {
 
     private final DataKeyStrategy _kmsContextStrategy = new DataKeyStrategy() {
 
-        private static final String KEY_PROVIDER_ID = "kms+context";
+        private static final String KEY_PROVIDER_INFO = "kms+context";
         private static final String ENCRYPTION_CONTEXT_ALGORITHM_KEY = "aws:x-amz-cek-alg";
 
         @Override
@@ -65,8 +64,8 @@ public class KmsKeyring extends S3Keyring {
         }
 
         @Override
-        public String keyProviderId() {
-            return KEY_PROVIDER_ID;
+        public String keyProviderInfo() {
+            return KEY_PROVIDER_INFO;
         }
 
         @Override
@@ -121,8 +120,8 @@ public class KmsKeyring extends S3Keyring {
         _kmsClient = builder._kmsClient;
         _wrappingKeyId = builder._wrappingKeyId;
 
-        decryptStrategies.put(_kmsStrategy.keyProviderId(), _kmsStrategy);
-        decryptStrategies.put(_kmsContextStrategy.keyProviderId(), _kmsContextStrategy);
+        decryptStrategies.put(_kmsStrategy.keyProviderInfo(), _kmsStrategy);
+        decryptStrategies.put(_kmsContextStrategy.keyProviderInfo(), _kmsContextStrategy);
     }
 
     public static Builder builder() {

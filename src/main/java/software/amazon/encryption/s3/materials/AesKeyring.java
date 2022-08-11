@@ -24,7 +24,7 @@ public class AesKeyring extends S3Keyring {
 
     private final DecryptDataKeyStrategy _aesStrategy = new DecryptDataKeyStrategy() {
 
-        private static final String KEY_PROVIDER_ID = "AES";
+        private static final String KEY_PROVIDER_INFO = "AES";
         private static final String CIPHER_ALGORITHM = "AES";
 
         @Override
@@ -33,8 +33,8 @@ public class AesKeyring extends S3Keyring {
         }
 
         @Override
-        public String keyProviderId() {
-            return KEY_PROVIDER_ID;
+        public String keyProviderInfo() {
+            return KEY_PROVIDER_INFO;
         }
 
         @Override
@@ -48,7 +48,7 @@ public class AesKeyring extends S3Keyring {
 
     private final DecryptDataKeyStrategy _aesWrapStrategy = new DecryptDataKeyStrategy() {
 
-        private static final String KEY_PROVIDER_ID = "AESWrap";
+        private static final String KEY_PROVIDER_INFO = "AESWrap";
         private static final String CIPHER_ALGORITHM = "AESWrap";
 
         @Override
@@ -57,8 +57,8 @@ public class AesKeyring extends S3Keyring {
         }
 
         @Override
-        public String keyProviderId() {
-            return KEY_PROVIDER_ID;
+        public String keyProviderInfo() {
+            return KEY_PROVIDER_INFO;
         }
 
         @Override
@@ -73,7 +73,7 @@ public class AesKeyring extends S3Keyring {
 
     private final DataKeyStrategy _aesGcmStrategy = new DataKeyStrategy() {
 
-        private static final String KEY_PROVIDER_ID = "AES/GCM";
+        private static final String KEY_PROVIDER_INFO = "AES/GCM";
         private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
         private static final int NONCE_LENGTH_BYTES = 12;
         private static final int TAG_LENGTH_BYTES = 16;
@@ -85,8 +85,8 @@ public class AesKeyring extends S3Keyring {
         }
 
         @Override
-        public String keyProviderId() {
-            return KEY_PROVIDER_ID;
+        public String keyProviderInfo() {
+            return KEY_PROVIDER_INFO;
         }
 
         @Override
@@ -138,9 +138,9 @@ public class AesKeyring extends S3Keyring {
 
         _wrappingKey = builder._wrappingKey;
 
-        decryptStrategies.put(_aesStrategy.keyProviderId(), _aesStrategy);
-        decryptStrategies.put(_aesWrapStrategy.keyProviderId(), _aesWrapStrategy);
-        decryptStrategies.put(_aesGcmStrategy.keyProviderId(), _aesGcmStrategy);
+        decryptStrategies.put(_aesStrategy.keyProviderInfo(), _aesStrategy);
+        decryptStrategies.put(_aesWrapStrategy.keyProviderInfo(), _aesWrapStrategy);
+        decryptStrategies.put(_aesGcmStrategy.keyProviderInfo(), _aesGcmStrategy);
     }
 
     public static Builder builder() {

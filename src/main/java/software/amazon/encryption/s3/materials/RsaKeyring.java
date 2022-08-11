@@ -26,7 +26,7 @@ public class RsaKeyring extends S3Keyring {
     private final KeyPair _wrappingKeyPair;
 
     private final DecryptDataKeyStrategy _rsaEcbStrategy = new DecryptDataKeyStrategy() {
-        private static final String KEY_PROVIDER_ID = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+        private static final String KEY_PROVIDER_INFO = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
         private static final String CIPHER_ALGORITHM = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
 
         @Override
@@ -35,8 +35,8 @@ public class RsaKeyring extends S3Keyring {
         }
 
         @Override
-        public String keyProviderId() {
-            return KEY_PROVIDER_ID;
+        public String keyProviderInfo() {
+            return KEY_PROVIDER_INFO;
         }
 
         @Override
@@ -52,7 +52,7 @@ public class RsaKeyring extends S3Keyring {
 
     private final DataKeyStrategy _rsaOaepStrategy = new DataKeyStrategy() {
 
-        private static final String KEY_PROVIDER_ID = "RSA-OAEP-SHA1";
+        private static final String KEY_PROVIDER_INFO = "RSA-OAEP-SHA1";
         private static final String CIPHER_ALGORITHM = "RSA/ECB/OAEPPadding";
         private static final String DIGEST_NAME = "SHA-1";
         private static final String MGF_NAME = "MGF1";
@@ -68,8 +68,8 @@ public class RsaKeyring extends S3Keyring {
         }
 
         @Override
-        public String keyProviderId() {
-            return KEY_PROVIDER_ID;
+        public String keyProviderInfo() {
+            return KEY_PROVIDER_INFO;
         }
 
         @Override
@@ -135,8 +135,8 @@ public class RsaKeyring extends S3Keyring {
 
         _wrappingKeyPair = builder._wrappingKeyPair;
 
-        decryptStrategies.put(_rsaEcbStrategy.keyProviderId(), _rsaEcbStrategy);
-        decryptStrategies.put(_rsaOaepStrategy.keyProviderId(), _rsaOaepStrategy);
+        decryptStrategies.put(_rsaEcbStrategy.keyProviderInfo(), _rsaEcbStrategy);
+        decryptStrategies.put(_rsaOaepStrategy.keyProviderInfo(), _rsaOaepStrategy);
     }
 
     public static Builder builder() {
