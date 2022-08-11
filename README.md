@@ -9,7 +9,7 @@ It also supports writing objects with non-legacy algorithms.
 The list of legacy modes and operations will be provided below.
 
 ### Examples
-#### V2 KMS Materials Provider to V3 KMS w/ Context Materials Manager and Keyring
+#### V2 KMS Materials Provider to V3
 ```java
 class Example {
     public static void main(String[] args) {
@@ -20,21 +20,14 @@ class Example {
                 .build();
         
         // V3
-        Keyring keyring = KmsContextKeyring.builder()
-                .wrappingKeyId(KMS_WRAPPING_KEY_ID)
-                .build();
-
-        MaterialsManager materialsManager = DefaultMaterialsManager.builder()
-                .keyring(keyring)
-                .build();
         S3Client v3Client = S3EncryptionClient.builder()
-                .materialsManager(materialsManager)
+                .kmsKeyId(KMS_WRAPPING_KEY_ID)
                 .build();
     }
 }
 ```
 
-#### V2 AES Key Materials Provider to V3 AES/GCM Materials Manager and Keyring
+#### V2 AES Key Materials Provider to V3
 ```java
 class Example {
     public static void main(String[] args) {
@@ -49,21 +42,14 @@ class Example {
                 .build();
 
         // V3
-        Keyring keyring = AesGcmKeyring.builder()
-                .wrappingKey(aesKey)
-                .build();
-
-        MaterialsManager materialsManager = DefaultMaterialsManager.builder()
-                .keyring(keyring)
-                .build();
         S3Client v3Client = S3EncryptionClient.builder()
-                .materialsManager(materialsManager)
+                .aesKey(aesKey)
                 .build();
     }
 }
 ```
 
-#### V2 RSA Key Materials Provider to V3 RSA-OAEP Materials Manager and Keyring
+#### V2 RSA Key Materials Provider to V3
 ```java
 class Example {
     public static void main(String[] args) {
@@ -78,22 +64,15 @@ class Example {
                 .build();
 
         // V3
-        Keyring keyring = RsaOaepKeyring.builder()
-                .wrappingKeyPair(rsaKey)
-                .build();
-
-        MaterialsManager materialsManager = DefaultMaterialsManager.builder()
-                .keyring(keyring)
-                .build();
         S3Client v3Client = S3EncryptionClient.builder()
-                .materialsManager(materialsManager)
+                .rsaKeyPair(rsaKey)
                 .build();
     }
 }
 ```
 
-#### V1 Key Materials Provider to V3 AES/GCM Materials Manager, Legacy AESWrap Keyring, and Keyring
-Since legacy algorithms are supported for decryption only, a non-legacy keyring is required for any writes.
+#### V1 Key Materials Provider to V3
+To allow legacy modes (for decryption only), you must explicitly allow them
 ```java
 class Example {
     public static void main(String[] args) {
@@ -108,20 +87,9 @@ class Example {
                 .build();
 
         // V3
-        Keyring keyring = AesGcmKeyring.builder()
-                .wrappingKey(aesKey)
-                .build();
-        
-        Keyring legacyKeyring = AesWrapKeyring.builder()
-                .wrappingKey(aesKey)
-                .build();
-
-        MaterialsManager materialsManager = LegacyDecryptMaterialsManager.builder()
-                .keyring(keyring)
-                .legacyKeyring(legacyKeyring)
-                .build();
         S3Client v3Client = S3EncryptionClient.builder()
-                .materialsManager(materialsManager)
+                .aesKey(aesKey)
+                .enableLegacyModes(true)
                 .build();
     }
 }
@@ -131,6 +99,7 @@ class Example {
 #### Content Encryption
 * AES/CBC
 #### Key Wrap Encryption
+* AES
 * AESWrap
 * RSA-OAEP w/MGF-1 and SHA-256
 * KMS (without context)
