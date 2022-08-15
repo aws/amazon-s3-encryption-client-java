@@ -1,6 +1,6 @@
 package software.amazon.encryption.s3.internal;
 
-public class MetadataKey {
+public class MetadataKeyConstants {
     public static final String ENCRYPTED_DATA_KEY_V1 = "x-amz-key";
     public static final String ENCRYPTED_DATA_KEY_V2 = "x-amz-key-v2";
     // This is the name of the keyring/algorithm e.g. AES/GCM or kms+context

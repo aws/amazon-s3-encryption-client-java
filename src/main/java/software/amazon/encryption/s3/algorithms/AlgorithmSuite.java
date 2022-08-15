@@ -3,7 +3,7 @@ package software.amazon.encryption.s3.algorithms;
 
 public enum AlgorithmSuite {
     ALG_AES_256_GCM_IV12_TAG16_NO_KDF(0x0078,
-            true,
+            false,
             "AES",
             256,
             "AES/GCM/NoPadding",
@@ -12,7 +12,7 @@ public enum AlgorithmSuite {
             128,
             AlgorithmConstants.GCM_MAX_CONTENT_LENGTH_BITS),
     ALG_AES_256_CBC_IV16_NO_KDF(0x0070,
-            false,
+            true,
             "AES",
             256,
             "AES/CBC/PKCS5Padding",
@@ -22,7 +22,7 @@ public enum AlgorithmSuite {
             AlgorithmConstants.CBC_MAX_CONTENT_LENGTH_BYTES);
 
     private int _id;
-    private boolean _isActive;
+    private boolean _isLegacy;
     private String _dataKeyAlgorithm;
     private int _dataKeyLengthBits;
     private String _cipherName;
@@ -32,7 +32,7 @@ public enum AlgorithmSuite {
     private long _cipherMaxContentLengthBits;
 
     AlgorithmSuite(int id,
-            boolean isActive,
+            boolean isLegacy,
             String dataKeyAlgorithm,
             int dataKeyLengthBits,
             String cipherName,
@@ -42,7 +42,7 @@ public enum AlgorithmSuite {
             long cipherMaxContentLengthBits
     ) {
         this._id = id;
-        this._isActive = isActive;
+        this._isLegacy = isLegacy;
         this._dataKeyAlgorithm = dataKeyAlgorithm;
         this._dataKeyLengthBits = dataKeyLengthBits;
         this._cipherName = cipherName;
@@ -57,7 +57,7 @@ public enum AlgorithmSuite {
     }
 
     public boolean isLegacy() {
-        return !_isActive;
+        return _isLegacy;
     }
 
     public String dataKeyAlgorithm() {

@@ -23,16 +23,12 @@ public class GetEncryptedObjectPipeline {
 
     final private S3Client _s3Client;
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
-    final private ContentDecryptionStrategy _contentDecryptionStrategy;
-    final private ContentMetadataDecodingStrategy _contentMetadataDecodingStrategy;
 
     public static Builder builder() { return new Builder(); }
 
     private GetEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
-        this._contentDecryptionStrategy = builder._contentDecryptionStrategy;
-        this._contentMetadataDecodingStrategy = builder._contentMetadataDecodingStrategy;
     }
 
     public <T> T getObject(GetObjectRequest getObjectRequest,
@@ -47,8 +43,13 @@ public class GetEncryptedObjectPipeline {
         }
 
         GetObjectResponse response = objectStream.response();
+
         // TODO: Need to differentiate metadata decoding strategy here
-        ContentMetadata contentMetadata = _contentMetadataDecodingStrategy.decodeMetadata(response);
+        ContentMetadataDecodingStrategy contentMetadataDecodingStrategy = S3ObjectMetadataStrategy
+                .builder()
+                .build();
+
+        ContentMetadata contentMetadata = contentMetadataDecodingStrategy.decodeMetadata(response);
 
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
@@ -83,14 +84,6 @@ public class GetEncryptedObjectPipeline {
     public static class Builder {
         private S3Client _s3Client;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
-        private ContentDecryptionStrategy _contentDecryptionStrategy =
-                AesGcmContentStrategy
-                        .builder()
-                        .build();
-        private ContentMetadataDecodingStrategy _contentMetadataDecodingStrategy =
-                S3ObjectMetadataStrategy
-                        .builder()
-                        .build();
 
         private Builder() {}
 
@@ -101,17 +94,6 @@ public class GetEncryptedObjectPipeline {
 
         public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
             this._cryptoMaterialsManager = cryptoMaterialsManager;
-            return this;
-        }
-
-        // TODO: these should be determined automatically based on inputs
-        public Builder contentDecryptionStrategy(ContentDecryptionStrategy strategy) {
-            this._contentDecryptionStrategy = strategy;
-            return this;
-        }
-
-        public Builder metadataDecodingStrategy(ContentMetadataDecodingStrategy strategy) {
-            this._contentMetadataDecodingStrategy = strategy;
             return this;
         }
 
