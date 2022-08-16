@@ -30,11 +30,12 @@ public class S3EncryptionClient implements S3Client {
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
+    private final boolean _enableLegacyModes;
 
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
-        // TODO: store _enableLegacyModes and pass onto pipeline
+        _enableLegacyModes = builder._enableLegacyModes;
     }
 
     public static Builder builder() {
@@ -66,6 +67,7 @@ public class S3EncryptionClient implements S3Client {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3Client(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
+                .enableLegacyModes(_enableLegacyModes)
                 .build();
 
         return pipeline.getObject(getObjectRequest, responseTransformer);
