@@ -24,8 +24,13 @@ import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
+/**
+ * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
+ * on putObject and decrypt objects on getObject using the provided encryption key(s).
+ */
 public class S3EncryptionClient implements S3Client {
 
+    // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String,String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
 
     private final S3Client _wrappedClient;
@@ -42,6 +47,7 @@ public class S3EncryptionClient implements S3Client {
         return new Builder();
     }
 
+    // Helper function to attach encryption contexts to a request
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalEncryptionContext(Map<String, String> encryptionContext) {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);

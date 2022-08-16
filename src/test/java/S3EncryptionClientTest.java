@@ -536,11 +536,7 @@ public class S3EncryptionClientTest {
                         .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)),
                 RequestBody.fromString(input));
 
-        EncryptedGetObjectRequest getObjectRequest = new EncryptedGetObjectRequest(
-                BUCKET,
-                BUCKET_KEY
-        ).withExtraMaterialsDescription(encryptionContext);
-        String output = IOUtils.toString(v2Client.getObject(getObjectRequest).getObjectContent());
+        String output = v2Client.getObjectAsString(BUCKET, BUCKET_KEY);
         assertEquals(input, output);
     }
 

@@ -36,6 +36,7 @@ public class PutEncryptedObjectPipeline {
 
         byte[] input;
         try {
+            // TODO: this needs to be a stream and not a byte[]
             input = IoUtils.toByteArray(requestBody.contentStreamProvider().newStream());
         } catch (IOException e) {
             throw new S3EncryptionClientException("Cannot read input.", e);
@@ -50,6 +51,7 @@ public class PutEncryptedObjectPipeline {
     public static class Builder {
         private S3Client _s3Client;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
+        // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
         private ContentEncryptionStrategy _contentEncryptionStrategy =
                 AesGcmContentStrategy
                         .builder()

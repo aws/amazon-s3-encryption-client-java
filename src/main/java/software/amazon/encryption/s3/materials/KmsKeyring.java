@@ -4,7 +4,6 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.core.ApiName;
 import software.amazon.awssdk.core.SdkBytes;
@@ -100,8 +99,7 @@ public class KmsKeyring extends S3Keyring {
 
         @Override
         public byte[] encryptDataKey(SecureRandom secureRandom, EncryptionMaterials materials) {
-            // Convert to TreeMap for sorting of keys
-            TreeMap<String, String> encryptionContext = new TreeMap<>(materials.encryptionContext());
+            HashMap<String, String> encryptionContext = new HashMap<>(materials.encryptionContext());
             EncryptRequest request = EncryptRequest.builder()
                     .keyId(_wrappingKeyId)
                     .encryptionContext(encryptionContext)

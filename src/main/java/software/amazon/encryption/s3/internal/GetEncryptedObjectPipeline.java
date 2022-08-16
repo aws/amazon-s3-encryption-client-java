@@ -20,6 +20,12 @@ import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
+/**
+ * This class will determine the necessary mechanisms to decrypt objects returned from S3.
+ * Due to supporting various legacy modes, this is not a predefined pipeline like
+ * PutEncryptedObjectPipeline. There are several branches in this graph that are determined as more
+ * information is available from the returned object.
+ */
 public class GetEncryptedObjectPipeline {
 
     private final S3Client _s3Client;
