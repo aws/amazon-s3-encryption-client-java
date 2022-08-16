@@ -3,7 +3,7 @@ package software.amazon.encryption.s3.materials;
 import java.util.List;
 
 /**
- * Keyring defines the interface for wrapping data keys. A {@link MaterialsManager} will use
+ * Keyring defines the interface for wrapping data keys. A {@link CryptographicMaterialsManager} will use
  * keyrings to encrypt and decrypt data keys.
  */
 public interface Keyring {

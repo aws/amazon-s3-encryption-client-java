@@ -10,26 +10,26 @@ import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
-import software.amazon.encryption.s3.materials.MaterialsManager;
+import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 
 public class PutEncryptedObjectPipeline {
 
     final private S3Client _s3Client;
-    final private MaterialsManager _materialsManager;
+    final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private ContentEncryptionStrategy _contentEncryptionStrategy;
-    final private MetadataEncodingStrategy _metadataEncodingStrategy;
+    final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
 
     public static Builder builder() { return new Builder(); }
 
     private PutEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
-        this._materialsManager = builder._materialsManager;
+        this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
-        this._metadataEncodingStrategy = builder._metadataEncodingStrategy;
+        this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
     }
 
     public PutObjectResponse putObject(PutObjectRequest request, RequestBody requestBody) {
-        EncryptionMaterials materials = _materialsManager.getEncryptionMaterials(
+        EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(
                 EncryptionMaterialsRequest.builder()
                         .build());
 
@@ -41,35 +41,20 @@ public class PutEncryptedObjectPipeline {
         }
         EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, input);
 
-        request = _metadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
+        request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
 
         return _s3Client.putObject(request, RequestBody.fromBytes(encryptedContent.ciphertext));
     }
 
-    public static class EncryptedContent{
-        public byte[] ciphertext;
-        public byte[] nonce;
-    }
-
-    @FunctionalInterface
-    public interface ContentEncryptionStrategy {
-        EncryptedContent encryptContent(EncryptionMaterials materials, byte[] content);
-    }
-
-    @FunctionalInterface
-    public interface MetadataEncodingStrategy {
-        PutObjectRequest encodeMetadata(EncryptionMaterials materials, EncryptedContent encryptedContent, PutObjectRequest request);
-    }
-
     public static class Builder {
         private S3Client _s3Client;
-        private MaterialsManager _materialsManager;
+        private CryptographicMaterialsManager _cryptoMaterialsManager;
         private ContentEncryptionStrategy _contentEncryptionStrategy =
-                AesGcmContentEncryptionStrategy
+                AesGcmContentStrategy
                         .builder()
                         .build();
-        private MetadataEncodingStrategy _metadataEncodingStrategy =
-                ObjectMetadataMetadataEncodingStrategy
+        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy =
+                S3ObjectMetadataStrategy
                         .builder()
                         .build();
 
@@ -80,8 +65,8 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
-        public Builder materialsManager(MaterialsManager materialsManager) {
-            this._materialsManager = materialsManager;
+        public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
+            this._cryptoMaterialsManager = cryptoMaterialsManager;
             return this;
         }
 
@@ -90,8 +75,8 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
-        public Builder metadataEncodingStrategy(MetadataEncodingStrategy strategy) {
-            this._metadataEncodingStrategy = strategy;
+        public Builder metadataEncodingStrategy(ContentMetadataEncodingStrategy strategy) {
+            this._contentMetadataEncodingStrategy = strategy;
             return this;
         }
 
