@@ -16,6 +16,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
 
     public EncryptionMaterials getEncryptionMaterials(EncryptionMaterialsRequest request) {
         EncryptionMaterials materials = EncryptionMaterials.builder()
+                .s3Request(request.s3Request())
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .encryptionContext(request.encryptionContext())
                 .build();
@@ -25,6 +26,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
 
     public DecryptionMaterials decryptMaterials(DecryptMaterialsRequest request) {
         DecryptionMaterials materials = DecryptionMaterials.builder()
+                .s3Request(request.s3Request())
                 .algorithmSuite(request.algorithmSuite())
                 .encryptionContext(request.encryptionContext())
                 .build();

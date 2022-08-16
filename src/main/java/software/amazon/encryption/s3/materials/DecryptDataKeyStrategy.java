@@ -7,6 +7,6 @@ public interface DecryptDataKeyStrategy {
 
     String keyProviderInfo();
 
-    byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey)
+    byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey)
             throws GeneralSecurityException;
 }

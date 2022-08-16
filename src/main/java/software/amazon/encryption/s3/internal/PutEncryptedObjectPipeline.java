@@ -29,9 +29,10 @@ public class PutEncryptedObjectPipeline {
     }
 
     public PutObjectResponse putObject(PutObjectRequest request, RequestBody requestBody) {
-        EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(
-                EncryptionMaterialsRequest.builder()
-                        .build());
+        EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
+                .s3Request(request);
+
+        EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
         byte[] input;
         try {

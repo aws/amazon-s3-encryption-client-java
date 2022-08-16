@@ -1,10 +1,13 @@
 package software.amazon.encryption.s3;
 
 import java.security.KeyPair;
-import java.security.SecureRandom;
+import java.util.Map;
+import java.util.function.Consumer;
 import javax.crypto.SecretKey;
+import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -16,14 +19,14 @@ import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
-import software.amazon.encryption.s3.materials.DataKeyGenerator;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
-import software.amazon.encryption.s3.materials.DefaultDataKeyGenerator;
 import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
 public class S3EncryptionClient implements S3Client {
+
+    public static final ExecutionAttribute<Map<String,String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -36,6 +39,11 @@ public class S3EncryptionClient implements S3Client {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalEncryptionContext(Map<String, String> encryptionContext) {
+        return builder ->
+                builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
     }
 
     @Override

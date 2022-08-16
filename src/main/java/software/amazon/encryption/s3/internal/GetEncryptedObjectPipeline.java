@@ -49,13 +49,14 @@ public class GetEncryptedObjectPipeline {
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
 
-        DecryptMaterialsRequest request = DecryptMaterialsRequest.builder()
+        DecryptMaterialsRequest materialsRequest = DecryptMaterialsRequest.builder()
+                .s3Request(getObjectRequest)
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKeys(encryptedDataKeys)
                 .encryptionContext(contentMetadata.encryptedDataKeyContext())
                 .build();
 
-        DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(request);
+        DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(materialsRequest);
 
         ContentDecryptionStrategy contentDecryptionStrategy = null;
         switch (algorithmSuite) {

@@ -5,9 +5,13 @@ import java.util.List;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 final public class EncryptionMaterials {
+
+    // Original request
+    private final PutObjectRequest _s3Request;
 
     // Identifies what sort of crypto algorithms we want to use
     private final AlgorithmSuite _algorithmSuite;
@@ -20,6 +24,7 @@ final public class EncryptionMaterials {
     private final byte[] _plaintextDataKey;
 
     private EncryptionMaterials(Builder builder) {
+        this._s3Request = builder._s3Request;
         this._algorithmSuite = builder._algorithmSuite;
         this._encryptionContext = builder._encryptionContext;
         this._encryptedDataKeys = builder._encryptedDataKeys;
@@ -28,6 +33,10 @@ final public class EncryptionMaterials {
 
     static public Builder builder() {
         return new Builder();
+    }
+
+    public PutObjectRequest s3Request() {
+        return _s3Request;
     }
 
     public AlgorithmSuite algorithmSuite() {
@@ -52,6 +61,7 @@ final public class EncryptionMaterials {
 
     public Builder toBuilder() {
         return new Builder()
+                .s3Request(_s3Request)
                 .algorithmSuite(_algorithmSuite)
                 .encryptionContext(_encryptionContext)
                 .encryptedDataKeys(_encryptedDataKeys)
@@ -60,12 +70,19 @@ final public class EncryptionMaterials {
 
     static public class Builder {
 
+        private PutObjectRequest _s3Request = null;
+
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private byte[] _plaintextDataKey = null;
 
         private Builder() {
+        }
+
+        public Builder s3Request(PutObjectRequest s3Request) {
+            _s3Request = s3Request;
+            return this;
         }
 
         public Builder algorithmSuite(AlgorithmSuite algorithmSuite) {
