@@ -1,10 +1,5 @@
 package software.amazon.encryption.s3.internal;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
@@ -16,50 +11,24 @@ import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.S3Keyring;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 /**
- * This stores encryption metadata in the S3 object metadata.
+ * This Decrypts metadata from Instruction File which is stored parallel to S3 Object.
  * The name is not a typo
  */
-public class S3ObjectMetadataStrategy implements ContentMetadataEncodingStrategy,
-        ContentMetadataDecodingStrategy {
-    private final Base64.Encoder _encoder;
+public class InstructionFileMetadataDecodingStrategy implements ContentMetadataDecodingStrategy {
     private final Base64.Decoder _decoder;
 
-    private S3ObjectMetadataStrategy(Builder builder) {
-        this._encoder = builder._encoder;
+    private InstructionFileMetadataDecodingStrategy(Builder builder) {
         this._decoder = builder._decoder;
     }
 
     public static Builder builder() { return new Builder(); }
-
-    @Override
-    public PutObjectRequest encodeMetadata(
-            EncryptionMaterials materials,
-            EncryptedContent encryptedContent,
-            PutObjectRequest request) {
-        Map<String,String> metadata = new HashMap<>(request.metadata());
-        EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
-        metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, _encoder.encodeToString(edk.ciphertext()));
-        metadata.put(MetadataKeyConstants.CONTENT_NONCE, _encoder.encodeToString(encryptedContent.nonce));
-        metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
-        metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
-        metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, new String(edk.keyProviderInfo(), StandardCharsets.UTF_8));
-
-        try (JsonWriter jsonWriter = JsonWriter.create()) {
-            jsonWriter.writeStartObject();
-            for (Entry<String,String> entry : materials.encryptionContext().entrySet()) {
-                jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
-            }
-            jsonWriter.writeEndObject();
-
-            String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
-            metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_CONTEXT, jsonEncryptionContext);
-        } catch (JsonGenerationException e) {
-            throw new S3EncryptionClientException("Cannot serialize encryption context to JSON.", e);
-        }
-
-        return request.toBuilder().metadata(metadata).build();
-    }
 
     @Override
     public ContentMetadata decodeMetadata(Map<String, String> metadata) {
@@ -126,7 +95,7 @@ public class S3ObjectMetadataStrategy implements ContentMetadataEncodingStrategy
             JsonNodeParser parser = JsonNodeParser.create();
             JsonNode objectNode = parser.parse(jsonEncryptionContext);
 
-            for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
+            for (Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
                 encryptionContext.put(entry.getKey(), entry.getValue().asString());
             }
         } catch (Exception e) {
@@ -145,21 +114,15 @@ public class S3ObjectMetadataStrategy implements ContentMetadataEncodingStrategy
     }
 
     public static class Builder {
-        private Base64.Encoder _encoder = Base64.getEncoder();
         private  Base64.Decoder _decoder = Base64.getDecoder();
-
-        public Builder base64Encoder(Base64.Encoder encoder) {
-            this._encoder = encoder;
-            return this;
-        }
 
         public Builder base64Decoder(Base64.Decoder decoder) {
             this._decoder = decoder;
             return this;
         }
 
-        public S3ObjectMetadataStrategy build() {
-            return new S3ObjectMetadataStrategy(this);
+        public InstructionFileMetadataDecodingStrategy build() {
+            return new InstructionFileMetadataDecodingStrategy(this);
         }
     }
 }
