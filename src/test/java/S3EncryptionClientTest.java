@@ -322,8 +322,7 @@ public class S3EncryptionClientTest {
         EncryptionMaterialsProvider materialsProvider =
                 new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
         CryptoConfigurationV2 cryptoConfig =
-                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
-                        .withStorageMode(CryptoStorageMode.InstructionFile);
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption);
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
                 .withCryptoConfiguration(cryptoConfig)
                 .withEncryptionMaterialsProvider(materialsProvider)
