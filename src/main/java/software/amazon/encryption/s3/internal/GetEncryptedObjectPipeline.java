@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.AbortableInputStream;
@@ -42,14 +43,8 @@ public class GetEncryptedObjectPipeline {
             throw new RuntimeException(e);
         }
 
-        GetObjectResponse response = objectStream.response();
-
-        // TODO: Need to differentiate metadata decoding strategy here
-        ContentMetadataDecodingStrategy contentMetadataDecodingStrategy = S3ObjectMetadataStrategy
-                .builder()
-                .build();
-
-        ContentMetadata contentMetadata = contentMetadataDecodingStrategy.decodeMetadata(response);
+        GetObjectResponse getObjectResponse = objectStream.response();
+        ContentMetadata contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, getObjectResponse);
 
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
@@ -74,7 +69,7 @@ public class GetEncryptedObjectPipeline {
         byte[] plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, ciphertext);
 
         try {
-            return responseTransformer.transform(response,
+            return responseTransformer.transform(getObjectResponse,
                     AbortableInputStream.create(new ByteArrayInputStream(plaintext)));
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);

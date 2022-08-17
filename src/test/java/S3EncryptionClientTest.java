@@ -6,15 +6,8 @@ import com.amazonaws.services.s3.AmazonS3Encryption;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
 import com.amazonaws.services.s3.AmazonS3EncryptionV2;
-import com.amazonaws.services.s3.model.CryptoConfiguration;
-import com.amazonaws.services.s3.model.CryptoConfigurationV2;
-import com.amazonaws.services.s3.model.CryptoMode;
-import com.amazonaws.services.s3.model.EncryptedPutObjectRequest;
-import com.amazonaws.services.s3.model.EncryptionMaterials;
-import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
-import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.*;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -119,12 +112,44 @@ public class S3EncryptionClientTest {
 
     @Test
     public void AesGcmV2toV3() {
-        final String BUCKET_KEY = "aes-gcm-v3-to-v2";
+        final String BUCKET_KEY = "aes-gcm-v2-to-v3";
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
                 new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // Asserts
+        final String input = "AesGcmV2toV3";
+        v2Client.putObject(BUCKET, BUCKET_KEY, input);
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(
+                GetObjectRequest.builder()
+                        .bucket(BUCKET)
+                        .key(BUCKET_KEY).build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+    }
+
+    @Test
+    public void AesGcmV2toV3WithInstructionFile() {
+        final String BUCKET_KEY = "aes-gcm-v2-to-v3-with-instruction-file";
+
+        // V2 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
