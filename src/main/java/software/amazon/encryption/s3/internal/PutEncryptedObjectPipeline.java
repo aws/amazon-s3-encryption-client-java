@@ -53,10 +53,7 @@ public class PutEncryptedObjectPipeline {
                 AesGcmContentStrategy
                         .builder()
                         .build();
-        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy =
-                S3ObjectMetadataStrategy
-                        .builder()
-                        .build();
+        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
 
         private Builder() {}
 
