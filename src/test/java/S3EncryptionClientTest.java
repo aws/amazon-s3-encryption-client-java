@@ -111,45 +111,45 @@ public class S3EncryptionClientTest {
     }
 
     @Test
-    public void AesWrapV1toV3WithInstructionMode() {
-        final String BUCKET_KEY = "aes-wrap-v1-to-v3-with-instruction-storage-mode";
-
-        // V1 Client
-        EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
-        CryptoConfiguration v1CryptoConfig =
-                new CryptoConfiguration(CryptoMode.AuthenticatedEncryption)
-                        .withStorageMode(CryptoStorageMode.InstructionFile);
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-                .withCryptoConfiguration(v1CryptoConfig)
-                .withEncryptionMaterials(materialsProvider)
-                .build();
-
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .enableLegacyModes(true)
-                .build();
-
-        // Asserts
-        final String input = "AesGcmV1toV3";
-        v1Client.putObject(BUCKET, BUCKET_KEY, input);
-
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(GetObjectRequest.builder()
-                .bucket(BUCKET)
-                .key(BUCKET_KEY).build());
-        String output = objectResponse.asUtf8String();
-        assertEquals(input, output);
-    }
-
-    @Test
     public void AesGcmV2toV3() {
-        final String BUCKET_KEY = "aes-gcm-v3-to-v2";
+        final String BUCKET_KEY = "aes-gcm-v2-to-v3";
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
                 new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // Asserts
+        final String input = "AesGcmV2toV3";
+        v2Client.putObject(BUCKET, BUCKET_KEY, input);
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(
+                GetObjectRequest.builder()
+                        .bucket(BUCKET)
+                        .key(BUCKET_KEY).build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+    }
+
+    @Test
+    public void AesGcmV2toV3WithInstructionFile() {
+        final String BUCKET_KEY = "aes-gcm-v2-to-v3-with-instruction-file";
+
+        // V2 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
@@ -283,38 +283,6 @@ public class S3EncryptionClientTest {
     }
 
     @Test
-    public void RsaEcbV1toV3WithInstructionMode() {
-        final String BUCKET_KEY = "rsa-ecb-v1-to-v3-with-instruction-mode";
-
-        // V1 Client
-        EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
-        CryptoConfiguration v1CryptoConfig =
-                new CryptoConfiguration(CryptoMode.AuthenticatedEncryption)
-                        .withStorageMode(CryptoStorageMode.InstructionFile);;
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-                .withCryptoConfiguration(v1CryptoConfig)
-                .withEncryptionMaterials(materialsProvider)
-                .build();
-
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .rsaKeyPair(RSA_KEY_PAIR)
-                .enableLegacyModes(true)
-                .build();
-
-        // Asserts
-        final String input = "RsaEcbV1toV3";
-        v1Client.putObject(BUCKET, BUCKET_KEY, input);
-
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(GetObjectRequest.builder()
-                .bucket(BUCKET)
-                .key(BUCKET_KEY).build());
-        String output = objectResponse.asUtf8String();
-        assertEquals(input, output);
-    }
-
-    @Test
     public void RsaOaepV2toV3() {
         final String BUCKET_KEY = "rsa-oaep-v2-to-v3";
 
@@ -323,38 +291,6 @@ public class S3EncryptionClientTest {
                 new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
         CryptoConfigurationV2 cryptoConfig =
                 new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption);
-        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
-                .withCryptoConfiguration(cryptoConfig)
-                .withEncryptionMaterialsProvider(materialsProvider)
-                .build();
-
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .rsaKeyPair(RSA_KEY_PAIR)
-                .build();
-
-        // Asserts
-        final String input = "RsaOaepV2toV3";
-        v2Client.putObject(BUCKET, BUCKET_KEY, input);
-
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(
-                GetObjectRequest.builder()
-                        .bucket(BUCKET)
-                        .key(BUCKET_KEY).build());
-        String output = objectResponse.asUtf8String();
-        assertEquals(input, output);
-    }
-
-    @Test
-    public void RsaOaepV2toV3WithInstructionMode() {
-        final String BUCKET_KEY = "rsa-oaep-v2-to-v3-with-instruction-mode";
-
-        // V2 Client
-        EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
-        CryptoConfigurationV2 cryptoConfig =
-                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
-                        .withStorageMode(CryptoStorageMode.InstructionFile);
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
                 .withCryptoConfiguration(cryptoConfig)
                 .withEncryptionMaterialsProvider(materialsProvider)
@@ -467,40 +403,6 @@ public class S3EncryptionClientTest {
 
         CryptoConfiguration v1Config =
                 new CryptoConfiguration(CryptoMode.AuthenticatedEncryption)
-                        .withAwsKmsRegion(KMS_REGION);
-
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-                .withCryptoConfiguration(v1Config)
-                .withEncryptionMaterials(materialsProvider)
-                .build();
-
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_MASTER_KEY)
-                .enableLegacyModes(true)
-                .build();
-
-        // Asserts
-        final String input = "KmsV1toV3";
-        v1Client.putObject(BUCKET, BUCKET_KEY, input);
-
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(GetObjectRequest.builder()
-                .bucket(BUCKET)
-                .key(BUCKET_KEY).build());
-        String output = objectResponse.asUtf8String();
-        assertEquals(input, output);
-    }
-
-    @Test
-    public void KmsV1toV3WithInstructionMode() {
-        final String BUCKET_KEY = "kms-v1-to-v3-with-instruction-mode";
-
-        // V1 Client
-        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_MASTER_KEY);
-
-        CryptoConfiguration v1Config =
-                new CryptoConfiguration(CryptoMode.AuthenticatedEncryption)
-                        .withStorageMode(CryptoStorageMode.InstructionFile)
                         .withAwsKmsRegion(KMS_REGION);
 
         AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()

@@ -3,15 +3,11 @@ package software.amazon.encryption.s3.internal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.AbortableInputStream;
-import software.amazon.awssdk.protocols.jsoncore.JsonNode;
-import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -47,37 +43,8 @@ public class GetEncryptedObjectPipeline {
             throw new RuntimeException(e);
         }
 
-        GetObjectResponse response = objectStream.response();
-
-        // TODO: Need to differentiate metadata decoding strategy here
-        ContentMetadataDecodingStrategy contentMetadataDecodingStrategy = S3ObjectMetadataStrategy
-                .builder()
-                .build();
-
-        Map metadata = response.metadata();
-
-        // If Metadata is not in S3 Object,
-        // Pulls metadata from Instruction File which is stored parallel to S3 Object
-        if ((metadata == null) || (metadata.get(MetadataKeyConstants.CONTENT_CIPHER) == null)) {
-            contentMetadataDecodingStrategy = InstructionFileMetadataDecodingStrategy.builder().build();
-            String instructionSuffix = ".instruction";
-
-            GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
-                    .bucket(getObjectRequest.bucket())
-                    .key(getObjectRequest.key() + instructionSuffix )
-                    .build();
-            ResponseInputStream<GetObjectResponse> instruction = _s3Client.getObject(instructionGetObjectRequest);
-
-            Map<String, String> metadataContext = new HashMap<>();
-            JsonNodeParser parser = JsonNodeParser.create();
-            JsonNode objectNode = parser.parse(instruction);
-            for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
-                metadataContext.put(entry.getKey(), entry.getValue().asString());
-            }
-            metadata = metadataContext;
-        }
-
-        ContentMetadata contentMetadata = contentMetadataDecodingStrategy.decodeMetadata(metadata);
+        GetObjectResponse getObjectResponse = objectStream.response();
+        ContentMetadata contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, getObjectResponse);
 
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
@@ -102,7 +69,7 @@ public class GetEncryptedObjectPipeline {
         byte[] plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, ciphertext);
 
         try {
-            return responseTransformer.transform(response,
+            return responseTransformer.transform(getObjectResponse,
                     AbortableInputStream.create(new ByteArrayInputStream(plaintext)));
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
