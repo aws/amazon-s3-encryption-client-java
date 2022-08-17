@@ -28,11 +28,11 @@ import software.amazon.encryption.s3.S3EncryptionClient;
 public class S3EncryptionClientTest {
 
     // TODO: make these dynamic
-    private static final String BUCKET = "s3encryptionclient";
+    private static final String BUCKET = "845853869857-s3-research";
 
-    private static final String KMS_MASTER_KEY = "6c7db579-a16c-48c0-adea-604f6b449758";
+    private static final String KMS_MASTER_KEY = "e45015eb-1643-448f-9145-8ed4679138e4";
     
-    private static final Region KMS_REGION = Region.getRegion(Regions.US_WEST_2);
+    private static final Region KMS_REGION = Region.getRegion(Regions.US_EAST_2);
 
     private static SecretKey AES_KEY;
     private static KeyPair RSA_KEY_PAIR;
