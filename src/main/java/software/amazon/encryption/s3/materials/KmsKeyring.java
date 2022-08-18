@@ -125,10 +125,11 @@ public class KmsKeyring extends S3Keyring {
                 }
             }
 
-            Map<String, String> materialsEncryptionContext = new HashMap<>(materials.encryptionContext());
-            materialsEncryptionContext.remove(KEY_ID_CONTEXT_KEY);
-            materialsEncryptionContext.remove(ENCRYPTION_CONTEXT_ALGORITHM_KEY);
-            if (!materialsEncryptionContext.equals(requestEncryptionContext)) {
+            // We are validating the encryption context to match S3EC V2 behavior
+            Map<String, String> materialsEncryptionContextCopy = new HashMap<>(materials.encryptionContext());
+            materialsEncryptionContextCopy.remove(KEY_ID_CONTEXT_KEY);
+            materialsEncryptionContextCopy.remove(ENCRYPTION_CONTEXT_ALGORITHM_KEY);
+            if (!materialsEncryptionContextCopy.equals(requestEncryptionContext)) {
                 throw new S3EncryptionClientException("Provided encryption context does not match information retrieved from S3");
             }
 
