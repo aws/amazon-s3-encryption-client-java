@@ -1,10 +1,13 @@
 package software.amazon.encryption.s3;
 
 import java.security.KeyPair;
-import java.security.SecureRandom;
+import java.util.Map;
+import java.util.function.Consumer;
 import javax.crypto.SecretKey;
+import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -16,26 +19,38 @@ import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
-import software.amazon.encryption.s3.materials.DataKeyGenerator;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
-import software.amazon.encryption.s3.materials.DefaultDataKeyGenerator;
 import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
+/**
+ * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
+ * on putObject and decrypt objects on getObject using the provided encryption key(s).
+ */
 public class S3EncryptionClient implements S3Client {
+
+    // Used for request-scoped encryption contexts for supporting keys
+    public static final ExecutionAttribute<Map<String,String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
+    private final boolean _enableLegacyModes;
 
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
-        // TODO: store _enableLegacyModes and pass onto pipeline
+        _enableLegacyModes = builder._enableLegacyModes;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    // Helper function to attach encryption contexts to a request
+    public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalEncryptionContext(Map<String, String> encryptionContext) {
+        return builder ->
+                builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
     }
 
     @Override
@@ -58,6 +73,7 @@ public class S3EncryptionClient implements S3Client {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3Client(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
+                .enableLegacyModes(_enableLegacyModes)
                 .build();
 
         return pipeline.getObject(getObjectRequest, responseTransformer);

@@ -38,11 +38,11 @@ public class AesKeyring extends S3Keyring {
         }
 
         @Override
-        public byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
             Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, _wrappingKey);
 
-            return cipher.doFinal(encryptedDataKey.ciphertext());
+            return cipher.doFinal(encryptedDataKey);
         }
     };
 
@@ -62,11 +62,11 @@ public class AesKeyring extends S3Keyring {
         }
 
         @Override
-        public byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.UNWRAP_MODE, _wrappingKey);
 
-            Key plaintextKey = cipher.unwrap(encryptedDataKey.ciphertext(), CIPHER_ALGORITHM, Cipher.SECRET_KEY);
+            Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
             return plaintextKey.getEncoded();
         }
     };
@@ -113,8 +113,8 @@ public class AesKeyring extends S3Keyring {
         }
 
         @Override
-        public byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
-            byte[] encodedBytes = encryptedDataKey.ciphertext();
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+            byte[] encodedBytes = encryptedDataKey;
             byte[] nonce = new byte[NONCE_LENGTH_BYTES];
             byte[] ciphertext = new byte[encodedBytes.length - nonce.length];
 
@@ -122,7 +122,7 @@ public class AesKeyring extends S3Keyring {
             System.arraycopy(encodedBytes, nonce.length, ciphertext, 0, ciphertext.length);
 
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
-            final Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, _wrappingKey, gcmParameterSpec);
 
             AlgorithmSuite algorithmSuite = materials.algorithmSuite();

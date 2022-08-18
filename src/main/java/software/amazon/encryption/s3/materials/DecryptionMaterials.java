@@ -4,9 +4,13 @@ import java.util.Collections;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 final public class DecryptionMaterials {
+
+    // Original request
+    private final GetObjectRequest _s3Request;
 
     // Identifies what sort of crypto algorithms we want to use
     private final AlgorithmSuite _algorithmSuite;
@@ -18,6 +22,7 @@ final public class DecryptionMaterials {
     private final byte[] _plaintextDataKey;
 
     private DecryptionMaterials(Builder builder) {
+        this._s3Request = builder._s3Request;
         this._algorithmSuite = builder._algorithmSuite;
         this._encryptionContext = builder._encryptionContext;
         this._plaintextDataKey = builder._plaintextDataKey;
@@ -25,6 +30,10 @@ final public class DecryptionMaterials {
 
     static public Builder builder() {
         return new Builder();
+    }
+
+    public GetObjectRequest s3Request() {
+        return _s3Request;
     }
 
     public AlgorithmSuite algorithmSuite() {
@@ -45,6 +54,7 @@ final public class DecryptionMaterials {
 
     public Builder toBuilder() {
         return new Builder()
+                .s3Request(_s3Request)
                 .algorithmSuite(_algorithmSuite)
                 .encryptionContext(_encryptionContext)
                 .plaintextDataKey(_plaintextDataKey);
@@ -52,11 +62,17 @@ final public class DecryptionMaterials {
 
     static public class Builder {
 
+        public GetObjectRequest _s3Request = null;
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private byte[] _plaintextDataKey = null;
 
         private Builder() {
+        }
+
+        public Builder s3Request(GetObjectRequest s3Request) {
+            _s3Request = s3Request;
+            return this;
         }
 
         public Builder algorithmSuite(AlgorithmSuite algorithmSuite) {

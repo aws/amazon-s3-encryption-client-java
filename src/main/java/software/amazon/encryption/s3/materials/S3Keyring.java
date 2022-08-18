@@ -1,6 +1,7 @@
 package software.amazon.encryption.s3.materials;
 
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,9 +89,9 @@ abstract public class S3Keyring implements Keyring {
         }
 
         try {
-            byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey);
+            byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey.ciphertext());
             return materials.toBuilder().plaintextDataKey(plaintext).build();
-        } catch (Exception e) {
+        } catch (GeneralSecurityException e) {
             throw new S3EncryptionClientException("Unable to " + keyProviderInfo + " unwrap", e);
         }
     }

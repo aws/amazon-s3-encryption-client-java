@@ -20,16 +20,24 @@ import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
+/**
+ * This class will determine the necessary mechanisms to decrypt objects returned from S3.
+ * Due to supporting various legacy modes, this is not a predefined pipeline like
+ * PutEncryptedObjectPipeline. There are several branches in this graph that are determined as more
+ * information is available from the returned object.
+ */
 public class GetEncryptedObjectPipeline {
 
-    final private S3Client _s3Client;
-    final private CryptographicMaterialsManager _cryptoMaterialsManager;
+    private final S3Client _s3Client;
+    private final CryptographicMaterialsManager _cryptoMaterialsManager;
+    private final boolean _enableLegacyModes;
 
     public static Builder builder() { return new Builder(); }
 
     private GetEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
+        this._enableLegacyModes = builder._enableLegacyModes;
     }
 
     public <T> T getObject(GetObjectRequest getObjectRequest,
@@ -47,15 +55,20 @@ public class GetEncryptedObjectPipeline {
         ContentMetadata contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, getObjectResponse);
 
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
+        if (!_enableLegacyModes && algorithmSuite.isLegacy()) {
+            throw new S3EncryptionClientException("Enable legacy modes to use legacy content encryption: " + algorithmSuite.cipherName());
+        }
+
         List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
 
-        DecryptMaterialsRequest request = DecryptMaterialsRequest.builder()
+        DecryptMaterialsRequest materialsRequest = DecryptMaterialsRequest.builder()
+                .s3Request(getObjectRequest)
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKeys(encryptedDataKeys)
                 .encryptionContext(contentMetadata.encryptedDataKeyContext())
                 .build();
 
-        DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(request);
+        DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(materialsRequest);
 
         ContentDecryptionStrategy contentDecryptionStrategy = null;
         switch (algorithmSuite) {
@@ -79,6 +92,7 @@ public class GetEncryptedObjectPipeline {
     public static class Builder {
         private S3Client _s3Client;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
+        private boolean _enableLegacyModes;
 
         private Builder() {}
 
@@ -89,6 +103,11 @@ public class GetEncryptedObjectPipeline {
 
         public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
             this._cryptoMaterialsManager = cryptoMaterialsManager;
+            return this;
+        }
+
+        public Builder enableLegacyModes(boolean enableLegacyModes) {
+            this._enableLegacyModes = enableLegacyModes;
             return this;
         }
 

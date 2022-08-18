@@ -40,11 +40,11 @@ public class RsaKeyring extends S3Keyring {
         }
 
         @Override
-        public byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.UNWRAP_MODE, _wrappingKeyPair.getPrivate());
 
-            Key plaintextKey = cipher.unwrap(encryptedDataKey.ciphertext(), CIPHER_ALGORITHM, Cipher.SECRET_KEY);
+            Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
 
             return plaintextKey.getEncoded();
         }
@@ -93,12 +93,12 @@ public class RsaKeyring extends S3Keyring {
         }
 
         @Override
-        public byte[] decryptDataKey(DecryptionMaterials materials, EncryptedDataKey encryptedDataKey) throws GeneralSecurityException {
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.UNWRAP_MODE, _wrappingKeyPair.getPrivate(), OAEP_PARAMETER_SPEC);
 
             String dataKeyAlgorithm = materials.algorithmSuite().dataKeyAlgorithm();
-            Key pseudoDataKey = cipher.unwrap(encryptedDataKey.ciphertext(), dataKeyAlgorithm, Cipher.SECRET_KEY);
+            Key pseudoDataKey = cipher.unwrap(encryptedDataKey, dataKeyAlgorithm, Cipher.SECRET_KEY);
 
             return parsePseudoDataKey(materials, pseudoDataKey.getEncoded());
         }
