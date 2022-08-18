@@ -2,6 +2,13 @@
 
 This library provides an S3 client that supports client-side encryption.
 
+## Testing
+Integration tests are included. To test them, certain environment variables need to be set:
+
+* `AWS_S3EC_TEST_BUCKET` - The bucket to write test values to
+* `AWS_S3EC_TEST_KMS_KEY_ID` - The key id for the KMS key used for KMS tests
+* `AWS_S3EC_TEST_KMS_REGION` - The region the KMS key resides e.g. us-east-1`
+
 ## Migration
 
 This version of the library supports reading encrypted objects from previous versions.

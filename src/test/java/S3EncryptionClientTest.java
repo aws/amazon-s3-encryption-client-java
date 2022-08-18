@@ -39,12 +39,9 @@ import software.amazon.encryption.s3.S3EncryptionClient;
 
 public class S3EncryptionClientTest {
 
-    // TODO: make these dynamic
-    private static final String BUCKET = "845853869857-s3-research";
-
-    private static final String KMS_MASTER_KEY = "e45015eb-1643-448f-9145-8ed4679138e4";
-    
-    private static final Region KMS_REGION = Region.getRegion(Regions.US_EAST_2);
+    private static final String BUCKET = System.getenv("AWS_S3EC_TEST_BUCKET");
+    private static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
+    private static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_S3EC_TEST_KMS_REGION")));
 
     private static SecretKey AES_KEY;
     private static KeyPair RSA_KEY_PAIR;
@@ -403,7 +400,7 @@ public class S3EncryptionClientTest {
         final String BUCKET_KEY = "kms-v1-to-v3";
 
         // V1 Client
-        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_MASTER_KEY);
+        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_KEY_ID);
 
         CryptoConfiguration v1Config =
                 new CryptoConfiguration(CryptoMode.AuthenticatedEncryption)
@@ -416,7 +413,7 @@ public class S3EncryptionClientTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_MASTER_KEY)
+                .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyModes(true)
                 .build();
 
@@ -436,7 +433,7 @@ public class S3EncryptionClientTest {
         final String BUCKET_KEY = "kms-context-v2-to-v3";
 
         // V2 Client
-        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_MASTER_KEY);
+        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_KEY_ID);
 
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
                 .withEncryptionMaterialsProvider(materialsProvider)
@@ -444,7 +441,7 @@ public class S3EncryptionClientTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_MASTER_KEY)
+                .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyModes(true)
                 .build();
 
@@ -473,7 +470,7 @@ public class S3EncryptionClientTest {
         final String BUCKET_KEY = "kms-context-v3-to-v1";
 
         // V1 Client
-        KMSEncryptionMaterials kmsMaterials = new KMSEncryptionMaterials(KMS_MASTER_KEY);
+        KMSEncryptionMaterials kmsMaterials = new KMSEncryptionMaterials(KMS_KEY_ID);
         kmsMaterials.addDescription("user-metadata-key", "user-metadata-value-v3-to-v1");
         EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(kmsMaterials);
 
@@ -488,7 +485,7 @@ public class S3EncryptionClientTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_MASTER_KEY)
+                .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyModes(true)
                 .build();
 
@@ -511,7 +508,7 @@ public class S3EncryptionClientTest {
         final String BUCKET_KEY = "kms-context-v3-to-v2";
 
         // V2 Client
-        KMSEncryptionMaterials kmsMaterials = new KMSEncryptionMaterials(KMS_MASTER_KEY);
+        KMSEncryptionMaterials kmsMaterials = new KMSEncryptionMaterials(KMS_KEY_ID);
         kmsMaterials.addDescription("user-metadata-key", "user-metadata-value-v3-to-v2");
         EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(kmsMaterials);
 
@@ -521,7 +518,7 @@ public class S3EncryptionClientTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_MASTER_KEY)
+                .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyModes(true)
                 .build();
 
@@ -546,7 +543,7 @@ public class S3EncryptionClientTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_MASTER_KEY)
+                .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyModes(true)
                 .build();
 
