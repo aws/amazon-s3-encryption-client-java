@@ -113,12 +113,18 @@ abstract public class S3Keyring implements Keyring {
             return builder();
         }
 
-        public BuilderT secureRandom(SecureRandom secureRandom) {
+        public BuilderT secureRandom(final SecureRandom secureRandom) {
+            if (secureRandom == null) {
+                throw new S3EncryptionClientException("SecureRandom cannot be null!");
+            }
             _secureRandom = secureRandom;
             return builder();
         }
 
-        public BuilderT dataKeyGenerator(DataKeyGenerator dataKeyGenerator) {
+        public BuilderT dataKeyGenerator(final DataKeyGenerator dataKeyGenerator) {
+            if (dataKeyGenerator == null) {
+                throw new S3EncryptionClientException("DataKeyGenerator cannot be null!");
+            }
             _dataKeyGenerator = dataKeyGenerator;
             return builder();
         }
