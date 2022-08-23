@@ -7,7 +7,8 @@ Integration tests are included. To test them, certain environment variables need
 
 * `AWS_S3EC_TEST_BUCKET` - The bucket to write test values to
 * `AWS_S3EC_TEST_KMS_KEY_ID` - The key id for the KMS key used for KMS tests
-* `AWS_S3EC_TEST_KMS_REGION` - The region the KMS key resides e.g. us-east-1`
+* `AWS_S3EC_TEST_KMS_KEY_ALIAS` - An alias for the KMS key used for KMS tests. The alias must reference the key ID above. 
+* `AWS_REGION` - The region the AWS resources (KMS key, S3 bucket) resides e.g. "us-east-1"
 
 ## Migration
 

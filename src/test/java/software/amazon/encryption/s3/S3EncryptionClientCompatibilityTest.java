@@ -1,4 +1,7 @@
+package software.amazon.encryption.s3;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
 
 import com.amazonaws.regions.Region;
@@ -35,13 +38,16 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.encryption.s3.S3EncryptionClient;
 
-public class S3EncryptionClientTest {
+/**
+ * This class is an integration test for verifying compatibility of ciphertexts
+ * between V1, V2, and V3 clients under various conditions.
+ */
+public class S3EncryptionClientCompatibilityTest {
 
     private static final String BUCKET = System.getenv("AWS_S3EC_TEST_BUCKET");
     private static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
-    private static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_S3EC_TEST_KMS_REGION")));
+    private static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
 
     private static SecretKey AES_KEY;
     private static KeyPair RSA_KEY_PAIR;
@@ -565,4 +571,57 @@ public class S3EncryptionClientTest {
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
     }
+
+    @Test
+    public void AesCbcV1toV3FailsWhenLegacyModeDisabled() {
+        final String BUCKET_KEY = "aes-cbc-v1-to-v3";
+
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfiguration v1CryptoConfig =
+                new CryptoConfiguration(CryptoMode.EncryptionOnly);
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig)
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyModes(false)
+                .build();
+
+        final String input = "AesCbcV1toV3";
+        v1Client.putObject(BUCKET, BUCKET_KEY, input);
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)));
+    }
+
+    @Test
+    public void AesWrapV1toV3FailsWhenLegacyModeDisabled() {
+        final String BUCKET_KEY = "aes-wrap-v1-to-v3";
+
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfiguration v1CryptoConfig =
+                new CryptoConfiguration(CryptoMode.AuthenticatedEncryption);
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig)
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyModes(false)
+                .build();
+
+        final String input = "AesGcmV1toV3";
+        v1Client.putObject(BUCKET, BUCKET_KEY, input);
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)));
+    }
+
 }

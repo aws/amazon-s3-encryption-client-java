@@ -9,6 +9,7 @@ import java.util.Map;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
@@ -169,7 +170,10 @@ public class AesKeyring extends S3Keyring {
             return this;
         }
 
-        public Builder wrappingKey(SecretKey wrappingKey) {
+        public Builder wrappingKey(final SecretKey wrappingKey) {
+            if (wrappingKey == null) {
+                throw new S3EncryptionClientException("Wrapping key cannot be null!");
+            }
             if (!wrappingKey.getAlgorithm().equals(KEY_ALGORITHM)) {
                 throw new S3EncryptionClientException("Invalid algorithm: " + wrappingKey.getAlgorithm() + ", expecting " + KEY_ALGORITHM);
             }
