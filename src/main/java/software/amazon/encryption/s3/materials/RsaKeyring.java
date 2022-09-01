@@ -1,10 +1,7 @@
 package software.amazon.encryption.s3.materials;
 
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.MGF1ParameterSpec;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,7 +20,7 @@ public class RsaKeyring extends S3Keyring {
 
     private static final String KEY_ALGORITHM = "RSA";
 
-    private final KeyPair _wrappingKeyPair;
+    private final PartialRsaKeyPair _partialRsaKeyPair;
 
     private final DecryptDataKeyStrategy _rsaEcbStrategy = new DecryptDataKeyStrategy() {
         private static final String KEY_PROVIDER_INFO = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
@@ -42,7 +39,7 @@ public class RsaKeyring extends S3Keyring {
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.UNWRAP_MODE, _wrappingKeyPair.getPrivate());
+            cipher.init(Cipher.UNWRAP_MODE, _partialRsaKeyPair.getPrivateKey());
 
             Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
 
@@ -76,7 +73,7 @@ public class RsaKeyring extends S3Keyring {
         public byte[] encryptDataKey(SecureRandom secureRandom,
                 EncryptionMaterials materials) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.WRAP_MODE, _wrappingKeyPair.getPublic(), OAEP_PARAMETER_SPEC, secureRandom);
+            cipher.init(Cipher.WRAP_MODE, _partialRsaKeyPair.getPublicKey(), OAEP_PARAMETER_SPEC, secureRandom);
 
             // Create a pseudo-data key with the content encryption appended to the data key
             byte[] dataKey = materials.plaintextDataKey();
@@ -95,7 +92,7 @@ public class RsaKeyring extends S3Keyring {
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.UNWRAP_MODE, _wrappingKeyPair.getPrivate(), OAEP_PARAMETER_SPEC);
+            cipher.init(Cipher.UNWRAP_MODE, _partialRsaKeyPair.getPrivateKey(), OAEP_PARAMETER_SPEC);
 
             String dataKeyAlgorithm = materials.algorithmSuite().dataKeyAlgorithm();
             Key pseudoDataKey = cipher.unwrap(encryptedDataKey, dataKeyAlgorithm, Cipher.SECRET_KEY);
@@ -133,7 +130,7 @@ public class RsaKeyring extends S3Keyring {
     private RsaKeyring(Builder builder) {
         super(builder);
 
-        _wrappingKeyPair = builder._wrappingKeyPair;
+        _partialRsaKeyPair = builder._partialRsaKeyPair;
 
         decryptStrategies.put(_rsaEcbStrategy.keyProviderInfo(), _rsaEcbStrategy);
         decryptStrategies.put(_rsaOaepStrategy.keyProviderInfo(), _rsaOaepStrategy);
@@ -142,7 +139,6 @@ public class RsaKeyring extends S3Keyring {
     public static Builder builder() {
         return new Builder();
     }
-
 
     @Override
     protected EncryptDataKeyStrategy encryptStrategy() {
@@ -155,7 +151,7 @@ public class RsaKeyring extends S3Keyring {
     }
 
     public static class Builder extends S3Keyring.Builder<S3Keyring, Builder> {
-        private KeyPair _wrappingKeyPair;
+        private PartialRsaKeyPair _partialRsaKeyPair;
 
         private Builder() {
             super();
@@ -166,11 +162,8 @@ public class RsaKeyring extends S3Keyring {
             return this;
         }
 
-        public Builder wrappingKeyPair(KeyPair wrappingKeyPair) {
-            if (!wrappingKeyPair.getPublic().getAlgorithm().equals(KEY_ALGORITHM)) {
-                throw new S3EncryptionClientException("Invalid algorithm '" + wrappingKeyPair.getPublic().getAlgorithm() + "', expecting " + KEY_ALGORITHM);
-            }
-            _wrappingKeyPair = wrappingKeyPair;
+        public Builder wrappingKeyPair(final PartialRsaKeyPair partialRsaKeyPair) {
+            _partialRsaKeyPair = partialRsaKeyPair;
             return builder();
         }
 
