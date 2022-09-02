@@ -16,15 +16,14 @@ import static org.mockito.Mockito.mock;
 
 public class ContentMetadataStrategyTest {
 
-    public S3Client mockS3client;
-    public Map<String, String> metadata = new HashMap<>();
-    public GetObjectResponse getObjectResponse;
-    public ContentMetadata expectedContentMetadata;
-    public GetObjectRequest getObjectRequest;
+    private S3Client mockS3client;
+    private Map<String, String> metadata = new HashMap<>();
+    private GetObjectResponse getObjectResponse;
+    private ContentMetadata expectedContentMetadata;
+    private GetObjectRequest getObjectRequest;
 
     @BeforeEach
     public void setUp() {
-
         mockS3client = mock(S3Client.class);
         metadata.put("x-amz-tag-len" , "128");
         metadata.put("x-amz-wrap-alg" , "AES/GCM");
@@ -36,7 +35,6 @@ public class ContentMetadataStrategyTest {
                 .bucket("TestBucket")
                 .key("TestKey")
                 .build();
-
     }
 
     @Test
@@ -52,10 +50,10 @@ public class ContentMetadataStrategyTest {
                 .contentNonce(bytes)
                 .build();
 
-        ContentMetadata contentMetadata = ContentMetadataStrategy.decode(mockS3client, getObjectRequest ,getObjectResponse);
+        ContentMetadata contentMetadata = ContentMetadataStrategy.decode(mockS3client, getObjectRequest, getObjectResponse);
         assertEquals(expectedContentMetadata.algorithmSuite(), contentMetadata.algorithmSuite());
-        String actualContentNonce= Arrays.toString(contentMetadata.contentNonce());
-        String expectedContentNonce=Arrays.toString(expectedContentMetadata.contentNonce());
-        assertEquals(expectedContentNonce,actualContentNonce);
+        String actualContentNonce = Arrays.toString(contentMetadata.contentNonce());
+        String expectedContentNonce = Arrays.toString(expectedContentMetadata.contentNonce());
+        assertEquals(expectedContentNonce, actualContentNonce);
     }
 }

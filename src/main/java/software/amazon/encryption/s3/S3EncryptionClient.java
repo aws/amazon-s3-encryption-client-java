@@ -141,7 +141,7 @@ public class S3EncryptionClient implements S3Client {
         }
 
         // We only want one way to use a key, if more than one is set, throw an error
-        protected void checkKeyOptions() {
+        private void checkKeyOptions() {
             if (onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 return;
             }
@@ -149,7 +149,7 @@ public class S3EncryptionClient implements S3Client {
             throw new S3EncryptionClientException("Only one may be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
         }
 
-        protected boolean onlyOneNonNull(Object... values) {
+        private boolean onlyOneNonNull(Object... values) {
             boolean haveOneNonNull = false;
             for (Object o : values) {
                 if (o != null) {

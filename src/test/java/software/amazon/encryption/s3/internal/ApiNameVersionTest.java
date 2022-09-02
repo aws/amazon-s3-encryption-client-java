@@ -1,22 +1,17 @@
 package software.amazon.encryption.s3.internal;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ApiNameVersionTest {
-    public String expectedApiname;
-    public String expectedApiVersion;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    @BeforeEach
-    void setUp() {
-        expectedApiname = "AwsS3Encrypt";
-        expectedApiVersion = "unknown";
-    }
+public class ApiNameVersionTest {
+
+    private final static String EXPECTED_API_NAME = "AwsS3Encrypt";
+    private final static String EXPECTED_API_VERSION = "unknown";
 
     @Test
-    void testApiNameWithVersion() {
-        Assertions.assertEquals(expectedApiname, ApiNameVersion.apiNameWithVersion().name());
-        Assertions.assertEquals(expectedApiVersion, ApiNameVersion.apiNameWithVersion().version());
+    public void testApiNameWithVersion() {
+        assertEquals(EXPECTED_API_NAME, ApiNameVersion.apiNameWithVersion().name());
+        assertEquals(EXPECTED_API_VERSION, ApiNameVersion.apiNameWithVersion().version());
     }
 }

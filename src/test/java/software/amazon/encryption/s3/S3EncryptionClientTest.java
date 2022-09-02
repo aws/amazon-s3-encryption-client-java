@@ -29,49 +29,39 @@ public class S3EncryptionClientTest {
     // This alias must point to the same key as KMS_KEY_ID
     private static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
 
-    private static SecretKey aesKey;
-    private static KeyPair rsaKey;
+    private static SecretKey AES_KEY;
+    private static KeyPair RSA_KEY_PAIR;
+
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
-        aesKey = keyGen.generateKey();
+        AES_KEY = keyGen.generateKey();
 
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
         keyPairGen.initialize(2048);
-        rsaKey = keyPairGen.generateKeyPair();
+        RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    // Test to check when Multiple keyrings are intialized to S3 Client
     @Test
     public void s3EncryptionClientWithMultipleKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-                .aesKey(aesKey)
-                .rsaKeyPair(rsaKey)
+                .aesKey(AES_KEY)
+                .rsaKeyPair(RSA_KEY_PAIR)
                 .build());
     }
 
     @Test
-    public void s3EncryptionClientWithNoKeyringsFails() throws Exception {
+    public void s3EncryptionClientWithNoKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
                 .build());
     }
 
     @Test
-    public void s3EncryptionClientWithNoLegacyKeyringsFails() throws Exception {
+    public void s3EncryptionClientWithNoLegacyKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
                 .enableLegacyModes(true)
                 .build());
-    }
-
-    @Test
-    public void onlyOneNotNullWithTwoNonNullsFails() {
-        assertFalse(S3EncryptionClient.builder().onlyOneNonNull(null,null,"TestString1","TestString2",null));
-    }
-
-    @Test
-    public void onlyOneNotNullWithOneNonNullsPass() {
-        assertTrue(S3EncryptionClient.builder().onlyOneNonNull(null,null,"TestString1",null,null));
     }
 
     @Test
