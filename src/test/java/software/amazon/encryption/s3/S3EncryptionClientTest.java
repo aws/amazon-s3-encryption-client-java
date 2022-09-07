@@ -1,5 +1,6 @@
 package software.amazon.encryption.s3;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -14,8 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
 
 /**
@@ -28,6 +28,41 @@ public class S3EncryptionClientTest {
     private static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
     // This alias must point to the same key as KMS_KEY_ID
     private static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
+
+    private static SecretKey AES_KEY;
+    private static KeyPair RSA_KEY_PAIR;
+
+    @BeforeAll
+    public static void setUp() throws NoSuchAlgorithmException {
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(256);
+        AES_KEY = keyGen.generateKey();
+
+        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
+        keyPairGen.initialize(2048);
+        RSA_KEY_PAIR = keyPairGen.generateKeyPair();
+    }
+
+    @Test
+    public void s3EncryptionClientWithMultipleKeyringsFails() {
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .rsaKeyPair(RSA_KEY_PAIR)
+                .build());
+    }
+
+    @Test
+    public void s3EncryptionClientWithNoKeyringsFails() {
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+                .build());
+    }
+
+    @Test
+    public void s3EncryptionClientWithNoLegacyKeyringsFails() {
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+                .enableLegacyModes(true)
+                .build());
+    }
 
     @Test
     public void KmsWithAliasARN() {
