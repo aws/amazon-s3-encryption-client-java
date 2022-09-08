@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  S3ECGitHubKMSKeyID:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: KMS Key for GitHub Action Workflow
+      Enabled: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: 'arn:aws:iam::370957321024:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Effect: Allow
+            Principal:
+              AWS: 'arn:aws:iam::370957321024:role/Admin'
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:DescribeKey'
+            Resource: '*'
+          - Effect: Allow
+            Principal:
+              AWS: 'arn:aws:iam::370957321024:role/Admin'
+            Action:
+              - 'kms:CreateGrant'
+              - 'kms:ListGrants'
+              - 'kms:RevokeGrant'
+            Resource: '*'
+            Condition:
+              Bool:
+                'kms:GrantIsForAWSResource': true
+
+  S3ECGitHubKMSKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: alias/s3ecgithubkmskey
+      TargetKeyId: !Ref S3ECGitHubKMSKeyID
+
+  S3ECGitHubTestS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: wiz-s3ec-github-test-bucket
+      LifecycleConfiguration:
+        Rules:
+          - Id: Expire in 14 days
+            Status: Enabled
+            ExpirationInDays: 14
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  S3ECGitHubS3BucketPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: S3EC-GitHub-S3-Bucket-Policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+            Resource:
+              - !Join [ "", [ !GetAtt S3ECGitHubTestS3Bucket.Arn, '/*'] ]
+
+  S3ECGitHubKMSKeyPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:kms:*:370957321024:key/*",
+                "arn:aws:kms:*:370957321024:alias/*"
+              ],
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:GenerateDataKeyPair"
+              ]
+            }
+          ]
+        }
+      ManagedPolicyName: S3EC-GitHub-KMS-Key-Policy
+
+  S3ECGithubTestRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Path: /service-role/
+      RoleName: S3EC-GitHub-test-role
+      AssumeRolePolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",   
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Federated": "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com" },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                  "StringEquals": {
+                      "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                  },
+                  "StringLike": {
+                    "token.actions.githubusercontent.com:sub": "repo:aws/aws-s3-encryption-client-java:ref:refs/*"
+                  }
+               }
+            }
+          ]
+        }
+      Description: >-
+        Grant GitHub S3 put and get and KMS encrypt, decrypt, and generate access
+        for testing
+      ManagedPolicyArns:
+        - !Ref S3ECGitHubKMSKeyPolicy
+        - !Ref S3ECGitHubS3BucketPolicy
