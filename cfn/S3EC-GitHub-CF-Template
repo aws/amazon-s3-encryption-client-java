@@ -10,12 +10,12 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: 'arn:aws:iam::370957321024:root'
+              AWS: !Sub 'arn:aws:iam::{AWS::AccountId}:root'
             Action: 'kms:*'
             Resource: '*'
           - Effect: Allow
             Principal:
-              AWS: 'arn:aws:iam::370957321024:role/Admin'
+              AWS: !Sub 'arn:aws:iam::{AWS::AccountId}:role/Admin'
             Action:
               - 'kms:Encrypt'
               - 'kms:Decrypt'
@@ -25,7 +25,7 @@ Resources:
             Resource: '*'
           - Effect: Allow
             Principal:
-              AWS: 'arn:aws:iam::370957321024:role/Admin'
+              AWS: !Sub 'arn:aws:iam::{AWS::AccountId}:role/Admin'
             Action:
               - 'kms:CreateGrant'
               - 'kms:ListGrants'
@@ -44,7 +44,7 @@ Resources:
   S3ECGitHubTestS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: wiz-s3ec-github-test-bucket
+      BucketName: s3ec-github-test-bucket
       LifecycleConfiguration:
         Rules:
           - Id: Expire in 14 days
@@ -80,8 +80,8 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:kms:*:370957321024:key/*",
-                "arn:aws:kms:*:370957321024:alias/*"
+                "arn:aws:kms:*:{AWS::AccountId}:key/*",
+                "arn:aws:kms:*:{AWS::AccountId}:alias/*"
               ],
               "Action": [
                 "kms:Encrypt",
