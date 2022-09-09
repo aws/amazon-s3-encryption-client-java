@@ -34,7 +34,7 @@ Resources:
             Resource: '*'
           - Effect: Allow
             Principal:
-              AWS: !GetAtt bestGithubTestRole.Arn
+              AWS: !GetAtt S3ECGithubTestRole.Arn
             Action:
               - 'kms:Encrypt'
               - 'kms:Decrypt'
