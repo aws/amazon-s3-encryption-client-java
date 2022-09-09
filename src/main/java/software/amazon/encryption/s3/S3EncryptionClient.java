@@ -1,6 +1,6 @@
 package software.amazon.encryption.s3;
 
-import java.security.*;
+import java.security.KeyPair;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.crypto.SecretKey;
@@ -17,7 +17,13 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
-import software.amazon.encryption.s3.materials.*;
+import software.amazon.encryption.s3.materials.AesKeyring;
+import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
+import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
+import software.amazon.encryption.s3.materials.Keyring;
+import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
+import software.amazon.encryption.s3.materials.RsaKeyring;
 
 /**
  * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects

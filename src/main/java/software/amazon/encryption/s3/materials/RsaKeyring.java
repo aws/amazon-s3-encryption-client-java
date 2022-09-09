@@ -1,7 +1,9 @@
 package software.amazon.encryption.s3.materials;
 
 import java.nio.charset.StandardCharsets;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.SecureRandom;
 import java.security.spec.MGF1ParameterSpec;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,8 +19,6 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
  * unwrap with the active and legacy algorithms for RSA keys.
  */
 public class RsaKeyring extends S3Keyring {
-
-    private static final String KEY_ALGORITHM = "RSA";
 
     private final PartialRsaKeyPair _partialRsaKeyPair;
 
@@ -71,7 +71,7 @@ public class RsaKeyring extends S3Keyring {
 
         @Override
         public byte[] encryptDataKey(SecureRandom secureRandom,
-                EncryptionMaterials materials) throws GeneralSecurityException {
+                                     EncryptionMaterials materials) throws GeneralSecurityException {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.WRAP_MODE, _partialRsaKeyPair.getPublicKey(), OAEP_PARAMETER_SPEC, secureRandom);
 
