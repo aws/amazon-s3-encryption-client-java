@@ -10,12 +10,31 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::{AWS::AccountId}:root'
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
             Action: 'kms:*'
             Resource: '*'
           - Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::{AWS::AccountId}:role/Admin'
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/admin'
+            Action:
+                - 'kms:Create*'
+                - 'kms:Describe*'
+                - 'kms:Enable*'
+                - 'kms:List*'
+                - 'kms:Put*'
+                - 'kms:Update*'
+                - 'kms:Revoke*'
+                - 'kms:Disable*'
+                - 'kms:Get*'
+                - 'kms:Delete*'
+                - 'kms:TagResource'
+                - 'kms:UntagResource'
+                - 'kms:ScheduleKeyDeletion'
+                - 'kms:CancelKeyDeletion'
+            Resource: '*'
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt bestGithubTestRole.Arn
             Action:
               - 'kms:Encrypt'
               - 'kms:Decrypt'
@@ -25,7 +44,7 @@ Resources:
             Resource: '*'
           - Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::{AWS::AccountId}:role/Admin'
+              AWS: !GetAtt S3ECGithubTestRole.Arn
             Action:
               - 'kms:CreateGrant'
               - 'kms:ListGrants'
@@ -38,7 +57,7 @@ Resources:
   S3ECGitHubKMSKeyAlias:
     Type: 'AWS::KMS::Alias'
     Properties:
-      AliasName: alias/s3ecgithubkmskey
+      AliasName: alias/S3EC-Github-KMS-Key
       TargetKeyId: !Ref S3ECGitHubKMSKeyID
 
   S3ECGitHubTestS3Bucket:
@@ -80,8 +99,8 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:kms:*:{AWS::AccountId}:key/*",
-                "arn:aws:kms:*:{AWS::AccountId}:alias/*"
+                "arn:aws:kms:*:${AWS::AccountId}:key/*",
+                "arn:aws:kms:*:${AWS::AccountId}:alias/*"
               ],
               "Action": [
                 "kms:Encrypt",
