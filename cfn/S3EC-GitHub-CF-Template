@@ -59,8 +59,8 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:kms:*:${AWS::AccountId}:key/*",
-                "arn:aws:kms:*:${AWS::AccountId}:alias/*"
+                "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECGitHubKMSKeyID}",
+                "arn:aws:kms:*:${AWS::AccountId}:${S3ECGitHubKMSKeyAlias}"
               ],
               "Action": [
                 "kms:Encrypt",
