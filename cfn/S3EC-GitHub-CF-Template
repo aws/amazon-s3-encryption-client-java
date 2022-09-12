@@ -13,46 +13,6 @@ Resources:
               AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
             Action: 'kms:*'
             Resource: '*'
-          - Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/admin'
-            Action:
-                - 'kms:Create*'
-                - 'kms:Describe*'
-                - 'kms:Enable*'
-                - 'kms:List*'
-                - 'kms:Put*'
-                - 'kms:Update*'
-                - 'kms:Revoke*'
-                - 'kms:Disable*'
-                - 'kms:Get*'
-                - 'kms:Delete*'
-                - 'kms:TagResource'
-                - 'kms:UntagResource'
-                - 'kms:ScheduleKeyDeletion'
-                - 'kms:CancelKeyDeletion'
-            Resource: '*'
-          - Effect: Allow
-            Principal:
-              AWS: !GetAtt S3ECGithubTestRole.Arn
-            Action:
-              - 'kms:Encrypt'
-              - 'kms:Decrypt'
-              - 'kms:ReEncrypt*'
-              - 'kms:GenerateDataKey*'
-              - 'kms:DescribeKey'
-            Resource: '*'
-          - Effect: Allow
-            Principal:
-              AWS: !GetAtt S3ECGithubTestRole.Arn
-            Action:
-              - 'kms:CreateGrant'
-              - 'kms:ListGrants'
-              - 'kms:RevokeGrant'
-            Resource: '*'
-            Condition:
-              Bool:
-                'kms:GrantIsForAWSResource': true
 
   S3ECGitHubKMSKeyAlias:
     Type: 'AWS::KMS::Alias'
