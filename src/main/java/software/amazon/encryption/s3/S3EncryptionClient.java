@@ -22,6 +22,7 @@ import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
 /**
@@ -94,7 +95,7 @@ public class S3EncryptionClient implements S3Client {
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
         private SecretKey _aesKey;
-        private KeyPair _rsaKeyPair;
+        private PartialRsaKeyPair _rsaKeyPair;
         private String _kmsKeyId;
         private boolean _enableLegacyModes = false;
 
@@ -127,7 +128,14 @@ public class S3EncryptionClient implements S3Client {
         }
 
         public Builder rsaKeyPair(KeyPair rsaKeyPair) {
-            this._rsaKeyPair = rsaKeyPair;
+            this._rsaKeyPair = new PartialRsaKeyPair(rsaKeyPair);
+            checkKeyOptions();
+
+            return this;
+        }
+
+        public Builder rsaKeyPair(PartialRsaKeyPair partialRsaKeyPair) {
+            this._rsaKeyPair = partialRsaKeyPair;
             checkKeyOptions();
 
             return this;
