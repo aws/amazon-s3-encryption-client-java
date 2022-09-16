@@ -88,10 +88,10 @@ Resources:
               "Action": "sts:AssumeRoleWithWebIdentity",
               "Condition": {
                   "StringEquals": {
-                      "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
                   },
                   "StringLike": {
-                    "token.actions.githubusercontent.com:sub": "repo:aws/aws-s3-encryption-client-java:ref:refs/*"
+                    "token.actions.githubusercontent.com:sub": "repo:aws/aws-s3-encryption-client-java:*"
                   }
                }
             }
