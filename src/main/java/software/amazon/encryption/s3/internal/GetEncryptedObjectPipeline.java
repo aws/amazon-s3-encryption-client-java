@@ -1,7 +1,6 @@
 package software.amazon.encryption.s3.internal;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -11,10 +10,11 @@ import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.legacy.internal.AesCbcContentStrategy;
+import software.amazon.encryption.s3.legacy.internal.RangedGetAesCbcContentStrategy;
+import software.amazon.encryption.s3.legacy.internal.RangedGetAesGcmContentStrategy;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
@@ -44,13 +44,6 @@ public class GetEncryptedObjectPipeline {
             ResponseTransformer<GetObjectResponse, T> responseTransformer) {
         ResponseInputStream<GetObjectResponse> objectStream = _s3Client.getObject(
                 getObjectRequest);
-        byte[] ciphertext;
-        try {
-            ciphertext = IoUtils.toByteArray(objectStream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
         GetObjectResponse getObjectResponse = objectStream.response();
         ContentMetadata contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, getObjectResponse);
 
@@ -70,23 +63,43 @@ public class GetEncryptedObjectPipeline {
 
         DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(materialsRequest);
 
-        ContentDecryptionStrategy contentDecryptionStrategy = null;
-        switch (algorithmSuite) {
-            case ALG_AES_256_CBC_IV16_NO_KDF:
-                contentDecryptionStrategy = AesCbcContentStrategy.builder().build();
-                break;
-            case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
-                contentDecryptionStrategy = AesGcmContentStrategy.builder().build();
-                break;
-        }
-        byte[] plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, ciphertext);
+        ContentDecryptionStrategy contentDecryptionStrategy = selectContentDecryptionStrategy(algorithmSuite, materials);
+
+        final InputStream plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, objectStream);
 
         try {
             return responseTransformer.transform(getObjectResponse,
-                    AbortableInputStream.create(new ByteArrayInputStream(plaintext)));
+                    AbortableInputStream.create(plaintext));
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
         }
+    }
+
+    /**
+     * Select which content decryption strategy to use based on the algorithm suite
+     * and whether the request is using range get or not.
+     * @param algorithmSuite
+     * @param materials
+     */
+    private ContentDecryptionStrategy selectContentDecryptionStrategy(final AlgorithmSuite algorithmSuite, final DecryptionMaterials materials) {
+        if (materials.s3Request().range() != null) {
+            if (!_enableLegacyModes) {
+                throw new S3EncryptionClientException("Enable legacy modes in order to use range gets.");
+            }
+            switch (algorithmSuite) {
+                case ALG_AES_256_CBC_IV16_NO_KDF:
+                    return new RangedGetAesCbcContentStrategy();
+                case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+                    return new RangedGetAesGcmContentStrategy();
+            }
+        }
+        switch (algorithmSuite) {
+            case ALG_AES_256_CBC_IV16_NO_KDF:
+                return AesCbcContentStrategy.builder().build();
+            case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+                return AesGcmContentStrategy.builder().build();
+        }
+        throw new S3EncryptionClientException("Invalid algorithm choice specified!");
     }
 
     public static class Builder {

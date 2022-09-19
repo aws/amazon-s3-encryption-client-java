@@ -1,12 +1,17 @@
 package software.amazon.encryption.s3.internal;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 
+import software.amazon.awssdk.core.internal.io.Releasable;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
@@ -30,32 +35,24 @@ public class PutEncryptedObjectPipeline {
 
     public PutObjectResponse putObject(PutObjectRequest request, RequestBody requestBody) {
         EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
+                .plaintextLength(requestBody.optionalContentLength().orElse(-1L))
                 .s3Request(request);
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
-        byte[] input;
-        try {
-            // TODO: this needs to be a stream and not a byte[]
-            input = IoUtils.toByteArray(requestBody.contentStreamProvider().newStream());
-        } catch (IOException e) {
-            throw new S3EncryptionClientException("Cannot read input.", e);
-        }
-        EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, input);
+        final InputStream inputStream = requestBody.contentStreamProvider().newStream();
+        EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, inputStream);
 
         request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
 
-        return _s3Client.putObject(request, RequestBody.fromBytes(encryptedContent.ciphertext));
+        return _s3Client.putObject(request, RequestBody.fromBytes(encryptedContent.getCiphertext()));
     }
 
     public static class Builder {
         private S3Client _s3Client;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
-        private ContentEncryptionStrategy _contentEncryptionStrategy =
-                AesGcmContentStrategy
-                        .builder()
-                        .build();
+        private ContentEncryptionStrategy _contentEncryptionStrategy = AesGcmContentStrategy.builder().build();
         private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
 
         private Builder() {}

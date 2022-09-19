@@ -1,5 +1,8 @@
 package software.amazon.encryption.s3.internal;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -11,6 +14,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
@@ -30,6 +35,16 @@ public class AesGcmContentStrategy implements ContentEncryptionStrategy, Content
     public static Builder builder() { return new Builder(); }
 
     @Override
+    public EncryptedContent encryptContent(final EncryptionMaterials materials, final InputStream inputStream) {
+        byte[] plaintext;
+        try {
+            plaintext = IoUtils.toByteArray(inputStream);
+        } catch (final IOException exception) {
+            throw new S3EncryptionClientException("Failed to convert stream to bytes.");
+        }
+        return encryptContent(materials, plaintext);
+    }
+
     public EncryptedContent encryptContent(EncryptionMaterials materials, byte[] content) {
         final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
 
@@ -44,11 +59,7 @@ public class AesGcmContentStrategy implements ContentEncryptionStrategy, Content
                     materials.dataKey(),
                     new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
 
-            EncryptedContent result = new EncryptedContent();
-            result.nonce = nonce;
-            result.ciphertext = cipher.doFinal(content);
-
-            return result;
+            return new EncryptedContent(cipher.doFinal(content), nonce);
         } catch (NoSuchAlgorithmException
                  | NoSuchPaddingException
                  | InvalidAlgorithmParameterException
@@ -60,7 +71,14 @@ public class AesGcmContentStrategy implements ContentEncryptionStrategy, Content
     }
 
     @Override
-    public byte[] decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials, byte[] ciphertext) {
+    public InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials, InputStream ciphertext) {
+        byte[] ciphertextBytes;
+        try {
+            ciphertextBytes = IoUtils.toByteArray(ciphertext);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         final int tagLength = algorithmSuite.cipherTagLengthBits();
@@ -70,7 +88,7 @@ public class AesGcmContentStrategy implements ContentEncryptionStrategy, Content
         try {
             cipher = Cipher.getInstance(algorithmSuite.cipherName());
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
-            plaintext = cipher.doFinal(ciphertext);
+            plaintext = cipher.doFinal(ciphertextBytes);
         } catch (NoSuchAlgorithmException
                  | NoSuchPaddingException
                  | InvalidAlgorithmParameterException
@@ -80,7 +98,7 @@ public class AesGcmContentStrategy implements ContentEncryptionStrategy, Content
             throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
         }
 
-        return plaintext;
+        return new ByteArrayInputStream(plaintext);
     }
 
     public static class Builder {

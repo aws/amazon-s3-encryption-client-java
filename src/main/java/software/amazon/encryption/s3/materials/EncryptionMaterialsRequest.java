@@ -9,9 +9,12 @@ final public class EncryptionMaterialsRequest {
     private final PutObjectRequest _s3Request;
     private final Map<String, String> _encryptionContext;
 
+    private final long _plaintextLength;
+
     private EncryptionMaterialsRequest(Builder builder) {
         this._s3Request = builder._s3Request;
         this._encryptionContext = builder._encryptionContext;
+        this._plaintextLength = builder._plaintextLength;
     }
 
     static public Builder builder() {
@@ -26,10 +29,15 @@ final public class EncryptionMaterialsRequest {
         return _encryptionContext;
     }
 
+    public long plaintextLength() {
+        return _plaintextLength;
+    }
+
     static public class Builder {
 
         public PutObjectRequest _s3Request = null;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
+        private long _plaintextLength = -1;
 
         private Builder() {
         }
@@ -43,6 +51,11 @@ final public class EncryptionMaterialsRequest {
             _encryptionContext = encryptionContext == null
                     ? Collections.emptyMap()
                     : Collections.unmodifiableMap(encryptionContext);
+            return this;
+        }
+
+        public Builder plaintextLength(final long plaintextLength) {
+            _plaintextLength = plaintextLength;
             return this;
         }
 

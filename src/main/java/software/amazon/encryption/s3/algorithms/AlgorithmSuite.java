@@ -79,4 +79,8 @@ public enum AlgorithmSuite {
     public int nonceLengthBytes() {
         return _cipherNonceLengthBits / 8;
     }
+
+    public int cipherBlockSizeBytes() {
+        return _cipherBlockSizeBits / 8;
+    }
 }

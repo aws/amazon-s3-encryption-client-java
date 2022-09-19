@@ -57,7 +57,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             Map<String,String> metadata = new HashMap<>(request.metadata());
             EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.ciphertext()));
-            metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(encryptedContent.nonce));
+            metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(encryptedContent.getNonce()));
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, new String(edk.keyProviderInfo(), StandardCharsets.UTF_8));
@@ -75,7 +75,10 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                 throw new S3EncryptionClientException("Cannot serialize encryption context to JSON.", e);
             }
 
-            return request.toBuilder().metadata(metadata).build();
+            return request.toBuilder()
+                    .metadata(metadata)
+                    .contentLength(materials.ciphertextLength())
+                    .build();
         }
 
         @Override

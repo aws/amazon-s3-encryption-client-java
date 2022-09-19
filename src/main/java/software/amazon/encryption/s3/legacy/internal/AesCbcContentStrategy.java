@@ -1,5 +1,8 @@
 package software.amazon.encryption.s3.legacy.internal;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -10,6 +13,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.ContentDecryptionStrategy;
@@ -26,7 +31,14 @@ public class AesCbcContentStrategy implements ContentDecryptionStrategy {
     public static Builder builder() { return new Builder(); }
 
     @Override
-    public byte[] decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials, byte[] ciphertext) {
+    public InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials, InputStream ciphertext) {
+        byte[] ciphertextBytes;
+        try {
+            ciphertextBytes = IoUtils.toByteArray(ciphertext);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         byte[] iv = contentMetadata.contentNonce();
@@ -35,7 +47,7 @@ public class AesCbcContentStrategy implements ContentDecryptionStrategy {
         try {
             cipher = Cipher.getInstance(algorithmSuite.cipherName());
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
-            plaintext = cipher.doFinal(ciphertext);
+            plaintext = cipher.doFinal(ciphertextBytes);
         } catch (NoSuchAlgorithmException
                  | NoSuchPaddingException
                  | InvalidAlgorithmParameterException
@@ -45,7 +57,7 @@ public class AesCbcContentStrategy implements ContentDecryptionStrategy {
             throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
         }
 
-        return plaintext;
+        return new ByteArrayInputStream(plaintext);
     }
 
     public static class Builder {
