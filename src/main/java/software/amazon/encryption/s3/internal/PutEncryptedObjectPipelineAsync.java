@@ -1,14 +1,17 @@
 package software.amazon.encryption.s3.internal;
 
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
 
-import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 public class PutEncryptedObjectPipelineAsync {
@@ -35,12 +38,34 @@ public class PutEncryptedObjectPipelineAsync {
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
-        byte[] input;
-        Class obj = asyncRequestBody.getClass();
-        Field field = obj.getDeclaredField("bytes");
-        field.setAccessible(true);
-        input = (byte[]) field.get(asyncRequestBody);
+        final ByteBuffer[] inputByteBuffer = new ByteBuffer[1];
+        Subscriber<ByteBuffer> subscriber = new Subscriber<ByteBuffer>() {
+            public Subscription s;
+            public ByteBuffer byteBuffer;
+            @Override
+            public void onSubscribe(Subscription s) {
+                this.s = s;
+                this.s.request(1);
+            }
 
+            @Override
+            public void onNext(ByteBuffer byteBuffer) {
+                this.byteBuffer = byteBuffer;
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                throw new S3EncryptionClientException("" + t);
+            }
+
+            @Override
+            public void onComplete() {
+                inputByteBuffer[0] = this.byteBuffer;
+            }
+        };
+        asyncRequestBody.subscribe(subscriber);
+
+        byte[] input = inputByteBuffer[0].array();
         EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, input);
 
         request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
