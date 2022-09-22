@@ -1,11 +1,7 @@
 package software.amazon.encryption.s3.internal;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
 
 import software.amazon.awssdk.core.internal.io.Releasable;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -45,14 +41,25 @@ public class PutEncryptedObjectPipeline {
 
         request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
 
-        return _s3Client.putObject(request, RequestBody.fromBytes(encryptedContent.getCiphertext()));
+        try {
+            PutObjectResponse response = _s3Client.putObject(request, RequestBody.fromInputStream(encryptedContent.getInputStream(), encryptedContent.getCiphertextLength()));
+            encryptedContent.getInputStream().close();
+            if (encryptedContent.getInputStream() instanceof Releasable) {
+                Releasable r = (Releasable)encryptedContent.getInputStream();
+                r.release();
+            }
+            return response;
+        } catch (IOException exception) {
+            // TODO: Better exception
+            throw new S3EncryptionClientException("IOException while closing stream.");
+        }
     }
 
     public static class Builder {
         private S3Client _s3Client;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
-        private ContentEncryptionStrategy _contentEncryptionStrategy = AesGcmContentStrategy.builder().build();
+        private ContentEncryptionStrategy _contentEncryptionStrategy = StreamingAesGcmContentStrategy.builder().build();
         private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
 
         private Builder() {}

@@ -1,5 +1,6 @@
 package software.amazon.encryption.s3;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -12,6 +13,7 @@ import javax.crypto.SecretKey;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +30,15 @@ public class S3EncryptionClientTest {
     private static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
     // This alias must point to the same key as KMS_KEY_ID
     private static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
+
+    // TODO: These tests need to specifically install BouncyCastle.
+    // I suspect this is not needed in the other tests because the v1/v2 client has a side effect
+    // which installs the BC provider.
+    // Provider configuration is an open item. Completing that work should allow removal of this
+    // static initializer.
+    static {
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     private static SecretKey AES_KEY;
     private static KeyPair RSA_KEY_PAIR;

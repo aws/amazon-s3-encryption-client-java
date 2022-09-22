@@ -21,7 +21,6 @@ import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -228,6 +227,7 @@ public class S3EncryptionClientCompatibilityTest {
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .build();
+
 
         // Asserts
         final String input = "AesGcmV3toV2";
@@ -510,7 +510,7 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
     @Test
-    public void KmsContextV3toV2() throws IOException {
+    public void KmsContextV3toV2() {
         final String BUCKET_KEY = "kms-context-v3-to-v2";
 
         // V2 Client

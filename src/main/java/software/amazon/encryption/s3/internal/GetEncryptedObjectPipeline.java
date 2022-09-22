@@ -12,9 +12,10 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.legacy.internal.AesCbcContentStrategy;
 import software.amazon.encryption.s3.legacy.internal.RangedGetAesCbcContentStrategy;
 import software.amazon.encryption.s3.legacy.internal.RangedGetAesGcmContentStrategy;
+import software.amazon.encryption.s3.legacy.internal.StreamingAesCbcContentStrategy;
+
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
@@ -95,9 +96,9 @@ public class GetEncryptedObjectPipeline {
         }
         switch (algorithmSuite) {
             case ALG_AES_256_CBC_IV16_NO_KDF:
-                return AesCbcContentStrategy.builder().build();
+                return StreamingAesCbcContentStrategy.builder().build();
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
-                return AesGcmContentStrategy.builder().build();
+                return StreamingAesGcmContentStrategy.builder().build();
         }
         throw new S3EncryptionClientException("Invalid algorithm choice specified!");
     }
