@@ -9,8 +9,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.encryption.s3.internal.GetEncryptedObjectPipelineAsync;
-import software.amazon.encryption.s3.internal.PutEncryptedObjectPipelineAsync;
+import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
+import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.*;
 
 import javax.crypto.SecretKey;
@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 public class S3AsyncEncryptionClient implements S3AsyncClient {
 
     // Used for request-scoped encryption contexts for supporting keys
-    public static final ExecutionAttribute<Map<String,String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
+    public static final ExecutionAttribute<Map<String,String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContextAsync");
 
     private final S3AsyncClient _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -51,7 +51,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
 
     @Override
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest putObjectRequest, AsyncRequestBody asyncRequestBody) {
-        PutEncryptedObjectPipelineAsync pipeline = PutEncryptedObjectPipelineAsync.builder()
+        PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .build();
@@ -68,7 +68,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     @Override
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
                                                  AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
-        GetEncryptedObjectPipelineAsync pipeline = GetEncryptedObjectPipelineAsync.builder()
+        GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .enableLegacyModes(_enableLegacyModes)

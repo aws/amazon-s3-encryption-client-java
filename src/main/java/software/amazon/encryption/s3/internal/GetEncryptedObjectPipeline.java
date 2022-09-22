@@ -4,10 +4,15 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.AbortableInputStream;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -29,6 +34,7 @@ import software.amazon.encryption.s3.materials.EncryptedDataKey;
 public class GetEncryptedObjectPipeline {
 
     private final S3Client _s3Client;
+    private final S3AsyncClient _s3AsyncClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final boolean _enableLegacyModes;
 
@@ -36,6 +42,7 @@ public class GetEncryptedObjectPipeline {
 
     private GetEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
+        this._s3AsyncClient = builder._s3AsyncClient;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._enableLegacyModes = builder._enableLegacyModes;
     }
@@ -54,6 +61,51 @@ public class GetEncryptedObjectPipeline {
         GetObjectResponse getObjectResponse = objectStream.response();
         ContentMetadata contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, getObjectResponse);
 
+        byte[] plaintext = getPlaintext(getObjectRequest, contentMetadata, ciphertext);
+
+        try {
+            return responseTransformer.transform(getObjectResponse,
+                    AbortableInputStream.create(new ByteArrayInputStream(plaintext)));
+        } catch (Exception e) {
+            throw new S3EncryptionClientException("Unable to transform response.", e);
+        }
+    }
+
+    public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
+                                              AsyncResponseTransformer<GetObjectResponse, T> responseTransformer) throws ExecutionException, InterruptedException {
+        CompletableFuture<ResponseBytes<GetObjectResponse>> objectStream = _s3AsyncClient.getObject(
+                getObjectRequest, AsyncResponseTransformer.toBytes());
+        CompletableFuture<Object> operationCompleteFuture =
+                objectStream.thenApply((objectResponse) -> {
+                    byte[] ciphertext;
+                    try {
+                        ciphertext = IoUtils.toByteArray(objectResponse.asInputStream());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    GetObjectResponse getObjectResponse = objectResponse.response();
+                    ContentMetadata contentMetadata = null;
+                    try {
+                        contentMetadata = ContentMetadataStrategy.decodeAsync(_s3AsyncClient, getObjectRequest, getObjectResponse);
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    byte[] plaintext = getPlaintext(getObjectRequest, contentMetadata, ciphertext);
+
+                    try {
+                        return ResponseTransformer.toBytes().transform(getObjectResponse, AbortableInputStream.create(new ByteArrayInputStream(plaintext)));
+                    } catch (Exception e) {
+                        throw new S3EncryptionClientException("Unable to transform response.", e);
+                    }
+                });
+        return (CompletableFuture<T>) operationCompleteFuture;
+    }
+
+    private byte[] getPlaintext(GetObjectRequest getObjectRequest, ContentMetadata contentMetadata, byte[] ciphertext){
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         if (!_enableLegacyModes && algorithmSuite.isLegacy()) {
             throw new S3EncryptionClientException("Enable legacy modes to use legacy content encryption: " + algorithmSuite.cipherName());
@@ -80,17 +132,13 @@ public class GetEncryptedObjectPipeline {
                 break;
         }
         byte[] plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, ciphertext);
-
-        try {
-            return responseTransformer.transform(getObjectResponse,
-                    AbortableInputStream.create(new ByteArrayInputStream(plaintext)));
-        } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to transform response.", e);
-        }
+        return plaintext;
     }
+
 
     public static class Builder {
         private S3Client _s3Client;
+        private S3AsyncClient _s3AsyncClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private boolean _enableLegacyModes;
 
@@ -98,6 +146,11 @@ public class GetEncryptedObjectPipeline {
 
         public Builder s3Client(S3Client s3Client) {
             this._s3Client = s3Client;
+            return this;
+        }
+
+        public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
+            this._s3AsyncClient = s3AsyncClient;
             return this;
         }
 

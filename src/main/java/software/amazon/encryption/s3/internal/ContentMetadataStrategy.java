@@ -5,11 +5,17 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter.JsonGenerationException;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -42,6 +48,25 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             JsonNodeParser parser = JsonNodeParser.create();
             JsonNode objectNode = parser.parse(instruction);
             for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
+                metadata.put(entry.getKey(), entry.getValue().asString());
+            }
+
+            return ContentMetadataStrategy.readFromMap(metadata);
+        }
+
+        @Override
+        public ContentMetadata decodeMetadataAsync(S3AsyncClient client, GetObjectRequest getObjectRequest, GetObjectResponse response) throws ExecutionException, InterruptedException {
+            GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
+                    .bucket(getObjectRequest.bucket())
+                    .key(getObjectRequest.key() + FILE_SUFFIX)
+                    .build();
+            CompletableFuture<ResponseBytes<GetObjectResponse>> instruction = client.getObject(
+                    instructionGetObjectRequest, AsyncResponseTransformer.toBytes());
+
+            Map<String, String> metadata = new HashMap<>();
+            JsonNodeParser parser = JsonNodeParser.create();
+            JsonNode objectNode = parser.parse(instruction.get().asInputStream());
+            for (Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
                 metadata.put(entry.getKey(), entry.getValue().asString());
             }
 
@@ -82,6 +107,12 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         public ContentMetadata decodeMetadata(S3Client client, GetObjectRequest request, GetObjectResponse response) {
             return ContentMetadataStrategy.readFromMap(response.metadata());
         }
+
+        @Override
+        public ContentMetadata decodeMetadataAsync(S3AsyncClient client, GetObjectRequest request, GetObjectResponse response) {
+            return ContentMetadataStrategy.readFromMap(response.metadata());
+        }
+
     };
 
     private static ContentMetadata readFromMap(Map<String, String> metadata) {
@@ -178,5 +209,20 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         }
 
         return strategy.decodeMetadata(client, request, response);
+    }
+
+    public static ContentMetadata decodeAsync(S3AsyncClient asyncClient, GetObjectRequest request, GetObjectResponse response) throws ExecutionException, InterruptedException {
+        Map<String, String> metadata = response.metadata();
+        ContentMetadataDecodingStrategy strategy;
+        if (metadata != null
+                && metadata.containsKey(MetadataKeyConstants.CONTENT_NONCE)
+                && (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
+                || metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2))) {
+            strategy = OBJECT_METADATA;
+        } else {
+            strategy = INSTRUCTION_FILE;
+        }
+
+        return strategy.decodeMetadataAsync(asyncClient, request, response);
     }
 }
