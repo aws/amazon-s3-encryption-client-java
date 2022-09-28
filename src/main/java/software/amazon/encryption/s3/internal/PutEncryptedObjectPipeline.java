@@ -1,9 +1,12 @@
 package software.amazon.encryption.s3.internal;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -60,7 +63,7 @@ public class PutEncryptedObjectPipeline {
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
-        byte[] input = new AsyncRequestBodySubscriber().getByteBuffer(asyncRequestBody).array();
+        byte[] input = new AsyncRequestBodySubscriber().getByteBuffer(asyncRequestBody);
 
         EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, input);
 

@@ -1,15 +1,11 @@
 package software.amazon.encryption.s3.internal;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -24,6 +20,15 @@ import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This class will determine the necessary mechanisms to decrypt objects returned from S3.
@@ -75,8 +80,10 @@ public class GetEncryptedObjectPipeline {
                                               AsyncResponseTransformer<GetObjectResponse, T> responseTransformer) throws ExecutionException, InterruptedException {
         CompletableFuture<ResponseBytes<GetObjectResponse>> objectStream = _s3AsyncClient.getObject(
                 getObjectRequest, AsyncResponseTransformer.toBytes());
-        CompletableFuture<Object> operationCompleteFuture =
-                objectStream.thenApply((objectResponse) -> {
+        AtomicReference<GetObjectResponse> getObjectResponse = new AtomicReference<>();
+        AtomicReference<byte[]> plaintext = new AtomicReference<>();
+        CompletableFuture<ResponseBytes<GetObjectResponse>> operationCompleteFuture =
+                (CompletableFuture<ResponseBytes<GetObjectResponse>>) objectStream.thenApply((objectResponse) -> {
                     byte[] ciphertext;
                     try {
                         ciphertext = IoUtils.toByteArray(objectResponse.asInputStream());
@@ -84,22 +91,68 @@ public class GetEncryptedObjectPipeline {
                         throw new RuntimeException(e);
                     }
 
-                    GetObjectResponse getObjectResponse = objectResponse.response();
-                    ContentMetadata contentMetadata = null;
+                    getObjectResponse.set(objectResponse.response());
+                    ContentMetadata contentMetadata;
                     try {
-                        contentMetadata = ContentMetadataStrategy.decodeAsync(_s3AsyncClient, getObjectRequest, getObjectResponse);
+                        contentMetadata = ContentMetadataStrategy.decodeAsync(_s3AsyncClient, getObjectRequest, getObjectResponse.get());
                     } catch (ExecutionException e) {
                         throw new RuntimeException(e);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
+                    plaintext.set(getPlaintext(getObjectRequest, contentMetadata, ciphertext));
 
-                    byte[] plaintext = getPlaintext(getObjectRequest, contentMetadata, ciphertext);
+                    // TODO: Can Cast to CompletableFuture<T> be removed - operationCompleteFuture returns CompletableFuture<Object>
+                    responseTransformer.onResponse(getObjectResponse.get());
+                    responseTransformer.onStream(new SdkPublisher<ByteBuffer>() {
+                        @Override
+                        public void subscribe(Subscriber<? super ByteBuffer> s) {
+                            // As per rule 1.9 we must throw NullPointerException if the subscriber parameter is null
+                            if (s == null) {
+                                throw new S3EncryptionClientException("Subscription MUST NOT be null.");
+                            }
+                            try {
+                                s.onSubscribe(
+                                        new Subscription() {
+                                            private boolean done = false;
+
+                                            @Override
+                                            public void request(long n) {
+                                                if (done) {
+                                                    return;
+                                                }
+                                                if (n > 0) {
+                                                    done = true;
+                                                    s.onNext(ByteBuffer.wrap(plaintext.get()));
+                                                } else {
+                                                    s.onError(new IllegalArgumentException("§3.9: non-positive requests are not allowed!"));
+                                                }
+                                            }
+
+                                            @Override
+                                            public void cancel() {
+                                                synchronized (this) {
+                                                    if (!done) {
+                                                        done = true;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                );
+                            } catch (Throwable ex) {
+                                throw new S3EncryptionClientException(" violated the Reactive Streams rule 2.13 by throwing an exception from onSubscribe.", ex);
+                            }
+                        }
+                    });
+
+                    //responseTransformer.onStream(subscriber -> subscriber.onNext(ByteBuffer.wrap(plaintext)));
 
                     try {
-                        return ResponseTransformer.toBytes().transform(getObjectResponse, AbortableInputStream.create(new ByteArrayInputStream(plaintext)));
-                    } catch (Exception e) {
-                        throw new S3EncryptionClientException("Unable to transform response.", e);
+                        return responseTransformer.prepare().get();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
                     }
                 });
         return (CompletableFuture<T>) operationCompleteFuture;
