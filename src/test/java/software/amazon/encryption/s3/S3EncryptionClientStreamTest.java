@@ -136,8 +136,8 @@ public class S3EncryptionClientStreamTest {
         // Copy the enciphered bytes
         System.arraycopy(encryptedBytes, 0, tamperedBytes, 0, inputLength);
         final byte[] tamperedTag = new byte[tagLength];
-        // Increment the first byte of the tag
-        tamperedTag[0] = (byte) (encryptedBytes[inputLength + 1] + 1);
+        // XOR the first byte of the tag
+        tamperedTag[0] = (byte) (encryptedBytes[inputLength + 1] ^ 1);
         // Copy the rest of the tag as-is
         System.arraycopy(encryptedBytes, inputLength + 1, tamperedTag, 1, tagLength - 1);
         // Append the tampered tag
