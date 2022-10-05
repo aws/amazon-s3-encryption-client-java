@@ -97,7 +97,6 @@ public class S3EncryptionClientStreamTest {
         final String readOutput = v2Client.getObjectAsString(BUCKET, BUCKET_KEY);
 
         assertEquals(input, readOutput);
-
     }
 
     @Test
@@ -168,7 +167,8 @@ public class S3EncryptionClientStreamTest {
             dataStream.read(chunk1, 0, chunkSize);
             dataStream.read(chunk2, 0, chunkSize);
             System.out.println("So far we have: " + new String(chunk1) + new String(chunk2));
-            dataStream.read(restOfInput, 0, leftOverSize);
+            int result = dataStream.read(restOfInput, 0, leftOverSize);
+            System.out.println("The result from last read is: " + result);
         } catch (final IOException ioException) {
             // Just wrap the checked exception so test fails
             throw new RuntimeException(ioException);
@@ -261,4 +261,78 @@ public class S3EncryptionClientStreamTest {
         final String readOutput = new String(chunk1) + new String(chunk2) + new String(restOfInput);
         assertEquals(input, readOutput);
     }
+
+    @Test
+    public void AesGcmV2toV2StreamBigRead() {
+        final String BUCKET_KEY = "aes-gcm-v2-to-v2-stream-big-read";
+
+        // V2 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // 640 bytes of gibberish - enough to cover multiple blocks
+        final String input = "1esGcmYoReadThisReadThisReadThisReadThisReadThisReadThisReadThis"
+                + "2esGcmYoReadThisReadThisReadThisReadThisReadThisReadThisReadThis"
+                + "3esGcmYoReadThisReadThisReadThisReadThisReadThisReadThisReadThis"
+                + "4esGcmYoReadThisReadThisReadThisReadThisReadThisReadThisReadThis"
+                + "5esGcmYoReadThisReadThisReadThisReadThisReadThisReadThisReadThis"
+                + "6esGcmYoReadThisReadThisReadThisReadThisReadThisReadThisReadThis"
+                + "7esGcmYoReadThisReadThisReadThisReadThisReadThisReadThisReadThis"
+                + "8esGcmYoReadThisReadThisReadThisReadThisReadThisReadThisReadThis"
+                + "9esGcmYoReadThisReadThisReadThisReadThisReadThisReadThisReadThis"
+                + "10sGcmYoAesGcmEndOfChunkReadThisReadThisReadThisReadThisReadThis";
+        final int inputLength = input.length();
+        v2Client.putObject(BUCKET, BUCKET_KEY, input);
+
+        // Use an unencrypted (plaintext) client to interact with the encrypted object
+        final S3Client plaintextS3Client = S3Client.builder().build();
+        ResponseBytes<GetObjectResponse> objectResponse = plaintextS3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY));
+        final byte[] encryptedBytes = objectResponse.asByteArray();
+        final int tagLength = 16;
+        final byte[] tamperedBytes = new byte[inputLength + tagLength];
+        // Copy the enciphered bytes
+        System.arraycopy(encryptedBytes, 0, tamperedBytes, 0, inputLength);
+        final byte[] tamperedTag = new byte[tagLength];
+        // XOR the first byte of the tag
+        tamperedTag[0] = (byte) (encryptedBytes[inputLength + 1] ^ 1);
+        // Copy the rest of the tag as-is
+        System.arraycopy(encryptedBytes, inputLength + 1, tamperedTag, 1, tagLength - 1);
+        // Append the tampered tag
+        System.arraycopy(tamperedTag, 0, tamperedBytes, inputLength, tagLength);
+
+        // Sanity check that the objects differ
+        assertNotEquals(encryptedBytes, tamperedBytes);
+
+        // Replace the encrypted object with the tampered object
+        PutObjectRequest tamperedPut = PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .metadata(objectResponse.response().metadata()) // Preserve metadata from encrypted object
+                .build();
+        plaintextS3Client.putObject(tamperedPut, RequestBody.fromBytes(tamperedBytes));
+
+        // Get (and decrypt) the (modified) object from S3
+        final S3Object s3Object = v2Client.getObject(BUCKET, BUCKET_KEY);
+
+        // Use a single, large byte array
+        final int chunkSize = 3000;
+        final byte[] chunk1 = new byte[chunkSize];
+
+        try (final InputStream dataStream = s3Object.getObjectContent()) {
+            dataStream.read(chunk1, 0, chunkSize);
+        } catch (final IOException ioException) {
+            // Just wrap the checked exception so test fails
+            throw new RuntimeException(ioException);
+        }
+
+        // Trim off the extra 0'd bytes
+        final String readOutput = new String(chunk1).trim();
+        assertEquals(input, readOutput);
+    }
+
 }
