@@ -13,6 +13,9 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 public class PartialKeyPairExample {
 
     private static final String OBJECT_KEY = "MyEncryptedObject";
@@ -32,95 +35,88 @@ public class PartialKeyPairExample {
     }
 
     public static void useBothPublicAndPrivateKey(final String bucket) {
-        // 1. Instantiate the S3 Encryption Client using its builder.
-        // This configures the S3 Encryption Client to use an RSA Key Pair
-        // as the wrapping key pair for data key encryption.
-        // In this example, the KeyPair object is provided directly to the builder.
-        // This means that the S3 Encryption Client can perform both encrypt and decrypt operations,
-        // which correspond to putObject and getObject operations in S3.
+        // Instantiate the S3 Encryption Client to encrypt and decrypt
+        // by specifying an RSA wrapping key pair with the rsaKeyPair builder
+        // parameter.
+        // This means that the S3 Encryption Client can perform both encrypt and decrypt operations
+        // as part of the S3 putObject and getObject operations.
         S3Client s3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
-        // Call putObject to encrypt the data and then put it in S3
+        // Call putObject to encrypt the object and upload it to S3
         s3Client.putObject(PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(OBJECT_KEY)
                 .build(), RequestBody.fromString(OBJECT_CONTENT));
 
-        // Call getObject to retrieve and decrypt the data from S3
+        // Call getObject to retrieve and decrypt the object from S3
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .key(OBJECT_KEY));
         String output = objectResponse.asUtf8String();
 
-        // Verify that the decrypted response matches the original input plaintext
-        if (!output.equals(OBJECT_CONTENT)) {
-            throw new AssertionError("Decrypted response does not match original plaintext!");
-        }
+        // Verify that the decrypted object matches the original plaintext object
+        assertEquals(OBJECT_CONTENT, output, "Decrypted response does not match original plaintext!");
     }
 
     static void useOnlyPublicKey(final String bucket) {
-        // 1. Instantiate the S3 Encryption Client using its builder.
-        // This configures the S3 Encryption Client to use only the public key
-        // portion of the RSA key. Instead of providing the key pair directly,
-        // a PartialRsaKeyPair object is instantiated using only the public key.
-        // This means that the S3 Encryption Client can only perform encryption,
-        // meaning it can call putObject but not getObject, because the private key
-        // is needed for decryption.
+        // Instantiate the S3 Encryption client to encrypt by specifying the
+        // public key from an RSA key pair with the PartialKeyPair object.
+        // When you specify the public key alone, all GetObject calls will fail
+        // because the private key is required to decrypt.
         S3Client s3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
                 .build();
 
-        // Call putObject to encrypt the data and then put it in S3
+        // Call putObject to encrypt the object and upload it to S3
         s3Client.putObject(PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(OBJECT_KEY)
                 .build(), RequestBody.fromString(OBJECT_CONTENT));
 
-        // Attempt to call getObject to retrieve and decrypt the data from S3.
+        // Attempt to call getObject to retrieve and decrypt the object from S3.
         try {
             s3Client.getObjectAsBytes(builder -> builder
                     .bucket(bucket)
                     .key(OBJECT_KEY));
+            fail("Expected exception! No private key provided for decryption.");
         } catch (final S3EncryptionClientException exception) {
-            // This is expected; the s3Client as configured cannot successfully call getObject
+            // This is expected; the s3Client cannot successfully call getObject
+            // when instantiated with a public key.
         }
 
     }
 
     static void useOnlyPrivateKey(final String bucket) {
-        // 1. Instantiate the S3 Encryption Client using its builder.
-        // This configures the S3 Encryption Client to use only the private key
-        // portion of the RSA key. Instead of providing the key pair directly,
-        // a PartialRsaKeyPair object is instantiated using only the private key.
-        // This means that the S3 Encryption Client can only perform decryption,
-        // meaning it can call getObject but not putObject, because the public key
-        // is needed for encryption.
+        // Instantiate the S3 Encryption client to decrypt by specifying the
+        // private key from an RSA key pair with the PartialRsaKeyPair object.
+        // When you specify the private key alone, all PutObject calls will
+        // fail because the public key is required to encrypt.
         S3Client s3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), null))
                 .build();
 
-        // Attempt to call putObject to encrypt the data and then put it in S3
+        // Attempt to call putObject to encrypt the object and upload it to S3
         try {
             s3Client.putObject(PutObjectRequest.builder()
                     .bucket(bucket)
                     .key(OBJECT_KEY)
                     .build(), RequestBody.fromString(OBJECT_CONTENT));
+            fail("Expected exception! No public key provided for encryption.");
         } catch (final S3EncryptionClientException exception) {
-            // This is expected; the s3Client as configured cannot successfully call putObject
+            // This is expected; the s3Client cannot successfully call putObject
+            // when instantiated with a private key.
         }
 
-        // Call getObject to retrieve and decrypt the data from S3
+        // Call getObject to retrieve and decrypt the object from S3
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .key(OBJECT_KEY));
         String output = objectResponse.asUtf8String();
 
-        // Verify that the decrypted response matches the original input plaintext
-        if (!output.equals(OBJECT_CONTENT)) {
-            throw new AssertionError("The decrypted response does not match the original plaintext!");
-        }
+        // Verify that the decrypted object matches the original plaintext object
+        assertEquals(OBJECT_CONTENT, output, "The decrypted response does not match the original plaintext!");
     }
 
     private static KeyPair retrieveRsaKeyPair() {
