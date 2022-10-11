@@ -3,7 +3,9 @@ package software.amazon.encryption.s3.examples;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
@@ -12,26 +14,39 @@ import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class PartialKeyPairExample {
 
-    private static final String OBJECT_KEY = "MyEncryptedObject";
     private static final String OBJECT_CONTENT = "Hello, world!";
+
+    // Use unique object keys for each example
+    private static final String PUBLIC_AND_PRIVATE_KEY_OBJECT_KEY = "PublicAndPrivateKeyTestObject";
+    private static final String PUBLIC_KEY_OBJECT_KEY = "PublicKeyTestObject";
+    private static final String PRIVATE_KEY_OBJECT_KEY = "PrivateKeyTestObject";
+
+    // Keep a Set of ObjectIdentifiers for cleaning up at the end of the tests
+    private static final Set<ObjectIdentifier> PARTIAL_KEY_PAIR_EXAMPLE_OBJECT_KEYS = Stream
+            .of(PUBLIC_AND_PRIVATE_KEY_OBJECT_KEY, PUBLIC_KEY_OBJECT_KEY, PRIVATE_KEY_OBJECT_KEY)
+            .map(k -> ObjectIdentifier.builder().key(k).build())
+            .collect(Collectors.toSet());
 
     // This example generates a new key. In practice, you would
     // retrieve your key from an existing keystore.
     private static final KeyPair RSA_KEY_PAIR = retrieveRsaKeyPair();
 
     public static void main(final String[] args) {
-
         final String bucket = args[0];
 
         useBothPublicAndPrivateKey(bucket);
         useOnlyPublicKey(bucket);
         useOnlyPrivateKey(bucket);
+        cleanup(bucket);
     }
 
     public static void useBothPublicAndPrivateKey(final String bucket) {
@@ -47,17 +62,20 @@ public class PartialKeyPairExample {
         // Call putObject to encrypt the object and upload it to S3
         s3Client.putObject(PutObjectRequest.builder()
                 .bucket(bucket)
-                .key(OBJECT_KEY)
+                .key(PUBLIC_AND_PRIVATE_KEY_OBJECT_KEY)
                 .build(), RequestBody.fromString(OBJECT_CONTENT));
 
         // Call getObject to retrieve and decrypt the object from S3
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
-                .key(OBJECT_KEY));
+                .key(PUBLIC_AND_PRIVATE_KEY_OBJECT_KEY));
         String output = objectResponse.asUtf8String();
 
         // Verify that the decrypted object matches the original plaintext object
         assertEquals(OBJECT_CONTENT, output, "Decrypted response does not match original plaintext!");
+
+        // Close the client
+        s3Client.close();
     }
 
     static void useOnlyPublicKey(final String bucket) {
@@ -72,36 +90,39 @@ public class PartialKeyPairExample {
         // Call putObject to encrypt the object and upload it to S3
         s3Client.putObject(PutObjectRequest.builder()
                 .bucket(bucket)
-                .key(OBJECT_KEY)
+                .key(PUBLIC_KEY_OBJECT_KEY)
                 .build(), RequestBody.fromString(OBJECT_CONTENT));
 
         // Attempt to call getObject to retrieve and decrypt the object from S3.
         try {
             s3Client.getObjectAsBytes(builder -> builder
                     .bucket(bucket)
-                    .key(OBJECT_KEY));
+                    .key(PUBLIC_KEY_OBJECT_KEY));
             fail("Expected exception! No private key provided for decryption.");
         } catch (final S3EncryptionClientException exception) {
             // This is expected; the s3Client cannot successfully call getObject
             // when instantiated with a public key.
         }
 
+        // Close the client
+        s3Client.close();
     }
 
     static void useOnlyPrivateKey(final String bucket) {
+
         // Instantiate the S3 Encryption client to decrypt by specifying the
         // private key from an RSA key pair with the PartialRsaKeyPair object.
         // When you specify the private key alone, all PutObject calls will
         // fail because the public key is required to encrypt.
-        S3Client s3Client = S3EncryptionClient.builder()
+        S3Client s3ClientPrivateKeyOnly = S3EncryptionClient.builder()
                 .rsaKeyPair(new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), null))
                 .build();
 
         // Attempt to call putObject to encrypt the object and upload it to S3
         try {
-            s3Client.putObject(PutObjectRequest.builder()
+            s3ClientPrivateKeyOnly.putObject(PutObjectRequest.builder()
                     .bucket(bucket)
-                    .key(OBJECT_KEY)
+                    .key(PRIVATE_KEY_OBJECT_KEY)
                     .build(), RequestBody.fromString(OBJECT_CONTENT));
             fail("Expected exception! No public key provided for encryption.");
         } catch (final S3EncryptionClientException exception) {
@@ -109,14 +130,45 @@ public class PartialKeyPairExample {
             // when instantiated with a private key.
         }
 
-        // Call getObject to retrieve and decrypt the object from S3
-        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
+        // Instantiate a new S3 Encryption client with a public key in order
+        // to successfully call PutObject so that the client which only has
+        // a private key can call GetObject on a valid S3 Object.
+        S3Client s3ClientPublicKeyOnly = S3EncryptionClient.builder()
+                .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
+                .build();
+
+        // Call putObject to encrypt the object and upload it to S3
+        s3ClientPublicKeyOnly.putObject(PutObjectRequest.builder()
                 .bucket(bucket)
-                .key(OBJECT_KEY));
+                .key(PRIVATE_KEY_OBJECT_KEY)
+                .build(), RequestBody.fromString(OBJECT_CONTENT));
+
+        // Call getObject to retrieve and decrypt the object from S3
+        ResponseBytes<GetObjectResponse> objectResponse = s3ClientPrivateKeyOnly.getObjectAsBytes(builder -> builder
+                .bucket(bucket)
+                .key(PRIVATE_KEY_OBJECT_KEY));
         String output = objectResponse.asUtf8String();
 
         // Verify that the decrypted object matches the original plaintext object
         assertEquals(OBJECT_CONTENT, output, "The decrypted response does not match the original plaintext!");
+
+        // Close the client
+        s3ClientPrivateKeyOnly.close();
+    }
+
+    public static void cleanup(final String bucket) {
+        // The S3 Encryption client is not necessary for deleting encrypted
+        // objects, so just use the S3 Client.
+        final S3Client s3Client = S3Client.builder().build();
+        final Delete delete = Delete.builder()
+                .objects(PARTIAL_KEY_PAIR_EXAMPLE_OBJECT_KEYS)
+                .build();
+        s3Client.deleteObjects(builder -> builder
+                .bucket(bucket)
+                .delete(delete)
+                .build());
+
+        s3Client.close();
     }
 
     private static KeyPair retrieveRsaKeyPair() {

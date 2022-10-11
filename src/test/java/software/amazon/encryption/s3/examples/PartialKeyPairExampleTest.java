@@ -3,18 +3,12 @@ package software.amazon.encryption.s3.examples;
 import org.junit.jupiter.api.Test;
 import software.amazon.encryption.s3.S3EncryptionClientTestResources;
 
-import static software.amazon.encryption.s3.examples.PartialKeyPairExample.useBothPublicAndPrivateKey;
-import static software.amazon.encryption.s3.examples.PartialKeyPairExample.useOnlyPrivateKey;
-import static software.amazon.encryption.s3.examples.PartialKeyPairExample.useOnlyPublicKey;
-
 public class PartialKeyPairExampleTest {
 
     @Test
     public void testPartialKeyPairExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
 
-        useBothPublicAndPrivateKey(bucket);
-        useOnlyPublicKey(bucket);
-        useOnlyPrivateKey(bucket);
+        PartialKeyPairExample.main(new String[]{bucket});
     }
 }
