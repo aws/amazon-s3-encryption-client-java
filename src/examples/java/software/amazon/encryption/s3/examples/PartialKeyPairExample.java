@@ -152,7 +152,8 @@ public class PartialKeyPairExample {
         // Verify that the decrypted object matches the original plaintext object
         assertEquals(OBJECT_CONTENT, output, "The decrypted response does not match the original plaintext!");
 
-        // Close the client
+        // Close the clients
+        s3ClientPublicKeyOnly.close();
         s3ClientPrivateKeyOnly.close();
     }
 
@@ -168,6 +169,7 @@ public class PartialKeyPairExample {
                 .delete(delete)
                 .build());
 
+        // Close the client
         s3Client.close();
     }
 
