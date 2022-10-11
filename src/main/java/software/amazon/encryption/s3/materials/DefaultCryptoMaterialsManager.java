@@ -29,6 +29,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
                 .s3Request(request.s3Request())
                 .algorithmSuite(request.algorithmSuite())
                 .encryptionContext(request.encryptionContext())
+                .ciphertextLength(request.ciphertextLength())
                 .build();
 
         return _keyring.onDecrypt(materials, request.encryptedDataKeys());

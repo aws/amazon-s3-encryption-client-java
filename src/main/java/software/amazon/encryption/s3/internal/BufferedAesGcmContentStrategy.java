@@ -1,5 +1,8 @@
 package software.amazon.encryption.s3.internal;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -11,6 +14,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
@@ -19,11 +24,15 @@ import software.amazon.encryption.s3.materials.EncryptionMaterials;
 /**
  * This class will encrypt data according to the algorithm suite constants
  */
-public class AesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
+public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
+
+    // 64MiB ought to be enough for most usecases
+    private final long DEFAULT_MAX_CONTENT_LENGTH_MiB = 64;
+    private final long DEFAULT_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * DEFAULT_MAX_CONTENT_LENGTH_MiB;
 
     final private SecureRandom _secureRandom;
 
-    private AesGcmContentStrategy(Builder builder) {
+    private BufferedAesGcmContentStrategy(Builder builder) {
         this._secureRandom = builder._secureRandom;
     }
 
@@ -60,7 +69,26 @@ public class AesGcmContentStrategy implements ContentEncryptionStrategy, Content
     }
 
     @Override
-    public byte[] decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials, byte[] ciphertext) {
+    public InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials,
+                                      InputStream ciphertextStream) {
+        // Check the size of the object. If it exceeds a predefined limit in default mode,
+        // do not buffer it into memory. Throw an exception and instruct the client to
+        // reconfigure using Delayed Authentication mode which supports decryption of
+        // large objects over an InputStream.
+        if (materials.ciphertextLength() > DEFAULT_MAX_CONTENT_LENGTH_BYTES) {
+            throw new S3EncryptionClientException(String.format("The object you are attempting to decrypt exceeds the maximum content " +
+                    "length allowed in default mode. Please enable Delayed Authentication mode to decrypt objects larger" +
+                    "than %d", DEFAULT_MAX_CONTENT_LENGTH_MiB));
+        }
+
+        // Buffer the ciphertextStream into a byte array
+        byte[] ciphertext;
+        try {
+            ciphertext = IoUtils.toByteArray(ciphertextStream);
+        } catch (IOException e) {
+            throw new S3EncryptionClientException("Unexpected exception while buffering ciphertext input stream!", e);
+        }
+
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         final int tagLength = algorithmSuite.cipherTagLengthBits();
@@ -80,7 +108,7 @@ public class AesGcmContentStrategy implements ContentEncryptionStrategy, Content
             throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
         }
 
-        return plaintext;
+        return new ByteArrayInputStream(plaintext);
     }
 
     public static class Builder {
@@ -93,8 +121,8 @@ public class AesGcmContentStrategy implements ContentEncryptionStrategy, Content
             return this;
         }
 
-        public AesGcmContentStrategy build() {
-            return new AesGcmContentStrategy(this);
+        public BufferedAesGcmContentStrategy build() {
+            return new BufferedAesGcmContentStrategy(this);
         }
     }
 }

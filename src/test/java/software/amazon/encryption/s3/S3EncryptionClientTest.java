@@ -6,9 +6,12 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -58,7 +61,7 @@ public class S3EncryptionClientTest {
     @Test
     public void s3EncryptionClientWithNoLegacyKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build());
     }
 
@@ -134,6 +137,54 @@ public class S3EncryptionClientTest {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
                 .rsaKeyPair(invalidRsaKey)
                 .build());
+    }
+
+    @Test
+    public void defaultModeWithLargeObjectFails() throws IOException {
+        final String BUCKET_KEY = "large-object";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // Tight bound on the default limit of 64MiB
+        final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
+        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
+
+        largeObjectStream.close();
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)));
+        v3Client.close();
+    }
+
+    /**
+     * Stream of a fixed number of zeros. Useful for testing
+     * stream uploads of a specific size. Not threadsafe.
+     */
+    private static class BoundedZerosInputStream extends InputStream {
+
+        private final long _bound;
+        private long _progress = 0;
+
+        BoundedZerosInputStream(final long bound) {
+            _bound = bound;
+        }
+
+        @Override
+        public int read() {
+            if (_progress >= _bound) {
+                return -1;
+            }
+            _progress++;
+            return 0;
+        }
     }
 
     /**

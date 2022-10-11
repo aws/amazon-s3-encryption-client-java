@@ -12,12 +12,14 @@ public class DecryptMaterialsRequest {
     private final AlgorithmSuite _algorithmSuite;
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final Map<String, String> _encryptionContext;
+    private final long _ciphertextLength;
 
     private DecryptMaterialsRequest(Builder builder) {
         this._s3Request = builder._s3Request;
         this._algorithmSuite = builder._algorithmSuite;
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._encryptionContext = builder._encryptionContext;
+        this._ciphertextLength = builder._ciphertextLength;
     }
 
     static public Builder builder() {
@@ -40,12 +42,17 @@ public class DecryptMaterialsRequest {
         return _encryptionContext;
     }
 
+    public long ciphertextLength() {
+        return _ciphertextLength;
+    }
+
     static public class Builder {
 
         public GetObjectRequest _s3Request = null;
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
+        private long _ciphertextLength = -1;
 
         private Builder() {
         }
@@ -71,6 +78,11 @@ public class DecryptMaterialsRequest {
             _encryptedDataKeys = encryptedDataKeys == null
                     ? Collections.emptyList()
                     : Collections.unmodifiableList(encryptedDataKeys);
+            return this;
+        }
+
+        public Builder ciphertextLength(long ciphertextLength) {
+            _ciphertextLength = ciphertextLength;
             return this;
         }
 

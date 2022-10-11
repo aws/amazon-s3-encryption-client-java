@@ -29,7 +29,7 @@ public class AesKeyring extends S3Keyring {
         private static final String CIPHER_ALGORITHM = "AES";
 
         @Override
-        public boolean isLegacy() {
+        public boolean isLegacyUnauthenticated() {
             return true;
         }
 
@@ -53,7 +53,7 @@ public class AesKeyring extends S3Keyring {
         private static final String CIPHER_ALGORITHM = "AESWrap";
 
         @Override
-        public boolean isLegacy() {
+        public boolean isLegacyUnauthenticated() {
             return true;
         }
 
@@ -81,7 +81,7 @@ public class AesKeyring extends S3Keyring {
         private static final int TAG_LENGTH_BITS = TAG_LENGTH_BYTES * 8;
 
         @Override
-        public boolean isLegacy() {
+        public boolean isLegacyUnauthenticated() {
             return false;
         }
 

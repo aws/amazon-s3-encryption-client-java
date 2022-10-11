@@ -2,7 +2,9 @@ package software.amazon.encryption.s3.internal;
 
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 
+import java.io.InputStream;
+
 @FunctionalInterface
 public interface ContentDecryptionStrategy {
-    byte[] decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials, byte[] ciphertext);
+    InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials, InputStream ciphertext);
 }
