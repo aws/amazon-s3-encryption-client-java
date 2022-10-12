@@ -17,17 +17,15 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
+import static software.amazon.encryption.s3.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
+import static software.amazon.encryption.s3.S3EncryptionClientTestResources.KMS_KEY_ID;
 
 /**
  * This class is an integration test for verifying behavior of the V3 client
  * under various scenarios.
  */
 public class S3EncryptionClientTest {
-
-    private static final String BUCKET = System.getenv("AWS_S3EC_TEST_BUCKET");
-    private static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
-    // This alias must point to the same key as KMS_KEY_ID
-    private static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
 
     private static SecretKey AES_KEY;
     private static KeyPair RSA_KEY_PAIR;
