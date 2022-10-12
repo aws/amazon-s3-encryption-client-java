@@ -30,7 +30,6 @@ public class PartialKeyPairExample {
     private static final String PUBLIC_KEY_OBJECT_KEY = "PublicKeyTestObject";
     private static final String PRIVATE_KEY_OBJECT_KEY = "PrivateKeyTestObject";
 
-    // Keep a Set of ObjectIdentifiers for cleaning up at the end of the tests
     private static final Set<ObjectIdentifier> PARTIAL_KEY_PAIR_EXAMPLE_OBJECT_KEYS = Stream
             .of(PUBLIC_AND_PRIVATE_KEY_OBJECT_KEY, PUBLIC_KEY_OBJECT_KEY, PRIVATE_KEY_OBJECT_KEY)
             .map(k -> ObjectIdentifier.builder().key(k).build())
@@ -158,8 +157,8 @@ public class PartialKeyPairExample {
     }
 
     public static void cleanup(final String bucket) {
-        // The S3 Encryption client is not necessary for deleting encrypted
-        // objects, so just use the S3 Client.
+        // The S3 Encryption client is not required when deleting encrypted
+        // objects, use the S3 Client.
         final S3Client s3Client = S3Client.builder().build();
         final Delete delete = Delete.builder()
                 .objects(PARTIAL_KEY_PAIR_EXAMPLE_OBJECT_KEYS)
