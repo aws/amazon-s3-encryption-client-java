@@ -35,7 +35,7 @@ public class KmsKeyring extends S3Keyring {
         private static final String KEY_PROVIDER_INFO = "kms";
 
         @Override
-        public boolean isLegacyUnauthenticated() {
+        public boolean isLegacy() {
             return true;
         }
 
@@ -64,7 +64,7 @@ public class KmsKeyring extends S3Keyring {
         private static final String ENCRYPTION_CONTEXT_ALGORITHM_KEY = "aws:x-amz-cek-alg";
 
         @Override
-        public boolean isLegacyUnauthenticated() {
+        public boolean isLegacy() {
             return false;
         }
 

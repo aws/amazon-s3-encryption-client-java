@@ -27,7 +27,7 @@ public class RsaKeyring extends S3Keyring {
         private static final String CIPHER_ALGORITHM = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
 
         @Override
-        public boolean isLegacyUnauthenticated() {
+        public boolean isLegacy() {
             return true;
         }
 
@@ -60,7 +60,7 @@ public class RsaKeyring extends S3Keyring {
                 new OAEPParameterSpec(DIGEST_NAME, MGF_NAME, MGF_PARAMETER_SPEC, PSpecified.DEFAULT);
 
         @Override
-        public boolean isLegacyUnauthenticated() {
+        public boolean isLegacy() {
             return false;
         }
 

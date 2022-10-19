@@ -84,7 +84,7 @@ abstract public class S3Keyring implements Keyring {
             throw new S3EncryptionClientException("Unknown key wrap: " + keyProviderInfo);
         }
 
-        if (decryptStrategy.isLegacyUnauthenticated() && !_enableLegacyUnauthenticatedModes) {
+        if (decryptStrategy.isLegacy() && !_enableLegacyUnauthenticatedModes) {
             throw new S3EncryptionClientException("Enable legacy modes to use legacy key wrap: " + keyProviderInfo);
         }
 

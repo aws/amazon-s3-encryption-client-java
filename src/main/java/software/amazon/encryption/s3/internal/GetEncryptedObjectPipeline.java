@@ -91,9 +91,11 @@ public class GetEncryptedObjectPipeline {
                 } else {
                     return BufferedAesGcmContentStrategy.builder().build();
                 }
+            default:
+                // This should never happen in practice.
+                throw new S3EncryptionClientException(String.format("No content strategy available for algorithm suite:" +
+                        " %s", materials.algorithmSuite()));
         }
-        // This should never happen.
-        throw new S3EncryptionClientException("Unable to select content decryption strategy.");
     }
 
     public static class Builder {

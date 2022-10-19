@@ -27,8 +27,8 @@ import software.amazon.encryption.s3.materials.EncryptionMaterials;
 public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
 
     // 64MiB ought to be enough for most usecases
-    private final long DEFAULT_MAX_CONTENT_LENGTH_MiB = 64;
-    private final long DEFAULT_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * DEFAULT_MAX_CONTENT_LENGTH_MiB;
+    private final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
+    private final long BUFFERED_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * BUFFERED_MAX_CONTENT_LENGTH_MiB;
 
     final private SecureRandom _secureRandom;
 
@@ -75,10 +75,10 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
         // do not buffer it into memory. Throw an exception and instruct the client to
         // reconfigure using Delayed Authentication mode which supports decryption of
         // large objects over an InputStream.
-        if (materials.ciphertextLength() > DEFAULT_MAX_CONTENT_LENGTH_BYTES) {
+        if (materials.ciphertextLength() > BUFFERED_MAX_CONTENT_LENGTH_BYTES) {
             throw new S3EncryptionClientException(String.format("The object you are attempting to decrypt exceeds the maximum content " +
                     "length allowed in default mode. Please enable Delayed Authentication mode to decrypt objects larger" +
-                    "than %d", DEFAULT_MAX_CONTENT_LENGTH_MiB));
+                    "than %d", BUFFERED_MAX_CONTENT_LENGTH_MiB));
         }
 
         // Buffer the ciphertextStream into a byte array
