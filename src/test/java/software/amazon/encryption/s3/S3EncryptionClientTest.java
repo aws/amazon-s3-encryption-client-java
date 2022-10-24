@@ -7,6 +7,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -162,29 +163,6 @@ public class S3EncryptionClientTest {
                 .bucket(BUCKET)
                 .key(BUCKET_KEY)));
         v3Client.close();
-    }
-
-    /**
-     * Stream of a fixed number of zeros. Useful for testing
-     * stream uploads of a specific size. Not threadsafe.
-     */
-    private static class BoundedZerosInputStream extends InputStream {
-
-        private final long _bound;
-        private long _progress = 0;
-
-        BoundedZerosInputStream(final long bound) {
-            _bound = bound;
-        }
-
-        @Override
-        public int read() {
-            if (_progress >= _bound) {
-                return -1;
-            }
-            _progress++;
-            return 0;
-        }
     }
 
     /**
