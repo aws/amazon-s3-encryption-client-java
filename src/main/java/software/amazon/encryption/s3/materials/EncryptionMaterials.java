@@ -8,7 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
-final public class EncryptionMaterials {
+final public class EncryptionMaterials implements CryptographicMaterials {
 
     // Original request
     private final PutObjectRequest _s3Request;
