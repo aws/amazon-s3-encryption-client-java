@@ -47,6 +47,8 @@ public class S3EncryptionClientCompatibilityTest {
 
     private static final String BUCKET = System.getenv("AWS_S3EC_TEST_BUCKET");
     private static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
+    // This alias must point to the same key as KMS_KEY_ID
+    private static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
     private static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
 
     private static SecretKey AES_KEY;
@@ -425,6 +427,39 @@ public class S3EncryptionClientCompatibilityTest {
 
         // Asserts
         final String input = "KmsV1toV3";
+        v1Client.putObject(BUCKET, BUCKET_KEY, input);
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY));
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+    }
+
+    @Test
+    public void KmsV1toV3FailsWhenEncryptWithIDAndDecryptWithAlias() {
+        final String BUCKET_KEY = "kms-v1-to-v3-fails";
+
+        // V1 Client with KMS Key ID
+        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_KEY_ID);
+
+        CryptoConfiguration v1Config =
+                new CryptoConfiguration(CryptoMode.AuthenticatedEncryption)
+                        .withAwsKmsRegion(KMS_REGION);
+
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1Config)
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        // V3 Client with KMS Key Alias
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ALIAS)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+
+        // Asserts
+        final String input = "KmsV1toV3FailsWhenEncryptWithIDAndDecryptWithAlias";
         v1Client.putObject(BUCKET, BUCKET_KEY, input);
 
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
