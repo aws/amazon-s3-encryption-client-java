@@ -21,9 +21,10 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
-import static software.amazon.encryption.s3.S3EncryptionClientTestResources.BUCKET;
-import static software.amazon.encryption.s3.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
-import static software.amazon.encryption.s3.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.cleanup;
 
 /**
  * This class is an integration test for verifying behavior of the V3 client
@@ -68,15 +69,21 @@ public class S3EncryptionClientTest {
 
     @Test
     public void KmsWithAliasARN() {
+        final String objectKey = "kms-with-alias-arn";
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ALIAS)
                 .build();
 
-        simpleV3RoundTrip(v3Client);
+        simpleV3RoundTrip(v3Client, objectKey);
+
+        // Cleanup
+        v3Client.close();
+        cleanup(BUCKET, objectKey);
     }
 
     @Test
     public void KmsWithShortKeyId() {
+        final String objectKey = "kms-with-short-key-id";
         // Just assume the ARN is well-formed
         // Also assume that the region is set correctly
         final String shortId = KMS_KEY_ID.split("/")[1];
@@ -85,11 +92,16 @@ public class S3EncryptionClientTest {
                 .kmsKeyId(shortId)
                 .build();
 
-        simpleV3RoundTrip(v3Client);
+        simpleV3RoundTrip(v3Client, objectKey);
+
+        // Cleanup
+        v3Client.close();
+        cleanup(BUCKET, objectKey);
     }
 
     @Test
     public void KmsAliasARNToKeyId() {
+        final String objectKey = "kms-alias-arn-to-key-id";
         S3Client aliasClient = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ALIAS)
                 .build();
@@ -104,15 +116,20 @@ public class S3EncryptionClientTest {
 
         aliasClient.putObject(builder -> builder
                         .bucket(BUCKET)
-                        .key(input)
+                        .key(objectKey)
                         .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)),
                 RequestBody.fromString(input));
 
         ResponseBytes<GetObjectResponse> objectResponse = keyIdClient.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(input)
+                .key(objectKey)
                 .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)));
         String output = objectResponse.asUtf8String();
+
+        // Cleanup
+        aliasClient.close();
+        keyIdClient.close();
+        cleanup(BUCKET, objectKey);
         assertEquals(input, output);
     }
 
@@ -142,7 +159,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void defaultModeWithLargeObjectFails() throws IOException {
-        final String BUCKET_KEY = "large-object";
+        final String objectKey = "large-object";
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -154,15 +171,19 @@ public class S3EncryptionClientTest {
         final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)
+                .key(objectKey)
                 .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
 
         largeObjectStream.close();
 
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)));
+                .key(objectKey)));
+
+
+        // Cleanup
         v3Client.close();
+        cleanup(BUCKET, objectKey);
     }
 
     /**
@@ -170,18 +191,18 @@ public class S3EncryptionClientTest {
      * S3Client. Useful for testing client configuration.
      * @param v3Client the client under test
      */
-    private void simpleV3RoundTrip(final S3Client v3Client) {
+    private void simpleV3RoundTrip(final S3Client v3Client, final String objectKey) {
         final String input = "SimpleTestOfV3EncryptionClient";
 
         v3Client.putObject(builder -> builder
                         .bucket(BUCKET)
-                        .key(input)
+                        .key(objectKey)
                         .build(),
                 RequestBody.fromString(input));
 
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(input)
+                .key(objectKey)
                 .build());
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);

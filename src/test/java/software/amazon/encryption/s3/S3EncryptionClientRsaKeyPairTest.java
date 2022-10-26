@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.cleanup;
 
 public class S3EncryptionClientRsaKeyPairTest {
     private static final String BUCKET = System.getenv("AWS_S3EC_TEST_BUCKET");
@@ -30,7 +31,7 @@ public class S3EncryptionClientRsaKeyPairTest {
 
     @Test
     public void RsaPublicAndPrivateKeys() {
-        final String BUCKET_KEY = "rsa-public-and-private";
+        final String objectKey = "rsa-public-and-private";
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -41,18 +42,23 @@ public class S3EncryptionClientRsaKeyPairTest {
         final String input = "RsaOaepV3toV3";
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)
+                .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(BUCKET_KEY));
+                .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
+
+        // Cleanup
+        v3Client.close();
+        cleanup(BUCKET, objectKey);
     }
 
     @Test
     public void RsaPrivateKeyCanOnlyDecrypt() {
+        final String objectKey = "rsa-private-key-only";
         S3Client v3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
@@ -64,12 +70,12 @@ public class S3EncryptionClientRsaKeyPairTest {
         final String input = "RsaOaepV3toV3";
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(input)
+                .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
         ResponseBytes<GetObjectResponse> objectResponse = v3ClientReadOnly.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(input));
+                .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -77,23 +83,31 @@ public class S3EncryptionClientRsaKeyPairTest {
                 .bucket(BUCKET)
                 .key(input)
                 .build(), RequestBody.fromString(input)));
+
+        // Cleanup
+        v3Client.close();
+        cleanup(BUCKET, objectKey);
     }
 
     @Test
     public void RsaPublicKeyCanOnlyEncrypt() {
-        final String BUCKET_KEY = "rsa-public-key-only";
+        final String objectKey = "rsa-public-key-only";
         S3Client v3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
                 .build();
 
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)
-                .build(), RequestBody.fromString(BUCKET_KEY));
+                .key(objectKey)
+                .build(), RequestBody.fromString(objectKey));
 
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)));
+                .key(objectKey)));
+
+        // Cleanup
+        v3Client.close();
+        cleanup(BUCKET, objectKey);
     }
 
 
