@@ -462,11 +462,9 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "KmsV1toV3FailsWhenEncryptWithIDAndDecryptWithAlias";
         v1Client.putObject(BUCKET, BUCKET_KEY, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(BUCKET_KEY));
-        String output = objectResponse.asUtf8String();
-        assertEquals(input, output);
+                .key(BUCKET_KEY)));
     }
 
     @Test
