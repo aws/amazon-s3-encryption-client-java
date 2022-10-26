@@ -1,18 +1,11 @@
 package software.amazon.encryption.s3.internal;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
-
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.legacy.internal.AesCbcContentStrategy;
@@ -20,6 +13,10 @@ import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
+
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This class will determine the necessary mechanisms to decrypt objects returned from S3.
@@ -45,8 +42,17 @@ public class GetEncryptedObjectPipeline {
 
     public <T> T getObject(GetObjectRequest getObjectRequest,
             ResponseTransformer<GetObjectResponse, T> responseTransformer) {
-        ResponseInputStream<GetObjectResponse> objectStream = _s3Client.getObject(
-                getObjectRequest);
+        ResponseInputStream<GetObjectResponse> objectStream;
+        if (getObjectRequest.range() != null) {
+            long[] cryptoRange = RangedGetUtils.getCryptoRange(getObjectRequest.range());
+            objectStream = _s3Client.getObject( getObjectRequest
+                    .toBuilder()
+                    .range("bytes=" + cryptoRange[0] + "-" + (cryptoRange[1]))
+                    .build());
+        } else {
+            objectStream = _s3Client.getObject(
+                    getObjectRequest);
+        }
 
         GetObjectResponse getObjectResponse = objectStream.response();
         ContentMetadata contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, getObjectResponse);
@@ -69,7 +75,8 @@ public class GetEncryptedObjectPipeline {
         DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(materialsRequest);
 
         ContentDecryptionStrategy contentDecryptionStrategy = selectContentDecryptionStrategy(materials);
-        final InputStream plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, objectStream);
+        String contentRange = getObjectResponse.contentRange();
+        final InputStream plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, objectStream, contentRange);
 
         try {
             return responseTransformer.transform(getObjectResponse,

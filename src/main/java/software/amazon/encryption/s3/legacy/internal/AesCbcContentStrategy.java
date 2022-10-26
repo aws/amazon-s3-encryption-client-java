@@ -12,6 +12,7 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.CbcCipherInputStream;
 import software.amazon.encryption.s3.internal.ContentDecryptionStrategy;
 import software.amazon.encryption.s3.internal.ContentMetadata;
+import software.amazon.encryption.s3.internal.RangedGetUtils;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 
 /**
@@ -25,7 +26,8 @@ public class AesCbcContentStrategy implements ContentDecryptionStrategy {
 
     @Override
     public InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials,
-                                      InputStream ciphertextStream) {
+                                      InputStream ciphertextStream, String contentRange) {
+        long[] desiredRange = RangedGetUtils.getRange(materials.s3Request().range());
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         byte[] iv = contentMetadata.contentNonce();
@@ -33,7 +35,8 @@ public class AesCbcContentStrategy implements ContentDecryptionStrategy {
             // TODO: Allow configurable Cryptographic provider
             final Cipher cipher = Cipher.getInstance(materials.algorithmSuite().cipherName());
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
-            return new CbcCipherInputStream(ciphertextStream, cipher);
+            InputStream plaintext = new CbcCipherInputStream(ciphertextStream, cipher);
+            return RangedGetUtils.adjustToDesiredRange(plaintext, desiredRange, contentRange, AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF.cipherTagLengthBits());
         } catch (GeneralSecurityException ex) {
             throw new S3EncryptionClientException("Unable to build cipher: " + ex.getMessage()
                     + "\nMake sure you have the JCE unlimited strength policy files installed and "

@@ -70,7 +70,7 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
 
     @Override
     public InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials,
-                                      InputStream ciphertextStream) {
+                                      InputStream ciphertextStream, String contentRange) {
         // Check the size of the object. If it exceeds a predefined limit in default mode,
         // do not buffer it into memory. Throw an exception and instruct the client to
         // reconfigure using Delayed Authentication mode which supports decryption of
