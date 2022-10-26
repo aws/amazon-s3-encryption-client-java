@@ -48,7 +48,7 @@ public class KmsKeyring extends S3Keyring {
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) {
             Map<String, String> materialsEncryptionContextCopy = new HashMap<>(materials.encryptionContext());
             materialsEncryptionContextCopy.get(KEY_ID_CONTEXT_KEY);
-            if (!_wrappingKeyId.equals(materialsEncryptionContextCopy.get("kms_cmk_id"))) {
+            if (!_wrappingKeyId.equals(materialsEncryptionContextCopy.get(KEY_ID_CONTEXT_KEY))) {
                 throw new S3EncryptionClientException("Provided encryption materials do not match information" +
                         " retrieved from the encrypted object");
             }
