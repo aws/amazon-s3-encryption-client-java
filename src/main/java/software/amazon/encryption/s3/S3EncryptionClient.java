@@ -98,6 +98,7 @@ public class S3EncryptionClient implements S3Client {
         private PartialRsaKeyPair _rsaKeyPair;
         private String _kmsKeyId;
         private boolean _enableLegacyModes = false;
+        private String unusedString;
 
         private Builder() {}
 
