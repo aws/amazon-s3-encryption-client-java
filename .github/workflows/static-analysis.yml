@@ -1,0 +1,16 @@
+name: Static Analysis
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  static_analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Run SpotBugs
+        run: mvn -T 4 -ntp spotbugs:spotbugs
