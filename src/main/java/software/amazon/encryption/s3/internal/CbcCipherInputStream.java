@@ -34,51 +34,53 @@ public class CbcCipherInputStream extends SdkFilterInputStream {
         if (!readNextChunk()) {
             return -1;
         }
+        // Cast the last byte to int with a value between 0-255, masking out the
+        // higher bits. In other words, this is abs(x % 256).
         return ((int) outputBuffer[currentPosition++] & 0xFF);
     }
 
     @Override
-    public int read(byte b[]) throws IOException {
-        return read(b, 0, b.length);
+    public int read(byte buffer[]) throws IOException {
+        return read(buffer, 0, buffer.length);
     }
 
     @Override
-    public int read(byte buf[], int off, int target_len) throws IOException {
+    public int read(byte buffer[], int off, int targetLength) throws IOException {
         if (!readNextChunk()) {
             return -1;
         }
-        if (target_len <= 0) {
+        if (targetLength <= 0) {
             return 0;
         }
-        int len = maxPosition - currentPosition;
-        if (target_len < len) {
-            len = target_len;
+        int length = maxPosition - currentPosition;
+        if (targetLength < length) {
+            length = targetLength;
         }
-        System.arraycopy(outputBuffer, currentPosition, buf, off, len);
-        currentPosition += len;
-        return len;
+        System.arraycopy(outputBuffer, currentPosition, buffer, off, length);
+        currentPosition += length;
+        return length;
     }
 
     private boolean readNextChunk() throws IOException {
         if (currentPosition >= maxPosition) {
-            // all buffered data has been read, let's get some more
+            // All buffered data has been read, let's get some more
             if (eofReached) {
                 return false;
             }
             int retryCount = 0;
-            int len;
+            int length;
             do {
                 if (retryCount > MAX_RETRY_COUNT) {
                     throw new IOException("Exceeded maximum number of attempts to read next chunk of data");
                 }
-                len = nextChunk();
-                // if buf != null, it means that data is being read off of the InputStream
+                length = nextChunk();
+                // If outputBuffer != null, it means that data is being read off of the InputStream
                 if (outputBuffer == null) {
                     retryCount++;
                 }
-            } while (len == 0);
+            } while (length == 0);
 
-            if (len == -1) {
+            if (length == -1) {
                 return false;
             }
         }
@@ -151,8 +153,8 @@ public class CbcCipherInputStream extends SdkFilterInputStream {
             return -1;
         }
         outputBuffer = null;
-        int len = in.read(inputBuffer);
-        if (len == -1) {
+        int length = in.read(inputBuffer);
+        if (length == -1) {
             eofReached = true;
             try {
                 outputBuffer = cipher.doFinal();
@@ -166,7 +168,7 @@ public class CbcCipherInputStream extends SdkFilterInputStream {
             }
             return -1;
         }
-        outputBuffer = cipher.update(inputBuffer, 0, len);
+        outputBuffer = cipher.update(inputBuffer, 0, length);
         currentPosition = 0;
         return maxPosition = (outputBuffer == null ? 0 : outputBuffer.length);
     }
