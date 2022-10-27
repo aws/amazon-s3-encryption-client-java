@@ -23,21 +23,7 @@ public class RangedGetUtils {
         return adjustedRange;
     }
 
-    public static long[] getAdjustedRange(long[] range, String contentRange, Long contentLength, int cipherTagLengthBits) {
-        long instanceLength = contentLength;
-        if (contentRange != null) {
-            int pos = contentRange.lastIndexOf("/");
-            if (pos >= 0)
-                instanceLength = Long.parseLong(contentRange.substring(pos + 1));
-        }
-        final long maxOffset = instanceLength - (cipherTagLengthBits / 8) - 1;
-        if (range[1] > maxOffset) {
-            range[1] = maxOffset;
-        }
-        return range;
-    }
-
-    public static long[] getCryptoRange(String desiredRange) {
+    public static String getCryptoRange(String desiredRange) {
         long[] range = getRange(desiredRange);
         // If range is invalid, then return null.
         if (range == null || range[0] > range[1]) {
@@ -46,7 +32,7 @@ public class RangedGetUtils {
         long[] adjustedCryptoRange = new long[2];
         adjustedCryptoRange[0] = getCipherBlockLowerBound(range[0]);
         adjustedCryptoRange[1] = getCipherBlockUpperBound(range[1]);
-        return adjustedCryptoRange;
+        return "bytes=" + adjustedCryptoRange[0] + "-" + adjustedCryptoRange[1];
     }
 
     private static long getCipherBlockLowerBound(long leftmostBytePosition) {
@@ -75,14 +61,16 @@ public class RangedGetUtils {
         if (range[1] > maxOffset) {
             range[1] = maxOffset;
             if (range[0] > range[1]) {
+                // Close existing input stream to avoid resource leakage,
+                // return empty input stream
                 try {
                     if (plaintext != null)
                         plaintext.close();
                 } catch (IOException e) {
                     throw new RuntimeException("Error while closing the Input Stream" + e.getMessage());
                 }
+                return new ByteArrayInputStream(new byte[0]);
             }
-            return new ByteArrayInputStream(new byte[0]);
         }
         if (range[0] > range[1]) {
             // Make no modifications if range is invalid.

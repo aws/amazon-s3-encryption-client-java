@@ -44,10 +44,10 @@ public class GetEncryptedObjectPipeline {
             ResponseTransformer<GetObjectResponse, T> responseTransformer) {
         ResponseInputStream<GetObjectResponse> objectStream;
         if (getObjectRequest.range() != null) {
-            long[] cryptoRange = RangedGetUtils.getCryptoRange(getObjectRequest.range());
+            String cryptoRange = RangedGetUtils.getCryptoRange(getObjectRequest.range());
             objectStream = _s3Client.getObject( getObjectRequest
                     .toBuilder()
-                    .range("bytes=" + cryptoRange[0] + "-" + (cryptoRange[1]))
+                    .range(cryptoRange)
                     .build());
         } else {
             objectStream = _s3Client.getObject(
