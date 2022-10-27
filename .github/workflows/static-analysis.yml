@@ -12,5 +12,6 @@ jobs:
       contents: read
 
     steps:
+      - uses: actions/checkout@v3
       - name: Run SpotBugs
         run: mvn -T 4 -ntp com.github.spotbugs:spotbugs-maven-plugin:4.7.2.1:spotbugs
