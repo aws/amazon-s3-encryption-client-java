@@ -13,4 +13,4 @@ jobs:
 
     steps:
       - name: Run SpotBugs
-        run: mvn -T 4 -ntp spotbugs:spotbugs
+        run: mvn -T 4 -ntp com.github.spotbugs:spotbugs-maven-plugin:4.7.2.1:spotbugs
