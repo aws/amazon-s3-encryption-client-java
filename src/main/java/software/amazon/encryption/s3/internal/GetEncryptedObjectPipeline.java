@@ -1,11 +1,11 @@
 package software.amazon.encryption.s3.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
