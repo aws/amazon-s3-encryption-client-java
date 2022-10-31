@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.AbortableInputStream;
@@ -79,6 +81,12 @@ public class GetEncryptedObjectPipeline {
                 contentDecryptionStrategy = AesGcmContentStrategy.builder().build();
                 break;
         }
+
+        if (contentDecryptionStrategy == null) {
+            throw new S3EncryptionClientException("Unable to determine content decryption strategy from algorithm "
+                + "suite: " + algorithmSuite);
+        }
+
         byte[] plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, ciphertext);
 
         try {
@@ -96,6 +104,11 @@ public class GetEncryptedObjectPipeline {
 
         private Builder() {}
 
+        /**
+         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
+         * S3Client will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder s3Client(S3Client s3Client) {
             this._s3Client = s3Client;
             return this;

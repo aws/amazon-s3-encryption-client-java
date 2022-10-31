@@ -2,6 +2,8 @@ package software.amazon.encryption.s3.internal;
 
 import java.util.Collections;
 import java.util.Map;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
@@ -45,10 +47,20 @@ public class ContentMetadata {
         return _encryptedDataKeyAlgorithm;
     }
 
+    /**
+     * Note that this does NOT create a defensive copy of the encrypted data key content. Any modifications to the 
+     * return value will be reflected in this Builder.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public Map<String, String> encryptedDataKeyContext() {
         return _encryptedDataKeyContext;
     }
 
+    /**
+     * Note that this does NOT create a defensive copy of the content nonce. Any modifications to the return value 
+     * will be reflected in this Builder.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public byte[] contentNonce() {
         return _contentNonce;
     }

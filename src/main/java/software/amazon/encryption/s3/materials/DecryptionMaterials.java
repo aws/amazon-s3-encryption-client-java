@@ -1,9 +1,12 @@
 package software.amazon.encryption.s3.materials;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Collections;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
@@ -40,10 +43,20 @@ final public class DecryptionMaterials {
         return _algorithmSuite;
     }
 
+    /**
+     * Note that this does NOT create a defensive copy of the encryption context. Any modifications to the return 
+     * value will be reflected in this Builder.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }
 
+    /**
+     * Note that this does NOT create a defensive copy of the plaintext data key. Any modifications to the returned
+     * array will be reflected in this Builder.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public byte[] plaintextDataKey() {
         return _plaintextDataKey;
     }

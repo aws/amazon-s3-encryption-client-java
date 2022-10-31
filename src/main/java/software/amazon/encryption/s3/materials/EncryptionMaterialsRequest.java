@@ -1,7 +1,10 @@
 package software.amazon.encryption.s3.materials;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Collections;
 import java.util.Map;
+
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 final public class EncryptionMaterialsRequest {
@@ -22,6 +25,11 @@ final public class EncryptionMaterialsRequest {
         return _s3Request;
     }
 
+    /**
+     * Note that this does NOT create a defensive copy of the encryption context. Any modifications to the returned
+     * object will be reflected in this Builder.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }

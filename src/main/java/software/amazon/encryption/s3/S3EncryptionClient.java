@@ -1,9 +1,12 @@
 package software.amazon.encryption.s3;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.security.KeyPair;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.crypto.SecretKey;
+
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -101,6 +104,11 @@ public class S3EncryptionClient implements S3Client {
 
         private Builder() {}
 
+        /**
+         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
+         * S3Client will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder wrappedClient(S3Client wrappedClient) {
             this._wrappedClient = wrappedClient;
             return this;

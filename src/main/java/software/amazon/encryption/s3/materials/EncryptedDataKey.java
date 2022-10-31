@@ -1,5 +1,7 @@
 package software.amazon.encryption.s3.materials;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class EncryptedDataKey {
 
     // forms the "domain" of the key e.g. "aws-kms"
@@ -23,10 +25,20 @@ public class EncryptedDataKey {
         return _keyProviderId;
     }
 
+    /**
+     * Note that this does NOT create a defensive copy of the key provider info. Any modifications to the returned
+     * array will be reflected in this Builder.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public byte[] keyProviderInfo() {
         return _keyProviderInfo;
     }
 
+    /**
+     * Note that this does NOT create a defensive copy of the ciphertext. Any modifications to the returned array
+     * will be reflected in this Builder.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public byte[] ciphertext() {
         return _ciphertext;
     }
