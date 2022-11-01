@@ -1,6 +1,6 @@
 package software.amazon.encryption.s3.algorithms;
 
-
+// TODO: Clarification on ID for CTR & isLegacy()
 public enum AlgorithmSuite {
     ALG_AES_256_GCM_IV12_TAG16_NO_KDF(0x0078,
             false,
@@ -11,6 +11,15 @@ public enum AlgorithmSuite {
             96,
             128,
             AlgorithmConstants.GCM_MAX_CONTENT_LENGTH_BITS),
+    ALG_AES_256_CTR_IV16_TAG16_NO_KDF(0x0078,
+            true,
+            "AES",
+            256,
+            "AES/CTR/NoPadding",
+            128,
+            128,
+            128,
+            AlgorithmConstants.CTR_MAX_CONTENT_LENGTH_BYTES),
     ALG_AES_256_CBC_IV16_NO_KDF(0x0070,
             true,
             "AES",
@@ -78,5 +87,9 @@ public enum AlgorithmSuite {
 
     public int nonceLengthBytes() {
         return _cipherNonceLengthBits / 8;
+    }
+
+    public int cipherBlockSizeBytes() {
+        return _cipherBlockSizeBits / 8;
     }
 }

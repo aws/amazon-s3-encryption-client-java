@@ -23,7 +23,7 @@ public class RangedGetUtils {
         return adjustedRange;
     }
 
-    public static String getCryptoRange(String desiredRange) {
+    public static long[] getCryptoRange(String desiredRange) {
         long[] range = getRange(desiredRange);
         // If range is invalid, then return null.
         if (range == null || range[0] > range[1]) {
@@ -32,7 +32,7 @@ public class RangedGetUtils {
         long[] adjustedCryptoRange = new long[2];
         adjustedCryptoRange[0] = getCipherBlockLowerBound(range[0]);
         adjustedCryptoRange[1] = getCipherBlockUpperBound(range[1]);
-        return "bytes=" + adjustedCryptoRange[0] + "-" + adjustedCryptoRange[1];
+        return adjustedCryptoRange;
     }
 
     private static long getCipherBlockLowerBound(long leftmostBytePosition) {

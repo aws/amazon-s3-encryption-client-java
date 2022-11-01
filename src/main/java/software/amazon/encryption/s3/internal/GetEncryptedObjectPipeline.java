@@ -44,10 +44,11 @@ public class GetEncryptedObjectPipeline {
             ResponseTransformer<GetObjectResponse, T> responseTransformer) {
         ResponseInputStream<GetObjectResponse> objectStream;
         if (getObjectRequest.range() != null) {
-            String cryptoRange = RangedGetUtils.getCryptoRange(getObjectRequest.range());
+            long[] cryptoRange = RangedGetUtils.getCryptoRange(getObjectRequest.range());
+            String range = cryptoRange == null ? null : "bytes=" + cryptoRange[0] + "-" + cryptoRange[1];
             objectStream = _s3Client.getObject( getObjectRequest
                     .toBuilder()
-                    .range(cryptoRange)
+                    .range(range)
                     .build());
         } else {
             objectStream = _s3Client.getObject(
@@ -91,6 +92,11 @@ public class GetEncryptedObjectPipeline {
             case ALG_AES_256_CBC_IV16_NO_KDF:
                 return AesCbcContentStrategy.builder().build();
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+                long[] range = RangedGetUtils.getRange(materials.s3Request().range());
+                if (!(range == null || range[0] > range[1])) {
+                    return AesCtrContentStrategy.builder().build();
+                }
+                // TODO: When (range != null && range[0] > range[1]), delayed authentication mode will support instead of Buffered mode
                 if (_enableDelayedAuthentication) {
                     // TODO: Implement StreamingAesGcmContentStrategy
                     throw new UnsupportedOperationException("Delayed Authentication mode using streaming AES-GCM decryption" +
