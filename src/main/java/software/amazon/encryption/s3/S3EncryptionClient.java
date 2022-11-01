@@ -11,10 +11,7 @@ import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
@@ -81,6 +78,20 @@ public class S3EncryptionClient implements S3Client {
                 .build();
 
         return pipeline.getObject(getObjectRequest, responseTransformer);
+    }
+
+    @Override
+    public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) {
+        // Delete the object
+        _wrappedClient.deleteObject(deleteObjectRequest);
+        // If it exists, delete the instruction file.
+        String bucketKey = deleteObjectRequest.key() + ".instruction";
+        DeleteObjectRequest instructionDeleteRequest = deleteObjectRequest
+                .toBuilder()
+                .key(bucketKey)
+                .build();
+        _wrappedClient.deleteObject(instructionDeleteRequest);
+        return null;
     }
 
     @Override
