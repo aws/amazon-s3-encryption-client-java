@@ -43,17 +43,12 @@ public class GetEncryptedObjectPipeline {
     public <T> T getObject(GetObjectRequest getObjectRequest,
             ResponseTransformer<GetObjectResponse, T> responseTransformer) {
         ResponseInputStream<GetObjectResponse> objectStream;
-        if (getObjectRequest.range() != null) {
-            long[] cryptoRange = RangedGetUtils.getCryptoRange(getObjectRequest.range());
-            String range = cryptoRange == null ? null : "bytes=" + cryptoRange[0] + "-" + cryptoRange[1];
-            objectStream = _s3Client.getObject( getObjectRequest
-                    .toBuilder()
-                    .range(range)
-                    .build());
-        } else {
-            objectStream = _s3Client.getObject(
-                    getObjectRequest);
-        }
+        long[] cryptoRange = RangedGetUtils.getCryptoRange(getObjectRequest.range());
+        String range = cryptoRange == null ? null : "bytes=" + cryptoRange[0] + "-" + cryptoRange[1];
+        objectStream = _s3Client.getObject(getObjectRequest
+                .toBuilder()
+                .range(range)
+                .build());
 
         GetObjectResponse getObjectResponse = objectStream.response();
         ContentMetadata contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, getObjectResponse);
@@ -75,7 +70,7 @@ public class GetEncryptedObjectPipeline {
 
         DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(materialsRequest);
 
-        ContentDecryptionStrategy contentDecryptionStrategy = selectContentDecryptionStrategy(materials);
+        ContentDecryptionStrategy contentDecryptionStrategy = selectContentDecryptionStrategy(materials, cryptoRange);
         String contentRange = getObjectResponse.contentRange();
         final InputStream plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, objectStream, contentRange);
 
@@ -87,16 +82,15 @@ public class GetEncryptedObjectPipeline {
         }
     }
 
-    private ContentDecryptionStrategy selectContentDecryptionStrategy(final DecryptionMaterials materials) {
+    private ContentDecryptionStrategy selectContentDecryptionStrategy(final DecryptionMaterials materials, long[] cryptoRange) {
         switch (materials.algorithmSuite()) {
             case ALG_AES_256_CBC_IV16_NO_KDF:
                 return AesCbcContentStrategy.builder().build();
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
-                long[] range = RangedGetUtils.getRange(materials.s3Request().range());
-                if (!(range == null || range[0] > range[1])) {
+                if (cryptoRange != null) {
                     return AesCtrContentStrategy.builder().build();
                 }
-                // TODO: When (range != null && range[0] > range[1]), delayed authentication mode will support instead of Buffered mode
+                // TODO: When cryptoRange is null, delayed authentication mode will support instead of Buffered mode
                 if (_enableDelayedAuthentication) {
                     // TODO: Implement StreamingAesGcmContentStrategy
                     throw new UnsupportedOperationException("Delayed Authentication mode using streaming AES-GCM decryption" +

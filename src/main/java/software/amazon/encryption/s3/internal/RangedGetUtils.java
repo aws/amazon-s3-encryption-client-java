@@ -13,6 +13,9 @@ import java.io.InputStream;
 public class RangedGetUtils {
 
     public static long[] getRange(String range) {
+        if (range == null) {
+            return null;
+        }
         if (!range.matches("bytes=[0-9]+-[0-9]+")) {
             return null;
         }
