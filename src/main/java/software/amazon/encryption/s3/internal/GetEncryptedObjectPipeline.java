@@ -1,25 +1,22 @@
 package software.amazon.encryption.s3.internal;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
-
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.legacy.internal.AesCbcContentStrategy;
+import software.amazon.encryption.s3.legacy.internal.UnauthenticatedContentStrategy;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
+
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This class will determine the necessary mechanisms to decrypt objects returned from S3.
@@ -45,8 +42,13 @@ public class GetEncryptedObjectPipeline {
 
     public <T> T getObject(GetObjectRequest getObjectRequest,
             ResponseTransformer<GetObjectResponse, T> responseTransformer) {
-        ResponseInputStream<GetObjectResponse> objectStream = _s3Client.getObject(
-                getObjectRequest);
+        ResponseInputStream<GetObjectResponse> objectStream;
+        long[] cryptoRange = RangedGetUtils.getCryptoRange(getObjectRequest.range());
+        String range = cryptoRange == null ? null : "bytes=" + cryptoRange[0] + "-" + cryptoRange[1];
+        objectStream = _s3Client.getObject(getObjectRequest
+                .toBuilder()
+                .range(range)
+                .build());
 
         GetObjectResponse getObjectResponse = objectStream.response();
         ContentMetadata contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, getObjectResponse);
@@ -68,8 +70,9 @@ public class GetEncryptedObjectPipeline {
 
         DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(materialsRequest);
 
-        ContentDecryptionStrategy contentDecryptionStrategy = selectContentDecryptionStrategy(materials);
-        final InputStream plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, objectStream);
+        ContentDecryptionStrategy contentDecryptionStrategy = selectContentDecryptionStrategy(materials, cryptoRange);
+        String contentRange = getObjectResponse.contentRange();
+        final InputStream plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, objectStream, contentRange);
 
         try {
             return responseTransformer.transform(getObjectResponse,
@@ -79,11 +82,14 @@ public class GetEncryptedObjectPipeline {
         }
     }
 
-    private ContentDecryptionStrategy selectContentDecryptionStrategy(final DecryptionMaterials materials) {
+    private ContentDecryptionStrategy selectContentDecryptionStrategy(final DecryptionMaterials materials, long[] cryptoRange) {
         switch (materials.algorithmSuite()) {
             case ALG_AES_256_CBC_IV16_NO_KDF:
-                return AesCbcContentStrategy.builder().build();
+                return UnauthenticatedContentStrategy.builder().build();
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+                if (cryptoRange != null) {
+                    return UnauthenticatedContentStrategy.builder().build();
+                }
                 if (_enableDelayedAuthentication) {
                     // TODO: Implement StreamingAesGcmContentStrategy
                     throw new UnsupportedOperationException("Delayed Authentication mode using streaming AES-GCM decryption" +

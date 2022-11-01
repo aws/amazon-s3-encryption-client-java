@@ -9,31 +9,36 @@ import javax.crypto.spec.SecretKeySpec;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.internal.CbcCipherInputStream;
-import software.amazon.encryption.s3.internal.ContentDecryptionStrategy;
-import software.amazon.encryption.s3.internal.ContentMetadata;
+import software.amazon.encryption.s3.internal.*;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 
 /**
  * This class will decrypt (only) data using AES/CBC
  */
-public class AesCbcContentStrategy implements ContentDecryptionStrategy {
+public class UnauthenticatedContentStrategy implements ContentDecryptionStrategy {
 
-    private AesCbcContentStrategy(Builder builder) {}
+    private UnauthenticatedContentStrategy(Builder builder) {}
 
     public static Builder builder() { return new Builder(); }
 
     @Override
     public InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials,
-                                      InputStream ciphertextStream) {
+                                      InputStream ciphertextStream, String contentRange) {
+        long[] desiredRange = RangedGetUtils.getRange(materials.s3Request().range());
+        long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.s3Request().range());
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
-        SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         byte[] iv = contentMetadata.contentNonce();
+        if (algorithmSuite.cipherName() == AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName()) {
+            algorithmSuite = AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF;
+            iv = AesCtrUtils.adjustIV(iv, cryptoRange[0]);
+        }
+        SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         try {
             // TODO: Allow configurable Cryptographic provider
-            final Cipher cipher = Cipher.getInstance(materials.algorithmSuite().cipherName());
+            final Cipher cipher = Cipher.getInstance(algorithmSuite.cipherName());
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
-            return new CbcCipherInputStream(ciphertextStream, cipher);
+            InputStream plaintext = new CipherInputStream(ciphertextStream, cipher);
+            return RangedGetUtils.adjustToDesiredRange(plaintext, desiredRange, contentRange, algorithmSuite.cipherTagLengthBits());
         } catch (GeneralSecurityException ex) {
             throw new S3EncryptionClientException("Unable to build cipher: " + ex.getMessage()
                     + "\nMake sure you have the JCE unlimited strength policy files installed and "
@@ -44,8 +49,8 @@ public class AesCbcContentStrategy implements ContentDecryptionStrategy {
     public static class Builder {
         private Builder() {}
 
-        public AesCbcContentStrategy build() {
-            return new AesCbcContentStrategy(this);
+        public UnauthenticatedContentStrategy build() {
+            return new UnauthenticatedContentStrategy(this);
         }
     }
 }

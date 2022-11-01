@@ -12,7 +12,7 @@ import java.io.InputStream;
  * A cipher stream for decrypting CBC encrypted data. There is nothing particularly
  * specific to CBC, but other algorithms may require additional considerations.
  */
-public class CbcCipherInputStream extends SdkFilterInputStream {
+public class CipherInputStream extends SdkFilterInputStream {
     private static final int MAX_RETRY_COUNT = 1000;
     private static final int DEFAULT_IN_BUFFER_SIZE = 512;
     private final Cipher cipher;
@@ -23,7 +23,7 @@ public class CbcCipherInputStream extends SdkFilterInputStream {
     private int currentPosition;
     private int maxPosition;
 
-    public CbcCipherInputStream(InputStream inputStream, Cipher cipher) {
+    public CipherInputStream(InputStream inputStream, Cipher cipher) {
         super(inputStream);
         this.cipher = cipher;
         this.inputBuffer = new byte[DEFAULT_IN_BUFFER_SIZE];
