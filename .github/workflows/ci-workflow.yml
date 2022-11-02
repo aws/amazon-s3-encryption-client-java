@@ -26,7 +26,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: .
       - name: Compile
         run: |
           mvn clean compile
