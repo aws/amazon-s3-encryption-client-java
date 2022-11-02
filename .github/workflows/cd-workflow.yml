@@ -1,4 +1,4 @@
-ame: Continuous Deployment Workflow
+name: Continuous Deployment Workflow
 
 on:
   push:
