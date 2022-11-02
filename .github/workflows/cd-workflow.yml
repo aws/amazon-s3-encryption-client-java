@@ -1,4 +1,4 @@
-name: Continuous Deployment Workflow
+ame: Continuous Deployment Workflow
 
 on:
   push:
@@ -20,15 +20,15 @@ jobs:
       - name: Run CI Workflow
         uses: ./.github/workflows/ci-workflow.yml
 
-  version:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    #steps:
-    #  - uses: actions/checkout@v3
-    #  - uses: codfish/semantic-release-action@v2
-    #    with:
-    #      branches: $RELEASE_BRANCH
-    #      dry_run: true
+  #version:
+  #  runs-on: ubuntu-latest
+  #  permissions:
+  #    id-token: write
+  #    contents: read
+  #
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #    - uses: codfish/semantic-release-action@v2
+  #      with:
+  #        branches: $RELEASE_BRANCH
+  #        dry_run: true
