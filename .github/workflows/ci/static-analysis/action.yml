@@ -1,0 +1,11 @@
+name: Static Analysis
+description: Runs static analysis tools on package
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Run SpotBugs
+      run: mvn -T 4 -ntp com.github.spotbugs:spotbugs-maven-plugin:4.7.2.1:spotbugs
+      shell: bash
