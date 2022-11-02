@@ -1,0 +1,34 @@
+name: Continuous Integration Workflow
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  static_analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v3
+      # TODO: SpotBugs, fmt-maven-plugin
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Compile
+        run: |
+          mvn clean compile
+          mvn test-compile
+      - name: Test
+        run: mvn -B ntp test
+      - name: Package JAR
+        run: |
+          mvn package
+          mvn install
