@@ -28,7 +28,7 @@ jobs:
           mvn clean compile
           mvn test-compile
       - name: Test
-        run: mvn -B ntp test
+        run: mvn -B -ntp test
       - name: Package JAR
         run: |
           mvn package
