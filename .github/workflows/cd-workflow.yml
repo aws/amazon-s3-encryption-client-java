@@ -8,20 +8,6 @@ env:
   RELEASE_BRANCH: main
 
 jobs:
-  ci_tests:
-      runs-on: ubuntu-latest
-      permissions:
-        id-token: write
-        contents: read
-
-      steps:
-        - name: Configure AWS Credentials
-          uses: aws-actions/configure-aws-credentials@v1
-          with:
-            role-to-assume: arn:aws:iam::370957321024:role/service-role/S3EC-GitHub-test-role
-            role-session-name: S3EC-Github-CI-Tests
-            aws-region: us-west-2
-
   Run_CI_Workflow:
     uses: ./.github/workflows/ci-workflow.yml
 
