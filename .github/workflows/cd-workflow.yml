@@ -9,7 +9,7 @@ env:
   RELEASE_BRANCH: main
 
 jobs:
-  checkout:
+  Checkout:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -18,7 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       # TODO: SpotBugs, fmt-maven-plugin
-  run_ci_workflow:
+  Run_CI_Workflow:
+    needs: Checkout
     uses: ./.github/workflows/ci-workflow.yml
 
   #version:

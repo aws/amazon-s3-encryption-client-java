@@ -20,6 +20,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    needs: static_analysis
     
     steps:
       - name: Compile
