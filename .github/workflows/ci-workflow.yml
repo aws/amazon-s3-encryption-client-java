@@ -5,7 +5,7 @@ on:
   workflow_call: # Allow workflow to be called from other workflows (i.e. CD workflow)
 
 env:
-  CI_WORKFLOW_ROOT: ./.github/workflows/ci
+  CI_ACTIONS_ROOT: ./.github/workflows/ci
 
 jobs:
   Static_Analysis:
@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: $CI_WORKFLOW_ROOT/static-analysis
+      - uses: $CI_ACTIONS_ROOT/static-analysis
 
   Build:
     runs-on: ubuntu-latest
