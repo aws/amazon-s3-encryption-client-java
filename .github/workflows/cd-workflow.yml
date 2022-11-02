@@ -18,9 +18,9 @@ jobs:
       id-token: write
       contents: read
 
-    steps:
-      - uses: actions/checkout@v3
-      - uses: codfish/semantic-release-action@v2
-        with:
-          branches: $RELEASE_BRANCH
-          dry_run: true
+    #steps:
+    #  - uses: actions/checkout@v3
+    #  - uses: codfish/semantic-release-action@v2
+    #    with:
+    #      branches: $RELEASE_BRANCH
+    #      dry_run: true
