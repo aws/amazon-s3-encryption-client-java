@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/workflows/ci_actions/static-analysis
+      - uses: $CI_ACTIONS_ROOT/static-analysis
 
   Build:
     runs-on: ubuntu-latest
