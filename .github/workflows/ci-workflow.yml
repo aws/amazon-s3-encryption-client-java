@@ -20,9 +20,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    needs: static_analysis
-    
+
     steps:
+      - uses: actions/checkout@v3
       - name: Compile
         run: |
           mvn clean compile
