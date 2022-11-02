@@ -5,7 +5,8 @@ on:
   workflow_call: # Allow workflow to be called from other workflows (i.e. CD workflow)
 
 env:
-  CI_ACTIONS_ROOT: ./.github/workflows/ci_actions
+  CI_ACTIONS_ROOT: ./.github/workflows/ci_actions # TODO: GHA seems to check 'uses' syntax at compile time;
+                                                  # we might not be able to abstract/re-use this
 
 jobs:
   Static_Analysis:
@@ -16,7 +17,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: $CI_ACTIONS_ROOT /static-analysis
+      - uses: ./.github/workflows/ci_actions/static-analysis
 
   Build:
     runs-on: ubuntu-latest
