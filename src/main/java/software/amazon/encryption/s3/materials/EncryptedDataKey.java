@@ -25,13 +25,8 @@ public class EncryptedDataKey {
         return _keyProviderId;
     }
 
-    /**
-     * Note that this does NOT create a defensive copy of the key provider info. Any modifications to the returned
-     * array will be reflected in this Builder.
-     */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public byte[] keyProviderInfo() {
-        return _keyProviderInfo;
+        return _keyProviderInfo.clone();
     }
 
     /**

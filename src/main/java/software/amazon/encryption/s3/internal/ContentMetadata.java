@@ -49,21 +49,17 @@ public class ContentMetadata {
     }
 
     /**
-     * Note that this does NOT create a defensive copy of the encrypted data key content. Any modifications to the 
-     * return value will be reflected in this Builder.
+     * Note that the underlying implementation uses a Collections.unmodifiableMap which is
+     * immutable by implementation.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
+        + " implementation is immutable")
     public Map<String, String> encryptedDataKeyContext() {
         return _encryptedDataKeyContext;
     }
 
-    /**
-     * Note that this does NOT create a defensive copy of the content nonce. Any modifications to the return value 
-     * will be reflected in this Builder.
-     */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public byte[] contentNonce() {
-        return _contentNonce;
+        return _contentNonce.clone();
     }
 
     public String contentCipher() {

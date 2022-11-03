@@ -48,21 +48,17 @@ final public class DecryptionMaterials implements CryptographicMaterials {
     }
 
     /**
-     * Note that this does NOT create a defensive copy of the encryption context. Any modifications to the return 
-     * value will be reflected in this Builder.
+     * Note that the underlying implementation uses a Collections.unmodifiableMap which is
+     * immutable by implementation.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
+        + " implementation is immutable")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }
 
-    /**
-     * Note that this does NOT create a defensive copy of the plaintext data key. Any modifications to the returned
-     * array will be reflected in this Builder.
-     */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     public byte[] plaintextDataKey() {
-        return _plaintextDataKey;
+        return _plaintextDataKey.clone();
     }
 
     public SecretKey dataKey() {

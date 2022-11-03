@@ -26,10 +26,11 @@ final public class EncryptionMaterialsRequest {
     }
 
     /**
-     * Note that this does NOT create a defensive copy of the encryption context. Any modifications to the returned
-     * object will be reflected in this Builder.
+     * Note that the underlying implementation uses a Collections.unmodifiableMap which is
+     * immutable by implementation.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
+        + " implementation is immutable")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }

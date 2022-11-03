@@ -74,6 +74,20 @@
       <optional>true</optional>
     </dependency>
 
+    <dependency>
+      <groupId>net.jcip</groupId>
+      <artifactId>jcip-annotations</artifactId>
+      <version>1.0</version>
+      <optional>true</optional>
+    </dependency>
+    
+    <dependency>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <version>4.7.3</version>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Test Dependencies -->
     <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
     <dependency>
@@ -107,20 +121,6 @@
       <artifactId>bcprov-jdk18on</artifactId>
       <version>1.71</version>
       <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>net.jcip</groupId>
-      <artifactId>jcip-annotations</artifactId>
-      <version>1.0</version>
-      <optional>true</optional>
-    </dependency>
-    
-    <dependency>
-      <groupId>com.github.spotbugs</groupId>
-      <artifactId>spotbugs-annotations</artifactId>
-      <version>4.7.3</version>
-      <optional>true</optional>
     </dependency>
 
   </dependencies>
