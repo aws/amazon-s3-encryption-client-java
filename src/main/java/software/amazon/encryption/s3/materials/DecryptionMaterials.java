@@ -11,7 +11,7 @@ import javax.crypto.spec.SecretKeySpec;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
-final public class DecryptionMaterials {
+final public class DecryptionMaterials implements CryptographicMaterials {
 
     // Original request
     private final GetObjectRequest _s3Request;
@@ -25,11 +25,14 @@ final public class DecryptionMaterials {
 
     private final byte[] _plaintextDataKey;
 
+    private long _ciphertextLength;
+
     private DecryptionMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
         this._algorithmSuite = builder._algorithmSuite;
         this._encryptionContext = builder._encryptionContext;
         this._plaintextDataKey = builder._plaintextDataKey;
+        this._ciphertextLength = builder._ciphertextLength;
     }
 
     static public Builder builder() {
@@ -66,12 +69,17 @@ final public class DecryptionMaterials {
         return new SecretKeySpec(_plaintextDataKey, "AES");
     }
 
+    public long ciphertextLength() {
+        return _ciphertextLength;
+    }
+
     public Builder toBuilder() {
         return new Builder()
                 .s3Request(_s3Request)
                 .algorithmSuite(_algorithmSuite)
                 .encryptionContext(_encryptionContext)
-                .plaintextDataKey(_plaintextDataKey);
+                .plaintextDataKey(_plaintextDataKey)
+                .ciphertextLength(_ciphertextLength);
     }
 
     static public class Builder {
@@ -80,6 +88,7 @@ final public class DecryptionMaterials {
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private byte[] _plaintextDataKey = null;
+        private long _ciphertextLength = -1;
 
         private Builder() {
         }
@@ -103,6 +112,11 @@ final public class DecryptionMaterials {
 
         public Builder plaintextDataKey(byte[] plaintextDataKey) {
             _plaintextDataKey = plaintextDataKey == null ? null : plaintextDataKey.clone();
+            return this;
+        }
+
+        public Builder ciphertextLength(long ciphertextLength) {
+            _ciphertextLength = ciphertextLength;
             return this;
         }
 

@@ -39,12 +39,14 @@ public class S3EncryptionClient implements S3Client {
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
-    private final boolean _enableLegacyModes;
+    private final boolean _enableLegacyUnauthenticatedModes;
+    private final boolean _enableDelayedAuthenticationMode;
 
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
-        _enableLegacyModes = builder._enableLegacyModes;
+        _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
+        _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
     }
 
     public static Builder builder() {
@@ -77,7 +79,8 @@ public class S3EncryptionClient implements S3Client {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3Client(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
-                .enableLegacyModes(_enableLegacyModes)
+                .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .build();
 
         return pipeline.getObject(getObjectRequest, responseTransformer);
@@ -100,7 +103,8 @@ public class S3EncryptionClient implements S3Client {
         private SecretKey _aesKey;
         private PartialRsaKeyPair _rsaKeyPair;
         private String _kmsKeyId;
-        private boolean _enableLegacyModes = false;
+        private boolean _enableLegacyUnauthenticatedModes = false;
+        private boolean _enableDelayedAuthenticationMode = false;
 
         private Builder() {}
 
@@ -180,8 +184,13 @@ public class S3EncryptionClient implements S3Client {
             return haveOneNonNull;
         }
 
-        public Builder enableLegacyModes(boolean shouldEnableLegacyModes) {
-            this._enableLegacyModes = shouldEnableLegacyModes;
+        public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
+            this._enableLegacyUnauthenticatedModes = shouldEnableLegacyUnauthenticatedModes;
+            return this;
+        }
+
+        public Builder enableDelayedAuthenticationMode(boolean shouldEnableDelayedAuthenticationMode) {
+            this._enableDelayedAuthenticationMode = shouldEnableDelayedAuthenticationMode;
             return this;
         }
 
@@ -194,17 +203,17 @@ public class S3EncryptionClient implements S3Client {
                 if (_aesKey != null) {
                     _keyring = AesKeyring.builder()
                             .wrappingKey(_aesKey)
-                            .enableLegacyModes(_enableLegacyModes)
+                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                             .build();
                 } else if (_rsaKeyPair != null) {
                     _keyring = RsaKeyring.builder()
                             .wrappingKeyPair(_rsaKeyPair)
-                            .enableLegacyModes(_enableLegacyModes)
+                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                             .build();
                 } else if (_kmsKeyId != null) {
                     _keyring = KmsKeyring.builder()
                             .wrappingKeyId(_kmsKeyId)
-                            .enableLegacyModes(_enableLegacyModes)
+                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                             .build();
                 }
             }

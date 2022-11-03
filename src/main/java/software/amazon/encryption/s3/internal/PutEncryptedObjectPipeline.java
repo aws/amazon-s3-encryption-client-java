@@ -55,7 +55,7 @@ public class PutEncryptedObjectPipeline {
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
         private ContentEncryptionStrategy _contentEncryptionStrategy =
-                AesGcmContentStrategy
+                BufferedAesGcmContentStrategy
                         .builder()
                         .build();
         private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;

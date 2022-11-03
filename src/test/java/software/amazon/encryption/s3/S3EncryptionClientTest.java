@@ -6,9 +6,13 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -17,17 +21,15 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
+import static software.amazon.encryption.s3.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
+import static software.amazon.encryption.s3.S3EncryptionClientTestResources.KMS_KEY_ID;
 
 /**
  * This class is an integration test for verifying behavior of the V3 client
  * under various scenarios.
  */
 public class S3EncryptionClientTest {
-
-    private static final String BUCKET = System.getenv("AWS_S3EC_TEST_BUCKET");
-    private static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
-    // This alias must point to the same key as KMS_KEY_ID
-    private static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
 
     private static SecretKey AES_KEY;
     private static KeyPair RSA_KEY_PAIR;
@@ -60,7 +62,7 @@ public class S3EncryptionClientTest {
     @Test
     public void s3EncryptionClientWithNoLegacyKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build());
     }
 
@@ -136,6 +138,31 @@ public class S3EncryptionClientTest {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
                 .rsaKeyPair(invalidRsaKey)
                 .build());
+    }
+
+    @Test
+    public void defaultModeWithLargeObjectFails() throws IOException {
+        final String BUCKET_KEY = "large-object";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // Tight bound on the default limit of 64MiB
+        final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
+        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
+
+        largeObjectStream.close();
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)));
+        v3Client.close();
     }
 
     /**

@@ -80,7 +80,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -111,7 +111,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -279,7 +279,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -420,7 +420,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -448,7 +448,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -492,7 +492,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -525,7 +525,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -550,7 +550,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -587,7 +587,7 @@ public class S3EncryptionClientCompatibilityTest {
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyModes(false)
+                .enableLegacyUnauthenticatedModes(false)
                 .build();
 
         final String input = "AesCbcV1toV3";
@@ -613,7 +613,7 @@ public class S3EncryptionClientCompatibilityTest {
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyModes(false)
+                .enableLegacyUnauthenticatedModes(false)
                 .build();
 
         final String input = "AesGcmV1toV3";
