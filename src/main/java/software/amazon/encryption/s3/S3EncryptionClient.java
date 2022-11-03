@@ -1,9 +1,12 @@
 package software.amazon.encryption.s3;
 
 import java.security.KeyPair;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.crypto.SecretKey;
+
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -11,8 +14,13 @@ import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
@@ -32,7 +40,7 @@ import software.amazon.encryption.s3.materials.RsaKeyring;
 public class S3EncryptionClient implements S3Client {
 
     // Used for request-scoped encryption contexts for supporting keys
-    public static final ExecutionAttribute<Map<String,String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
+    public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -70,7 +78,7 @@ public class S3EncryptionClient implements S3Client {
 
     @Override
     public <T> T getObject(GetObjectRequest getObjectRequest,
-            ResponseTransformer<GetObjectResponse, T> responseTransformer)
+                           ResponseTransformer<GetObjectResponse, T> responseTransformer)
             throws AwsServiceException, SdkClientException {
 
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
@@ -81,6 +89,36 @@ public class S3EncryptionClient implements S3Client {
                 .build();
 
         return pipeline.getObject(getObjectRequest, responseTransformer);
+    }
+
+    @Override
+    public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) {
+        // Delete the object
+        DeleteObjectResponse deleteObjectResponse = _wrappedClient.deleteObject(deleteObjectRequest);
+        // If Instruction file exists, delete the instruction file as well.
+        String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
+        _wrappedClient.deleteObject(builder -> builder
+                .bucket(deleteObjectRequest.bucket())
+                .key(instructionObjectKey));
+        return deleteObjectResponse;
+    }
+
+    @Override
+    public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) {
+        // Delete the objects
+        DeleteObjectsResponse deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest);
+        // If Instruction files exists, delete the instruction files as well.
+        List<ObjectIdentifier> deleteObjects = new ArrayList<>();
+        for (ObjectIdentifier o : deleteObjectsRequest.delete().objects()) {
+            deleteObjects.add(o.toBuilder()
+                    .key(o.key() + ".instruction")
+                    .build());
+        }
+        _wrappedClient.deleteObjects(DeleteObjectsRequest.builder()
+                .bucket(deleteObjectsRequest.bucket())
+                .delete(builder -> builder.objects(deleteObjects))
+                .build());
+        return deleteObjectsResponse;
     }
 
     @Override
@@ -103,7 +141,8 @@ public class S3EncryptionClient implements S3Client {
         private boolean _enableLegacyUnauthenticatedModes = false;
         private boolean _enableDelayedAuthenticationMode = false;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         public Builder wrappedClient(S3Client wrappedClient) {
             this._wrappedClient = wrappedClient;
