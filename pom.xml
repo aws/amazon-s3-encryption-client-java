@@ -122,7 +122,6 @@
       <version>1.71</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <build>

@@ -49,7 +49,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
     /**
      * Note that the underlying implementation uses a Collections.unmodifiableMap which is
-     * immutable by implementation.
+     * immutable.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
         + " implementation is immutable")
@@ -59,7 +59,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
     /**
      * Note that the underlying implementation uses a Collections.unmodifiableList which is
-     * immutable by implementation.
+     * immutable.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
         + " implementation is immutable")

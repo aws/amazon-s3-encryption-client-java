@@ -27,7 +27,7 @@ final public class EncryptionMaterialsRequest {
 
     /**
      * Note that the underlying implementation uses a Collections.unmodifiableMap which is
-     * immutable by implementation.
+     * immutable.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
         + " implementation is immutable")
