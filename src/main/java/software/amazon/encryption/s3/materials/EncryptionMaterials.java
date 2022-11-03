@@ -68,6 +68,9 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     }
 
     public byte[] plaintextDataKey() {
+        if (_plaintextDataKey == null) {
+            return null;
+        }
         return _plaintextDataKey.clone();
     }
 

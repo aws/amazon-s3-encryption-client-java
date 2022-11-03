@@ -26,6 +26,9 @@ public class EncryptedDataKey {
     }
 
     public byte[] keyProviderInfo() {
+        if (_keyProviderInfo == null) {
+            return null;
+        }
         return _keyProviderInfo.clone();
     }
 

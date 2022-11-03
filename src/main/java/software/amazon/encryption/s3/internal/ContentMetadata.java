@@ -59,6 +59,9 @@ public class ContentMetadata {
     }
 
     public byte[] contentNonce() {
+        if (_contentNonce == null) {
+            return null;
+        }
         return _contentNonce.clone();
     }
 
