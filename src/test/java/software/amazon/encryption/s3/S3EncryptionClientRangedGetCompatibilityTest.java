@@ -23,8 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * This class is an integration test for verifying compatibility of ciphertexts
- * between V1, V2, and V3 clients under various conditions.
+ * This class is an integration test for Unauthenticated Ranged Get for AES/CBC and AES/GCM modes
  */
 public class S3EncryptionClientRangedGetCompatibilityTest {
 
@@ -40,6 +39,29 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
     }
 
     @Test
+    public void failsOnRangeWhenLegacyModeDisabled() {
+        final String BUCKET_KEY = "fails-when-on-range-when-legacy-disabled";
+        final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
+                "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
+                "2bcdefghijklmnopqrst2BCDEFGHIJKLMNOPQRST" +
+                "3bcdefghijklmnopqrst3BCDEFGHIJKLMNOPQRST" +
+                "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .build(), RequestBody.fromString(input));
+        assertThrows(S3EncryptionClientException.class, ()-> v3Client.getObjectAsBytes(builder -> builder.bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .range("bytes=10-20")));
+    }
+
+    @Test
     public void AesGcmV3toV3RangedGet() {
         final String BUCKET_KEY = "aes-gcm-v3-to-v3-ranged-get";
 
@@ -52,6 +74,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -112,6 +135,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         v3Client.putObject(PutObjectRequest.builder()
@@ -120,7 +144,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .build(), RequestBody.fromString(input));
 
         // Invalid range exceed object length, Throws S3Exception
-        assertThrows(S3Exception.class,() -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3Exception.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=300-400")
                 .key(BUCKET_KEY)));
@@ -224,7 +248,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .build();
 
         // Invalid range exceed object length, Throws S3Exception
-        assertThrows(S3Exception.class,() -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3Exception.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=300-400")
                 .key(BUCKET_KEY)));

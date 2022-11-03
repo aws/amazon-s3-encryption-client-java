@@ -36,7 +36,9 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
         this._secureRandom = builder._secureRandom;
     }
 
-    public static Builder builder() { return new Builder(); }
+    public static Builder builder() {
+        return new Builder();
+    }
 
     @Override
     public EncryptedContent encryptContent(EncryptionMaterials materials, byte[] content) {
@@ -70,7 +72,7 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
 
     @Override
     public InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials,
-                                      InputStream ciphertextStream, String contentRange) {
+                                      InputStream ciphertextStream) {
         // Check the size of the object. If it exceeds a predefined limit in default mode,
         // do not buffer it into memory. Throw an exception and instruct the client to
         // reconfigure using Delayed Authentication mode which supports decryption of
@@ -114,7 +116,8 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
     public static class Builder {
         private SecureRandom _secureRandom = new SecureRandom();
 
-        private Builder() {}
+        private Builder() {
+        }
 
         public Builder secureRandom(SecureRandom secureRandom) {
             _secureRandom = secureRandom;

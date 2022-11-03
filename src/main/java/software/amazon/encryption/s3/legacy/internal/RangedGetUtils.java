@@ -1,4 +1,4 @@
-package software.amazon.encryption.s3.internal;
+package software.amazon.encryption.s3.legacy.internal;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Reads only a specific range of bytes from the underlying input stream.
+ * Utilities for processing Ranged Get functions.
  */
 public class RangedGetUtils {
 
@@ -24,6 +24,11 @@ public class RangedGetUtils {
         adjustedRange[0] = Integer.parseInt(rangeSplit[1]);
         adjustedRange[1] = Integer.parseInt(rangeSplit[2]);
         return adjustedRange;
+    }
+
+    public static String getCryptoRangeAsString(String desiredRange) {
+        long[] cryptoRange = RangedGetUtils.getCryptoRange(desiredRange);
+        return cryptoRange == null ? null : "bytes=" + cryptoRange[0] + "-" + cryptoRange[1];
     }
 
     public static long[] getCryptoRange(String desiredRange) {
@@ -53,9 +58,9 @@ public class RangedGetUtils {
     }
 
     public static InputStream adjustToDesiredRange(InputStream plaintext, long[] range, String contentRange, int cipherTagLengthBits) {
-        if (range == null || contentRange == null)
+        if (range == null || contentRange == null) {
             return plaintext;
-
+        }
         final long instanceLength;
         int pos = contentRange.lastIndexOf("/");
         instanceLength = Long.parseLong(contentRange.substring(pos + 1));

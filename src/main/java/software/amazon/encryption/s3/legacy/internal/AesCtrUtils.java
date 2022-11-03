@@ -1,4 +1,4 @@
-package software.amazon.encryption.s3.internal;
+package software.amazon.encryption.s3.legacy.internal;
 
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
@@ -10,8 +10,8 @@ import java.nio.ByteBuffer;
  * re-reading the encrypted input stream.
  */
 public class AesCtrUtils {
-    public static final long MAX_GCM_BLOCKS = (1L << 32) - 2; // 2^32 - 2
-    public static final int cipherBlockSize = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherBlockSizeBytes();
+    public static final long MAX_GCM_BLOCKS = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBits() >> 7; // 2^32 - 2
+    public static final int CIPHER_BLOCK_SIZE = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherBlockSizeBytes();
 
     public static byte[] adjustIV(byte[] iv, long byteOffset) {
         // Currently only support iv of length 12 for AES/GCM.
@@ -19,7 +19,7 @@ public class AesCtrUtils {
         if (iv.length != 12) {
             throw new UnsupportedOperationException();
         }
-        final int blockSizeBytes = cipherBlockSize;
+        final int blockSizeBytes = CIPHER_BLOCK_SIZE;
         final long blockOffset = byteOffset / blockSizeBytes;
         if (blockOffset * blockSizeBytes != byteOffset) {
             throw new IllegalArgumentException("Expecting byteOffset to be multiple of 16, but got blockOffset=" +
@@ -40,7 +40,7 @@ public class AesCtrUtils {
      * >GCMBlockCipher.java</a>
      */
     private static byte[] computeJ0(byte[] nonce) {
-        final int blockSizeBytes = cipherBlockSize;
+        final int blockSizeBytes = CIPHER_BLOCK_SIZE;
         byte[] J0 = new byte[blockSizeBytes];
         System.arraycopy(nonce, 0, J0, 0, nonce.length);
         J0[blockSizeBytes - 1] = 0x01;
@@ -51,14 +51,11 @@ public class AesCtrUtils {
      * Increment the rightmost 32 bits of a 16-byte counter by the specified
      * delta. Both the specified delta and the resultant value must stay within
      * the capacity of 32 bits.
-     * (Package private for testing purposes.)
      *
-     * @param counter
-     *            a 16-byte counter used in AES/CTR
-     * @param blockDelta
-     *            the number of blocks (16-byte) to increment
+     * @param counter    a 16-byte counter used in AES/CTR
+     * @param blockDelta the number of blocks (16-byte) to increment
      */
-    public static byte[] incrementBlocks(byte[] counter, long blockDelta) {
+    private static byte[] incrementBlocks(byte[] counter, long blockDelta) {
         if (blockDelta == 0) {
             return counter;
         }
@@ -71,8 +68,8 @@ public class AesCtrUtils {
         // Allocate 8 bytes for a long
         ByteBuffer bb = ByteBuffer.allocate(8);
         // Copy the right-most 32 bits from the counter
-        for (int i=12; i <= 15; i++) {
-            bb.put(i-8, counter[i]);
+        for (int i = 12; i <= 15; i++) {
+            bb.put(i - 8, counter[i]);
         }
         // increment by delta
         long val = bb.getLong() + blockDelta;
@@ -83,9 +80,7 @@ public class AesCtrUtils {
         // Get the incremented value (result) as an 8-byte array
         byte[] result = bb.putLong(val).array();
         // Copy the rightmost 32 bits from the resultant array to the input counter;
-        for (int i=12; i <= 15; i++) {
-            counter[i] = result[i-8];
-        }
+        System.arraycopy(result, 4, counter, 12, 4);
         return counter;
     }
 }

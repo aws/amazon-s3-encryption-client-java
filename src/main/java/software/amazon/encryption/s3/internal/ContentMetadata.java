@@ -2,6 +2,7 @@ package software.amazon.encryption.s3.internal;
 
 import java.util.Collections;
 import java.util.Map;
+
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
@@ -16,6 +17,7 @@ public class ContentMetadata {
     private final byte[] _contentNonce;
     private final String _contentCipher;
     private final String _contentCipherTagLength;
+    private final String _contentRange;
 
     private ContentMetadata(Builder builder) {
         _algorithmSuite = builder._algorithmSuite;
@@ -27,6 +29,7 @@ public class ContentMetadata {
         _contentNonce = builder._contentNonce;
         _contentCipher = builder._contentCipher;
         _contentCipherTagLength = builder._contentCipherTagLength;
+        _contentRange = builder._contentRange;
     }
 
     public static Builder builder() {
@@ -61,6 +64,10 @@ public class ContentMetadata {
         return _contentCipherTagLength;
     }
 
+    public String contentRange() {
+        return _contentRange;
+    }
+
     public static class Builder {
         private AlgorithmSuite _algorithmSuite;
 
@@ -71,8 +78,9 @@ public class ContentMetadata {
         private byte[] _contentNonce;
         private String _contentCipher;
         private String _contentCipherTagLength;
+        public String _contentRange;
 
-        private Builder () {
+        private Builder() {
 
         }
 
@@ -101,8 +109,14 @@ public class ContentMetadata {
             return this;
         }
 
+        public Builder contentRange(String contentRange) {
+            _contentRange = contentRange;
+            return this;
+        }
 
-        public ContentMetadata build() { return new ContentMetadata(this); }
+        public ContentMetadata build() {
+            return new ContentMetadata(this);
+        }
     }
 
 }

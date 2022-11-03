@@ -101,8 +101,8 @@ public class AesKeyring extends S3Keyring {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, _wrappingKey, gcmParameterSpec, secureRandom);
 
-            AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-            cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
+            final byte[] aADBytes = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+            cipher.updateAAD(aADBytes);
             byte[] ciphertext = cipher.doFinal(materials.plaintextDataKey());
 
             // The encrypted data key is the nonce prepended to the ciphertext
@@ -126,8 +126,8 @@ public class AesKeyring extends S3Keyring {
             final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, _wrappingKey, gcmParameterSpec);
 
-            AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-            cipher.updateAAD(algorithmSuite.cipherName().getBytes(StandardCharsets.UTF_8));
+            final byte[] aADBytes = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+            cipher.updateAAD(aADBytes);
             return cipher.doFinal(ciphertext);
         }
     };

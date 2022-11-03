@@ -8,6 +8,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.legacy.internal.RangedGetUtils;
 import software.amazon.encryption.s3.legacy.internal.UnauthenticatedContentStrategy;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
@@ -31,7 +32,9 @@ public class GetEncryptedObjectPipeline {
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthentication;
 
-    public static Builder builder() { return new Builder(); }
+    public static Builder builder() {
+        return new Builder();
+    }
 
     private GetEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
@@ -41,13 +44,14 @@ public class GetEncryptedObjectPipeline {
     }
 
     public <T> T getObject(GetObjectRequest getObjectRequest,
-            ResponseTransformer<GetObjectResponse, T> responseTransformer) {
+                           ResponseTransformer<GetObjectResponse, T> responseTransformer) {
         ResponseInputStream<GetObjectResponse> objectStream;
-        long[] cryptoRange = RangedGetUtils.getCryptoRange(getObjectRequest.range());
-        String range = cryptoRange == null ? null : "bytes=" + cryptoRange[0] + "-" + cryptoRange[1];
+        if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
+            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
+        }
         objectStream = _s3Client.getObject(getObjectRequest
                 .toBuilder()
-                .range(range)
+                .range(RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range()))
                 .build());
 
         GetObjectResponse getObjectResponse = objectStream.response();
@@ -70,9 +74,8 @@ public class GetEncryptedObjectPipeline {
 
         DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(materialsRequest);
 
-        ContentDecryptionStrategy contentDecryptionStrategy = selectContentDecryptionStrategy(materials, cryptoRange);
-        String contentRange = getObjectResponse.contentRange();
-        final InputStream plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, objectStream, contentRange);
+        ContentDecryptionStrategy contentDecryptionStrategy = selectContentDecryptionStrategy(materials);
+        final InputStream plaintext = contentDecryptionStrategy.decryptContent(contentMetadata, materials, objectStream);
 
         try {
             return responseTransformer.transform(getObjectResponse,
@@ -82,14 +85,12 @@ public class GetEncryptedObjectPipeline {
         }
     }
 
-    private ContentDecryptionStrategy selectContentDecryptionStrategy(final DecryptionMaterials materials, long[] cryptoRange) {
+    private ContentDecryptionStrategy selectContentDecryptionStrategy(final DecryptionMaterials materials) {
         switch (materials.algorithmSuite()) {
             case ALG_AES_256_CBC_IV16_NO_KDF:
+            case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
                 return UnauthenticatedContentStrategy.builder().build();
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
-                if (cryptoRange != null) {
-                    return UnauthenticatedContentStrategy.builder().build();
-                }
                 if (_enableDelayedAuthentication) {
                     // TODO: Implement StreamingAesGcmContentStrategy
                     throw new UnsupportedOperationException("Delayed Authentication mode using streaming AES-GCM decryption" +
@@ -110,7 +111,8 @@ public class GetEncryptedObjectPipeline {
         private boolean _enableLegacyUnauthenticatedModes;
         private boolean _enableDelayedAuthentication;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         public Builder s3Client(S3Client s3Client) {
             this._s3Client = s3Client;

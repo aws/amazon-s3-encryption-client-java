@@ -6,5 +6,5 @@ import java.io.InputStream;
 
 @FunctionalInterface
 public interface ContentDecryptionStrategy {
-    InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials, InputStream ciphertext, String contentRange);
+    InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials, InputStream ciphertext);
 }
