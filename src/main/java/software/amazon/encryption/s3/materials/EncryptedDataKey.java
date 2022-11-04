@@ -1,7 +1,5 @@
 package software.amazon.encryption.s3.materials;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 public class EncryptedDataKey {
 
     // forms the "domain" of the key e.g. "aws-kms"
@@ -9,12 +7,13 @@ public class EncryptedDataKey {
 
     // a unique identifer e.g. an ARN
     private final byte[] _keyProviderInfo;
-    private final byte[] _ciphertext;
+    // Encrypted data key ciphertext
+    private final byte[] _encryptedDataKey;
 
     private EncryptedDataKey(Builder builder) {
         this._keyProviderId = builder._keyProviderId;
         this._keyProviderInfo = builder._keyProviderInfo;
-        this._ciphertext = builder._ciphertext;
+        this._encryptedDataKey = builder._encryptedDataKey;
     }
 
     static public Builder builder() {
@@ -32,20 +31,19 @@ public class EncryptedDataKey {
         return _keyProviderInfo.clone();
     }
 
-    /**
-     * Note that this does NOT create a defensive copy of the ciphertext. Any modifications to the returned array
-     * will be reflected in this Builder.
-     */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP")
-    public byte[] ciphertext() {
-        return _ciphertext;
+    public byte[] encryptedDatakey() {
+        if (_encryptedDataKey == null) {
+            return null;
+        }
+
+        return _encryptedDataKey;
     }
 
     static public class Builder {
 
         private String _keyProviderId = null;
         private byte[] _keyProviderInfo = null;
-        private byte[] _ciphertext = null;
+        private byte[] _encryptedDataKey = null;
 
         private Builder() {
         }
@@ -60,8 +58,8 @@ public class EncryptedDataKey {
             return this;
         }
 
-        public Builder ciphertext(byte[] ciphertext) {
-            _ciphertext = ciphertext == null ? null : ciphertext.clone();
+        public Builder encryptedDataKey(byte[] encryptedDataKey) {
+            _encryptedDataKey = encryptedDataKey == null ? null : encryptedDataKey.clone();
             return this;
         }
 

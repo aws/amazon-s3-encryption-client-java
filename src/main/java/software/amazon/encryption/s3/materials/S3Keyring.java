@@ -49,7 +49,7 @@ abstract public class S3Keyring implements Keyring {
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
                     .keyProviderInfo(encryptStrategy.keyProviderInfo().getBytes(StandardCharsets.UTF_8))
-                    .ciphertext(ciphertext)
+                    .encryptedDataKey(ciphertext)
                     .build();
 
             List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
@@ -93,7 +93,7 @@ abstract public class S3Keyring implements Keyring {
         }
 
         try {
-            byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey.ciphertext());
+            byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey.encryptedDatakey());
             return materials.toBuilder().plaintextDataKey(plaintext).build();
         } catch (GeneralSecurityException e) {
             throw new S3EncryptionClientException("Unable to " + keyProviderInfo + " unwrap", e);

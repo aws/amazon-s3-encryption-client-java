@@ -23,7 +23,7 @@ public class EncryptedDataKeyTest {
         actualEncryptedDataKey = EncryptedDataKey.builder()
                 .keyProviderId(keyProviderId)
                 .keyProviderInfo(keyProviderInfo)
-                .ciphertext(ciphertext)
+                .encryptedDataKey(ciphertext)
                 .build();
     }
 
@@ -39,6 +39,6 @@ public class EncryptedDataKeyTest {
 
     @Test
     public void ciphertext() {
-        assertEquals(Arrays.toString(ciphertext), Arrays.toString(actualEncryptedDataKey.ciphertext()));
+        assertEquals(Arrays.toString(ciphertext), Arrays.toString(actualEncryptedDataKey.encryptedDatakey()));
     }
 }
