@@ -221,15 +221,12 @@ public class S3EncryptionClientTest {
 
     @Test
     public void s3EncryptionClientWithWrappedS3ClientSucceeds() {
-        final String objectKey = "wrapped-s3-client-from-kms-key-id";
+        final String objectKey = "wrapped-s3-client-with-kms-key-id";
 
-        // S3EncryptionClient is an S3Client, so it can be used as a wrappedClient
-        S3Client clientToWrap = S3EncryptionClient.builder()
-            .kmsKeyId(KMS_KEY_ID)
-            .build();
+        S3Client wrappedClient = S3Client.builder().build();
 
         S3Client wrappingClient = S3EncryptionClient.builder()
-            .wrappedClient(clientToWrap)
+            .wrappedClient(wrappedClient)
             .build();
 
         simpleV3RoundTrip(wrappingClient, objectKey);
@@ -239,13 +236,22 @@ public class S3EncryptionClientTest {
     public void s3EncryptionClientWithWrappedS3EncryptionClientSucceeds() {
         final String objectKey = "wrapped-s3-ec-from-kms-key-id";
 
-        // S3EncryptionClient extends S3Client, so it should succeed as a wrapped client
-        S3Client clientToWrap = S3EncryptionClient.builder()
-            .kmsKeyId(KMS_KEY_ID)
+        /**
+         * S3EncryptionClient implements S3Client, so it should succeed as a wrapped client.
+         * We would expect the wrappingClient to use its own KMS key ID and not the wrappedClient's
+         * KMS key ID. The wrappingClient would treat the wrappedClient as a standard S3Client,
+         * which does not have any encryption materials associated with it, so the wrappedClient's
+         * encryption materials are ignored.
+         */
+
+        // Using invalid KMS key ID to assert that wrappedClient's encryption materials are not used
+        S3Client wrappedClient = S3EncryptionClient.builder()
+            .kmsKeyId("invalid-kms-key-id")
             .build();
 
         S3Client wrappingClient = S3EncryptionClient.builder()
-            .wrappedClient(clientToWrap)
+            .wrappedClient(wrappedClient)
+            .kmsKeyId(KMS_KEY_ID)
             .build();
 
         simpleV3RoundTrip(wrappingClient, objectKey);
