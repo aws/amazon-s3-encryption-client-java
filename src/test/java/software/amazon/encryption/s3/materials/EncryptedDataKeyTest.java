@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class EncryptedDataKeyTest {
 
     private EncryptedDataKey actualEncryptedDataKey;
-    private byte[] ciphertext;
+    private byte[] encryptedDataKey;
     private String keyProviderId;
     private byte[] keyProviderInfo;
     
@@ -18,12 +18,12 @@ public class EncryptedDataKeyTest {
     public void setUp() {
         keyProviderId = "testKeyProviderId";
         keyProviderInfo = new byte[]{20, 10, 30, 5};
-        ciphertext = new byte[]{20, 10, 30, 5};
+        encryptedDataKey = new byte[]{20, 10, 30, 5};
 
         actualEncryptedDataKey = EncryptedDataKey.builder()
                 .keyProviderId(keyProviderId)
                 .keyProviderInfo(keyProviderInfo)
-                .encryptedDataKey(ciphertext)
+                .encryptedDataKey(encryptedDataKey)
                 .build();
     }
 
@@ -39,6 +39,6 @@ public class EncryptedDataKeyTest {
 
     @Test
     public void ciphertext() {
-        assertEquals(Arrays.toString(ciphertext), Arrays.toString(actualEncryptedDataKey.encryptedDatakey()));
+        assertEquals(Arrays.toString(encryptedDataKey), Arrays.toString(actualEncryptedDataKey.encryptedDatakey()));
     }
 }
