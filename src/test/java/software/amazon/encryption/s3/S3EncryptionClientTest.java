@@ -31,9 +31,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.*;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
  * This class is an integration test for verifying behavior of the V3 client
