@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
@@ -92,7 +93,8 @@ public class S3EncryptionClient implements S3Client {
     }
 
     @Override
-    public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) {
+    public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) throws AwsServiceException,
+            SdkClientException {
         // Delete the object
         DeleteObjectResponse deleteObjectResponse = _wrappedClient.deleteObject(deleteObjectRequest);
         // If Instruction file exists, delete the instruction file as well.
@@ -104,7 +106,8 @@ public class S3EncryptionClient implements S3Client {
     }
 
     @Override
-    public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) {
+    public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
+            SdkClientException {
         // Delete the objects
         DeleteObjectsResponse deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest);
         // If Instruction files exists, delete the instruction files as well.

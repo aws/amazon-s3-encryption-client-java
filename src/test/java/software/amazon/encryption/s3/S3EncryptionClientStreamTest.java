@@ -18,6 +18,7 @@ import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedStreamBufferer;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 import software.amazon.encryption.s3.utils.MarkResetBoundedZerosInputStream;
+import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -27,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
  * Test the streaming functionality using various stream implementations.
@@ -70,9 +72,12 @@ public class S3EncryptionClientStreamTest {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build()).asUtf8String();
-        v3Client.close();
 
         assertEquals(inputStreamAsUtf8String, actualObject);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -101,9 +106,12 @@ public class S3EncryptionClientStreamTest {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build()).asUtf8String();
-        v3Client.close();
 
         assertEquals(inputStreamAsUtf8String, actualObject);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -134,9 +142,12 @@ public class S3EncryptionClientStreamTest {
                 .build());
         final String actualObject = new String(BoundedStreamBufferer.toByteArray(responseInputStream, inputLength / 8),
                 StandardCharsets.UTF_8);
-        v3Client.close();
 
         assertEquals(inputStreamAsUtf8String, actualObject);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -167,9 +178,12 @@ public class S3EncryptionClientStreamTest {
                 .build());
         final String actualObject = new String(BoundedStreamBufferer.toByteArrayWithMarkReset(responseInputStream, inputLength / 8),
                 StandardCharsets.UTF_8);
-        v3Client.close();
 
         assertEquals(inputStreamAsUtf8String, actualObject);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -204,8 +218,11 @@ public class S3EncryptionClientStreamTest {
                 .build());
         final String actualObject = new String(BoundedStreamBufferer.toByteArray(responseInputStream, inputLength / 8),
                 StandardCharsets.UTF_8);
-        v3Client.close();
 
         assertEquals(inputStreamAsUtf8String, actualObject);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 }
