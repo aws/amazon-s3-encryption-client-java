@@ -123,6 +123,10 @@ public class S3EncryptionClient implements S3Client {
         private Builder() {}
 
         public Builder wrappedClient(S3Client wrappedClient) {
+            if (wrappedClient instanceof S3EncryptionClient) {
+                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
+            }
+
             this._wrappedClient = wrappedClient;
             return this;
         }

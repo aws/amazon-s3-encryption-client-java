@@ -233,25 +233,20 @@ public class S3EncryptionClientTest {
         simpleV3RoundTrip(wrappingClient, objectKey);
     }
 
+    /**
+     * S3EncryptionClient implements S3Client, so it can be passed into the builder as a wrappedClient.
+     * However, is not a supported use case, and the builder should throw an exception if this happens.
+     */
     @Test
-    public void s3EncryptionClientWithWrappedS3EncryptionClientSucceeds() {
-        final String objectKey = "wrapped-s3-ec-from-kms-key-id";
-
-        /**
-         * S3EncryptionClient implements S3Client, so it can be used as a wrapped client.
-         * However, both the wrappedClient and the wrappingClient need valid keys:
-         * ex. wrappingClient.get calls wrappedClient.get calls wrappedClient's S3Client.get
-         */
+    public void s3EncryptionClientWithWrappedS3EncryptionClientFails() {
         S3Client wrappedClient = S3EncryptionClient.builder()
             .kmsKeyId(KMS_KEY_ID)
             .build();
 
-        S3Client wrappingClient = S3EncryptionClient.builder()
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
             .wrappedClient(wrappedClient)
             .kmsKeyId(KMS_KEY_ID)
-            .build();
-
-        simpleV3RoundTrip(wrappingClient, objectKey);
+            .build());
     }
 
     /**
