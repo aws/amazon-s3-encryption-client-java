@@ -227,6 +227,7 @@ public class S3EncryptionClientTest {
 
         S3Client wrappingClient = S3EncryptionClient.builder()
             .wrappedClient(wrappedClient)
+            .kmsKeyId(KMS_KEY_ID)
             .build();
 
         simpleV3RoundTrip(wrappingClient, objectKey);
@@ -244,29 +245,6 @@ public class S3EncryptionClientTest {
         // Using invalid KMS key ID to assert that wrappedClient's encryption materials are not used
         S3Client wrappedClient = S3EncryptionClient.builder()
             .kmsKeyId(KMS_KEY_ID)
-            .build();
-
-        S3Client wrappingClient = S3EncryptionClient.builder()
-            .wrappedClient(wrappedClient)
-            .kmsKeyId(KMS_KEY_ID)
-            .build();
-
-        simpleV3RoundTrip(wrappingClient, objectKey);
-    }
-
-    @Test
-    public void s3EncryptionClientWithInvalidWrappedS3EncryptionClientFails() {
-        final String objectKey = "wrapped-s3-ec-from-kms-key-id";
-
-        /**
-         * S3EncryptionClient implements S3Client, so it can be used as a wrapped client.
-         * However, both the wrappedClient and the wrappingClient need valid keys:
-         * ex. wrappingClient.get calls wrappedClient.get calls wrappedClient's S3Client.get
-         * If wrappedClient's keys are invalid we would expect calls to fail.
-         */
-        // Using invalid KMS key ID to assert that wrappedClient's encryption materials are not used
-        S3Client wrappedClient = S3EncryptionClient.builder()
-            .kmsKeyId("invalid-kms-key-id")
             .build();
 
         S3Client wrappingClient = S3EncryptionClient.builder()
