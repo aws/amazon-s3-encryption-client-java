@@ -36,7 +36,7 @@ public class EncryptedDataKey {
             return null;
         }
 
-        return _encryptedDataKey;
+        return _encryptedDataKey.clone();
     }
 
     static public class Builder {
