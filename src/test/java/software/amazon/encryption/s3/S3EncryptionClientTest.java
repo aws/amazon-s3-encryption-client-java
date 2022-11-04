@@ -242,7 +242,6 @@ public class S3EncryptionClientTest {
          * However, both the wrappedClient and the wrappingClient need valid keys:
          * ex. wrappingClient.get calls wrappedClient.get calls wrappedClient's S3Client.get
          */
-        // Using invalid KMS key ID to assert that wrappedClient's encryption materials are not used
         S3Client wrappedClient = S3EncryptionClient.builder()
             .kmsKeyId(KMS_KEY_ID)
             .build();
