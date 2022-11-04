@@ -30,8 +30,8 @@ import software.amazon.encryption.s3.materials.EncryptionMaterials;
 public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
 
     // 64MiB ought to be enough for most usecases
-    private final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
-    private final long BUFFERED_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * BUFFERED_MAX_CONTENT_LENGTH_MiB;
+    private static final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
+    private static final long BUFFERED_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * BUFFERED_MAX_CONTENT_LENGTH_MiB;
 
     final private SecureRandom _secureRandom;
 
