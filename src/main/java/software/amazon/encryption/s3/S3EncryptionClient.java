@@ -131,6 +131,10 @@ public class S3EncryptionClient implements S3Client {
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder wrappedClient(S3Client wrappedClient) {
+            if (wrappedClient instanceof S3EncryptionClient) {
+                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
+            }
+
             this._wrappedClient = wrappedClient;
             return this;
         }
