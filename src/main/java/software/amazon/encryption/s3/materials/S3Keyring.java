@@ -45,11 +45,11 @@ abstract public class S3Keyring implements Keyring {
             // Allow encrypt strategy to modify the materials if necessary
             materials = encryptStrategy.modifyMaterials(materials);
 
-            byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
+            byte[] encryptedDataKeyCiphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
                     .keyProviderInfo(encryptStrategy.keyProviderInfo().getBytes(StandardCharsets.UTF_8))
-                    .encryptedDataKey(ciphertext)
+                    .encryptedDataKey(encryptedDataKeyCiphertext)
                     .build();
 
             List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
