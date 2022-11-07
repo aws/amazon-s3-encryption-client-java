@@ -39,7 +39,9 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
         this._secureRandom = builder._secureRandom;
     }
 
-    public static Builder builder() { return new Builder(); }
+    public static Builder builder() {
+        return new Builder();
+    }
 
     @Override
     public EncryptedContent encryptContent(EncryptionMaterials materials, byte[] content) {
@@ -117,7 +119,8 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
     public static class Builder {
         private SecureRandom _secureRandom = new SecureRandom();
 
-        private Builder() {}
+        private Builder() {
+        }
 
         /**
          * Note that this does NOT create a defensive copy of the SecureRandom object. Any modifications to the

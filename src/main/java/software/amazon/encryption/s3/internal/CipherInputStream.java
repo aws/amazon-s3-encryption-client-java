@@ -9,10 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * A cipher stream for decrypting CBC encrypted data. There is nothing particularly
- * specific to CBC, but other algorithms may require additional considerations.
+ * A cipher stream for encrypting or decrypting data using an unauthenticated block cipher.
  */
-public class CbcCipherInputStream extends SdkFilterInputStream {
+public class CipherInputStream extends SdkFilterInputStream {
     private static final int MAX_RETRY_COUNT = 1000;
     private static final int DEFAULT_IN_BUFFER_SIZE = 512;
     private final Cipher cipher;
@@ -23,7 +22,7 @@ public class CbcCipherInputStream extends SdkFilterInputStream {
     private int currentPosition;
     private int maxPosition;
 
-    public CbcCipherInputStream(InputStream inputStream, Cipher cipher) {
+    public CipherInputStream(InputStream inputStream, Cipher cipher) {
         super(inputStream);
         this.cipher = cipher;
         this.inputBuffer = new byte[DEFAULT_IN_BUFFER_SIZE];
@@ -143,9 +142,8 @@ public class CbcCipherInputStream extends SdkFilterInputStream {
      * Reads and process the next chunk of data into memory.
      *
      * @return the length of the data chunk read and processed, or -1 if end of
-     *         stream.
-     * @throws IOException
-     *             if there is an IO exception from the underlying input stream
+     * stream.
+     * @throws IOException if there is an IO exception from the underlying input stream
      */
     private int nextChunk() throws IOException {
         abortIfNeeded();
