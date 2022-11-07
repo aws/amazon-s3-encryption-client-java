@@ -1,7 +1,10 @@
 package software.amazon.encryption.s3.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Collections;
 import java.util.Map;
+
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
@@ -45,12 +48,21 @@ public class ContentMetadata {
         return _encryptedDataKeyAlgorithm;
     }
 
+    /**
+     * Note that the underlying implementation uses a Collections.unmodifiableMap which is
+     * immutable.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
+        + " implementation is immutable")
     public Map<String, String> encryptedDataKeyContext() {
         return _encryptedDataKeyContext;
     }
 
     public byte[] contentNonce() {
-        return _contentNonce;
+        if (_contentNonce == null) {
+            return null;
+        }
+        return _contentNonce.clone();
     }
 
     public String contentCipher() {

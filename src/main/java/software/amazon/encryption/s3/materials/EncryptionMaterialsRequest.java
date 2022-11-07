@@ -1,7 +1,10 @@
 package software.amazon.encryption.s3.materials;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Collections;
 import java.util.Map;
+
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 final public class EncryptionMaterialsRequest {
@@ -22,6 +25,12 @@ final public class EncryptionMaterialsRequest {
         return _s3Request;
     }
 
+    /**
+     * Note that the underlying implementation uses a Collections.unmodifiableMap which is
+     * immutable.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
+        + " implementation is immutable")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }

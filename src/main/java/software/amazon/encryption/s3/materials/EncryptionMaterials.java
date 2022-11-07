@@ -1,10 +1,14 @@
 package software.amazon.encryption.s3.materials;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
@@ -43,16 +47,31 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         return _algorithmSuite;
     }
 
+    /**
+     * Note that the underlying implementation uses a Collections.unmodifiableMap which is
+     * immutable.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
+        + " implementation is immutable")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }
 
+    /**
+     * Note that the underlying implementation uses a Collections.unmodifiableList which is
+     * immutable.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
+        + " implementation is immutable")
     public List<EncryptedDataKey> encryptedDataKeys() {
         return _encryptedDataKeys;
     }
 
     public byte[] plaintextDataKey() {
-        return _plaintextDataKey;
+        if (_plaintextDataKey == null) {
+            return null;
+        }
+        return _plaintextDataKey.clone();
     }
 
     public SecretKey dataKey() {

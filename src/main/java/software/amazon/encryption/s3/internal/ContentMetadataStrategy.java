@@ -56,7 +56,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                 EncryptedContent encryptedContent, PutObjectRequest request) {
             Map<String,String> metadata = new HashMap<>(request.metadata());
             EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
-            metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.ciphertext()));
+            metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
             metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(encryptedContent.nonce));
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
@@ -135,7 +135,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
         // Build encrypted data key
         EncryptedDataKey edk = EncryptedDataKey.builder()
-                .ciphertext(edkCiphertext)
+                .encryptedDataKey(edkCiphertext)
                 .keyProviderId(keyProviderId)
                 .keyProviderInfo(keyProviderInfo.getBytes(StandardCharsets.UTF_8))
                 .build();
