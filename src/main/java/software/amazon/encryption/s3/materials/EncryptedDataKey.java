@@ -7,12 +7,13 @@ public class EncryptedDataKey {
 
     // a unique identifer e.g. an ARN
     private final byte[] _keyProviderInfo;
-    private final byte[] _ciphertext;
+    // Encrypted data key ciphertext
+    private final byte[] _encryptedDataKey;
 
     private EncryptedDataKey(Builder builder) {
         this._keyProviderId = builder._keyProviderId;
         this._keyProviderInfo = builder._keyProviderInfo;
-        this._ciphertext = builder._ciphertext;
+        this._encryptedDataKey = builder._encryptedDataKey;
     }
 
     static public Builder builder() {
@@ -24,18 +25,25 @@ public class EncryptedDataKey {
     }
 
     public byte[] keyProviderInfo() {
-        return _keyProviderInfo;
+        if (_keyProviderInfo == null) {
+            return null;
+        }
+        return _keyProviderInfo.clone();
     }
 
-    public byte[] ciphertext() {
-        return _ciphertext;
+    public byte[] encryptedDatakey() {
+        if (_encryptedDataKey == null) {
+            return null;
+        }
+
+        return _encryptedDataKey.clone();
     }
 
     static public class Builder {
 
         private String _keyProviderId = null;
         private byte[] _keyProviderInfo = null;
-        private byte[] _ciphertext = null;
+        private byte[] _encryptedDataKey = null;
 
         private Builder() {
         }
@@ -50,8 +58,8 @@ public class EncryptedDataKey {
             return this;
         }
 
-        public Builder ciphertext(byte[] ciphertext) {
-            _ciphertext = ciphertext == null ? null : ciphertext.clone();
+        public Builder encryptedDataKey(byte[] encryptedDataKey) {
+            _encryptedDataKey = encryptedDataKey == null ? null : encryptedDataKey.clone();
             return this;
         }
 

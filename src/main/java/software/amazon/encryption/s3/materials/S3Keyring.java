@@ -1,12 +1,16 @@
 package software.amazon.encryption.s3.materials;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javax.crypto.SecretKey;
+
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 /**
@@ -41,11 +45,11 @@ abstract public class S3Keyring implements Keyring {
             // Allow encrypt strategy to modify the materials if necessary
             materials = encryptStrategy.modifyMaterials(materials);
 
-            byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
+            byte[] encryptedDataKeyCiphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
                     .keyProviderInfo(encryptStrategy.keyProviderInfo().getBytes(StandardCharsets.UTF_8))
-                    .ciphertext(ciphertext)
+                    .encryptedDataKey(encryptedDataKeyCiphertext)
                     .build();
 
             List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
@@ -89,7 +93,7 @@ abstract public class S3Keyring implements Keyring {
         }
 
         try {
-            byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey.ciphertext());
+            byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey.encryptedDatakey());
             return materials.toBuilder().plaintextDataKey(plaintext).build();
         } catch (GeneralSecurityException e) {
             throw new S3EncryptionClientException("Unable to " + keyProviderInfo + " unwrap", e);
@@ -113,6 +117,11 @@ abstract public class S3Keyring implements Keyring {
             return builder();
         }
 
+        /**
+         * Note that this does NOT create a defensive copy of the SecureRandom object. Any modifications to the
+         * object will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP")
         public BuilderT secureRandom(final SecureRandom secureRandom) {
             if (secureRandom == null) {
                 throw new S3EncryptionClientException("SecureRandom cannot be null!");

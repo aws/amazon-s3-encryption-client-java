@@ -1,9 +1,12 @@
 package software.amazon.encryption.s3.materials;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.core.ApiName;
 import software.amazon.awssdk.core.SdkBytes;
@@ -183,6 +186,11 @@ public class KmsKeyring extends S3Keyring {
             return this;
         }
 
+        /**
+         * Note that this does NOT create a defensive clone of KmsClient. Any modifications made to the wrapped
+         * client will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder kmsClient(KmsClient kmsClient) {
             _kmsClient = kmsClient;
             return this;

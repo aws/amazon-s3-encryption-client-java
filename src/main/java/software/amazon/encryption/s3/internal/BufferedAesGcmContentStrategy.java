@@ -1,5 +1,7 @@
 package software.amazon.encryption.s3.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,6 +9,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -27,8 +30,8 @@ import software.amazon.encryption.s3.materials.EncryptionMaterials;
 public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
 
     // 64MiB ought to be enough for most usecases
-    private final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
-    private final long BUFFERED_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * BUFFERED_MAX_CONTENT_LENGTH_MiB;
+    private static final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
+    private static final long BUFFERED_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * BUFFERED_MAX_CONTENT_LENGTH_MiB;
 
     final private SecureRandom _secureRandom;
 
@@ -119,6 +122,11 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
         private Builder() {
         }
 
+        /**
+         * Note that this does NOT create a defensive copy of the SecureRandom object. Any modifications to the
+         * object will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP")
         public Builder secureRandom(SecureRandom secureRandom) {
             _secureRandom = secureRandom;
             return this;
