@@ -21,7 +21,7 @@ import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static software.amazon.encryption.s3.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 
 /**
  * This class is an integration test for Unauthenticated Ranged Get for AES/CBC and AES/GCM modes
