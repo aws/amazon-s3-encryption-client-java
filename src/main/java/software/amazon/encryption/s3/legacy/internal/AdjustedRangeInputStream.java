@@ -11,10 +11,10 @@ import java.io.InputStream;
  * Reads only a specific range of bytes from the underlying input stream.
  */
 public class AdjustedRangeInputStream extends SdkInputStream {
-    private InputStream decryptedContents;
+    private final InputStream decryptedContents;
     private long virtualAvailable;
     private boolean closed;
-    private int SYMMETRIC_CIPHER_BLOCK_SIZE_BYTES = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherBlockSizeBytes();
+    private final int SYMMETRIC_CIPHER_BLOCK_SIZE_BYTES = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherBlockSizeBytes();
 
     /**
      * Creates a new DecryptedContentsInputStream object.

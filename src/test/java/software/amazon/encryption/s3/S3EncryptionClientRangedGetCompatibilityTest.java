@@ -21,13 +21,12 @@ import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static software.amazon.encryption.s3.S3EncryptionClientTestResources.BUCKET;
 
 /**
  * This class is an integration test for Unauthenticated Ranged Get for AES/CBC and AES/GCM modes
  */
 public class S3EncryptionClientRangedGetCompatibilityTest {
-
-    private static final String BUCKET = System.getenv("AWS_S3EC_TEST_BUCKET");
 
     private static SecretKey AES_KEY;
 
@@ -40,7 +39,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void failsOnRangeWhenLegacyModeDisabled() {
-        final String BUCKET_KEY = "fails-when-on-range-when-legacy-disabled";
+        final String objectKey = "fails-when-on-range-when-legacy-disabled";
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
                 "2bcdefghijklmnopqrst2BCDEFGHIJKLMNOPQRST" +
@@ -54,16 +53,16 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)
+                .key(objectKey)
                 .build(), RequestBody.fromString(input));
-        assertThrows(S3EncryptionClientException.class, ()-> v3Client.getObjectAsBytes(builder -> builder.bucket(BUCKET)
-                .key(BUCKET_KEY)
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder.bucket(BUCKET)
+                .key(objectKey)
                 .range("bytes=10-20")));
     }
 
     @Test
     public void AesGcmV3toV3RangedGet() {
-        final String BUCKET_KEY = "aes-gcm-v3-to-v3-ranged-get";
+        final String objectKey = "aes-gcm-v3-to-v3-ranged-get";
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -78,14 +77,14 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .build();
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)
+                .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
         // Valid Range
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=10-20")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals("klmnopqrst0", output);
 
@@ -93,7 +92,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=190-300")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals("KLMNOPQRST", output);
 
@@ -101,7 +100,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=100-50")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -109,7 +108,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("10-20")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -117,14 +116,14 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=216-217")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals("", output);
     }
 
     @Test
     public void AesGcmV3toV3FailsRangeExceededObjectLength() {
-        final String BUCKET_KEY = "aes-gcm-v3-to-v3-ranged-get-out-of-range";
+        final String objectKey = "aes-gcm-v3-to-v3-ranged-get-out-of-range";
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -140,19 +139,19 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)
+                .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
         // Invalid range exceed object length, Throws S3Exception
         assertThrows(S3Exception.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=300-400")
-                .key(BUCKET_KEY)));
+                .key(objectKey)));
     }
 
     @Test
     public void AesCbcV1toV3RangedGet() {
-        final String BUCKET_KEY = "aes-cbc-v1-to-v3-ranged-get";
+        final String objectKey = "aes-cbc-v1-to-v3-ranged-get";
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -170,7 +169,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 "3bcdefghijklmnopqrst3BCDEFGHIJKLMNOPQRST" +
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
-        v1Client.putObject(BUCKET, BUCKET_KEY, input);
+        v1Client.putObject(BUCKET, objectKey, input);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -182,7 +181,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=10-20")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals("klmnopqrst0", output);
 
@@ -190,7 +189,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=190-300")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals("KLMNOPQRST", output);
 
@@ -198,7 +197,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=100-50")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -206,7 +205,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("10-20")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -214,14 +213,14 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=216-217")
-                .key(BUCKET_KEY));
+                .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals("", output);
     }
 
     @Test
     public void AesCbcV1toV3FailsRangeExceededObjectLength() {
-        final String BUCKET_KEY = "aes-cbc-v1-to-v3-ranged-get-out-of-range";
+        final String objectKey = "aes-cbc-v1-to-v3-ranged-get-out-of-range";
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -239,7 +238,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 "3bcdefghijklmnopqrst3BCDEFGHIJKLMNOPQRST" +
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
-        v1Client.putObject(BUCKET, BUCKET_KEY, input);
+        v1Client.putObject(BUCKET, objectKey, input);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -251,6 +250,6 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         assertThrows(S3Exception.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=300-400")
-                .key(BUCKET_KEY)));
+                .key(objectKey)));
     }
 }
