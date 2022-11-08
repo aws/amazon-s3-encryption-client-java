@@ -1,10 +1,10 @@
 package software.amazon.encryption.s3.materials;
 
-import java.security.SecureRandom;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 public class DefaultCryptoMaterialsManager implements CryptographicMaterialsManager {
     private final Keyring _keyring;
+
 
     private DefaultCryptoMaterialsManager(Builder builder) {
         _keyring = builder._keyring;

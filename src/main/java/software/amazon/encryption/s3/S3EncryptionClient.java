@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
@@ -33,7 +32,6 @@ import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
-import software.amazon.encryption.s3.materials.S3Keyring;
 
 /**
  * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
@@ -117,8 +115,6 @@ public class S3EncryptionClient implements S3Client {
     public void close() {
         _wrappedClient.close();
     }
-
-    public SecureRandom getSecureRandom() { return _secureRandom; }
 
     public static class Builder {
         private S3Client _wrappedClient = S3Client.builder().build();
