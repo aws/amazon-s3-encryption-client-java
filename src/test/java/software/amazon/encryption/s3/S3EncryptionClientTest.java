@@ -1,7 +1,10 @@
 package software.amazon.encryption.s3;
 
+import java.security.SecureRandom;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -23,6 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
@@ -247,6 +256,24 @@ public class S3EncryptionClientTest {
             .wrappedClient(wrappedClient)
             .kmsKeyId(KMS_KEY_ID)
             .build());
+    }
+
+    @Test
+    public void s3EncryptionClientWithSecureRandomUsesObjectForRoundTripCall() {
+        SecureRandom mockSecureRandom = mock(SecureRandom.class);
+
+        final String objectKey = "secure-random-object";
+
+        S3Client v3Client = S3EncryptionClient.builder()
+            .kmsKeyId(KMS_KEY_ID)
+            .secureRandom(mockSecureRandom)
+            .build();
+
+        verify(mockSecureRandom, never()).nextBytes(any());
+
+        simpleV3RoundTrip(v3Client, objectKey);
+
+        verify(mockSecureRandom, times(2)).nextBytes(any());
     }
 
     /**

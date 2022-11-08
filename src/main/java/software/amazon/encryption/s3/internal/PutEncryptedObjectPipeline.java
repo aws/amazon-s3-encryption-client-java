@@ -4,6 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
+import java.security.SecureRandom;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -18,6 +19,7 @@ public class PutEncryptedObjectPipeline {
 
     final private S3Client _s3Client;
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
+    final private SecureRandom _secureRandom;
     final private ContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
 
@@ -26,6 +28,7 @@ public class PutEncryptedObjectPipeline {
     private PutEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
+        this._secureRandom = builder._secureRandom;
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
     }
@@ -53,12 +56,10 @@ public class PutEncryptedObjectPipeline {
     public static class Builder {
         private S3Client _s3Client;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
-        // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
-        private ContentEncryptionStrategy _contentEncryptionStrategy =
-                BufferedAesGcmContentStrategy
-                        .builder()
-                        .build();
+        private SecureRandom _secureRandom;
+        private ContentEncryptionStrategy _contentEncryptionStrategy;
         private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
+
 
         private Builder() {}
 
@@ -87,7 +88,19 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
+        public Builder secureRandom(SecureRandom secureRandom) {
+            this._secureRandom = secureRandom;
+            return this;
+        }
+
         public PutEncryptedObjectPipeline build() {
+            // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
+            if (_contentEncryptionStrategy == null) {
+                _contentEncryptionStrategy = BufferedAesGcmContentStrategy
+                    .builder()
+                    .secureRandom(_secureRandom)
+                    .build();
+            }
             return new PutEncryptedObjectPipeline(this);
         }
     }
