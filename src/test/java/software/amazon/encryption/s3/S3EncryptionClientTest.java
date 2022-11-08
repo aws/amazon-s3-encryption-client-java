@@ -270,7 +270,7 @@ public class S3EncryptionClientTest {
     public void s3EncryptionClientFromKMSKeyDoesNotUseUnprovidedSecureRandom() {
         SecureRandom mockSecureRandom = mock(SecureRandom.class);
 
-        final String objectKey = "secure-random-object-kms";
+        final String objectKey = "no-secure-random-object-kms";
 
         S3Client v3Client = S3EncryptionClient.builder()
             .kmsKeyId(KMS_KEY_ID)
