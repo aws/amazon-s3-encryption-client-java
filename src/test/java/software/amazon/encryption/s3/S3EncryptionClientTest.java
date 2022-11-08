@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -259,10 +260,10 @@ public class S3EncryptionClientTest {
     }
 
     @Test
-    public void s3EncryptionClientWithSecureRandomUsesObjectForRoundTripCall() {
+    public void s3EncryptionClientFromKMSKeyIdWithSecureRandomUsesObjectOnceForRoundTripCall() {
         SecureRandom mockSecureRandom = mock(SecureRandom.class);
 
-        final String objectKey = "secure-random-object";
+        final String objectKey = "secure-random-object-kms";
 
         S3Client v3Client = S3EncryptionClient.builder()
             .kmsKeyId(KMS_KEY_ID)
@@ -273,7 +274,28 @@ public class S3EncryptionClientTest {
 
         simpleV3RoundTrip(v3Client, objectKey);
 
-        verify(mockSecureRandom, times(2)).nextBytes(any());
+        // Should only be called from encryption content strategy.
+        // KMS keyring does not use SecureRandom for encryptDataKey.
+        verify(mockSecureRandom, atLeast(1)).nextBytes(any());
+    }
+
+    @Test
+    public void s3EncryptionClientFromAESKeyWithSecureRandomUsesObjectTwiceForRoundTripCall() {
+        SecureRandom mockSecureRandom = mock(SecureRandom.class);
+
+        final String objectKey = "secure-random-object-aes";
+
+        S3Client v3Client = S3EncryptionClient.builder()
+            .aesKey(AES_KEY)
+            .secureRandom(mockSecureRandom)
+            .build();
+
+        verify(mockSecureRandom, never()).nextBytes(any());
+
+        simpleV3RoundTrip(v3Client, objectKey);
+
+        // Should be called once from encryption content strategy and again from AES encryptDataKey.
+        verify(mockSecureRandom, atLeast(2)).nextBytes(any());
     }
 
     /**
