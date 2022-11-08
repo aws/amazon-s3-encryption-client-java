@@ -222,7 +222,10 @@ public class S3EncryptionClient implements S3Client {
         }
 
         public Builder secureRandom(SecureRandom secureRandom) {
-            this._secureRandom = secureRandom;
+            if (secureRandom == null) {
+                throw new S3EncryptionClientException("SecureRandom provided to S3EncryptionClient cannot be null");
+            }
+            _secureRandom = secureRandom;
             return this;
         }
 

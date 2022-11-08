@@ -260,6 +260,31 @@ public class S3EncryptionClientTest {
     }
 
     @Test
+    public void s3EncryptionClientWithNullSecureRandomFails() {
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+            .aesKey(AES_KEY)
+            .secureRandom(null)
+            .build());
+    }
+
+    @Test
+    public void s3EncryptionClientFromKMSKeyDoesNotUseUnprovidedSecureRandom() {
+        SecureRandom mockSecureRandom = mock(SecureRandom.class);
+
+        final String objectKey = "secure-random-object-kms";
+
+        S3Client v3Client = S3EncryptionClient.builder()
+            .kmsKeyId(KMS_KEY_ID)
+            .build();
+
+        simpleV3RoundTrip(v3Client, objectKey);
+
+        // Should only be called from encryption content strategy.
+        // KMS keyring does not use SecureRandom for encryptDataKey.
+        verify(mockSecureRandom, never()).nextBytes(any());
+    }
+
+    @Test
     public void s3EncryptionClientFromKMSKeyIdWithSecureRandomUsesObjectOnceForRoundTripCall() {
         SecureRandom mockSecureRandom = mock(SecureRandom.class);
 
@@ -270,13 +295,11 @@ public class S3EncryptionClientTest {
             .secureRandom(mockSecureRandom)
             .build();
 
-        verify(mockSecureRandom, never()).nextBytes(any());
-
         simpleV3RoundTrip(v3Client, objectKey);
 
         // Should only be called from encryption content strategy.
         // KMS keyring does not use SecureRandom for encryptDataKey.
-        verify(mockSecureRandom, atLeast(1)).nextBytes(any());
+        verify(mockSecureRandom, times(1)).nextBytes(any());
     }
 
     @Test
@@ -290,12 +313,27 @@ public class S3EncryptionClientTest {
             .secureRandom(mockSecureRandom)
             .build();
 
-        verify(mockSecureRandom, never()).nextBytes(any());
-
         simpleV3RoundTrip(v3Client, objectKey);
 
         // Should be called once from encryption content strategy and again from AES encryptDataKey.
-        verify(mockSecureRandom, atLeast(2)).nextBytes(any());
+        verify(mockSecureRandom, times(2)).nextBytes(any());
+    }
+
+    @Test
+    public void s3EncryptionClientFromRSAKeyWithSecureRandomUsesObjectTwiceForRoundTripCall() {
+        SecureRandom mockSecureRandom = mock(SecureRandom.class);
+
+        final String objectKey = "secure-random-object-rsa";
+
+        S3Client v3Client = S3EncryptionClient.builder()
+            .rsaKeyPair(RSA_KEY_PAIR)
+            .secureRandom(mockSecureRandom)
+            .build();
+
+        simpleV3RoundTrip(v3Client, objectKey);
+
+        // Should be called once from encryption content strategy and again from RSA encryptDataKey.
+        verify(mockSecureRandom, times(2)).nextBytes(any());
     }
 
     /**
