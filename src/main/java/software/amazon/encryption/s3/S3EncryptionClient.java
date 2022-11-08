@@ -118,6 +118,8 @@ public class S3EncryptionClient implements S3Client {
         _wrappedClient.close();
     }
 
+    public SecureRandom getSecureRandom() { return _secureRandom; }
+
     public static class Builder {
         private S3Client _wrappedClient = S3Client.builder().build();
         private CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -233,7 +235,6 @@ public class S3EncryptionClient implements S3Client {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
             }
-
 
             if (_keyring == null) {
                 if (_aesKey != null) {

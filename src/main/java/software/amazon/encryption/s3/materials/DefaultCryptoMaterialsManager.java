@@ -5,19 +5,13 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 public class DefaultCryptoMaterialsManager implements CryptographicMaterialsManager {
     private final Keyring _keyring;
-    private final SecureRandom _secureRandom;
 
     private DefaultCryptoMaterialsManager(Builder builder) {
         _keyring = builder._keyring;
-        _secureRandom = builder._secureRandom;
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public SecureRandom getSecureRandom() {
-        return _secureRandom;
     }
 
     public EncryptionMaterials getEncryptionMaterials(EncryptionMaterialsRequest request) {
@@ -43,17 +37,11 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
 
     public static class Builder {
         private Keyring _keyring;
-        private SecureRandom _secureRandom;
 
         private Builder() {}
 
         public Builder keyring(Keyring keyring) {
             this._keyring = keyring;
-            return this;
-        }
-
-        public Builder secureRandom(SecureRandom secureRandom) {
-            this._secureRandom = secureRandom;
             return this;
         }
 
