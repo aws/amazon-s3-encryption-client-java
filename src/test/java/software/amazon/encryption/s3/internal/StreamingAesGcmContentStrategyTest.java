@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Test;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
-public class BufferedAesGcmContentStrategyTest {
+public class StreamingAesGcmContentStrategyTest {
 
     @Test
     public void buildBufferedAesGcmContentStrategyWithNullSecureRandomFails() {
-      assertThrows(S3EncryptionClientException.class, () -> BufferedAesGcmContentStrategy.builder().secureRandom(null));
+      assertThrows(S3EncryptionClientException.class, () -> StreamingAesGcmContentStrategy.builder().secureRandom(null));
     }
 
 }

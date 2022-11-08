@@ -14,13 +14,13 @@ import java.io.InputStream;
 public class CipherInputStream extends SdkFilterInputStream {
     private static final int MAX_RETRY_COUNT = 1000;
     private static final int DEFAULT_IN_BUFFER_SIZE = 512;
-    private final Cipher cipher;
+    protected final Cipher cipher;
 
-    private boolean eofReached;
-    private byte[] inputBuffer;
-    private byte[] outputBuffer;
-    private int currentPosition;
-    private int maxPosition;
+    protected boolean eofReached;
+    protected byte[] inputBuffer;
+    protected byte[] outputBuffer;
+    protected int currentPosition;
+    protected int maxPosition;
 
     public CipherInputStream(InputStream inputStream, Cipher cipher) {
         super(inputStream);
@@ -121,6 +121,8 @@ public class CipherInputStream extends SdkFilterInputStream {
         } catch (BadPaddingException | IllegalBlockSizeException ex) {
             // Swallow the exception
         }
+        currentPosition = maxPosition = 0;
+        abortIfNeeded();
     }
 
     @Override
@@ -145,7 +147,7 @@ public class CipherInputStream extends SdkFilterInputStream {
      * stream.
      * @throws IOException if there is an IO exception from the underlying input stream
      */
-    private int nextChunk() throws IOException {
+    protected int nextChunk() throws IOException {
         abortIfNeeded();
         if (eofReached) {
             return -1;
