@@ -22,12 +22,12 @@ import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
-import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 /**
- * This class will encrypt data according to the algorithm suite constants
+ * This class will decrypt AES-GCM encrypted data by buffering the ciphertext
+ * stream into memory. This prevents release of unauthenticated plaintext.
  */
-public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
+public class BufferedAesGcmContentStrategy implements ContentDecryptionStrategy {
 
     // 64MiB ought to be enough for most usecases
     private static final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
@@ -41,36 +41,6 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    @Override
-    public EncryptedContent encryptContent(EncryptionMaterials materials, byte[] content) {
-        final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-
-        final byte[] nonce = new byte[algorithmSuite.nonceLengthBytes()];
-        _secureRandom.nextBytes(nonce);
-
-        final String cipherName = algorithmSuite.cipherName();
-        try {
-            final Cipher cipher = Cipher.getInstance(cipherName);
-
-            cipher.init(Cipher.ENCRYPT_MODE,
-                    materials.dataKey(),
-                    new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
-
-            EncryptedContent result = new EncryptedContent();
-            result.nonce = nonce;
-            result.ciphertext = cipher.doFinal(content);
-
-            return result;
-        } catch (NoSuchAlgorithmException
-                 | NoSuchPaddingException
-                 | InvalidAlgorithmParameterException
-                 | InvalidKeyException
-                 | IllegalBlockSizeException
-                 | BadPaddingException e) {
-            throw new S3EncryptionClientException("Unable to " + cipherName + " content encrypt.", e);
-        }
     }
 
     @Override
