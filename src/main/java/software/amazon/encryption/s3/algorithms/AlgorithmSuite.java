@@ -95,4 +95,8 @@ public enum AlgorithmSuite {
     public long cipherMaxContentLengthBits() {
         return _cipherMaxContentLengthBits;
     }
+
+    public long cipherMaxContentLengthBytes() {
+        return _cipherMaxContentLengthBits / 8;
+    }
 }

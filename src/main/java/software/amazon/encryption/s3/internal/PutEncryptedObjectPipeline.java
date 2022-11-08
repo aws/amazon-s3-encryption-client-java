@@ -2,15 +2,12 @@ package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.awssdk.utils.IoUtils;
-import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
@@ -19,7 +16,6 @@ public class PutEncryptedObjectPipeline {
 
     final private S3Client _s3Client;
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
-    final private SecureRandom _secureRandom;
     final private ContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
 
@@ -28,29 +24,22 @@ public class PutEncryptedObjectPipeline {
     private PutEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
-        this._secureRandom = builder._secureRandom;
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
     }
 
     public PutObjectResponse putObject(PutObjectRequest request, RequestBody requestBody) {
         EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
-                .s3Request(request);
+                .s3Request(request)
+                .plaintextLength(requestBody.optionalContentLength().orElse(-1L));
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
-        byte[] input;
-        try {
-            // TODO: this needs to be a stream and not a byte[]
-            input = IoUtils.toByteArray(requestBody.contentStreamProvider().newStream());
-        } catch (IOException e) {
-            throw new S3EncryptionClientException("Cannot read input.", e);
-        }
-        EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, input);
+        EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, requestBody.contentStreamProvider().newStream());
 
         request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
 
-        return _s3Client.putObject(request, RequestBody.fromBytes(encryptedContent.ciphertext));
+        return _s3Client.putObject(request, RequestBody.fromInputStream(encryptedContent.getCiphertext(), encryptedContent.getCiphertextLength()));
     }
 
     public static class Builder {
@@ -86,10 +75,10 @@ public class PutEncryptedObjectPipeline {
         public PutEncryptedObjectPipeline build() {
             // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
             if (_contentEncryptionStrategy == null) {
-                _contentEncryptionStrategy = BufferedAesGcmContentStrategy
-                    .builder()
-                    .secureRandom(_secureRandom)
-                    .build();
+                _contentEncryptionStrategy = StreamingAesGcmContentStrategy
+                        .builder()
+                        .secureRandom(_secureRandom)
+                        .build();
             }
             return new PutEncryptedObjectPipeline(this);
         }
