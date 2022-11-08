@@ -117,7 +117,7 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
     }
 
     public static class Builder {
-        private SecureRandom _secureRandom = new SecureRandom();
+        private SecureRandom _secureRandom;
 
         private Builder() {
         }
