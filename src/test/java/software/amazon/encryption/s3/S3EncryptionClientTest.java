@@ -10,6 +10,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.KmsKeyring;
@@ -333,6 +334,29 @@ public class S3EncryptionClientTest {
 
         // Should be called once from encryption content strategy and again from RSA encryptDataKey.
         verify(mockSecureRandom, times(2)).nextBytes(any());
+    }
+
+    @Test
+    public void s3EncryptionClientFromAESKeyringUsesDifferentSecureRandomThanKeyring() {
+        SecureRandom mockSecureRandomKeyring = mock(SecureRandom.class);
+        SecureRandom mockSecureRandomClient = mock(SecureRandom.class);
+
+        AesKeyring keyring = AesKeyring.builder()
+            .wrappingKey(AES_KEY)
+            .secureRandom(mockSecureRandomKeyring)
+            .build();
+
+        final String objectKey = "secure-random-object-aes-different-keyring";
+
+        S3Client v3Client = S3EncryptionClient.builder()
+            .keyring(keyring)
+            .secureRandom(mockSecureRandomClient)
+            .build();
+
+        simpleV3RoundTrip(v3Client, objectKey);
+
+        verify(mockSecureRandomKeyring, times(1)).nextBytes(any());
+        verify(mockSecureRandomClient, times(1)).nextBytes(any());
     }
 
     /**
