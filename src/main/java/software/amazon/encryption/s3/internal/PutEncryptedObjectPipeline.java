@@ -78,16 +78,6 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
-        public Builder contentEncryptionStrategy(ContentEncryptionStrategy strategy) {
-            this._contentEncryptionStrategy = strategy;
-            return this;
-        }
-
-        public Builder metadataEncodingStrategy(ContentMetadataEncodingStrategy strategy) {
-            this._contentMetadataEncodingStrategy = strategy;
-            return this;
-        }
-
         public Builder secureRandom(SecureRandom secureRandom) {
             this._secureRandom = secureRandom;
             return this;

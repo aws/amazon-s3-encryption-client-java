@@ -32,6 +32,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.withSettings;
 
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
@@ -269,7 +270,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void s3EncryptionClientFromKMSKeyDoesNotUseUnprovidedSecureRandom() {
-        SecureRandom mockSecureRandom = mock(SecureRandom.class);
+        SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
         final String objectKey = "no-secure-random-object-kms";
 
@@ -286,7 +287,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void s3EncryptionClientFromKMSKeyIdWithSecureRandomUsesObjectOnceForRoundTripCall() {
-        SecureRandom mockSecureRandom = mock(SecureRandom.class);
+        SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
         final String objectKey = "secure-random-object-kms";
 
@@ -304,7 +305,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void s3EncryptionClientFromAESKeyWithSecureRandomUsesObjectTwiceForRoundTripCall() {
-        SecureRandom mockSecureRandom = mock(SecureRandom.class);
+        SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
         final String objectKey = "secure-random-object-aes";
 
@@ -321,7 +322,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void s3EncryptionClientFromRSAKeyWithSecureRandomUsesObjectTwiceForRoundTripCall() {
-        SecureRandom mockSecureRandom = mock(SecureRandom.class);
+        SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
         final String objectKey = "secure-random-object-rsa";
 
