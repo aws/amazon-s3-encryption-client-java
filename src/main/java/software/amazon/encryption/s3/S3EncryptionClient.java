@@ -3,6 +3,7 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.security.KeyPair;
+import java.security.Provider;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.crypto.SecretKey;
@@ -22,7 +23,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.internal.CryptoProvider;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
@@ -122,6 +123,8 @@ public class S3EncryptionClient implements S3Client {
         private String _kmsKeyId;
         private boolean _enableLegacyUnauthenticatedModes = false;
         private boolean _enableDelayedAuthenticationMode = false;
+        private Provider _cryptoProvider = null;
+        private boolean _alwaysUseProvider = false;
 
         private Builder() {}
 
@@ -215,9 +218,25 @@ public class S3EncryptionClient implements S3Client {
             return this;
         }
 
+        public Builder cryptoProvider(Provider cryptoProvider) {
+            this._cryptoProvider = cryptoProvider;
+            return this;
+        }
+
+        public Builder enableAlwaysUseProvider(boolean alwaysUseProvider) {
+            this._alwaysUseProvider = alwaysUseProvider;
+            return this;
+        }
+
         public S3EncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
+            }
+
+            boolean haveOverride = (_cryptoProvider != null && _alwaysUseProvider) || CryptoProvider.preferDefaultSecurityProvider();
+
+            if (!haveOverride) {
+                CryptoProvider.checkBountyCastle();
             }
 
             if (_keyring == null) {
@@ -242,6 +261,8 @@ public class S3EncryptionClient implements S3Client {
             if (_cryptoMaterialsManager == null) {
                 _cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
                         .keyring(_keyring)
+                        .cryptoPovider(_cryptoProvider)
+                        .alwaysUseProvider(_alwaysUseProvider)
                         .build();
             }
 

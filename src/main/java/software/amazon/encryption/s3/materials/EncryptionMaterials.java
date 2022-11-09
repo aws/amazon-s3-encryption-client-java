@@ -2,6 +2,7 @@ package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.security.Provider;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final byte[] _plaintextDataKey;
+    private final Provider _cryptoProvider;
+    private final boolean _alwaysUseProvider;
 
     private EncryptionMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -33,6 +36,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         this._encryptionContext = builder._encryptionContext;
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._plaintextDataKey = builder._plaintextDataKey;
+        this._cryptoProvider = builder._cryptoProvider;
+        this._alwaysUseProvider = builder()._alwaysUseProvider;
     }
 
     static public Builder builder() {
@@ -78,13 +83,22 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         return new SecretKeySpec(_plaintextDataKey, "AES");
     }
 
+    public Provider cryptoProvider() {
+        return _cryptoProvider;
+    }
+
+    public boolean alwaysUseProvider() {
+        return _alwaysUseProvider;
+    }
+
     public Builder toBuilder() {
         return new Builder()
                 .s3Request(_s3Request)
                 .algorithmSuite(_algorithmSuite)
                 .encryptionContext(_encryptionContext)
                 .encryptedDataKeys(_encryptedDataKeys)
-                .plaintextDataKey(_plaintextDataKey);
+                .plaintextDataKey(_plaintextDataKey)
+                .cryptoProvider(_cryptoProvider);
     }
 
     static public class Builder {
@@ -95,6 +109,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private byte[] _plaintextDataKey = null;
+        private Provider _cryptoProvider = null;
+        private boolean _alwaysUseProvider = false;
 
         private Builder() {
         }
@@ -125,6 +141,15 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
         public Builder plaintextDataKey(byte[] plaintextDataKey) {
             _plaintextDataKey = plaintextDataKey == null ? null : plaintextDataKey.clone();
+            return this;
+        }
+        public Builder cryptoProvider(Provider cryptoProvider) {
+            _cryptoProvider = cryptoProvider;
+            return this;
+        }
+
+        public Builder alwaysUseProvider(boolean alwaysUseProvider) {
+            _alwaysUseProvider = alwaysUseProvider;
             return this;
         }
 

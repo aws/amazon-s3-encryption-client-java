@@ -13,6 +13,7 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource.PSpecified;
 import javax.crypto.spec.SecretKeySpec;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.internal.CryptoProvider;
 
 /**
  * This keyring can wrap keys with the active keywrap algorithm and
@@ -38,7 +39,7 @@ public class RsaKeyring extends S3Keyring {
 
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            final Cipher cipher = CryptoProvider.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.UNWRAP_MODE, _partialRsaKeyPair.getPrivateKey());
 
             Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
@@ -72,7 +73,7 @@ public class RsaKeyring extends S3Keyring {
         @Override
         public byte[] encryptDataKey(SecureRandom secureRandom,
                                      EncryptionMaterials materials) throws GeneralSecurityException {
-            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            final Cipher cipher = CryptoProvider.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.WRAP_MODE, _partialRsaKeyPair.getPublicKey(), OAEP_PARAMETER_SPEC, secureRandom);
 
             // Create a pseudo-data key with the content encryption appended to the data key
@@ -91,7 +92,7 @@ public class RsaKeyring extends S3Keyring {
 
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            final Cipher cipher = CryptoProvider.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.UNWRAP_MODE, _partialRsaKeyPair.getPrivateKey(), OAEP_PARAMETER_SPEC);
 
             String dataKeyAlgorithm = materials.algorithmSuite().dataKeyAlgorithm();

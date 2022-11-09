@@ -12,6 +12,7 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.CipherInputStream;
 import software.amazon.encryption.s3.internal.ContentDecryptionStrategy;
 import software.amazon.encryption.s3.internal.ContentMetadata;
+import software.amazon.encryption.s3.internal.CryptoProvider;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 
 /**
@@ -39,7 +40,7 @@ public class UnauthenticatedContentStrategy implements ContentDecryptionStrategy
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         try {
             // TODO: Allow configurable Cryptographic provider
-            final Cipher cipher = Cipher.getInstance(algorithmSuite.cipherName());
+            final Cipher cipher = CryptoProvider.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider(), materials.alwaysUseProvider());
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
             InputStream plaintext = new CipherInputStream(ciphertextStream, cipher);
             return RangedGetUtils.adjustToDesiredRange(plaintext, desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits());
