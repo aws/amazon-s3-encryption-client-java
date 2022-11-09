@@ -14,9 +14,9 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
@@ -87,10 +87,10 @@ public class S3EncryptionClientTest {
 
         S3Client s3Client = S3Client.builder().build();
         // Assert throw NoSuchKeyException when getObject for objectKey
-        assertThrows(NoSuchKeyException.class, () -> s3Client.getObject(builder -> builder
+        assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
-        assertThrows(NoSuchKeyException.class, () -> s3Client.getObject(builder -> builder
+        assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey + ".instruction")));
     }
@@ -130,10 +130,10 @@ public class S3EncryptionClientTest {
 
         S3Client s3Client = S3Client.builder().build();
         // Assert throw NoSuchKeyException when getObject for any of objectKeys
-        assertThrows(NoSuchKeyException.class, () -> s3Client.getObject(builder -> builder
+        assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKeys[0])));
-        assertThrows(NoSuchKeyException.class, () -> s3Client.getObject(builder -> builder
+        assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKeys[0] + ".instruction")));
     }
