@@ -337,8 +337,8 @@ public class S3EncryptionClientTest {
 
     @Test
     public void s3EncryptionClientFromAESKeyringUsesDifferentSecureRandomThanKeyring() {
-        SecureRandom mockSecureRandomKeyring = mock(SecureRandom.class);
-        SecureRandom mockSecureRandomClient = mock(SecureRandom.class);
+        SecureRandom mockSecureRandomKeyring = mock(SecureRandom.class, withSettings().withoutAnnotations());
+        SecureRandom mockSecureRandomClient = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
         AesKeyring keyring = AesKeyring.builder()
             .wrappingKey(AES_KEY)
