@@ -17,6 +17,9 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
+import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
+import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
@@ -284,6 +287,67 @@ public class S3EncryptionClientTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+    }
+
+
+    @Test
+    public void s3EncryptionClientWithKeyringFromKmsKeyIdSucceeds() {
+        final String objectKey = "keyring-from-kms-key-id";
+
+        KmsKeyring keyring = KmsKeyring.builder().wrappingKeyId(KMS_KEY_ID).build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+            .keyring(keyring)
+            .build();
+
+        simpleV3RoundTrip(v3Client, objectKey);
+    }
+
+    @Test
+    public void s3EncryptionClientWithCmmFromKmsKeyIdSucceeds() {
+        final String objectKey = "cmm-from-kms-key-id";
+
+        KmsKeyring keyring = KmsKeyring.builder().wrappingKeyId(KMS_KEY_ID).build();
+
+        CryptographicMaterialsManager cmm = DefaultCryptoMaterialsManager.builder()
+            .keyring(keyring)
+            .build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+            .cryptoMaterialsManager(cmm)
+            .build();
+
+        simpleV3RoundTrip(v3Client, objectKey);
+    }
+
+    @Test
+    public void s3EncryptionClientWithWrappedS3ClientSucceeds() {
+        final String objectKey = "wrapped-s3-client-with-kms-key-id";
+
+        S3Client wrappedClient = S3Client.builder().build();
+
+        S3Client wrappingClient = S3EncryptionClient.builder()
+            .wrappedClient(wrappedClient)
+            .kmsKeyId(KMS_KEY_ID)
+            .build();
+
+        simpleV3RoundTrip(wrappingClient, objectKey);
+    }
+
+    /**
+     * S3EncryptionClient implements S3Client, so it can be passed into the builder as a wrappedClient.
+     * However, is not a supported use case, and the builder should throw an exception if this happens.
+     */
+    @Test
+    public void s3EncryptionClientWithWrappedS3EncryptionClientFails() {
+        S3Client wrappedClient = S3EncryptionClient.builder()
+            .kmsKeyId(KMS_KEY_ID)
+            .build();
+
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+            .wrappedClient(wrappedClient)
+            .kmsKeyId(KMS_KEY_ID)
+            .build());
     }
 
     /**

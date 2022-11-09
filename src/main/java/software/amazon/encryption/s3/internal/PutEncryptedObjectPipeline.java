@@ -1,5 +1,7 @@
 package software.amazon.encryption.s3.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
 
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -60,6 +62,11 @@ public class PutEncryptedObjectPipeline {
 
         private Builder() {}
 
+        /**
+         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
+         * S3Client will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder s3Client(S3Client s3Client) {
             this._s3Client = s3Client;
             return this;

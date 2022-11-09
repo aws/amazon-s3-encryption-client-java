@@ -1,5 +1,7 @@
 package software.amazon.encryption.s3;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
@@ -147,7 +149,16 @@ public class S3EncryptionClient implements S3Client {
         private Builder() {
         }
 
+        /**
+         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
+         * S3Client will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder wrappedClient(S3Client wrappedClient) {
+            if (wrappedClient instanceof S3EncryptionClient) {
+                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
+            }
+
             this._wrappedClient = wrappedClient;
             return this;
         }

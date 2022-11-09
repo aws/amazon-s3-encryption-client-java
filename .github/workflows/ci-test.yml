@@ -20,6 +20,8 @@ jobs:
           aws-region: us-west-2
 
       - uses: actions/checkout@v3
+      - name: Run SpotBugs
+        run: mvn -B -ntp com.github.spotbugs:spotbugs-maven-plugin:check
       # run all test cases
       - name: Run S3EC Test Cases
         run: |

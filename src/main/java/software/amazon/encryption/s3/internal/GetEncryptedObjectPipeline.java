@@ -1,10 +1,6 @@
 package software.amazon.encryption.s3.internal;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
@@ -12,14 +8,18 @@ import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.legacy.internal.AesCbcContentStrategy;
+import software.amazon.encryption.s3.legacy.internal.RangedGetUtils;
+import software.amazon.encryption.s3.legacy.internal.UnauthenticatedContentStrategy;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
+
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This class will determine the necessary mechanisms to decrypt objects returned from S3.
@@ -34,7 +34,9 @@ public class GetEncryptedObjectPipeline {
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthentication;
 
-    public static Builder builder() { return new Builder(); }
+    public static Builder builder() {
+        return new Builder();
+    }
 
     private GetEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
@@ -44,9 +46,15 @@ public class GetEncryptedObjectPipeline {
     }
 
     public <T> T getObject(GetObjectRequest getObjectRequest,
-            ResponseTransformer<GetObjectResponse, T> responseTransformer) {
-        ResponseInputStream<GetObjectResponse> objectStream = _s3Client.getObject(
-                getObjectRequest);
+                           ResponseTransformer<GetObjectResponse, T> responseTransformer) {
+        ResponseInputStream<GetObjectResponse> objectStream;
+        if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
+            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
+        }
+        objectStream = _s3Client.getObject(getObjectRequest
+                .toBuilder()
+                .range(RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range()))
+                .build());
 
         GetObjectResponse getObjectResponse = objectStream.response();
         ContentMetadata contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, getObjectResponse);
@@ -82,7 +90,8 @@ public class GetEncryptedObjectPipeline {
     private ContentDecryptionStrategy selectContentDecryptionStrategy(final DecryptionMaterials materials) {
         switch (materials.algorithmSuite()) {
             case ALG_AES_256_CBC_IV16_NO_KDF:
-                return AesCbcContentStrategy.builder().build();
+            case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
+                return UnauthenticatedContentStrategy.builder().build();
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
                 if (_enableDelayedAuthentication) {
                     // TODO: Implement StreamingAesGcmContentStrategy
@@ -104,8 +113,14 @@ public class GetEncryptedObjectPipeline {
         private boolean _enableLegacyUnauthenticatedModes;
         private boolean _enableDelayedAuthentication;
 
-        private Builder() {}
+        private Builder() {
+        }
 
+        /**
+         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
+         * S3Client will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder s3Client(S3Client s3Client) {
             this._s3Client = s3Client;
             return this;
