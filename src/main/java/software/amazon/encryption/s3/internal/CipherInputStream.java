@@ -155,21 +155,26 @@ public class CipherInputStream extends SdkFilterInputStream {
         outputBuffer = null;
         int length = in.read(inputBuffer);
         if (length == -1) {
-            eofReached = true;
-            try {
-                outputBuffer = cipher.doFinal();
-                if (outputBuffer == null) {
-                    return -1;
-                }
-                currentPosition = 0;
-                return maxPosition = outputBuffer.length;
-            } catch (IllegalBlockSizeException | BadPaddingException ignore) {
-                // Swallow exceptions
-            }
-            return -1;
+            return endOfFileReached();
         }
         outputBuffer = cipher.update(inputBuffer, 0, length);
         currentPosition = 0;
         return maxPosition = (outputBuffer == null ? 0 : outputBuffer.length);
+    }
+
+    protected int endOfFileReached() {
+        eofReached = true;
+        try {
+            outputBuffer = cipher.doFinal();
+            if (outputBuffer == null) {
+                return -1;
+            }
+            currentPosition = 0;
+            return maxPosition = outputBuffer.length;
+        } catch (IllegalBlockSizeException | BadPaddingException ignore) {
+            // Swallow exceptions
+        }
+        return -1;
+
     }
 }
