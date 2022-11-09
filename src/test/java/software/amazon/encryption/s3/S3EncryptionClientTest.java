@@ -280,8 +280,6 @@ public class S3EncryptionClientTest {
 
         simpleV3RoundTrip(v3Client, objectKey);
 
-        // Should only be called from encryption content strategy.
-        // KMS keyring does not use SecureRandom for encryptDataKey.
         verify(mockSecureRandom, never()).nextBytes(any());
     }
 
