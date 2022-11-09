@@ -96,6 +96,10 @@ public class S3EncryptionClientTest {
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey + ".instruction")));
+
+        // Cleanup
+        v3Client.close();
+        s3Client.close();
     }
 
     @Test
@@ -139,6 +143,10 @@ public class S3EncryptionClientTest {
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKeys[0] + ".instruction")));
+
+        // Cleanup
+        v3Client.close();
+        s3Client.close();
     }
 
     @Test
@@ -148,6 +156,9 @@ public class S3EncryptionClientTest {
                 .aesKey(AES_KEY)
                 .build();
         assertDoesNotThrow(() -> v3Client.deleteObject(builder -> builder.bucket(BUCKET).key("InvalidKey")));
+
+        // Cleanup
+        v3Client.close();
     }
 
     @Test
