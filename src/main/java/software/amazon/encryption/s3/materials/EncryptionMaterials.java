@@ -37,7 +37,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._plaintextDataKey = builder._plaintextDataKey;
         this._cryptoProvider = builder._cryptoProvider;
-        this._alwaysUseProvider = builder()._alwaysUseProvider;
+        this._alwaysUseProvider = builder._alwaysUseProvider;
     }
 
     static public Builder builder() {
