@@ -15,50 +15,39 @@ public class AuthenticatedCipherInputStream extends CipherInputStream {
     /**
      * Authenticated ciphers call doFinal upon the last read,
      * so no need to do so upon close
+     * TODO: Should this throw a security exception? Probably?
      * @throws IOException from the wrapped InputStream
      */
     @Override
     public void close() throws IOException {
+        if (!eofReached) {
+            // If the stream is closed before reaching EOF,
+            // the auth tag cannot be written (on encrypt)
+            // or validated (on decrypt).
+            throw new SecurityException("Stream closed before end of stream reached!");
+        }
         in.close();
         currentPosition = maxPosition = 0;
         abortIfNeeded();
     }
 
-    /**
-     * Reads and process the next chunk of data into memory.
-     *
-     * @return the length of the data chunk read and processed, or -1 if end of
-     * stream.
-     * @throws IOException if there is an IO exception from the underlying input stream
-     */
-    protected int nextChunk() throws IOException {
-        abortIfNeeded();
-        if (eofReached) {
-            return -1;
-        }
-        outputBuffer = null;
-        int length = in.read(inputBuffer);
-        if (length == -1) {
-            eofReached = true;
-            // TODO: Factor out other shared code besides this try/catch
-            try {
-                outputBuffer = cipher.doFinal();
-                if (outputBuffer == null) {
-                    return -1;
-                }
-                currentPosition = 0;
-                return maxPosition = outputBuffer.length;
-            } catch (IllegalBlockSizeException ignore) {
-                // Swallow exception
-            } catch (BadPaddingException exception) {
-                // In an authenticated scheme, this indicates a security
-                // exception
-                throw new SecurityException(exception);
+    @Override
+    protected int endOfFileReached() {
+        eofReached = true;
+        try {
+            outputBuffer = cipher.doFinal();
+            if (outputBuffer == null) {
+                return -1;
             }
-            return -1;
+            currentPosition = 0;
+            return maxPosition = outputBuffer.length;
+        } catch (IllegalBlockSizeException ignore) {
+            // Swallow exception
+        } catch (BadPaddingException exception) {
+            // In an authenticated scheme, this indicates a security
+            // exception
+            throw new SecurityException(exception);
         }
-        outputBuffer = cipher.update(inputBuffer, 0, length);
-        currentPosition = 0;
-        return maxPosition = (outputBuffer == null ? 0 : outputBuffer.length);
+        return -1;
     }
 }
