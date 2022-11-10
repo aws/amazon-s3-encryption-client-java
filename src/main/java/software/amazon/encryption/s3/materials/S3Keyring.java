@@ -104,7 +104,7 @@ abstract public class S3Keyring implements Keyring {
 
     abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
         private boolean _enableLegacyUnauthenticatedModes = false;
-        private SecureRandom _secureRandom = new SecureRandom();
+        private SecureRandom _secureRandom;
         private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
 
 
@@ -124,7 +124,7 @@ abstract public class S3Keyring implements Keyring {
         @SuppressFBWarnings(value = "EI_EXPOSE_REP")
         public BuilderT secureRandom(final SecureRandom secureRandom) {
             if (secureRandom == null) {
-                throw new S3EncryptionClientException("SecureRandom cannot be null!");
+                throw new S3EncryptionClientException("SecureRandom provided to S3Keyring cannot be null");
             }
             _secureRandom = secureRandom;
             return builder();
