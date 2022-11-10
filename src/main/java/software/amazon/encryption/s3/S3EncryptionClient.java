@@ -4,6 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.security.KeyPair;
 import java.security.Provider;
+import java.security.SecureRandom;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.crypto.SecretKey;
@@ -45,12 +46,14 @@ public class S3EncryptionClient implements S3Client {
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
+    private final SecureRandom _secureRandom;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
 
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
+        _secureRandom = builder._secureRandom;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
     }
@@ -72,6 +75,7 @@ public class S3EncryptionClient implements S3Client {
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
                 .s3Client(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
+                .secureRandom(_secureRandom)
                 .build();
 
         return pipeline.putObject(putObjectRequest, requestBody);
@@ -125,6 +129,7 @@ public class S3EncryptionClient implements S3Client {
         private boolean _enableDelayedAuthenticationMode = false;
         private Provider _cryptoProvider = null;
         private boolean _alwaysUseProvider = false;
+        private SecureRandom _secureRandom = new SecureRandom();
 
         private Builder() {}
 
@@ -227,6 +232,14 @@ public class S3EncryptionClient implements S3Client {
             this._alwaysUseProvider = alwaysUseProvider;
             return this;
         }
+           
+        public Builder secureRandom(SecureRandom secureRandom) {
+            if (secureRandom == null) {
+                throw new S3EncryptionClientException("SecureRandom provided to S3EncryptionClient cannot be null");
+            }
+            _secureRandom = secureRandom;
+            return this;
+        }
 
         public S3EncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
@@ -244,16 +257,19 @@ public class S3EncryptionClient implements S3Client {
                     _keyring = AesKeyring.builder()
                             .wrappingKey(_aesKey)
                             .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                            .secureRandom(_secureRandom)
                             .build();
                 } else if (_rsaKeyPair != null) {
                     _keyring = RsaKeyring.builder()
                             .wrappingKeyPair(_rsaKeyPair)
                             .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                            .secureRandom(_secureRandom)
                             .build();
                 } else if (_kmsKeyId != null) {
                     _keyring = KmsKeyring.builder()
                             .wrappingKeyId(_kmsKeyId)
                             .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                            .secureRandom(_secureRandom)
                             .build();
                 }
             }

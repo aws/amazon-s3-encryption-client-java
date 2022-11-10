@@ -100,7 +100,7 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
     }
 
     public static class Builder {
-        private SecureRandom _secureRandom = new SecureRandom();
+        private SecureRandom _secureRandom;
 
         private Builder() {
         }
@@ -111,6 +111,9 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP")
         public Builder secureRandom(SecureRandom secureRandom) {
+            if (secureRandom == null) {
+                throw new S3EncryptionClientException("SecureRandom provided to BufferedAesGcmContentStrategy cannot be null");
+            }
             _secureRandom = secureRandom;
             return this;
         }
