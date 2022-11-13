@@ -9,13 +9,13 @@ import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 final public class EncryptionMaterials implements CryptographicMaterials {
 
     // Original request
-    private final PutObjectRequest _s3Request;
+    private final S3Request _s3Request;
 
     // Identifies what sort of crypto algorithms we want to use
     private final AlgorithmSuite _algorithmSuite;
@@ -42,7 +42,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         return new Builder();
     }
 
-    public PutObjectRequest s3Request() {
+    public S3Request s3Request() {
         return _s3Request;
     }
 
@@ -97,7 +97,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
     static public class Builder {
 
-        private PutObjectRequest _s3Request = null;
+        private S3Request _s3Request = null;
 
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
@@ -108,7 +108,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         private Builder() {
         }
 
-        public Builder s3Request(PutObjectRequest s3Request) {
+        public Builder s3Request(S3Request s3Request) {
             _s3Request = s3Request;
             return this;
         }

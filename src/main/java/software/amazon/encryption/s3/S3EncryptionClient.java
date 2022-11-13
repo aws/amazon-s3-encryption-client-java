@@ -1,13 +1,6 @@
 package software.amazon.encryption.s3;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import java.security.KeyPair;
-import java.security.SecureRandom;
-import java.util.Map;
-import java.util.function.Consumer;
-import javax.crypto.SecretKey;
-
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -15,6 +8,10 @@ import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
@@ -23,7 +20,10 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
+import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
@@ -32,6 +32,12 @@ import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
+
+import javax.crypto.SecretKey;
+import java.security.KeyPair;
+import java.security.SecureRandom;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
@@ -47,6 +53,8 @@ public class S3EncryptionClient implements S3Client {
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
+    /** Map of data about in progress encrypted multipart uploads. */
+    private MultipartUploadObjectPipeline _multipartPipeline;
 
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
@@ -54,6 +62,7 @@ public class S3EncryptionClient implements S3Client {
         _secureRandom = builder._secureRandom;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
+        _multipartPipeline = builder._multipartPipeline;
     }
 
     public static Builder builder() {
@@ -107,6 +116,28 @@ public class S3EncryptionClient implements S3Client {
     }
 
     @Override
+    public CreateMultipartUploadResponse createMultipartUpload(CreateMultipartUploadRequest request) {
+        return _multipartPipeline.createMultipartUpload(request);
+    }
+
+    @Override
+    public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody)
+            throws AwsServiceException, SdkClientException {
+        return _multipartPipeline.uploadPart(request, requestBody, false);
+    }
+
+    public UploadPartResponse uploadLastPart(UploadPartRequest request, RequestBody requestBody)
+            throws AwsServiceException, SdkClientException {
+        return _multipartPipeline.uploadPart(request, requestBody, true);
+    }
+
+    @Override
+    public CompleteMultipartUploadResponse completeMultipartUpload(CompleteMultipartUploadRequest request)
+            throws AwsServiceException, SdkClientException {
+        return _multipartPipeline.completeMultipartUpload(request);
+    }
+
+    @Override
     public String serviceName() {
         return _wrappedClient.serviceName();
     }
@@ -118,6 +149,8 @@ public class S3EncryptionClient implements S3Client {
 
     public static class Builder {
         private S3Client _wrappedClient = S3Client.builder().build();
+
+        private MultipartUploadObjectPipeline _multipartPipeline;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
         private SecretKey _aesKey;
@@ -259,6 +292,12 @@ public class S3EncryptionClient implements S3Client {
                         .keyring(_keyring)
                         .build();
             }
+
+            _multipartPipeline = MultipartUploadObjectPipeline.builder()
+                    .s3Client(_wrappedClient)
+                    .cryptoMaterialsManager(_cryptoMaterialsManager)
+                    .secureRandom(_secureRandom)
+                    .build();
 
             return new S3EncryptionClient(this);
         }
