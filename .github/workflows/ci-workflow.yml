@@ -4,10 +4,6 @@ on:
   pull_request:
   push:
 
-env:
-  CI_ACTIONS_ROOT: ./.github/workflows/ci_actions # TODO: GHA seems to check 'uses' syntax at compile time;
-                                                  # we might not be able to abstract/re-use this
-
 jobs:
   Static_Analysis:
     runs-on: ubuntu-latest

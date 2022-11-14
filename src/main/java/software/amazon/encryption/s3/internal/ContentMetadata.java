@@ -1,7 +1,10 @@
 package software.amazon.encryption.s3.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Collections;
 import java.util.Map;
+
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
@@ -16,6 +19,7 @@ public class ContentMetadata {
     private final byte[] _contentNonce;
     private final String _contentCipher;
     private final String _contentCipherTagLength;
+    private final String _contentRange;
 
     private ContentMetadata(Builder builder) {
         _algorithmSuite = builder._algorithmSuite;
@@ -27,6 +31,7 @@ public class ContentMetadata {
         _contentNonce = builder._contentNonce;
         _contentCipher = builder._contentCipher;
         _contentCipherTagLength = builder._contentCipherTagLength;
+        _contentRange = builder._contentRange;
     }
 
     public static Builder builder() {
@@ -45,12 +50,21 @@ public class ContentMetadata {
         return _encryptedDataKeyAlgorithm;
     }
 
+    /**
+     * Note that the underlying implementation uses a Collections.unmodifiableMap which is
+     * immutable.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
+        + " implementation is immutable")
     public Map<String, String> encryptedDataKeyContext() {
         return _encryptedDataKeyContext;
     }
 
     public byte[] contentNonce() {
-        return _contentNonce;
+        if (_contentNonce == null) {
+            return null;
+        }
+        return _contentNonce.clone();
     }
 
     public String contentCipher() {
@@ -59,6 +73,10 @@ public class ContentMetadata {
 
     public String contentCipherTagLength() {
         return _contentCipherTagLength;
+    }
+
+    public String contentRange() {
+        return _contentRange;
     }
 
     public static class Builder {
@@ -71,8 +89,9 @@ public class ContentMetadata {
         private byte[] _contentNonce;
         private String _contentCipher;
         private String _contentCipherTagLength;
+        public String _contentRange;
 
-        private Builder () {
+        private Builder() {
 
         }
 
@@ -101,8 +120,14 @@ public class ContentMetadata {
             return this;
         }
 
+        public Builder contentRange(String contentRange) {
+            _contentRange = contentRange;
+            return this;
+        }
 
-        public ContentMetadata build() { return new ContentMetadata(this); }
+        public ContentMetadata build() {
+            return new ContentMetadata(this);
+        }
     }
 
 }

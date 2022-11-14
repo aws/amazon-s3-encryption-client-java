@@ -1,10 +1,5 @@
 package software.amazon.encryption.s3.internal;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
@@ -19,6 +14,12 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.S3Keyring;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public abstract class ContentMetadataStrategy implements ContentMetadataEncodingStrategy, ContentMetadataDecodingStrategy {
 
@@ -44,8 +45,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
                 metadata.put(entry.getKey(), entry.getValue().asString());
             }
-
-            return ContentMetadataStrategy.readFromMap(metadata);
+            return ContentMetadataStrategy.readFromMap(metadata, response);
         }
     };
 
@@ -53,10 +53,10 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
         @Override
         public PutObjectRequest encodeMetadata(EncryptionMaterials materials,
-                EncryptedContent encryptedContent, PutObjectRequest request) {
-            Map<String,String> metadata = new HashMap<>(request.metadata());
+                                               EncryptedContent encryptedContent, PutObjectRequest request) {
+            Map<String, String> metadata = new HashMap<>(request.metadata());
             EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
-            metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.ciphertext()));
+            metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
             metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(encryptedContent.nonce));
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
@@ -64,7 +64,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
             try (JsonWriter jsonWriter = JsonWriter.create()) {
                 jsonWriter.writeStartObject();
-                for (Entry<String,String> entry : materials.encryptionContext().entrySet()) {
+                for (Entry<String, String> entry : materials.encryptionContext().entrySet()) {
                     jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
                 }
                 jsonWriter.writeEndObject();
@@ -80,19 +80,20 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
         @Override
         public ContentMetadata decodeMetadata(S3Client client, GetObjectRequest request, GetObjectResponse response) {
-            return ContentMetadataStrategy.readFromMap(response.metadata());
+            return ContentMetadataStrategy.readFromMap(response.metadata(), response);
         }
     };
 
-    private static ContentMetadata readFromMap(Map<String, String> metadata) {
+    private static ContentMetadata readFromMap(Map<String, String> metadata, GetObjectResponse response) {
         // Get algorithm suite
         final String contentEncryptionAlgorithm = metadata.get(MetadataKeyConstants.CONTENT_CIPHER);
         AlgorithmSuite algorithmSuite;
+        String contentRange = response.contentRange();
         if (contentEncryptionAlgorithm == null
                 || contentEncryptionAlgorithm.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF.cipherName())) {
             algorithmSuite = AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF;
         } else if (contentEncryptionAlgorithm.equals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName())) {
-            algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
+            algorithmSuite = (contentRange == null ) ? AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF : AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF;
         } else {
             throw new S3EncryptionClientException(
                     "Unknown content encryption algorithm: " + contentEncryptionAlgorithm);
@@ -115,6 +116,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
                 break;
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+            case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
                 // Check tag length
                 final int tagLength = Integer.parseInt(metadata.get(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH));
                 if (tagLength != algorithmSuite.cipherTagLengthBits()) {
@@ -135,7 +137,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
         // Build encrypted data key
         EncryptedDataKey edk = EncryptedDataKey.builder()
-                .ciphertext(edkCiphertext)
+                .encryptedDataKey(edkCiphertext)
                 .keyProviderId(keyProviderId)
                 .keyProviderInfo(keyProviderInfo.getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -162,6 +164,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                 .encryptedDataKey(edk)
                 .encryptedDataKeyContext(encryptionContext)
                 .contentNonce(nonce)
+                .contentRange(contentRange)
                 .build();
     }
 
@@ -169,8 +172,8 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         Map<String, String> metadata = response.metadata();
         ContentMetadataDecodingStrategy strategy;
         if (metadata != null
-            && metadata.containsKey(MetadataKeyConstants.CONTENT_NONCE)
-            && (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
+                && metadata.containsKey(MetadataKeyConstants.CONTENT_NONCE)
+                && (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
                 || metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2))) {
             strategy = OBJECT_METADATA;
         } else {

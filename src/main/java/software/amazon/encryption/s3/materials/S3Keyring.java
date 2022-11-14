@@ -1,12 +1,16 @@
 package software.amazon.encryption.s3.materials;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javax.crypto.SecretKey;
+
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 /**
@@ -17,12 +21,12 @@ abstract public class S3Keyring implements Keyring {
 
     public static final String KEY_PROVIDER_ID = "S3Keyring";
 
-    private final boolean _enableLegacyModes;
+    private final boolean _enableLegacyUnauthenticatedModes;
     private final SecureRandom _secureRandom;
     private final DataKeyGenerator _dataKeyGenerator;
 
     protected S3Keyring(Builder<?,?> builder) {
-        _enableLegacyModes = builder._enableLegacyModes;
+        _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         _secureRandom = builder._secureRandom;
         _dataKeyGenerator = builder._dataKeyGenerator;
     }
@@ -41,11 +45,11 @@ abstract public class S3Keyring implements Keyring {
             // Allow encrypt strategy to modify the materials if necessary
             materials = encryptStrategy.modifyMaterials(materials);
 
-            byte[] ciphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
+            byte[] encryptedDataKeyCiphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
                     .keyProviderInfo(encryptStrategy.keyProviderInfo().getBytes(StandardCharsets.UTF_8))
-                    .ciphertext(ciphertext)
+                    .encryptedDataKey(encryptedDataKeyCiphertext)
                     .build();
 
             List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
@@ -84,12 +88,12 @@ abstract public class S3Keyring implements Keyring {
             throw new S3EncryptionClientException("Unknown key wrap: " + keyProviderInfo);
         }
 
-        if (decryptStrategy.isLegacy() && !_enableLegacyModes) {
+        if (decryptStrategy.isLegacy() && !_enableLegacyUnauthenticatedModes) {
             throw new S3EncryptionClientException("Enable legacy modes to use legacy key wrap: " + keyProviderInfo);
         }
 
         try {
-            byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey.ciphertext());
+            byte[] plaintext = decryptStrategy.decryptDataKey(materials, encryptedDataKey.encryptedDatakey());
             return materials.toBuilder().plaintextDataKey(plaintext).build();
         } catch (GeneralSecurityException e) {
             throw new S3EncryptionClientException("Unable to " + keyProviderInfo + " unwrap", e);
@@ -99,8 +103,8 @@ abstract public class S3Keyring implements Keyring {
     abstract protected Map<String,DecryptDataKeyStrategy> decryptStrategies();
 
     abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
-        private boolean _enableLegacyModes = false;
-        private SecureRandom _secureRandom = new SecureRandom();
+        private boolean _enableLegacyUnauthenticatedModes = false;
+        private SecureRandom _secureRandom;
         private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
 
 
@@ -108,14 +112,19 @@ abstract public class S3Keyring implements Keyring {
 
         protected abstract BuilderT builder();
 
-        public BuilderT enableLegacyModes(boolean shouldEnableLegacyModes) {
-            this._enableLegacyModes = shouldEnableLegacyModes;
+        public BuilderT enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
+            this._enableLegacyUnauthenticatedModes = shouldEnableLegacyUnauthenticatedModes;
             return builder();
         }
 
+        /**
+         * Note that this does NOT create a defensive copy of the SecureRandom object. Any modifications to the
+         * object will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP")
         public BuilderT secureRandom(final SecureRandom secureRandom) {
             if (secureRandom == null) {
-                throw new S3EncryptionClientException("SecureRandom cannot be null!");
+                throw new S3EncryptionClientException("SecureRandom provided to S3Keyring cannot be null");
             }
             _secureRandom = secureRandom;
             return builder();
