@@ -1,0 +1,23 @@
+name: Build
+description: Runs Maven compile + test + install targets
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v3 # Cache dependencies
+    - uses: actions/checkout@v3
+    - name: Compile
+      run: |
+        mvn clean compile
+        mvn test-compile
+    - name: Test
+      run: |
+        export AWS_S3EC_TEST_BUCKET=s3ec-github-test-bucket
+        export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:us-west-2:370957321024:key/c3eafb5f-e87d-4584-9400-cf419ce5d782
+        export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:us-west-2:370957321024:alias/S3EC-Github-KMS-Key
+        export AWS_REGION=us-west-2
+        mvn -B -ntp test
+    - name: Package JAR
+      run: |
+        mvn package
+        mvn install
