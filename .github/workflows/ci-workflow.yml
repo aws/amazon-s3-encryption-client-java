@@ -20,3 +20,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/workflows/ci_actions/build
