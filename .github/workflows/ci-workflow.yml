@@ -17,7 +17,6 @@ jobs:
 
   Build:
     strategy:
-      max-parallel: 1
       matrix:
         version: [ 8, 11, 17 ]
         distribution: [corretto, temurin]
