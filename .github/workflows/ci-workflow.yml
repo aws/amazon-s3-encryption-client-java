@@ -16,11 +16,10 @@ jobs:
       - uses: ./.github/workflows/ci_actions/static-analysis
 
   Build:
-    build_matrix:
-      strategy:
-        matrix:
-          version: [ 8, 11, 17 ]
-          distribution: [corretto, openjdk, temurin]
+    strategy:
+      matrix:
+        version: [ 8, 11, 17 ]
+        distribution: [corretto, openjdk, temurin]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
