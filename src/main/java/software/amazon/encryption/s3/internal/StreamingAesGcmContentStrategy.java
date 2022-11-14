@@ -35,7 +35,9 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         return new Builder();
     }
 
+    // TODO: Find the best way to get nonce, cipher back for multi-part upload
     public EncryptedContent encryptContent(EncryptionMaterials materials) {
+        // TODO: Determine do we need to check for each part size before uploading?
         if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
             throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
                     "the maximum length allowed for GCM encryption.");

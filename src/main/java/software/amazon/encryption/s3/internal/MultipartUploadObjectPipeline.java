@@ -32,7 +32,9 @@ public class MultipartUploadObjectPipeline {
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
     private final Map<String, MultipartUploadContext> _multipartUploadContexts;
 
-    public static Builder builder() { return new Builder(); }
+    public static Builder builder() {
+        return new Builder();
+    }
 
     private MultipartUploadObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
@@ -54,7 +56,7 @@ public class MultipartUploadObjectPipeline {
 
         CreateMultipartUploadResponse response = _s3Client.createMultipartUpload(request);
 
-        MultipartUploadContext multipartUploadContext = new MultipartUploadContext(request.bucket(), request.key(), materials, encryptedContent.getCipher(), encryptedContent.getNonce());
+        MultipartUploadContext multipartUploadContext = new MultipartUploadContext(encryptedContent.getCipher());
         _multipartUploadContexts.put(response.uploadId(), multipartUploadContext);
 
         return response;
@@ -123,19 +125,20 @@ public class MultipartUploadObjectPipeline {
     public static class Builder {
         private S3Client _s3Client;
 
-        private final  Map<String, MultipartUploadContext> _multipartUploadContexts =
+        private final Map<String, MultipartUploadContext> _multipartUploadContexts =
                 Collections.synchronizedMap(new HashMap<>());
 
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
         private ContentEncryptionStrategy _contentEncryptionStrategy =
-               StreamingAesGcmContentStrategy
+                StreamingAesGcmContentStrategy
                         .builder()
                         .build();
-        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
+        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         /**
          * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
@@ -151,6 +154,7 @@ public class MultipartUploadObjectPipeline {
             this._cryptoMaterialsManager = cryptoMaterialsManager;
             return this;
         }
+
         public Builder secureRandom(SecureRandom secureRandom) {
             this._secureRandom = secureRandom;
             return this;

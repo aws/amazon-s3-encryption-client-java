@@ -46,15 +46,17 @@ import java.util.function.Consumer;
 public class S3EncryptionClient implements S3Client {
 
     // Used for request-scoped encryption contexts for supporting keys
-    public static final ExecutionAttribute<Map<String,String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
+    public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
-    /** Map of data about in progress encrypted multipart uploads. */
-    private MultipartUploadObjectPipeline _multipartPipeline;
+    /**
+     * Map of data about in progress encrypted multipart uploads.
+     */
+    private final MultipartUploadObjectPipeline _multipartPipeline;
 
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
@@ -90,7 +92,7 @@ public class S3EncryptionClient implements S3Client {
 
     @Override
     public <T> T getObject(GetObjectRequest getObjectRequest,
-            ResponseTransformer<GetObjectResponse, T> responseTransformer)
+                           ResponseTransformer<GetObjectResponse, T> responseTransformer)
             throws AwsServiceException, SdkClientException {
 
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
@@ -126,6 +128,8 @@ public class S3EncryptionClient implements S3Client {
         return _multipartPipeline.uploadPart(request, requestBody, false);
     }
 
+    // TODO: Find a way determine last part of the multipart upload,
+    //  unlike v1 & v2, UploadPartRequest don't have isLastPart parameter
     public UploadPartResponse uploadLastPart(UploadPartRequest request, RequestBody requestBody)
             throws AwsServiceException, SdkClientException {
         return _multipartPipeline.uploadPart(request, requestBody, true);
@@ -160,7 +164,8 @@ public class S3EncryptionClient implements S3Client {
         private boolean _enableDelayedAuthenticationMode = false;
         private SecureRandom _secureRandom = new SecureRandom();
 
-        private Builder() {}
+        private Builder() {
+        }
 
         /**
          * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped

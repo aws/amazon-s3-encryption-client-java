@@ -1,35 +1,16 @@
 package software.amazon.encryption.s3.internal;
 
-import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 import javax.crypto.Cipher;
 
 public class MultipartUploadContext {
 
-    private final String bucketName;
-    private final String key;
-    private final byte[] nonce;
     private boolean hasFinalPartBeenSeen;
-    private final EncryptionMaterials materials;
     private final Cipher cipher;
 
-
-    public MultipartUploadContext(String bucketName, String key, EncryptionMaterials materials, Cipher cipher, byte[] nonce) {
-        this.bucketName = bucketName;
-        this.key = key;
-        this.materials = materials;
+    public MultipartUploadContext(Cipher cipher) {
         this.cipher = cipher;
-        this.nonce = nonce;
-    }
-
-    public final String getBucketName() {
-        return bucketName;
-    }
-
-    public final String getKey() {
-        return key;
     }
 
     public final boolean hasFinalPartBeenSeen() {
@@ -44,25 +25,18 @@ public class MultipartUploadContext {
      * Can be used to enforce serial uploads.
      */
     private int partNumber;
+
     /**
      * True if a multipart upload is currently in progress; false otherwise.
      */
     private volatile boolean partUploadInProgress;
 
     /**
-     * Convenient method to return the content encrypting cipher lite (which is
-     * stateful) for the multi-part uploads.
+     * Convenient method to return the content encrypting cipher (which is
+     * stateful) for the multipart uploads.
      */
     Cipher getCipher() {
         return cipher;
-    }
-
-    /**
-     * Returns the content encrypting cryptographic material for the multi-part
-     * uploads.
-     */
-    EncryptionMaterials getEncryptionMaterials() {
-        return materials;
     }
 
     /**
@@ -74,13 +48,10 @@ public class MultipartUploadContext {
      * responsible to call {@link #endPartUpload()} in a finally block once
      * the respective part-upload is completed (either normally or abruptly).
      *
+     * @throws S3EncryptionClientException if parallel part upload is detected
      * @see #endPartUpload()
-     *
-     * @throws SdkClientException
-     *             if parallel part upload is detected
      */
-    void beginPartUpload(final int nextPartNumber)
-            throws SdkClientException {
+    void beginPartUpload(final int nextPartNumber) {
         if (nextPartNumber < 1)
             throw new IllegalArgumentException("part number must be at least 1");
         if (partUploadInProgress) {
