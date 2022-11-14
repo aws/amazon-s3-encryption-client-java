@@ -28,4 +28,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/workflows/ci_actions/build
+      - uses: ./.github/workflows/build.yml@main
+        with:
+          version: ${{ matrix.version }}
+          distribution: ${{ matrix.distribution }}
