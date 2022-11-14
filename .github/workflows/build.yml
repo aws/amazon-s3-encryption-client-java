@@ -11,35 +11,21 @@ on:
         type: string
 
 jobs:
-  Checkout_Code:
+  Build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-  Checkout_OpenJDK:
-    # OpenJDK requires a separate action as actions/checkout-java does not support OpenJDK.
-    if: ${{ inputs.distribution }} == 'openjdk'
-    runs-on: ubuntu-latest
-    steps:
       - uses: oracle-actions/setup-java@v1
+        if: ${{ inputs.distribution }} == 'openjdk'
         with:
           website: jdk.java.net
           release: ${{ matrix.version }}
-  Checkout_Java:
-    if: ${{ inputs.distribution }} != 'openjdk'
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/setup-java@v3
+        if: ${{ inputs.distribution }} != 'openjdk'
         with:
           distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.version}}
           cache: 'maven'
-  Build:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
       - name: Compile
         run: |
           mvn clean compile
