@@ -19,12 +19,12 @@ jobs:
         if: ${{ inputs.distribution }} == 'openjdk'
         with:
           website: jdk.java.net
-          release: ${{ matrix.version }}
+          release: ${{ inputs.version }}
       - uses: actions/setup-java@v3
         if: ${{ inputs.distribution }} != 'openjdk'
         with:
-          distribution: ${{ matrix.distribution }}
-          java-version: ${{ matrix.version}}
+          distribution: ${{ inputs.distribution }}
+          java-version: ${{ inputs.version}}
           cache: 'maven'
       - name: Compile
         run: |
