@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         version: [ 8, 11, 17 ]
-        distribution: [corretto, openjdk, temurin]
+        distribution: [corretto, temurin]
     uses: ./.github/workflows/build.yml
     with:
       version: ${{ matrix.version }}
