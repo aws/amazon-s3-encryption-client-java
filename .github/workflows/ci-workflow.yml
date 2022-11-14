@@ -25,7 +25,7 @@ jobs:
       id-token: write
       contents: read
 
-    uses: ./.github/workflows/build.yml@main
+    uses: ./.github/workflows/build.yml
     with:
       version: ${{ matrix.version }}
       distribution: ${{ matrix.distribution }}
