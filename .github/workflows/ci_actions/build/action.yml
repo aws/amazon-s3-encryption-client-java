@@ -18,9 +18,9 @@ runs:
         export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:us-west-2:370957321024:alias/S3EC-Github-KMS-Key
         export AWS_REGION=us-west-2
         mvn -B -ntp test
-        shell: bash
+      shell: bash
     - name: Package JAR
       run: |
         mvn package
         mvn install
-        shell: bash
+      shell: bash
