@@ -11,6 +11,10 @@ on:
         type: string
 
 jobs:
+  Checkout_Code:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
   Checkout_OpenJDK:
     # OpenJDK requires a separate action as actions/checkout-java does not support OpenJDK.
     if: ${{ inputs.distribution }} == 'openjdk'
@@ -36,7 +40,6 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v3
       - name: Compile
         run: |
           mvn clean compile
