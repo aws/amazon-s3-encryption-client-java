@@ -22,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
  * This class is an integration test for Unauthenticated Ranged Get for AES/CBC and AES/GCM modes
@@ -58,6 +59,10 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder.bucket(BUCKET)
                 .key(objectKey)
                 .range("bytes=10-20")));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -119,6 +124,10 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals("", output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -147,6 +156,10 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .bucket(BUCKET)
                 .range("bytes=300-400")
                 .key(objectKey)));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -216,6 +229,10 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals("", output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -251,5 +268,9 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .bucket(BUCKET)
                 .range("bytes=300-400")
                 .key(objectKey)));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 }

@@ -3,6 +3,8 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.security.KeyPair;
+import java.util.ArrayList;
+import java.util.List;
 import java.security.SecureRandom;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -21,6 +23,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
@@ -40,7 +43,7 @@ import software.amazon.encryption.s3.materials.RsaKeyring;
 public class S3EncryptionClient implements S3Client {
 
     // Used for request-scoped encryption contexts for supporting keys
-    public static final ExecutionAttribute<Map<String,String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
+    public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -81,7 +84,7 @@ public class S3EncryptionClient implements S3Client {
 
     @Override
     public <T> T getObject(GetObjectRequest getObjectRequest,
-            ResponseTransformer<GetObjectResponse, T> responseTransformer)
+                           ResponseTransformer<GetObjectResponse, T> responseTransformer)
             throws AwsServiceException, SdkClientException {
 
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
@@ -97,13 +100,33 @@ public class S3EncryptionClient implements S3Client {
     @Override
     public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) throws AwsServiceException,
             SdkClientException {
-        return _wrappedClient.deleteObject(deleteObjectRequest);
+        // Delete the object
+        DeleteObjectResponse deleteObjectResponse = _wrappedClient.deleteObject(deleteObjectRequest);
+        // If Instruction file exists, delete the instruction file as well.
+        String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
+        _wrappedClient.deleteObject(builder -> builder
+                .bucket(deleteObjectRequest.bucket())
+                .key(instructionObjectKey));
+        return deleteObjectResponse;
     }
 
     @Override
     public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
-        return _wrappedClient.deleteObjects(deleteObjectsRequest);
+        // Delete the objects
+        DeleteObjectsResponse deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest);
+        // If Instruction files exists, delete the instruction files as well.
+        List<ObjectIdentifier> deleteObjects = new ArrayList<>();
+        for (ObjectIdentifier o : deleteObjectsRequest.delete().objects()) {
+            deleteObjects.add(o.toBuilder()
+                    .key(o.key() + ".instruction")
+                    .build());
+        }
+        _wrappedClient.deleteObjects(DeleteObjectsRequest.builder()
+                .bucket(deleteObjectsRequest.bucket())
+                .delete(builder -> builder.objects(deleteObjects))
+                .build());
+        return deleteObjectsResponse;
     }
 
     @Override
@@ -127,7 +150,8 @@ public class S3EncryptionClient implements S3Client {
         private boolean _enableDelayedAuthenticationMode = false;
         private SecureRandom _secureRandom = new SecureRandom();
 
-        private Builder() {}
+        private Builder() {
+        }
 
         /**
          * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped

@@ -28,6 +28,4 @@ public class S3EncryptionClientTestResources {
                 .delete(delete)
                 .build());
     }
-
-
 }
