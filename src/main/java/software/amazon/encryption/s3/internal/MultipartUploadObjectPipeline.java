@@ -5,6 +5,8 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
@@ -120,6 +122,11 @@ public class MultipartUploadObjectPipeline {
 
         _multipartUploadContexts.remove(uploadId);
         return response;
+    }
+
+    public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request) {
+        _multipartUploadContexts.remove(request.uploadId());
+        return _s3Client.abortMultipartUpload(request);
     }
 
     public static class Builder {

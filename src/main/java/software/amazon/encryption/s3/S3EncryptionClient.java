@@ -8,6 +8,8 @@ import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
@@ -47,6 +49,8 @@ public class S3EncryptionClient implements S3Client {
 
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
+    // Used for multipart uploads
+    public static final ExecutionAttribute<Boolean> isLastPart = new ExecutionAttribute<>("isLastPart");
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -75,6 +79,12 @@ public class S3EncryptionClient implements S3Client {
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalEncryptionContext(Map<String, String> encryptionContext) {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
+    }
+
+    // Helper function to determine last upload part during multipart uploads
+    public static Consumer<AwsRequestOverrideConfiguration.Builder> isLastPart(Boolean isLastPart) {
+        return builder ->
+                builder.putExecutionAttribute(S3EncryptionClient.isLastPart, isLastPart);
     }
 
     @Override
@@ -122,23 +132,35 @@ public class S3EncryptionClient implements S3Client {
         return _multipartPipeline.createMultipartUpload(request);
     }
 
+    /**
+     * <p>
+     * <b>NOTE:</b> Because the encryption process requires context from block
+     * N-1 in order to encrypt block N, parts uploaded with the
+     * S3EncryptionClient (as opposed to the normal S3Client) must
+     * be uploaded serially, and in order. Otherwise, the previous encryption
+     * context isn't available to use when encrypting the current part.
+     */
     @Override
     public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody)
             throws AwsServiceException, SdkClientException {
-        return _multipartPipeline.uploadPart(request, requestBody, false);
-    }
-
-    // TODO: Find a way determine last part of the multipart upload,
-    //  unlike v1 & v2, UploadPartRequest don't have isLastPart parameter
-    public UploadPartResponse uploadLastPart(UploadPartRequest request, RequestBody requestBody)
-            throws AwsServiceException, SdkClientException {
-        return _multipartPipeline.uploadPart(request, requestBody, true);
+        AwsRequestOverrideConfiguration overrideConfiguration = request.overrideConfiguration().orElse(null);
+        boolean isLastPart = false;
+        if (!(overrideConfiguration == null)) {
+            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(this.isLastPart).orElse(false);
+        }
+        return _multipartPipeline.uploadPart(request, requestBody, isLastPart);
     }
 
     @Override
     public CompleteMultipartUploadResponse completeMultipartUpload(CompleteMultipartUploadRequest request)
             throws AwsServiceException, SdkClientException {
         return _multipartPipeline.completeMultipartUpload(request);
+    }
+
+    @Override
+    public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request)
+            throws AwsServiceException, SdkClientException {
+        return _multipartPipeline.abortMultipartUpload(request);
     }
 
     @Override
