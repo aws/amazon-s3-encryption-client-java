@@ -6,16 +6,7 @@ on:
 
 jobs:
   Static_Analysis:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Run SpotBugs
-        run: mvn -B -ntp com.github.spotbugs:spotbugs-maven-plugin:check
+    uses: ./.github/workflows/static-analysis.yml
 
   Build:
     strategy:
