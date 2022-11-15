@@ -14,5 +14,5 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Run SpotBugs
-        run: mvn -T 4 -ntp com.github.spotbugs:spotbugs-maven-plugin:spotbugs
+        run: mvn -B -ntp com.github.spotbugs:spotbugs-maven-plugin:check
         shell: bash
