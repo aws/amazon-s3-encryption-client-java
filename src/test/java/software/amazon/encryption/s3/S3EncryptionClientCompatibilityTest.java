@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -196,11 +198,8 @@ public class S3EncryptionClientCompatibilityTest {
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
-        // TODO: Implement deleteObject in the v3 client
-        //       so that instruction file is deleted too
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
-        deleteObject(BUCKET, (objectKey + ".instruction"), v3Client);
         v3Client.close();
     }
 
@@ -703,5 +702,4 @@ public class S3EncryptionClientCompatibilityTest {
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
-
 }

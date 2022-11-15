@@ -1,5 +1,13 @@
 package software.amazon.encryption.s3;
 
+import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
+import com.amazonaws.services.s3.AmazonS3EncryptionV2;
+import com.amazonaws.services.s3.model.CryptoConfigurationV2;
+import com.amazonaws.services.s3.model.CryptoMode;
+import com.amazonaws.services.s3.model.CryptoStorageMode;
+import com.amazonaws.services.s3.model.EncryptionMaterials;
+import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import java.security.SecureRandom;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -9,7 +17,9 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
@@ -23,10 +33,14 @@ import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -58,6 +72,104 @@ public class S3EncryptionClientTest {
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
         keyPairGen.initialize(2048);
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
+    }
+
+    @Test
+    public void deleteObjectWithInstructionFileSuccess() {
+        final String objectKey = "delete-object-with-instruction-file";
+
+        // V2 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+        final String input = "DeleteObjectWithInstructionFileSuccess";
+        v2Client.putObject(BUCKET, objectKey, input);
+
+        // Delete Object
+        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+
+        S3Client s3Client = S3Client.builder().build();
+        // Assert throw NoSuchKeyException when getObject for objectKey
+        assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
+        assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey + ".instruction")));
+
+        // Cleanup
+        v3Client.close();
+        s3Client.close();
+    }
+
+    @Test
+    public void deleteObjectsWithInstructionFilesSuccess() {
+        final String[] objectKeys = {"delete-object-with-instruction-file-1",
+                "delete-object-with-instruction-file-2",
+                "delete-object-with-instruction-file-3"};
+
+        // V2 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+        final String input = "DeleteObjectsWithInstructionFileSuccess";
+        List<ObjectIdentifier> objects = new ArrayList<>();
+        for (String objectKey : objectKeys) {
+            v2Client.putObject(BUCKET, objectKey, input);
+            objects.add(ObjectIdentifier.builder().key(objectKey).build());
+        }
+
+        // Delete Objects from S3 Buckets
+        v3Client.deleteObjects(builder -> builder
+                .bucket(BUCKET)
+                .delete(builder1 -> builder1.objects(objects)));
+
+        S3Client s3Client = S3Client.builder().build();
+        // Assert throw NoSuchKeyException when getObject for any of objectKeys
+        assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKeys[0])));
+        assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKeys[0] + ".instruction")));
+
+        // Cleanup
+        v3Client.close();
+        s3Client.close();
+    }
+
+    @Test
+    public void deleteObjectWithWrongObjectKeySuccess() {
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+        assertDoesNotThrow(() -> v3Client.deleteObject(builder -> builder.bucket(BUCKET).key("InvalidKey")));
+
+        // Cleanup
+        v3Client.close();
     }
 
     @Test
@@ -331,6 +443,7 @@ public class S3EncryptionClientTest {
     /**
      * A simple, reusable round-trip (encryption + decryption) using a given
      * S3Client. Useful for testing client configuration.
+     *
      * @param v3Client the client under test
      */
     private void simpleV3RoundTrip(final S3Client v3Client, final String objectKey) {
