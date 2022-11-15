@@ -14,18 +14,11 @@ public class AuthenticatedCipherInputStream extends CipherInputStream {
 
     /**
      * Authenticated ciphers call doFinal upon the last read,
-     * so no need to do so upon close
-     * TODO: Should this throw a security exception? Probably?
+     * there is no need to do so upon close.
      * @throws IOException from the wrapped InputStream
      */
     @Override
     public void close() throws IOException {
-        if (!eofReached) {
-            // If the stream is closed before reaching EOF,
-            // the auth tag cannot be written (on encrypt)
-            // or validated (on decrypt).
-            throw new SecurityException("Stream closed before end of stream reached!");
-        }
         in.close();
         currentPosition = maxPosition = 0;
         abortIfNeeded();
