@@ -12,8 +12,10 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/workflows/ci_actions/static-analysis
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Run SpotBugs
+        run: mvn -B -ntp com.github.spotbugs:spotbugs-maven-plugin:check
 
   Build:
     strategy:

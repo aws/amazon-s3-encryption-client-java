@@ -28,7 +28,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # TODO: Add OpenJDK. OpenJDK would require a different action than setup-java.
+      # TODO: Add OpenJDK
+      # OpenJDK would require a different action than setup-java, so setup is more involved.
 
       - name: Setup JDK
         uses: actions/setup-java@v3
