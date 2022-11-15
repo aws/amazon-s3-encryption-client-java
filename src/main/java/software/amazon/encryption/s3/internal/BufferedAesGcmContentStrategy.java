@@ -45,7 +45,7 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
 
         final String cipherName = algorithmSuite.cipherName();
         try {
-            final Cipher cipher = CryptoProvider.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider(), materials.alwaysUseProvider());
+            final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
 
             cipher.init(Cipher.ENCRYPT_MODE,
                     materials.dataKey(),
@@ -89,7 +89,7 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
         final Cipher cipher;
         byte[] plaintext;
         try {
-            cipher = CryptoProvider.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider(), materials.alwaysUseProvider());
+            cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
             plaintext = cipher.doFinal(ciphertext);
         } catch (GeneralSecurityException e) {

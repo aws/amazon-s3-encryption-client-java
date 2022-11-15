@@ -28,7 +28,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final byte[] _plaintextDataKey;
     private final Provider _cryptoProvider;
-    private final boolean _alwaysUseProvider;
 
     private EncryptionMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -37,7 +36,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._plaintextDataKey = builder._plaintextDataKey;
         this._cryptoProvider = builder._cryptoProvider;
-        this._alwaysUseProvider = builder._alwaysUseProvider;
     }
 
     static public Builder builder() {
@@ -87,10 +85,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         return _cryptoProvider;
     }
 
-    public boolean alwaysUseProvider() {
-        return _alwaysUseProvider;
-    }
-
     public Builder toBuilder() {
         return new Builder()
                 .s3Request(_s3Request)
@@ -110,7 +104,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private byte[] _plaintextDataKey = null;
         private Provider _cryptoProvider = null;
-        private boolean _alwaysUseProvider = false;
 
         private Builder() {
         }
@@ -145,11 +138,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         }
         public Builder cryptoProvider(Provider cryptoProvider) {
             _cryptoProvider = cryptoProvider;
-            return this;
-        }
-
-        public Builder alwaysUseProvider(boolean alwaysUseProvider) {
-            _alwaysUseProvider = alwaysUseProvider;
             return this;
         }
 

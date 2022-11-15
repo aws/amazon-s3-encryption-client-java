@@ -28,7 +28,6 @@ final public class DecryptionMaterials implements CryptographicMaterials {
 
     private long _ciphertextLength;
     private Provider _cryptoProvider;
-    private boolean _alwaysUseProvider;
 
     private DecryptionMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -37,7 +36,6 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         this._plaintextDataKey = builder._plaintextDataKey;
         this._ciphertextLength = builder._ciphertextLength;
         this._cryptoProvider = builder._cryptoProvider;
-        this._alwaysUseProvider = builder()._alwaysUseProvider;
     }
 
     static public Builder builder() {
@@ -77,10 +75,6 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         return _cryptoProvider;
     }
 
-    public boolean alwaysUseProvider() {
-        return _alwaysUseProvider;
-    }
-
     public long ciphertextLength() {
         return _ciphertextLength;
     }
@@ -92,15 +86,13 @@ final public class DecryptionMaterials implements CryptographicMaterials {
                 .encryptionContext(_encryptionContext)
                 .plaintextDataKey(_plaintextDataKey)
                 .ciphertextLength(_ciphertextLength)
-                .cryptoProvider(_cryptoProvider)
-                .alwaysUseProvider(_alwaysUseProvider);
+                .cryptoProvider(_cryptoProvider);
     }
 
     static public class Builder {
 
         public GetObjectRequest _s3Request = null;
         private Provider _cryptoProvider = null;
-        private boolean _alwaysUseProvider = false;
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private byte[] _plaintextDataKey = null;
@@ -138,11 +130,6 @@ final public class DecryptionMaterials implements CryptographicMaterials {
 
         public Builder cryptoProvider(Provider cryptoProvider) {
             _cryptoProvider = cryptoProvider;
-            return this;
-        }
-
-        public Builder alwaysUseProvider(boolean alwaysUseProvider) {
-            _alwaysUseProvider = alwaysUseProvider;
             return this;
         }
 
