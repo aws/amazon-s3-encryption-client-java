@@ -84,6 +84,10 @@ public enum AlgorithmSuite {
         return _cipherTagLengthBits;
     }
 
+    public int cipherTagLengthBytes() {
+        return _cipherTagLengthBits / 8;
+    }
+
     public int nonceLengthBytes() {
         return _cipherNonceLengthBits / 8;
     }

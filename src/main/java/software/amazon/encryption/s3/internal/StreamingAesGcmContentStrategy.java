@@ -54,11 +54,8 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
             cipher.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
                     new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
 
-            // TODO: Length check input stream
             final InputStream ciphertext = new AuthenticatedCipherInputStream(content, cipher);
-            // TODO: fix silly ciphertextLength hack
-            // TODO: ContentLength is often null..
-            final long ciphertextLength = materials.getPlaintextLength() + algorithmSuite.cipherTagLengthBits() / 8;
+            final long ciphertextLength = materials.getCiphertextLength();
             return new EncryptedContent(nonce, ciphertext, ciphertextLength);
         } catch (GeneralSecurityException e) {
             throw new S3EncryptionClientException("Unable to " + cipherName + " content encrypt.", e);
