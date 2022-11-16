@@ -15,6 +15,7 @@ jobs:
         version: [ 8, 11, 17 ]
         distribution: [ corretto, temurin ] # TODO: Add OpenJDK
     uses: ./.github/workflows/build.yml
+    secrets: inherit
     with:
       version: ${{ matrix.version }}
       distribution: ${{ matrix.distribution }}
