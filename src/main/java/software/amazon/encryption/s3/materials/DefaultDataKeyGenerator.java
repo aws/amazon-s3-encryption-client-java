@@ -1,11 +1,11 @@
 package software.amazon.encryption.s3.materials;
 
-import java.security.Provider;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.CryptoFactory;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import java.security.Provider;
 
 public class DefaultDataKeyGenerator implements DataKeyGenerator {
 
