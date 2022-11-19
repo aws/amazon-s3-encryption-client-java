@@ -9,7 +9,7 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
 public class StreamingAesGcmContentStrategyTest {
 
     @Test
-    public void buildBufferedAesGcmContentStrategyWithNullSecureRandomFails() {
+    public void buildStreamingAesGcmContentStrategyWithNullSecureRandomFails() {
       assertThrows(S3EncryptionClientException.class, () -> StreamingAesGcmContentStrategy.builder().secureRandom(null));
     }
 
