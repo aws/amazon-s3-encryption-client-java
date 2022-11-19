@@ -28,6 +28,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final byte[] _plaintextDataKey;
     private final Provider _cryptoProvider;
+    private final long _plaintextLength;
+    private final long _ciphertextLength;
 
     private EncryptionMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -36,6 +38,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._plaintextDataKey = builder._plaintextDataKey;
         this._cryptoProvider = builder._cryptoProvider;
+        this._plaintextLength = builder._plaintextLength;
+        this._ciphertextLength = _plaintextLength + _algorithmSuite.cipherTagLengthBytes();
     }
 
     static public Builder builder() {
@@ -77,6 +81,14 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         return _plaintextDataKey.clone();
     }
 
+    public long getPlaintextLength() {
+        return _plaintextLength;
+    }
+
+    public long getCiphertextLength() {
+        return _ciphertextLength;
+    }
+
     public SecretKey dataKey() {
         return new SecretKeySpec(_plaintextDataKey, "AES");
     }
@@ -92,7 +104,11 @@ final public class EncryptionMaterials implements CryptographicMaterials {
                 .encryptionContext(_encryptionContext)
                 .encryptedDataKeys(_encryptedDataKeys)
                 .plaintextDataKey(_plaintextDataKey)
+<<<<<<< HEAD
                 .cryptoProvider(_cryptoProvider);
+=======
+                .plaintextLength(_plaintextLength);
+>>>>>>> 06afee223d75039564b56e733bcf0453fb023ae0
     }
 
     static public class Builder {
@@ -103,7 +119,11 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private byte[] _plaintextDataKey = null;
+<<<<<<< HEAD
         private Provider _cryptoProvider = null;
+=======
+        private long _plaintextLength = -1;
+>>>>>>> 06afee223d75039564b56e733bcf0453fb023ae0
 
         private Builder() {
         }
@@ -138,6 +158,11 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         }
         public Builder cryptoProvider(Provider cryptoProvider) {
             _cryptoProvider = cryptoProvider;
+            return this;
+        }
+
+        public Builder plaintextLength(long plaintextLength) {
+            _plaintextLength = plaintextLength;
             return this;
         }
 

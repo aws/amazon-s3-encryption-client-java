@@ -5,7 +5,6 @@ import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
-import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -18,47 +17,20 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
 /**
- * This class will encrypt data according to the algorithm suite constants
+ * This class will decrypt AES-GCM encrypted data by buffering the ciphertext
+ * stream into memory. This prevents release of unauthenticated plaintext.
  */
-public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
+public class BufferedAesGcmContentStrategy implements ContentDecryptionStrategy {
 
     // 64MiB ought to be enough for most usecases
     private static final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
     private static final long BUFFERED_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * BUFFERED_MAX_CONTENT_LENGTH_MiB;
 
-    final private SecureRandom _secureRandom;
-
     private BufferedAesGcmContentStrategy(Builder builder) {
-        this._secureRandom = builder._secureRandom;
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    @Override
-    public EncryptedContent encryptContent(EncryptionMaterials materials, byte[] content) {
-        final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-
-        final byte[] nonce = new byte[algorithmSuite.nonceLengthBytes()];
-        _secureRandom.nextBytes(nonce);
-
-        final String cipherName = algorithmSuite.cipherName();
-        try {
-            final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
-
-            cipher.init(Cipher.ENCRYPT_MODE,
-                    materials.dataKey(),
-                    new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
-
-            EncryptedContent result = new EncryptedContent();
-            result.nonce = nonce;
-            result.ciphertext = cipher.doFinal(content);
-
-            return result;
-        } catch (GeneralSecurityException e) {
-            throw new S3EncryptionClientException("Unable to " + cipherName + " content encrypt.", e);
-        }
     }
 
     @Override
@@ -100,22 +72,8 @@ public class BufferedAesGcmContentStrategy implements ContentEncryptionStrategy,
     }
 
     public static class Builder {
-        private SecureRandom _secureRandom;
 
         private Builder() {
-        }
-
-        /**
-         * Note that this does NOT create a defensive copy of the SecureRandom object. Any modifications to the
-         * object will be reflected in this Builder.
-         */
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP")
-        public Builder secureRandom(SecureRandom secureRandom) {
-            if (secureRandom == null) {
-                throw new S3EncryptionClientException("SecureRandom provided to BufferedAesGcmContentStrategy cannot be null");
-            }
-            _secureRandom = secureRandom;
-            return this;
         }
 
         public BufferedAesGcmContentStrategy build() {

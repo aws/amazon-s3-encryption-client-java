@@ -84,6 +84,10 @@ public enum AlgorithmSuite {
         return _cipherTagLengthBits;
     }
 
+    public int cipherTagLengthBytes() {
+        return _cipherTagLengthBits / 8;
+    }
+
     public int nonceLengthBytes() {
         return _cipherNonceLengthBits / 8;
     }
@@ -94,5 +98,9 @@ public enum AlgorithmSuite {
 
     public long cipherMaxContentLengthBits() {
         return _cipherMaxContentLengthBits;
+    }
+
+    public long cipherMaxContentLengthBytes() {
+        return _cipherMaxContentLengthBits / 8;
     }
 }

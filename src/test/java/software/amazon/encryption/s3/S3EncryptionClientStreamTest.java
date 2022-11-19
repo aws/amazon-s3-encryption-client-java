@@ -14,6 +14,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedStreamBufferer;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
@@ -22,12 +23,15 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
@@ -223,6 +227,68 @@ public class S3EncryptionClientStreamTest {
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void delayedAuthModeWithLargeObject() throws IOException {
+        final String objectKey = "large-object-test";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // Tight bound on the default limit of 64MiB
+        final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
+        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
+
+        largeObjectStream.close();
+
+        // Delayed Authentication is not enabled, so getObject fails
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
+
+        S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableDelayedAuthenticationMode(true)
+                .build();
+
+        // Once enabled, the getObject request passes
+        v3ClientWithDelayedAuth.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void delayedAuthModeWithLargerThanMaxObjectFails() throws IOException {
+        final String objectKey = "larger-than-max-object-delayed-auth-mode";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableDelayedAuthenticationMode(true)
+                .build();
+
+        final long fileSizeExceedingGCMLimit = (1L << 39) - 256 / 8;
+        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingGCMLimit);
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingGCMLimit)));
+
+        largeObjectStream.close();
+
+        // Cleanup
         v3Client.close();
     }
 }

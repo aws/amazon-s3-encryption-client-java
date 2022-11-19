@@ -94,9 +94,7 @@ public class GetEncryptedObjectPipeline {
                 return UnauthenticatedContentStrategy.builder().build();
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
                 if (_enableDelayedAuthentication) {
-                    // TODO: Implement StreamingAesGcmContentStrategy
-                    throw new UnsupportedOperationException("Delayed Authentication mode using streaming AES-GCM decryption" +
-                            "is currently unsupported.");
+                    return StreamingAesGcmContentStrategy.builder().build();
                 } else {
                     return BufferedAesGcmContentStrategy.builder().build();
                 }
