@@ -40,7 +40,7 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
 
         final String cipherName = algorithmSuite.cipherName();
         try {
-            final Cipher cipher = Cipher.getInstance(cipherName);
+            final Cipher cipher = CryptoFactory.createCipher(cipherName, materials.cryptoProvider());
 
             cipher.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
                     new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
@@ -62,8 +62,7 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         final int tagLength = algorithmSuite.cipherTagLengthBits();
         byte[] iv = contentMetadata.contentNonce();
         try {
-            // TODO: Allow configurable Cryptographic provider
-            final Cipher cipher = Cipher.getInstance(algorithmSuite.cipherName());
+            final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
             return new AuthenticatedCipherInputStream(ciphertextStream, cipher);
         } catch (GeneralSecurityException e) {
