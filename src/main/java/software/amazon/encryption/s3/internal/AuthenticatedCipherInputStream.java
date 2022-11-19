@@ -34,13 +34,10 @@ public class AuthenticatedCipherInputStream extends CipherInputStream {
             }
             currentPosition = 0;
             return maxPosition = outputBuffer.length;
-        } catch (IllegalBlockSizeException ignore) {
-            // Swallow exception
-        } catch (BadPaddingException exception) {
+        } catch (IllegalBlockSizeException|BadPaddingException exception) {
             // In an authenticated scheme, this indicates a security
             // exception
             throw new SecurityException(exception);
         }
-        return -1;
     }
 }
