@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3.internal;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
@@ -14,7 +13,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 
 /**
  * This class will decrypt AES-GCM encrypted data by buffering the ciphertext

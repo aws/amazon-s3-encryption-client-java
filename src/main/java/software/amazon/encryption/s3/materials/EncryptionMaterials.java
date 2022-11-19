@@ -104,11 +104,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
                 .encryptionContext(_encryptionContext)
                 .encryptedDataKeys(_encryptedDataKeys)
                 .plaintextDataKey(_plaintextDataKey)
-<<<<<<< HEAD
-                .cryptoProvider(_cryptoProvider);
-=======
+                .cryptoProvider(_cryptoProvider)
                 .plaintextLength(_plaintextLength);
->>>>>>> 06afee223d75039564b56e733bcf0453fb023ae0
     }
 
     static public class Builder {
@@ -119,11 +116,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private byte[] _plaintextDataKey = null;
-<<<<<<< HEAD
         private Provider _cryptoProvider = null;
-=======
         private long _plaintextLength = -1;
->>>>>>> 06afee223d75039564b56e733bcf0453fb023ae0
 
         private Builder() {
         }

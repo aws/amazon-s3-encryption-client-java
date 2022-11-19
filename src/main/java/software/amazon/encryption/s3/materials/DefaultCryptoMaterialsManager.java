@@ -52,7 +52,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
             return this;
         }
 
-        public Builder cryptoPovider(Provider cryptoProvider) {
+        public Builder cryptoProvider(Provider cryptoProvider) {
             this._cryptoProvider = cryptoProvider;
             return this;
         }
