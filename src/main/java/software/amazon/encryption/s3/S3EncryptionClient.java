@@ -38,6 +38,7 @@ import software.amazon.encryption.s3.materials.RsaKeyring;
 
 import javax.crypto.SecretKey;
 import java.security.KeyPair;
+import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -207,6 +208,7 @@ public class S3EncryptionClient implements S3Client {
         private String _kmsKeyId;
         private boolean _enableLegacyUnauthenticatedModes = false;
         private boolean _enableDelayedAuthenticationMode = false;
+        private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
 
         private Builder() {
@@ -302,6 +304,11 @@ public class S3EncryptionClient implements S3Client {
             return this;
         }
 
+        public Builder cryptoProvider(Provider cryptoProvider) {
+            this._cryptoProvider = cryptoProvider;
+            return this;
+        }
+           
         public Builder secureRandom(SecureRandom secureRandom) {
             if (secureRandom == null) {
                 throw new S3EncryptionClientException("SecureRandom provided to S3EncryptionClient cannot be null");
@@ -340,6 +347,7 @@ public class S3EncryptionClient implements S3Client {
             if (_cryptoMaterialsManager == null) {
                 _cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
                         .keyring(_keyring)
+                        .cryptoPovider(_cryptoProvider)
                         .build();
             }
 

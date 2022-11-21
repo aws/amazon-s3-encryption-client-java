@@ -1,0 +1,59 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      distribution:
+        required: true
+        type: string
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CI_AWS_ACCOUNT_ID }}:role/service-role/S3EC-GitHub-test-role
+          role-session-name: S3EC-Github-CI-Tests
+          aws-region: us-west-2
+
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # TODO: Add OpenJDK
+      # OpenJDK would require a different action than setup-java, so setup is more involved.
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ inputs.distribution }}
+          java-version: ${{ inputs.version}}
+          cache: 'maven'
+
+      - name: Compile
+        run: |
+          mvn clean compile
+          mvn test-compile
+        shell: bash
+
+      - name: Test
+        run: |
+          export AWS_S3EC_TEST_BUCKET=s3ec-github-test-bucket
+          export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:us-west-2:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/c3eafb5f-e87d-4584-9400-cf419ce5d782
+          export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:us-west-2:${{ secrets.CI_AWS_ACCOUNT_ID }}:alias/S3EC-Github-KMS-Key
+          export AWS_REGION=us-west-2
+          mvn -B -ntp test -DskipCompile
+        shell: bash
+
+      - name: Package JAR
+        run: |
+          mvn install -DskipTests
+        shell: bash

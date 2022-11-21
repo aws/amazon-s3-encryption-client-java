@@ -1,5 +1,6 @@
 package software.amazon.encryption.s3.materials;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
@@ -13,9 +14,9 @@ public class DefaultDataKeyGeneratorTest {
 
     @Test
     public void testGenerateDataKey() {
-        SecretKey actualSecretKey = dataKeyGenerator.generateDataKey(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF);
+        SecretKey actualSecretKey = dataKeyGenerator.generateDataKey(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, null);
         assertEquals("AES", actualSecretKey.getAlgorithm());
-        actualSecretKey = dataKeyGenerator.generateDataKey(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF);
+        actualSecretKey = dataKeyGenerator.generateDataKey(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, new BouncyCastleProvider());
         assertEquals("AES", actualSecretKey.getAlgorithm());
     }
 }

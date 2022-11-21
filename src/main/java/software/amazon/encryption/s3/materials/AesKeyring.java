@@ -12,6 +12,7 @@ import javax.crypto.spec.GCMParameterSpec;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.CryptoFactory;
 
 /**
  * This keyring can wrap keys with the active keywrap algorithm and
@@ -40,7 +41,7 @@ public class AesKeyring extends S3Keyring {
 
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.DECRYPT_MODE, _wrappingKey);
 
             return cipher.doFinal(encryptedDataKey);
@@ -64,7 +65,7 @@ public class AesKeyring extends S3Keyring {
 
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.UNWRAP_MODE, _wrappingKey);
 
             Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
@@ -98,7 +99,7 @@ public class AesKeyring extends S3Keyring {
             secureRandom.nextBytes(nonce);
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
 
-            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.ENCRYPT_MODE, _wrappingKey, gcmParameterSpec, secureRandom);
 
             final byte[] aADBytes = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
@@ -123,7 +124,7 @@ public class AesKeyring extends S3Keyring {
             System.arraycopy(encodedBytes, nonce.length, ciphertext, 0, ciphertext.length);
 
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
-            final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.DECRYPT_MODE, _wrappingKey, gcmParameterSpec);
 
             final byte[] aADBytes = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);

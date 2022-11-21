@@ -1,27 +1,20 @@
 package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 
 /**
  * This class will decrypt AES-GCM encrypted data by buffering the ciphertext
@@ -71,15 +64,10 @@ public class BufferedAesGcmContentStrategy implements ContentDecryptionStrategy 
         final Cipher cipher;
         byte[] plaintext;
         try {
-            cipher = Cipher.getInstance(algorithmSuite.cipherName());
+            cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
             plaintext = cipher.doFinal(ciphertext);
-        } catch (NoSuchAlgorithmException
-                 | NoSuchPaddingException
-                 | InvalidAlgorithmParameterException
-                 | InvalidKeyException
-                 | IllegalBlockSizeException
-                 | BadPaddingException e) {
+        } catch (GeneralSecurityException e) {
             throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
         }
 

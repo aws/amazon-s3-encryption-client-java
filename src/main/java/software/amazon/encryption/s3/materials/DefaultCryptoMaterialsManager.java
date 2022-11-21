@@ -2,12 +2,15 @@ package software.amazon.encryption.s3.materials;
 
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
+import java.security.Provider;
+
 public class DefaultCryptoMaterialsManager implements CryptographicMaterialsManager {
     private final Keyring _keyring;
-
+    private final Provider _cryptoProvider;
 
     private DefaultCryptoMaterialsManager(Builder builder) {
         _keyring = builder._keyring;
+        _cryptoProvider = builder._cryptoProvider;
     }
 
     public static Builder builder() {
@@ -20,6 +23,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .encryptionContext(request.encryptionContext())
                 .plaintextLength(request.plaintextLength())
+                .cryptoProvider(_cryptoProvider)
                 .build();
 
         return _keyring.onEncrypt(materials);
@@ -31,6 +35,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
                 .algorithmSuite(request.algorithmSuite())
                 .encryptionContext(request.encryptionContext())
                 .ciphertextLength(request.ciphertextLength())
+                .cryptoProvider(_cryptoProvider)
                 .build();
 
         return _keyring.onDecrypt(materials, request.encryptedDataKeys());
@@ -38,11 +43,17 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
 
     public static class Builder {
         private Keyring _keyring;
+        private Provider _cryptoProvider;
 
         private Builder() {}
 
         public Builder keyring(Keyring keyring) {
             this._keyring = keyring;
+            return this;
+        }
+
+        public Builder cryptoPovider(Provider cryptoProvider) {
+            this._cryptoProvider = cryptoProvider;
             return this;
         }
 

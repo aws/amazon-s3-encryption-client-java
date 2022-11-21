@@ -2,6 +2,7 @@ package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.security.Provider;
 import java.util.Collections;
 import java.util.Map;
 
@@ -26,6 +27,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
     private final byte[] _plaintextDataKey;
 
     private long _ciphertextLength;
+    private Provider _cryptoProvider;
 
     private DecryptionMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -33,6 +35,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         this._encryptionContext = builder._encryptionContext;
         this._plaintextDataKey = builder._plaintextDataKey;
         this._ciphertextLength = builder._ciphertextLength;
+        this._cryptoProvider = builder._cryptoProvider;
     }
 
     static public Builder builder() {
@@ -68,6 +71,10 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         return new SecretKeySpec(_plaintextDataKey, "AES");
     }
 
+    public Provider cryptoProvider() {
+        return _cryptoProvider;
+    }
+
     public long ciphertextLength() {
         return _ciphertextLength;
     }
@@ -78,12 +85,14 @@ final public class DecryptionMaterials implements CryptographicMaterials {
                 .algorithmSuite(_algorithmSuite)
                 .encryptionContext(_encryptionContext)
                 .plaintextDataKey(_plaintextDataKey)
-                .ciphertextLength(_ciphertextLength);
+                .ciphertextLength(_ciphertextLength)
+                .cryptoProvider(_cryptoProvider);
     }
 
     static public class Builder {
 
         public GetObjectRequest _s3Request = null;
+        private Provider _cryptoProvider = null;
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private byte[] _plaintextDataKey = null;
@@ -116,6 +125,11 @@ final public class DecryptionMaterials implements CryptographicMaterials {
 
         public Builder ciphertextLength(long ciphertextLength) {
             _ciphertextLength = ciphertextLength;
+            return this;
+        }
+
+        public Builder cryptoProvider(Provider cryptoProvider) {
+            _cryptoProvider = cryptoProvider;
             return this;
         }
 
