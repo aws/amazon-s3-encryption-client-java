@@ -121,7 +121,6 @@ public class S3ECMultipartUploadTest {
         S3EncryptionClient v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableDelayedAuthenticationMode(true)
-                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Create Multipart upload request to S3
@@ -129,7 +128,6 @@ public class S3ECMultipartUploadTest {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext))
-                .overrideConfiguration(isLastPart(true))
                 .build();
         CreateMultipartUploadResponse createResponse = v3Client.createMultipartUpload(create);
 
