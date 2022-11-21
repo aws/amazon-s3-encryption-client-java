@@ -2,7 +2,6 @@ package software.amazon.encryption.s3;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -32,12 +31,7 @@ import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEnc
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 
-
-/**
- * This class is an integration test for verifying compatibility of ciphertexts
- * between V1, V2, and V3 clients under various conditions.
- */
-public class S3ECMultipartUpload {
+public class S3ECMultipartUploadTest {
     private static SecretKey AES_KEY;
 
     @BeforeAll
@@ -72,13 +66,13 @@ public class S3ECMultipartUpload {
         List<CompletedPart> partETags = new ArrayList<>();
 
         // Upload each part and store eTags in partETags
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 11; i++) {
             // Create the request to upload a part.
             UploadPartRequest uploadRequest = UploadPartRequest.builder()
                     .bucket(BUCKET)
                     .key(objectKey)
                     .uploadId(createResponse.uploadId())
-                    .overrideConfiguration(AwsRequestOverrideConfiguration.builder().build())
+                    .overrideConfiguration(isLastPart(i==11))
                     .partNumber(i)
                     .build();
             // Upload the part and add the response's eTag to our list.
@@ -89,19 +83,7 @@ public class S3ECMultipartUpload {
                     .eTag(uploadPartResponse.eTag())
                     .build());
         }
-        UploadPartRequest uploadRequest = UploadPartRequest.builder()
-                .bucket(BUCKET)
-                .key(objectKey)
-                .uploadId(createResponse.uploadId())
-                .partNumber(11)
-                .overrideConfiguration(isLastPart(true))
-                .build();
-        // Upload the last part and add the response's ETag to our list.
-        UploadPartResponse uploadPartResponse = v3Client.uploadPart(uploadRequest, RequestBody.fromInputStream(f[10], fileSizeLimit));
-        partETags.add(CompletedPart.builder()
-                .partNumber(11)
-                .eTag(uploadPartResponse.eTag())
-                .build());
+
         // Complete the multipart upload.
         CompleteMultipartUploadRequest compRequest = CompleteMultipartUploadRequest.builder()
                 .bucket(BUCKET)
@@ -147,38 +129,30 @@ public class S3ECMultipartUpload {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext))
+                .overrideConfiguration(isLastPart(true))
                 .build();
         CreateMultipartUploadResponse createResponse = v3Client.createMultipartUpload(create);
 
         List<CompletedPart> partETags = new ArrayList<>();
 
-        for (int i = 1; i <= 10; i++) {
+        // Upload each part and store eTags in partETags
+        for (int i = 1; i <= 11; i++) {
             // Create the request to upload a part.
             UploadPartRequest uploadRequest = UploadPartRequest.builder()
                     .bucket(BUCKET)
                     .key(objectKey)
                     .uploadId(createResponse.uploadId())
+                    .overrideConfiguration(isLastPart(i==11))
                     .partNumber(i)
                     .build();
-            // Upload the part and add the response's ETag to our list.
-            UploadPartResponse uploadPartResponse = v3Client.uploadPart(uploadRequest, RequestBody.fromInputStream(f[i - 1], fileSizeLimit));
+            // Upload the part and add the response's eTag to our list.
+            UploadPartResponse uploadPartResponse = v3Client.uploadPart(uploadRequest,
+                    RequestBody.fromInputStream(f[i - 1], fileSizeLimit));
             partETags.add(CompletedPart.builder()
                     .partNumber(i)
                     .eTag(uploadPartResponse.eTag())
                     .build());
         }
-        UploadPartRequest uploadRequest = UploadPartRequest.builder()
-                .bucket(BUCKET)
-                .key(objectKey)
-                .uploadId(createResponse.uploadId())
-                .partNumber(11)
-                .build();
-        // Upload the last part and add the response's ETag to our list.
-        UploadPartResponse uploadPartResponse = v3Client.uploadPart(uploadRequest, RequestBody.fromInputStream(f[10], fileSizeLimit));
-        partETags.add(CompletedPart.builder()
-                .partNumber(11)
-                .eTag(uploadPartResponse.eTag())
-                .build());
 
         // Complete the multipart upload.
         CompleteMultipartUploadRequest compRequest = CompleteMultipartUploadRequest.builder()
