@@ -83,7 +83,7 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         @SuppressFBWarnings(value = "EI_EXPOSE_REP")
         public Builder secureRandom(SecureRandom secureRandom) {
             if (secureRandom == null) {
-                throw new S3EncryptionClientException("SecureRandom provided to BufferedAesGcmContentStrategy cannot be null");
+                throw new S3EncryptionClientException("SecureRandom provided to StreamingAesGcmContentStrategy cannot be null");
             }
             _secureRandom = secureRandom;
             return this;

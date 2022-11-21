@@ -1,10 +1,11 @@
 package software.amazon.encryption.s3.internal;
 
-import javax.crypto.BadPaddingException;
+import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
+
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 
 public class AuthenticatedCipherInputStream extends CipherInputStream {
 
@@ -34,10 +35,10 @@ public class AuthenticatedCipherInputStream extends CipherInputStream {
             }
             currentPosition = 0;
             return maxPosition = outputBuffer.length;
-        } catch (IllegalBlockSizeException|BadPaddingException exception) {
+        } catch (GeneralSecurityException exception) {
             // In an authenticated scheme, this indicates a security
             // exception
-            throw new SecurityException(exception);
+            throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
         }
     }
 }
