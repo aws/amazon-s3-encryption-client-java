@@ -23,6 +23,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .encryptionContext(request.encryptionContext())
                 .cryptoProvider(_cryptoProvider)
+                .plaintextLength(request.plaintextLength())
                 .build();
 
         return _keyring.onEncrypt(materials);
@@ -51,7 +52,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
             return this;
         }
 
-        public Builder cryptoPovider(Provider cryptoProvider) {
+        public Builder cryptoProvider(Provider cryptoProvider) {
             this._cryptoProvider = cryptoProvider;
             return this;
         }
