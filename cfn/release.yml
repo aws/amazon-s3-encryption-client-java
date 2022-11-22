@@ -183,6 +183,7 @@ Resources:
     Properties:
       ManagedPolicyName: !Sub "CryptoTools-SecretsManager-${ProjectName}-Release"
       Path: "/service-role/"
+      # TODO for prod release: Change to Maven-GPG-Keys-Release
       PolicyDocument: !Sub |
         {
           "Version": "2012-10-17",
