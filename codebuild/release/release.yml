@@ -81,7 +81,7 @@ batch:
       - validate_staging_release_openjdk17
       - validate_staging_release_corretto8
       - validate_staging_release_corretto11
-      - validate_staging_release_corretto11
+      - validate_staging_release_corretto17
     buildspec: codebuild/release/version.yml
     env:
       image: aws/codebuild/standard:5.0
@@ -93,7 +93,7 @@ batch:
   # Upload Artifacts
   - identifier: upload_artifacts
     depend-on:
-      - # TODO for prod release: depend-on Maven release validations, not 'version' step
+      # TODO for prod release: depend-on Maven release validations, not 'version' step
       - version
     buildspec: codebuild/release/upload_artifacts.yml
     env:
