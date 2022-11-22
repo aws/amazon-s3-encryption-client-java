@@ -32,6 +32,16 @@ batch:
         JAVA_NUMERIC_VERSION: 11
       image: aws/codebuild/standard:3.0
 
+  - identifier: validate_staging_release_openjdk17
+    depend-on:
+      - release_staging
+    buildspec: codebuild/release/validate-staging.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: openjdk17
+        JAVA_NUMERIC_VERSION: 17
+      image: aws/codebuild/standard:3.0
+
   - identifier: validate_staging_release_corretto8
     depend-on:
       - release_staging
@@ -49,5 +59,54 @@ batch:
     env:
       variables:
         JAVA_ENV_VERSION: corretto11
+        JAVA_NUMERIC_VERSION: 11
+      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+
+  - identifier: validate_staging_release_corretto17
+    depend-on:
+      - release_staging
+    buildspec: codebuild/release/validate-staging.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: corretto17
+        JAVA_NUMERIC_VERSION: 17
+      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+
+    # Version Project
+  - identifier: version
+    depend-on:
+      - release_staging
+      - validate_staging_release_openjdk8
+      - validate_staging_release_openjdk11
+      - validate_staging_release_openjdk17
+      - validate_staging_release_corretto8
+      - validate_staging_release_corretto11
+      - validate_staging_release_corretto11
+    buildspec: codebuild/release/version.yml
+    env:
+      image: aws/codebuild/standard:5.0
+
+  # TODO for prod release: Release to Maven
+
+  # TODO for prod release: Validate Maven release
+
+    # Upload Artifacts
+  - identifier: upload_artifacts
+    depend-on:
+      - # TODO for prod release: depend-on Maven release validations, not 'version' step
+      - version
+    buildspec: codebuild/release/upload_artifacts.yml
+    env:
+      # standard:5.0 (Ubuntu) supports GH CLI; AL2 does not
+      image: aws/codebuild/standard:5.0
+
+    # Generate and update new javadocs
+  - identifier: update_javadoc
+    depend-on:
+      - upload_artifacts
+    buildspec: codebuild/release/javadoc.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: coretto11
         JAVA_NUMERIC_VERSION: 11
       image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
