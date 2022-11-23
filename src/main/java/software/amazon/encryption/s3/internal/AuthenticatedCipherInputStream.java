@@ -1,10 +1,11 @@
 package software.amazon.encryption.s3.internal;
 
-import javax.crypto.BadPaddingException;
+import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
+
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 
 public class AuthenticatedCipherInputStream extends CipherInputStream {
 
@@ -64,5 +65,6 @@ public class AuthenticatedCipherInputStream extends CipherInputStream {
                 throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
             }
         }
+        return -1;
     }
 }

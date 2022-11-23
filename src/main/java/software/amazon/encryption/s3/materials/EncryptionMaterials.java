@@ -31,15 +31,12 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     private final long _plaintextLength;
     private final long _ciphertextLength;
 
-    private final long _plaintextLength;
-
     private EncryptionMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
         this._algorithmSuite = builder._algorithmSuite;
         this._encryptionContext = builder._encryptionContext;
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._plaintextDataKey = builder._plaintextDataKey;
-        this._plaintextLength = builder._plaintextLength;
         this._cryptoProvider = builder._cryptoProvider;
         this._plaintextLength = builder._plaintextLength;
         this._ciphertextLength = _plaintextLength + _algorithmSuite.cipherTagLengthBytes();
@@ -121,7 +118,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         private byte[] _plaintextDataKey = null;
         private long _plaintextLength = -1;
         private Provider _cryptoProvider = null;
-        private long _plaintextLength = -1;
 
         private Builder() {
         }
