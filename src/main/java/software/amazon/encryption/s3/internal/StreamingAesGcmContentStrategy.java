@@ -21,6 +21,12 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
 public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
@@ -35,7 +41,6 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         return new Builder();
     }
 
-    // TODO: Find the best way to get nonce, cipher back for multi-part upload
     public EncryptedContent encryptContent(EncryptionMaterials materials) {
         // TODO: Determine do we need to check for each part size before uploading?
         if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
@@ -74,16 +79,15 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
 
         final String cipherName = algorithmSuite.cipherName();
         try {
-            final Cipher cipher = Cipher.getInstance(cipherName);
+            final Cipher cipher = CryptoFactory.createCipher(cipherName, materials.cryptoProvider());
+
 
             cipher.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
                     new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
 
-            // TODO: Length check input stream
             final InputStream ciphertext = new AuthenticatedCipherInputStream(content, cipher);
-            // TODO: fix silly ciphertextLength hack
-            // TODO: ContentLength is often null..
-            final long ciphertextLength = materials.getPlaintextLength() + algorithmSuite.cipherTagLengthBits() / 8;
+            final long ciphertextLength = materials.getCiphertextLength();
+
             return new EncryptedContent(nonce, ciphertext, ciphertextLength);
         } catch (GeneralSecurityException e) {
             throw new S3EncryptionClientException("Unable to " + cipherName + " content encrypt.", e);
@@ -99,8 +103,8 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         final int tagLength = algorithmSuite.cipherTagLengthBits();
         byte[] iv = contentMetadata.contentNonce();
         try {
-            // TODO: Allow configurable Cryptographic provider
-            final Cipher cipher = Cipher.getInstance(algorithmSuite.cipherName());
+            final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
+
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
             return new AuthenticatedCipherInputStream(ciphertextStream, cipher);
         } catch (GeneralSecurityException e) {
@@ -120,6 +124,11 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP")
         public Builder secureRandom(SecureRandom secureRandom) {
+
+            if (secureRandom == null) {
+                throw new S3EncryptionClientException("SecureRandom provided to StreamingAesGcmContentStrategy cannot be null");
+            }
+
             _secureRandom = secureRandom;
             return this;
         }

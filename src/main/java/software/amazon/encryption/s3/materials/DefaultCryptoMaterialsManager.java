@@ -24,6 +24,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
                 .encryptionContext(request.encryptionContext())
                 .plaintextLength(request.plaintextLength())
                 .cryptoProvider(_cryptoProvider)
+                .plaintextLength(request.plaintextLength())
                 .build();
 
         return _keyring.onEncrypt(materials);
@@ -52,7 +53,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
             return this;
         }
 
-        public Builder cryptoPovider(Provider cryptoProvider) {
+        public Builder cryptoProvider(Provider cryptoProvider) {
             this._cryptoProvider = cryptoProvider;
             return this;
         }

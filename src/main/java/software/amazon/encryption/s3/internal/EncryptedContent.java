@@ -24,6 +24,7 @@ public class EncryptedContent {
     public Cipher getCipher() {
         return _cipher;
     }
+
     public byte[] getNonce() {
         return _nonce;
     }

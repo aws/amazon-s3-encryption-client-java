@@ -33,20 +33,14 @@ public class AuthenticatedCipherInputStream extends CipherInputStream {
         this.multipart = multipart;
         this.lastMultipart = lastMultipart;
     }
+    
     /**
      * Authenticated ciphers call doFinal upon the last read,
      * so no need to do so upon close
-     * TODO: Should this throw a security exception? Probably?
      * @throws IOException from the wrapped InputStream
      */
     @Override
     public void close() throws IOException {
-        if (!eofReached) {
-            // If the stream is closed before reaching EOF,
-            // the auth tag cannot be written (on encrypt)
-            // or validated (on decrypt).
-            throw new SecurityException("Stream closed before end of stream reached!");
-        }
         in.close();
         currentPosition = maxPosition = 0;
         abortIfNeeded();
@@ -64,14 +58,11 @@ public class AuthenticatedCipherInputStream extends CipherInputStream {
                 }
                 currentPosition = 0;
                 return maxPosition = outputBuffer.length;
-            } catch (IllegalBlockSizeException ignore) {
-                // Swallow exception
-            } catch (BadPaddingException exception) {
+            } catch (GeneralSecurityException exception) {
                 // In an authenticated scheme, this indicates a security
                 // exception
-                throw new SecurityException(exception);
+                throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
             }
         }
-        return -1;
     }
 }

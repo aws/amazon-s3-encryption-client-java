@@ -28,6 +28,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final byte[] _plaintextDataKey;
     private final Provider _cryptoProvider;
+    private final long _plaintextLength;
+    private final long _ciphertextLength;
 
     private final long _plaintextLength;
 
@@ -39,6 +41,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         this._plaintextDataKey = builder._plaintextDataKey;
         this._plaintextLength = builder._plaintextLength;
         this._cryptoProvider = builder._cryptoProvider;
+        this._plaintextLength = builder._plaintextLength;
+        this._ciphertextLength = _plaintextLength + _algorithmSuite.cipherTagLengthBytes();
     }
 
     static public Builder builder() {
@@ -84,6 +88,10 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         return _plaintextLength;
     }
 
+    public long getCiphertextLength() {
+        return _ciphertextLength;
+    }
+
     public SecretKey dataKey() {
         return new SecretKeySpec(_plaintextDataKey, "AES");
     }
@@ -99,8 +107,8 @@ final public class EncryptionMaterials implements CryptographicMaterials {
                 .encryptionContext(_encryptionContext)
                 .encryptedDataKeys(_encryptedDataKeys)
                 .plaintextDataKey(_plaintextDataKey)
-                .plaintextLength(_plaintextLength)
-                .cryptoProvider(_cryptoProvider);
+                .cryptoProvider(_cryptoProvider)
+                .plaintextLength(_plaintextLength);
     }
 
     static public class Builder {
@@ -113,6 +121,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         private byte[] _plaintextDataKey = null;
         private long _plaintextLength = -1;
         private Provider _cryptoProvider = null;
+        private long _plaintextLength = -1;
 
         private Builder() {
         }

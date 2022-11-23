@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3.internal;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
@@ -14,7 +13,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 
 /**
  * This class will decrypt AES-GCM encrypted data by buffering the ciphertext
@@ -26,10 +24,7 @@ public class BufferedAesGcmContentStrategy implements ContentDecryptionStrategy 
     private static final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
     private static final long BUFFERED_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * BUFFERED_MAX_CONTENT_LENGTH_MiB;
 
-    final private SecureRandom _secureRandom;
-
     private BufferedAesGcmContentStrategy(Builder builder) {
-        this._secureRandom = builder._secureRandom;
     }
 
     public static Builder builder() {
@@ -75,22 +70,8 @@ public class BufferedAesGcmContentStrategy implements ContentDecryptionStrategy 
     }
 
     public static class Builder {
-        private SecureRandom _secureRandom;
 
         private Builder() {
-        }
-
-        /**
-         * Note that this does NOT create a defensive copy of the SecureRandom object. Any modifications to the
-         * object will be reflected in this Builder.
-         */
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP")
-        public Builder secureRandom(SecureRandom secureRandom) {
-            if (secureRandom == null) {
-                throw new S3EncryptionClientException("SecureRandom provided to BufferedAesGcmContentStrategy cannot be null");
-            }
-            _secureRandom = secureRandom;
-            return this;
         }
 
         public BufferedAesGcmContentStrategy build() {

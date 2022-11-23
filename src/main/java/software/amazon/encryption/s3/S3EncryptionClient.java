@@ -347,7 +347,7 @@ public class S3EncryptionClient implements S3Client {
             if (_cryptoMaterialsManager == null) {
                 _cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
                         .keyring(_keyring)
-                        .cryptoPovider(_cryptoProvider)
+                        .cryptoProvider(_cryptoProvider)
                         .build();
             }
 

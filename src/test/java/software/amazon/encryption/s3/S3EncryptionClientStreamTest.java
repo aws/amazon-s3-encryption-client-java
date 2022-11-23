@@ -231,8 +231,8 @@ public class S3EncryptionClientStreamTest {
     }
 
     @Test
-    public void defaultModeWithLargeObjectFails() throws IOException {
-        final String objectKey = "large-object-default-mode";
+    public void delayedAuthModeWithLargeObject() throws IOException {
+        final String objectKey = "large-object-test";
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -249,36 +249,18 @@ public class S3EncryptionClientStreamTest {
 
         largeObjectStream.close();
 
+        // Delayed Authentication is not enabled, so getObject fails
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
-
-        // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-    @Test
-    public void delayedAuthModeWithLargeObjectPasses() throws IOException {
-        final String objectKey = "large-object-delayed-auth-mode";
-
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+                
+        S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableDelayedAuthenticationMode(true)
                 .build();
 
-        // Tight bound on the default limit of 64MiB
-        final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
-        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
-        v3Client.putObject(PutObjectRequest.builder()
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
-
-        largeObjectStream.close();
-
-        v3Client.getObject(builder -> builder
+        // Once enabled, the getObject request passes
+        v3ClientWithDelayedAuth.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
 
