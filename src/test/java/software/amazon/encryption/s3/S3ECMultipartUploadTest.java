@@ -5,12 +5,9 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
@@ -43,7 +40,7 @@ public class S3ECMultipartUploadTest {
 
     @Test
     public void multipartUploadV3() throws IOException {
-        final String objectKey = "multipart-Upload-v3";
+        final String objectKey = "multipart-upload-v3";
 
         final long fileSizeLimit = 1024 * 1024 * 10;
         InputStream[] f = new InputStream[11];
@@ -58,27 +55,23 @@ public class S3ECMultipartUploadTest {
                 .build();
 
         // Create Multipart upload request to S3
-        CreateMultipartUploadRequest create = CreateMultipartUploadRequest.builder()
+        CreateMultipartUploadResponse createResponse = v3Client.createMultipartUpload(builder -> builder
                 .bucket(BUCKET)
-                .key(objectKey)
-                .build();
-        CreateMultipartUploadResponse createResponse = v3Client.createMultipartUpload(create);
+                .key(objectKey));
 
         List<CompletedPart> partETags = new ArrayList<>();
 
         // Upload each part and store eTags in partETags
         for (int i = 1; i <= 11; i++) {
             // Create the request to upload a part.
-            UploadPartRequest uploadRequest = UploadPartRequest.builder()
+            // Upload the part and add the response's eTag to our list.
+            int finalI = i;
+            UploadPartResponse uploadPartResponse = v3Client.uploadPart(builder -> builder
                     .bucket(BUCKET)
                     .key(objectKey)
                     .uploadId(createResponse.uploadId())
-                    .overrideConfiguration(isLastPart(i==11))
-                    .partNumber(i)
-                    .build();
-            // Upload the part and add the response's eTag to our list.
-            UploadPartResponse uploadPartResponse = v3Client.uploadPart(uploadRequest,
-                    RequestBody.fromInputStream(f[i - 1], fileSizeLimit));
+                    .partNumber(finalI)
+                    .overrideConfiguration(isLastPart(finalI == 11)), RequestBody.fromInputStream(f[finalI - 1], fileSizeLimit));
             partETags.add(CompletedPart.builder()
                     .partNumber(i)
                     .eTag(uploadPartResponse.eTag())
@@ -86,13 +79,11 @@ public class S3ECMultipartUploadTest {
         }
 
         // Complete the multipart upload.
-        CompleteMultipartUploadRequest compRequest = CompleteMultipartUploadRequest.builder()
+        v3Client.completeMultipartUpload(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .uploadId(createResponse.uploadId())
-                .multipartUpload(builder -> builder.parts(partETags))
-                .build();
-        v3Client.completeMultipartUpload(compRequest);
+                .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         // Asserts
         ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
@@ -120,34 +111,30 @@ public class S3ECMultipartUploadTest {
             f[i] = new BoundedZerosInputStream(fileSizeLimit);
         }
         // V3 Client
-        S3EncryptionClient v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableDelayedAuthenticationMode(true)
                 .build();
 
         // Create Multipart upload request to S3
-        CreateMultipartUploadRequest create = CreateMultipartUploadRequest.builder()
+        CreateMultipartUploadResponse createResponse = v3Client.createMultipartUpload(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
-                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext))
-                .build();
-        CreateMultipartUploadResponse createResponse = v3Client.createMultipartUpload(create);
+                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)));
 
         List<CompletedPart> partETags = new ArrayList<>();
 
         // Upload each part and store eTags in partETags
         for (int i = 1; i <= 11; i++) {
             // Create the request to upload a part.
-            UploadPartRequest uploadRequest = UploadPartRequest.builder()
+            // Upload the part and add the response's eTag to our list.
+            int finalI = i;
+            UploadPartResponse uploadPartResponse = v3Client.uploadPart(builder -> builder
                     .bucket(BUCKET)
                     .key(objectKey)
                     .uploadId(createResponse.uploadId())
-                    .overrideConfiguration(isLastPart(i==11))
-                    .partNumber(i)
-                    .build();
-            // Upload the part and add the response's eTag to our list.
-            UploadPartResponse uploadPartResponse = v3Client.uploadPart(uploadRequest,
-                    RequestBody.fromInputStream(f[i - 1], fileSizeLimit));
+                    .partNumber(finalI)
+                    .overrideConfiguration(isLastPart(finalI == 11)), RequestBody.fromInputStream(f[finalI - 1], fileSizeLimit));
             partETags.add(CompletedPart.builder()
                     .partNumber(i)
                     .eTag(uploadPartResponse.eTag())
@@ -155,13 +142,11 @@ public class S3ECMultipartUploadTest {
         }
 
         // Complete the multipart upload.
-        CompleteMultipartUploadRequest compRequest = CompleteMultipartUploadRequest.builder()
+        v3Client.completeMultipartUpload(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .uploadId(createResponse.uploadId())
-                .multipartUpload(builder -> builder.parts(partETags))
-                .build();
-        v3Client.completeMultipartUpload(compRequest);
+                .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         // Asserts
         ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
