@@ -4,6 +4,7 @@ import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 import java.util.Map;
 
+@FunctionalInterface
 public interface ContentMetadataEncodingStrategy {
 
     Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] nonce,

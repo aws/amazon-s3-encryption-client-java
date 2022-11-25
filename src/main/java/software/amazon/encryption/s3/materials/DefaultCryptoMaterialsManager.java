@@ -22,7 +22,6 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
                 .s3Request(request.s3Request())
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .encryptionContext(request.encryptionContext())
-                .plaintextLength(request.plaintextLength())
                 .cryptoProvider(_cryptoProvider)
                 .plaintextLength(request.plaintextLength())
                 .build();

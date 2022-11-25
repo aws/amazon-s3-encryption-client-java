@@ -42,13 +42,11 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         try {
             final Cipher cipher = CryptoFactory.createCipher(cipherName, materials.cryptoProvider());
 
-
             cipher.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
                     new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
 
             final InputStream ciphertext = new AuthenticatedCipherInputStream(content, cipher);
             final long ciphertextLength = materials.getCiphertextLength();
-
             return new EncryptedContent(nonce, ciphertext, ciphertextLength);
         } catch (GeneralSecurityException e) {
             throw new S3EncryptionClientException("Unable to " + cipherName + " content encrypt.", e);
@@ -65,7 +63,6 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         byte[] iv = contentMetadata.contentNonce();
         try {
             final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
-
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
             return new AuthenticatedCipherInputStream(ciphertextStream, cipher);
         } catch (GeneralSecurityException e) {
@@ -85,11 +82,9 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP")
         public Builder secureRandom(SecureRandom secureRandom) {
-
             if (secureRandom == null) {
                 throw new S3EncryptionClientException("SecureRandom provided to StreamingAesGcmContentStrategy cannot be null");
             }
-
             _secureRandom = secureRandom;
             return this;
         }

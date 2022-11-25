@@ -179,7 +179,4 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
         return strategy.decodeMetadata(client, request, response);
     }
-
-    public abstract Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] nonce,
-                                                       Map<String, String> metadata);
 }
