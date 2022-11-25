@@ -18,17 +18,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static software.amazon.encryption.s3.S3EncryptionClient.isLastPart;
-import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 
-public class S3ECMultipartUploadTest {
+public class S3EncryptionClientMultipartUploadTest {
     private static SecretKey AES_KEY;
 
     @BeforeAll
@@ -89,70 +85,6 @@ public class S3ECMultipartUploadTest {
         ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
-
-        String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit * 11));
-        String outputAsString = IoUtils.toUtf8String(result.asInputStream());
-        assertEquals(inputAsString, outputAsString);
-
-        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
-        v3Client.close();
-    }
-
-    @Test
-    public void multipartUploadV3withEncryptionContext() throws IOException {
-        final String objectKey = "multipart-upload-v3-with-encryption-context";
-
-        Map<String, String> encryptionContext = new HashMap<>();
-        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
-
-        final long fileSizeLimit = 1024 * 1024 * 10;
-        InputStream[] f = new InputStream[11];
-        for (int i = 0; i < 11; i++) {
-            f[i] = new BoundedZerosInputStream(fileSizeLimit);
-        }
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_KEY_ID)
-                .enableDelayedAuthenticationMode(true)
-                .build();
-
-        // Create Multipart upload request to S3
-        CreateMultipartUploadResponse createResponse = v3Client.createMultipartUpload(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)));
-
-        List<CompletedPart> partETags = new ArrayList<>();
-
-        // Upload each part and store eTags in partETags
-        for (int i = 1; i <= 11; i++) {
-            // Create the request to upload a part.
-            // Upload the part and add the response's eTag to our list.
-            int finalI = i;
-            UploadPartResponse uploadPartResponse = v3Client.uploadPart(builder -> builder
-                    .bucket(BUCKET)
-                    .key(objectKey)
-                    .uploadId(createResponse.uploadId())
-                    .partNumber(finalI)
-                    .overrideConfiguration(isLastPart(finalI == 11)), RequestBody.fromInputStream(f[finalI - 1], fileSizeLimit));
-            partETags.add(CompletedPart.builder()
-                    .partNumber(i)
-                    .eTag(uploadPartResponse.eTag())
-                    .build());
-        }
-
-        // Complete the multipart upload.
-        v3Client.completeMultipartUpload(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .uploadId(createResponse.uploadId())
-                .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
-
-        // Asserts
-        ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)));
 
         String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit * 11));
         String outputAsString = IoUtils.toUtf8String(result.asInputStream());
