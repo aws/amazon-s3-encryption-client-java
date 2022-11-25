@@ -52,7 +52,7 @@ public class MultipartUploadObjectPipeline {
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
-        EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials);
+        EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, null);
 
         request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), request);
 
@@ -137,9 +137,9 @@ public class MultipartUploadObjectPipeline {
 
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
-        // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
+        // To Create Cipher which is used in during uploadPart requests.
         private ContentEncryptionStrategy _contentEncryptionStrategy =
-                StreamingAesGcmContentStrategy
+                MultipartAesGcmContentStrategy
                         .builder()
                         .build();
         private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;

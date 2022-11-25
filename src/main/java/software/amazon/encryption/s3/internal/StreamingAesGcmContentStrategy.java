@@ -1,26 +1,11 @@
 package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -39,30 +24,6 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public EncryptedContent encryptContent(EncryptionMaterials materials) {
-        // TODO: Determine do we need to check for each part size before uploading?
-        if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
-            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
-                    "the maximum length allowed for GCM encryption.");
-        }
-
-        final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-
-        final byte[] nonce = new byte[algorithmSuite.nonceLengthBytes()];
-        _secureRandom.nextBytes(nonce);
-
-        final String cipherName = algorithmSuite.cipherName();
-        try {
-            final Cipher cipher = Cipher.getInstance(cipherName);
-
-            cipher.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
-                    new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
-            return new EncryptedContent(nonce, cipher);
-        } catch (GeneralSecurityException e) {
-            throw new S3EncryptionClientException("Unable to " + cipherName + " content encrypt.", e);
-        }
     }
 
     @Override
