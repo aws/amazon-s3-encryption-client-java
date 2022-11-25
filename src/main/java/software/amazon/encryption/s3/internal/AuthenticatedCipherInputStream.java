@@ -37,7 +37,7 @@ public class AuthenticatedCipherInputStream extends CipherInputStream {
     
     /**
      * Authenticated ciphers call doFinal upon the last read,
-     * so no need to do so upon close
+     * there is no need to do so upon close.
      * @throws IOException from the wrapped InputStream
      */
     @Override

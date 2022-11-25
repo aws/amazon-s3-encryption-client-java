@@ -61,9 +61,7 @@ public class S3EncryptionClient implements S3Client {
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
-    /**
-     * Map of data about in progress encrypted multipart uploads.
-     */
+
     private final MultipartUploadObjectPipeline _multipartPipeline;
 
     private S3EncryptionClient(Builder builder) {

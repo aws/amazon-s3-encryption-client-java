@@ -32,6 +32,9 @@ public class MultipartUploadObjectPipeline {
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private ContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
+    /**
+     * Map of data about in progress encrypted multipart uploads.
+     */
     private final Map<String, MultipartUploadContext> _multipartUploadContexts;
 
     public static Builder builder() {
@@ -54,7 +57,9 @@ public class MultipartUploadObjectPipeline {
 
         EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, null);
 
-        request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), request);
+        Map<String, String> metadata = new HashMap<>(request.metadata());
+        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
+        request = request.toBuilder().metadata(metadata).build();
 
         CreateMultipartUploadResponse response = _s3Client.createMultipartUpload(request);
 

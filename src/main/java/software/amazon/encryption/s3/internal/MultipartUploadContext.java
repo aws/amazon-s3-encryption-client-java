@@ -41,7 +41,7 @@ public class MultipartUploadContext {
 
     /**
      * Can be used to check the next part number must either be the same (if it
-     * was an retry) or increment by exactly 1 during a serial part uploads.
+     * was a retry) or increment by exactly 1 during a serial part uploads.
      * <p>
      * As a side effect, the {@link #partUploadInProgress} will be set to true
      * upon successful completion of this method. Caller of this method is
@@ -73,7 +73,7 @@ public class MultipartUploadContext {
 
     /**
      * Used to mark the completion of a part upload before the next. Should be
-     * invoked in a finally block, and must be preceded previously by a call to
+     * invoked in finally block, and must be preceded previously by a call to
      * {@link #beginPartUpload(int)}.
      *
      * @see #beginPartUpload(int)
