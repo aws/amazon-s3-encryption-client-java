@@ -94,7 +94,7 @@ public class MultipartUploadObjectPipeline {
         uploadContext.beginPartUpload(request.partNumber());
         Cipher cipher = uploadContext.getCipher();
         try {
-            final InputStream cipherInputStream = new AuthenticatedCipherInputStream(requestBody.contentStreamProvider().newStream(), cipher);
+            final InputStream cipherInputStream = new AuthenticatedCipherInputStream(requestBody.contentStreamProvider().newStream(), cipher, true, isLastPart);
             // The last part of the multipart upload will contain an extra
             // 16-byte mac
             if (isLastPart) {
