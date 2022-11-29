@@ -6,9 +6,7 @@ import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter.JsonGenerationException;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
@@ -53,11 +51,26 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
         @Override
         public PutObjectRequest encodeMetadata(EncryptionMaterials materials,
-                                               EncryptedContent encryptedContent, PutObjectRequest request) {
+                                        byte[] nonce, PutObjectRequest request) {
             Map<String, String> metadata = new HashMap<>(request.metadata());
+            metadata = updateMetadata(materials, nonce, metadata);
+            return request.toBuilder().metadata(metadata).build();
+        }
+
+        @Override
+        public CreateMultipartUploadRequest encodeMetadata(EncryptionMaterials materials,
+                                        byte[] nonce, CreateMultipartUploadRequest request) {
+            Map<String, String> metadata = new HashMap<>(request.metadata());
+            metadata = updateMetadata(materials, nonce, metadata);
+
+            return request.toBuilder().metadata(metadata).build();
+        }
+
+        private Map<String, String> updateMetadata(EncryptionMaterials materials, byte[] nonce,
+                                                   Map<String, String> metadata) {
             EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
-            metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(encryptedContent.getNonce()));
+            metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(nonce));
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, new String(edk.keyProviderInfo(), StandardCharsets.UTF_8));
@@ -74,8 +87,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             } catch (JsonGenerationException e) {
                 throw new S3EncryptionClientException("Cannot serialize encryption context to JSON.", e);
             }
-
-            return request.toBuilder().metadata(metadata).build();
+            return metadata;
         }
 
         @Override

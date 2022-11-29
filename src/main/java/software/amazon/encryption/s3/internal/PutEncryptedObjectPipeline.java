@@ -37,7 +37,7 @@ public class PutEncryptedObjectPipeline {
 
         EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, requestBody.contentStreamProvider().newStream());
 
-        request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
+        request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), request);
 
         return _s3Client.putObject(request, RequestBody.fromInputStream(encryptedContent.getCiphertext(), encryptedContent.getCiphertextLength()));
     }

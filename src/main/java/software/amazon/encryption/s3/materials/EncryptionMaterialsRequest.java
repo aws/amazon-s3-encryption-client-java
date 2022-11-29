@@ -5,11 +5,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Collections;
 import java.util.Map;
 
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Request;
 
 final public class EncryptionMaterialsRequest {
 
-    private final PutObjectRequest _s3Request;
+    private final S3Request _s3Request;
     private final Map<String, String> _encryptionContext;
     private final long _plaintextLength;
 
@@ -23,7 +23,7 @@ final public class EncryptionMaterialsRequest {
         return new Builder();
     }
 
-    public PutObjectRequest s3Request() {
+    public S3Request s3Request() {
         return _s3Request;
     }
 
@@ -43,14 +43,14 @@ final public class EncryptionMaterialsRequest {
 
     static public class Builder {
 
-        public PutObjectRequest _s3Request = null;
+        public S3Request _s3Request = null;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private long _plaintextLength = -1;
 
         private Builder() {
         }
 
-        public Builder s3Request(PutObjectRequest s3Request) {
+        public Builder s3Request(S3Request s3Request) {
             _s3Request = s3Request;
             return this;
         }
