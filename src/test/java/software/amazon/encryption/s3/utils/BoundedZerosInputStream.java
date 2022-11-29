@@ -19,6 +19,7 @@ public class BoundedZerosInputStream extends InputStream {
     @Override
     public int read() {
         if (_progress >= _bound) {
+            System.out.println("bound reached! done reading");
             return -1;
         }
         _progress++;

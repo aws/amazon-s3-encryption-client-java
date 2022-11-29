@@ -9,6 +9,8 @@ import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -37,6 +39,7 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 /**
  * Test the streaming functionality using various stream implementations.
  */
+@Execution(ExecutionMode.CONCURRENT)
 public class S3EncryptionClientStreamTest {
 
     private static final String BUCKET = S3EncryptionClientTestResources.BUCKET;
