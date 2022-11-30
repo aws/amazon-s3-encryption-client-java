@@ -109,7 +109,7 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-Release",
+                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-Release"
               ],
               "Action": [
                 "codebuild:StartBuild",
@@ -170,19 +170,12 @@ Resources:
           ]
         }
 
-  AccountIdParameter:
-    Type: "AWS::SSM::Parameter"
-    Properties:
-      Description: Parameter to store our account id so CodeBuild specs can access it
-      Name: /CodeBuild/AccountIdentity
-      Type: String
-      Value: !Sub "${AWS::AccountId}"
-
   SecretsManagerPolicyRelease:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
       ManagedPolicyName: !Sub "CryptoTools-SecretsManager-${ProjectName}-Release"
       Path: "/service-role/"
+      # TODO for prod release: Change to Maven-GPG-Keys-Release
       PolicyDocument: !Sub |
         {
           "Version": "2012-10-17",
@@ -190,7 +183,7 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-GC6h0A",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm"
               ],
               "Action": "secretsmanager:GetSecretValue"
