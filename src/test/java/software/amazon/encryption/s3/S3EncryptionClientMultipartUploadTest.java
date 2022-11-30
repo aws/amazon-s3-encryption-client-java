@@ -54,6 +54,7 @@ public class S3EncryptionClientMultipartUploadTest {
 
     @Test
     public void multipartUploadV3OutputStream() throws IOException {
+        final Date start = new Date();
         final String objectKey = "multipart-upload-v3-output-stream";
 
         // Overall "file" is 60MB, split into 10MB parts
@@ -68,6 +69,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .build();
 
         // Create Multipart upload request to S3
+        System.out.printf("Starting multipart upload request: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
                 builder.bucket(BUCKET).key(objectKey));
 
@@ -95,6 +97,7 @@ public class S3EncryptionClientMultipartUploadTest {
                     .build();
 
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+            System.out.printf("Making an upload part request: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
             UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
                     RequestBody.fromInputStream(partInputStream, partInputStream.available()));
             partETags.add(CompletedPart.builder()
@@ -116,6 +119,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .build();
 
         final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        System.out.printf("Last part upload request: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
                 RequestBody.fromInputStream(partInputStream, partInputStream.available()));
         partETags.add(CompletedPart.builder()
@@ -124,6 +128,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .build());
 
         // Complete the multipart upload.
+        System.out.printf("Completing multipart upload request: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         v3Client.completeMultipartUpload(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -131,6 +136,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         // Asserts
+        System.out.printf("Now getting result: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
@@ -141,7 +147,88 @@ public class S3EncryptionClientMultipartUploadTest {
 
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
+        System.out.printf("Done: %f\n", ((new Date()).getTime() - start.getTime()) / 1000.0);
     }
 
+    @Test
+    public void multipartUploadV2OutputStream() throws IOException {
+        final String objectKey = "multipart-upload-v2-output-stream";
+        final Date start = new Date();
+
+        // Overall "file" is 60MB, split into 10MB parts
+        final long fileSizeLimit = 1024 * 1024 * 60;
+        final int PART_SIZE = 10 * 1024 * 1024;
+        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+
+        // V2 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withEncryptionMaterialsProvider(materialsProvider).build();
+
+        // Create Multipart upload request to S3
+        System.out.printf("starting multipart upload request: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
+        InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(BUCKET, objectKey);
+        InitiateMultipartUploadResult initiateResult = v2Client.initiateMultipartUpload(request);
+
+        List<PartETag> partETags = new ArrayList<>();
+
+        int bytesRead, bytesSent = 0;
+        // 10MB parts
+        byte[] partData = new byte[PART_SIZE];
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        int partsSent = 1;
+
+        while ((bytesRead = inputStream.read(partData, 0, partData.length)) != -1) {
+            outputStream.write(partData, 0, bytesRead);
+            if (bytesSent < PART_SIZE) {
+                bytesSent += bytesRead;
+                continue;
+            }
+
+            System.out.printf("making an upload part request: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
+            com.amazonaws.services.s3.model.UploadPartRequest uploadPartRequest = new com.amazonaws.services.s3.model.UploadPartRequest();
+            uploadPartRequest.setBucketName(BUCKET);
+            uploadPartRequest.setKey(objectKey);
+            uploadPartRequest.setUploadId(initiateResult.getUploadId());
+            uploadPartRequest.setPartNumber(partsSent);
+            uploadPartRequest.setLastPart(false);
+            final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+            uploadPartRequest.setInputStream(partInputStream);
+            uploadPartRequest.setPartSize(partInputStream.available());
+            UploadPartResult uploadPartResult = v2Client.uploadPart(uploadPartRequest);
+            partETags.add(uploadPartResult.getPartETag());
+            outputStream.reset();
+            bytesSent = 0;
+            partsSent++;
+        }
+
+        // Last Part
+        System.out.printf("last part upload request: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
+        com.amazonaws.services.s3.model.UploadPartRequest uploadPartRequest = new com.amazonaws.services.s3.model.UploadPartRequest();
+        uploadPartRequest.setBucketName(BUCKET);
+        uploadPartRequest.setKey(objectKey);
+        uploadPartRequest.setUploadId(initiateResult.getUploadId());
+        uploadPartRequest.setPartNumber(partsSent);
+        uploadPartRequest.setLastPart(true);
+        final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        uploadPartRequest.setInputStream(partInputStream);
+        uploadPartRequest.setPartSize(partInputStream.available());
+        UploadPartResult uploadPartResult = v2Client.uploadPart(uploadPartRequest);
+        partETags.add(uploadPartResult.getPartETag());
+
+        // Complete the multipart upload.
+        System.out.printf("completing multipart upload request: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
+        CompleteMultipartUploadRequest completeReq = new com.amazonaws.services.s3.model.CompleteMultipartUploadRequest(BUCKET, objectKey, initiateResult.getUploadId(), partETags);
+        v2Client.completeMultipartUpload(completeReq);
+        System.out.printf("now getting result: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
+        final String result = v2Client.getObjectAsString(BUCKET, objectKey);
+
+        String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit));
+        assertEquals(inputAsString, result);
+
+        v2Client.deleteObject(BUCKET, objectKey);
+        System.out.printf("done: %f\n", ((new Date()).getTime() - start.getTime()) / 1000.0);
+    }
 
 }
