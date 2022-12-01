@@ -94,6 +94,8 @@ Resources:
         - !Ref CodeBuildBasePolicy
         - !Ref SecretsManagerPolicyRelease
         - !Ref ParameterStorePolicy
+        - !Ref S3ECReleaseTestKMSKeyPolicy
+        - !Ref S3ECReleaseS3BucketPolicy
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
 
@@ -184,8 +186,8 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI-xjAvTM",
-                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI-Credentials-eBrSNB",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI-Credentials",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm"
               ],
               "Action": "secretsmanager:GetSecretValue"
@@ -236,3 +238,77 @@ Resources:
             }
           ]
         }
+
+  S3ECReleaseTestingKMSKeyID:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: KMS Key for integration tests in release validation
+      Enabled: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+  S3ECReleaseKMSKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: alias/S3EC-Release-Testing-KMS-Key
+      TargetKeyId: !Ref S3ECReleaseTestingKMSKeyID
+
+  S3ECReleaseTestS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: s3ec-release-test-bucket
+      LifecycleConfiguration:
+        Rules:
+          - Id: Expire in 14 days
+            Status: Enabled
+            ExpirationInDays: 14
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  S3ECReleaseS3BucketPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: S3EC-Release-S3-Bucket-Policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:DeleteObject'
+            Resource:
+              - !Join [ "", [ !GetAtt S3ECReleaseTestS3Bucket.Arn, '/*' ] ]
+
+  S3ECReleaseTestKMSKeyPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseTestingKMSKeyID}",
+                "arn:aws:kms:*:${AWS::AccountId}:${S3ECReleaseKMSKeyAlias}"
+              ],
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:GenerateDataKeyPair"
+              ]
+            }
+          ]
+        }
+      ManagedPolicyName: S3EC-Release-Test-KMS-Key-Policy
