@@ -23,7 +23,16 @@ phases:
     commands:
       - git config --global user.name "aws-crypto-tools-ci-bot"
       - git config --global user.email "no-reply@noemail.local"
-      - git checkout $BRANCH
+      - echo $GH_TOKEN > token.txt
+      - export GH_TOKEN=
+      # install gh cli in order to upload artifacts
+      - curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
+      - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+      - apt update
+      - apt install gh
+      - gh version
+      - gh auth login --with-token < token.txt
+      - gh auth status
       - git fetch --tags git@github.com:aws/aws-s3-encryption-client-java.git
   build:
     commands:
