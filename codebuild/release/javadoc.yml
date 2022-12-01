@@ -5,7 +5,7 @@ version: 0.2
 
 env:
   variables:
-    BRANCH: "main"
+    BRANCH: "cd"
     GH_PAGES: "gh-pages"
   git-credential-helper: yes
 
