@@ -138,9 +138,12 @@ public class S3EncryptionClientMultipartUploadTest {
                 .key(objectKey));
 
         String inputAsString = IoUtils.toUtf8String(new BoundedOnesInputStream(fileSizeLimit));
+        System.out.printf("Got result: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         String outputAsString = IoUtils.toUtf8String(result.asInputStream());
+        System.out.printf("Asserting..: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         assertEquals(inputAsString, outputAsString);
 
+        System.out.printf("Deleting..: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
         System.out.printf("Done: %f\n", ((new Date()).getTime() - start.getTime()) / 1000.0);
