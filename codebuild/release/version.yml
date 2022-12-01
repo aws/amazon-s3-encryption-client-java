@@ -33,7 +33,6 @@ phases:
       - gh version
       - gh auth login --with-token < token.txt
       - gh auth status
-      - git fetch --tags git@github.com:aws/aws-s3-encryption-client-java.git
   build:
     commands:
-      - npx semantic-release --branches $BRANCH -r git@github.com:aws/aws-s3-encryption-client-java.git --no-ci
+      - npx semantic-release --branches $BRANCH --no-ci
