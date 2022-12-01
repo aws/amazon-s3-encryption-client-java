@@ -22,15 +22,15 @@ batch:
         JAVA_NUMERIC_VERSION: 8
       image: aws/codebuild/standard:3.0
 
-  - identifier: validate_staging_release_openjdk11
-    depend-on:
-      - validate_staging_release_openjdk8
-    buildspec: codebuild/release/validate-staging.yml
-    env:
-      variables:
-        JAVA_ENV_VERSION: openjdk11
-        JAVA_NUMERIC_VERSION: 11
-      image: aws/codebuild/standard:3.0
+#  - identifier: validate_staging_release_openjdk11
+#    depend-on:
+#      - validate_staging_release_openjdk8
+#    buildspec: codebuild/release/validate-staging.yml
+#    env:
+#      variables:
+#        JAVA_ENV_VERSION: openjdk11
+#        JAVA_NUMERIC_VERSION: 11
+#      image: aws/codebuild/standard:3.0
 
   # TODO: Add OpenJDK17 validation
 
@@ -67,7 +67,7 @@ batch:
   # Version Project
   - identifier: version
     depend-on:
-      - validate_staging_release_openjdk11
+      - validate_staging_release_openjdk8
     buildspec: codebuild/release/version.yml
     env:
       image: aws/codebuild/standard:5.0
