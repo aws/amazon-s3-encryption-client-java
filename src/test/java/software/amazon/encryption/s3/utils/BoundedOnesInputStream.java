@@ -4,15 +4,15 @@ import java.io.InputStream;
 
 /**
  * Test utility class.
- * Stream of a fixed number of zeros. Useful for testing
+ * Stream of a fixed number of ones. Useful for testing
  * stream uploads of a specific size. Not threadsafe.
  */
-public class BoundedZerosInputStream extends InputStream {
+public class BoundedOnesInputStream extends InputStream {
 
     private final long _bound;
     private long _progress = 0;
 
-    public BoundedZerosInputStream(final long bound) {
+    public BoundedOnesInputStream(final long bound) {
         _bound = bound;
     }
 
@@ -22,7 +22,10 @@ public class BoundedZerosInputStream extends InputStream {
             return -1;
         }
         _progress++;
-        return 0;
+        return 1;
     }
+
+
+
 }
 

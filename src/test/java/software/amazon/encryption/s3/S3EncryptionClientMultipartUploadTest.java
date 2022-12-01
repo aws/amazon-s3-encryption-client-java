@@ -1,16 +1,12 @@
 package software.amazon.encryption.s3;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
 import com.amazonaws.services.s3.AmazonS3EncryptionV2;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.UploadPartResult;
@@ -25,7 +21,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
-import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
+import software.amazon.encryption.s3.utils.BoundedOnesInputStream;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -60,7 +56,7 @@ public class S3EncryptionClientMultipartUploadTest {
         // Overall "file" is 60MB, split into 10MB parts
         final long fileSizeLimit = 1024 * 1024 * 60;
         final int PART_SIZE = 10 * 1024 * 1024;
-        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream inputStream = new BoundedOnesInputStream(fileSizeLimit);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -141,7 +137,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .bucket(BUCKET)
                 .key(objectKey));
 
-        String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit));
+        String inputAsString = IoUtils.toUtf8String(new BoundedOnesInputStream(fileSizeLimit));
         String outputAsString = IoUtils.toUtf8String(result.asInputStream());
         assertEquals(inputAsString, outputAsString);
 
@@ -158,7 +154,7 @@ public class S3EncryptionClientMultipartUploadTest {
         // Overall "file" is 60MB, split into 10MB parts
         final long fileSizeLimit = 1024 * 1024 * 60;
         final int PART_SIZE = 10 * 1024 * 1024;
-        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream inputStream = new BoundedOnesInputStream(fileSizeLimit);
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -223,10 +219,13 @@ public class S3EncryptionClientMultipartUploadTest {
         v2Client.completeMultipartUpload(completeReq);
         System.out.printf("now getting result: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         final String result = v2Client.getObjectAsString(BUCKET, objectKey);
+        System.out.printf("got result: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
 
-        String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit));
+        String inputAsString = IoUtils.toUtf8String(new BoundedOnesInputStream(fileSizeLimit));
+        System.out.printf("asserting..: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         assertEquals(inputAsString, result);
 
+        System.out.printf("deleting..: %d\n", ((new Date()).getTime() - start.getTime()) / 1000);
         v2Client.deleteObject(BUCKET, objectKey);
         System.out.printf("done: %f\n", ((new Date()).getTime() - start.getTime()) / 1000.0);
     }

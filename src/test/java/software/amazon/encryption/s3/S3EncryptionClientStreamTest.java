@@ -16,16 +16,15 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedStreamBufferer;
-import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
+import software.amazon.encryption.s3.utils.BoundedOnesInputStream;
 import software.amazon.encryption.s3.utils.MarkResetBoundedZerosInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -99,8 +98,8 @@ public class S3EncryptionClientStreamTest {
         final int inputLength = DEFAULT_TEST_STREAM_LENGTH;
         // Create a second stream of zeros because reset is not supported
         // and reading into the byte string will consume the stream.
-        final InputStream inputStream = new BoundedZerosInputStream(inputLength);
-        final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
+        final InputStream inputStream = new BoundedOnesInputStream(inputLength);
+        final InputStream inputStreamForString = new BoundedOnesInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
         v3Client.putObject(PutObjectRequest.builder()
@@ -133,8 +132,8 @@ public class S3EncryptionClientStreamTest {
         final int inputLength = DEFAULT_TEST_STREAM_LENGTH;
         // Create a second stream of zeros because reset is not supported
         // and reading into the byte string will consume the stream.
-        final InputStream inputStream = new BoundedZerosInputStream(inputLength);
-        final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
+        final InputStream inputStream = new BoundedOnesInputStream(inputLength);
+        final InputStream inputStreamForString = new BoundedOnesInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
         v3Client.putObject(PutObjectRequest.builder()
@@ -169,8 +168,8 @@ public class S3EncryptionClientStreamTest {
         final int inputLength = DEFAULT_TEST_STREAM_LENGTH;
         // Create a second stream of zeros because reset is not supported
         // and reading into the byte string will consume the stream.
-        final InputStream inputStream = new BoundedZerosInputStream(inputLength);
-        final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
+        final InputStream inputStream = new BoundedOnesInputStream(inputLength);
+        final InputStream inputStreamForString = new BoundedOnesInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
         v3Client.putObject(PutObjectRequest.builder()
@@ -214,7 +213,8 @@ public class S3EncryptionClientStreamTest {
                 .build();
 
         final int inputLength = DEFAULT_TEST_STREAM_LENGTH;
-        final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
+        System.out.println(String.format("inputLength is: %d", inputLength));
+        final InputStream inputStreamForString = new BoundedOnesInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
         v1Client.putObject(BUCKET, objectKey, inputStreamAsUtf8String);
@@ -234,6 +234,46 @@ public class S3EncryptionClientStreamTest {
     }
 
     @Test
+    public void delayedAuthModeWithLargeObjectBytes() throws IOException {
+        final String objectKey = "large-object-test-bytes";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // Tight bound on the default limit of 64MiB
+        final int fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
+        final byte[] bytes = new byte[fileSizeExceedingDefaultLimit];
+        final InputStream largeObjectStream = new ByteArrayInputStream(bytes);
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
+
+        largeObjectStream.close();
+
+        // Delayed Authentication is not enabled, so getObject fails
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
+
+        S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableDelayedAuthenticationMode(true)
+                .build();
+
+        // Once enabled, the getObject request passes
+        v3ClientWithDelayedAuth.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = "large-object-test";
 
@@ -244,7 +284,7 @@ public class S3EncryptionClientStreamTest {
 
         // Tight bound on the default limit of 64MiB
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
-        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
+        final InputStream largeObjectStream = new BoundedOnesInputStream(fileSizeExceedingDefaultLimit);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -283,7 +323,7 @@ public class S3EncryptionClientStreamTest {
                 .build();
 
         final long fileSizeExceedingGCMLimit = (1L << 39) - 256 / 8;
-        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingGCMLimit);
+        final InputStream largeObjectStream = new BoundedOnesInputStream(fileSizeExceedingGCMLimit);
         assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
