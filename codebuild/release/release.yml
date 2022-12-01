@@ -66,8 +66,8 @@ batch:
 
   # Version Project
   - identifier: version
-    depend-on:
-      - validate_staging_release_openjdk8
+    #depend-on:
+    #  - validate_staging_release_openjdk8
     buildspec: codebuild/release/version.yml
     env:
       image: aws/codebuild/standard:5.0
