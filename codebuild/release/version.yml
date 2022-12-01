@@ -24,8 +24,7 @@ phases:
       - git config --global user.name "aws-crypto-tools-ci-bot"
       - git config --global user.email "no-reply@noemail.local"
       - git checkout $BRANCH
-      - git fetch --tags https://github.com/aws/aws-s3-encryption-client-java.git
-      - git fetch --tags https://github.com/aws/aws-s3-encryption-client-java.git
+      - git fetch --tags git@github.com:aws/aws-s3-encryption-client-java.git
   build:
     commands:
       - npx semantic-release --branches $BRANCH -r git@github.com:aws/aws-s3-encryption-client-java.git --no-ci
