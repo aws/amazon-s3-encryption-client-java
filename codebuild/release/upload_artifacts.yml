@@ -38,14 +38,14 @@ phases:
       # TODO for prod release: Change repo URL to prod repo
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
-          -DrepoUrl=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
+          -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,staging::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -Dartifact=software.amazon.encryption:s3:${VERSION}:jar
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
-          -DrepoUrl=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
+          -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,staging::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -Dartifact=software.amazon.encryption:s3:${VERSION}:jar:sources
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
-          -DrepoUrl=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
+          -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,staging::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -Dartifact=software.amazon.encryption:s3:${VERSION}:jar:javadoc
       - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/s3/${VERSION}/*.jar -d -F CHANGELOG.md -t "AWS S3 Encryption Client ${VERSION} Release -- $(date +%Y-%m-%d)"
