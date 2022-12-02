@@ -12,6 +12,8 @@ env:
     DOMAIN: crypto-tools-internal
     REPOSITORY: java-s3ec-staging
   git-credential-helper: yes
+  parameter-store:
+    ACCOUNT: /CodeBuild/AccountId
   secrets-manager:
     GH_TOKEN: Github/aws-crypto-tools-ci-bot:ESDK Release Token
 
