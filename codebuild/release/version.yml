@@ -6,6 +6,7 @@ version: 0.2
 env:
   variables:
     NODE_OPTIONS: "--max-old-space-size=4096"
+    # TODO for prod release: change to "main" branch
     BRANCH: "cd"
   git-credential-helper: "yes"
   secrets-manager:
@@ -28,4 +29,5 @@ phases:
       - git checkout $BRANCH
   build:
     commands:
+      # semantic-release uses config stored in ~/.releaserc
       - npx semantic-release --branches $BRANCH --no-ci
