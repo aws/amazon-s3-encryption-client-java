@@ -65,12 +65,12 @@ batch:
 #      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
 
   # Version Project
-#  - identifier: version
-#    depend-on:
-#      - release_staging
-#    buildspec: codebuild/release/version.yml
-#    env:
-#      image: aws/codebuild/standard:5.0
+  - identifier: version
+    depend-on:
+      - release_staging
+    buildspec: codebuild/release/version.yml
+    env:
+      image: aws/codebuild/standard:5.0
 
   # TODO for prod release: Release to Maven
 
@@ -80,7 +80,7 @@ batch:
   - identifier: upload_artifacts
     depend-on:
       # TODO for prod release: depend-on Maven release validations, not 'version' step
-      - release_staging
+      - version
     buildspec: codebuild/release/upload_artifacts.yml
     env:
       # standard:5.0 (Ubuntu) supports GH CLI; AL2 does not
