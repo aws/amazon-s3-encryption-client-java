@@ -77,19 +77,19 @@ batch:
   # TODO for prod release: Validate Maven release
 
   # Upload Artifacts
-  - identifier: upload_artifacts
-#    depend-on:
-#      # TODO for prod release: depend-on Maven release validations, not 'version' step
-#      - version
-    buildspec: codebuild/release/upload_artifacts.yml
-    env:
-      # standard:5.0 (Ubuntu) supports GH CLI; AL2 does not
-      image: aws/codebuild/standard:5.0
+#  - identifier: upload_artifacts
+##    depend-on:
+##      # TODO for prod release: depend-on Maven release validations, not 'version' step
+##      - version
+#    buildspec: codebuild/release/upload_artifacts.yml
+#    env:
+#      # standard:5.0 (Ubuntu) supports GH CLI; AL2 does not
+#      image: aws/codebuild/standard:5.0
 
   # Generate and update new javadocs
   - identifier: update_javadoc
-    depend-on:
-      - upload_artifacts
+#    depend-on:
+#      - upload_artifacts
     buildspec: codebuild/release/javadoc.yml
     env:
       variables:
