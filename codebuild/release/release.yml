@@ -54,7 +54,7 @@ batch:
 
   - identifier: validate_staging_release_corretto17
     depend-on:
-      - validate_staging_release_openjdk17
+      - release_staging
     buildspec: codebuild/release/validate-staging.yml
     env:
       variables:
