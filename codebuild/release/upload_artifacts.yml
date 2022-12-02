@@ -21,7 +21,7 @@ phases:
   pre_build:
     commands:
       # get codeartifact authorization
-      - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
+      - export CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
       # get new project version
       - git checkout $BRANCH
       - export VERSION=$(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
