@@ -33,8 +33,8 @@ batch:
 #      image: aws/codebuild/standard:3.0
 
   - identifier: validate_staging_release_openjdk17
-#    depend-on:
-#      - validate_staging_release_openjdk11
+    depend-on:
+      - release_staging
     buildspec: codebuild/release/validate-staging.yml
     env:
       variables:
@@ -43,29 +43,29 @@ batch:
       # Only Ubuntu instance supporting openjdk17 runtime is 6.0
       image: aws/codebuild/standard:6.0
 
-  - identifier: validate_staging_release_corretto8
-    depend-on:
-      - validate_staging_release_openjdk17
-    buildspec: codebuild/release/validate-staging.yml
-    env:
-      variables:
-        JAVA_ENV_VERSION: corretto8
-        JAVA_NUMERIC_VERSION: 8
-      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-
-  - identifier: validate_staging_release_corretto11
-    depend-on:
-      - validate_staging_release_corretto8
-    buildspec: codebuild/release/validate-staging.yml
-    env:
-      variables:
-        JAVA_ENV_VERSION: corretto11
-        JAVA_NUMERIC_VERSION: 11
-      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+#  - identifier: validate_staging_release_corretto8
+#    depend-on:
+#      - validate_staging_release_openjdk17
+#    buildspec: codebuild/release/validate-staging.yml
+#    env:
+#      variables:
+#        JAVA_ENV_VERSION: corretto8
+#        JAVA_NUMERIC_VERSION: 8
+#      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+#
+#  - identifier: validate_staging_release_corretto11
+#    depend-on:
+#      - validate_staging_release_corretto8
+#    buildspec: codebuild/release/validate-staging.yml
+#    env:
+#      variables:
+#        JAVA_ENV_VERSION: corretto11
+#        JAVA_NUMERIC_VERSION: 11
+#      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
 
   - identifier: validate_staging_release_corretto17
     depend-on:
-      - validate_staging_release_corretto11
+      - validate_staging_release_openjdk17
     buildspec: codebuild/release/validate-staging.yml
     env:
       variables:
