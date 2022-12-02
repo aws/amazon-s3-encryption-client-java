@@ -44,18 +44,21 @@ phases:
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
           -Dcodeartifact.token=$CODEARTIFACT_AUTH_TOKEN \
+          -Dcodeartifact.url=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -Dartifact=software.amazon.encryption:s3:${VERSION}:jar \
           -s $SETTINGS_FILE
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
           -Dcodeartifact.token=$CODEARTIFACT_AUTH_TOKEN \
+          -Dcodeartifact.url=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -Dartifact=software.amazon.encryption:s3:${VERSION}:jar:sources \
           -s $SETTINGS_FILE
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
           -Dcodeartifact.token=$CODEARTIFACT_AUTH_TOKEN \
+          -Dcodeartifact.url=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -Dartifact=software.amazon.encryption:s3:${VERSION}:jar:javadoc \
           -s $SETTINGS_FILE
