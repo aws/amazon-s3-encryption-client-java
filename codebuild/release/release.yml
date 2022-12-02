@@ -78,9 +78,9 @@ batch:
 
   # Upload Artifacts
   - identifier: upload_artifacts
-    depend-on:
-      # TODO for prod release: depend-on Maven release validations, not 'version' step
-      - version
+#    depend-on:
+#      # TODO for prod release: depend-on Maven release validations, not 'version' step
+#      - version
     buildspec: codebuild/release/upload_artifacts.yml
     env:
       # standard:5.0 (Ubuntu) supports GH CLI; AL2 does not
