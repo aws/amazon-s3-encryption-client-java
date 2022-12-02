@@ -1,0 +1,5 @@
+software.amazon.encryption.s3
+software.amazon.encryption.s3.algorithms
+software.amazon.encryption.s3.internal
+software.amazon.encryption.s3.legacy.internal
+software.amazon.encryption.s3.materials
