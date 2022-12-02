@@ -11,16 +11,16 @@ batch:
   - identifier: release_staging
     buildspec: codebuild/release/release-staging.yml
 
-  # Validate CodeArtifact with supported JDK and Corretto
-  - identifier: validate_staging_release_openjdk8
-    depend-on:
-      - release_staging
-    buildspec: codebuild/release/validate-staging.yml
-    env:
-      variables:
-        JAVA_ENV_VERSION: openjdk8
-        JAVA_NUMERIC_VERSION: 8
-      image: aws/codebuild/standard:3.0
+#  # Validate CodeArtifact with supported JDK and Corretto
+#  - identifier: validate_staging_release_openjdk8
+#    depend-on:
+#      - release_staging
+#    buildspec: codebuild/release/validate-staging.yml
+#    env:
+#      variables:
+#        JAVA_ENV_VERSION: openjdk8
+#        JAVA_NUMERIC_VERSION: 8
+#      image: aws/codebuild/standard:3.0
 
 #  - identifier: validate_staging_release_openjdk11
 #    depend-on:
@@ -67,7 +67,7 @@ batch:
   # Version Project
   - identifier: version
     depend-on:
-      - validate_staging_release_openjdk8
+      - release_staging
     buildspec: codebuild/release/version.yml
     env:
       image: aws/codebuild/standard:5.0
