@@ -5,8 +5,7 @@ version: 0.2
 
 env:
   variables:
-    # TODO for prod release: change to "main" branch
-    BRANCH: "cd"
+    BRANCH: "main"
     # TODO for prod release: Remove variables below; these are used in CodeArtifact, which won't be
     #   used as part of Prod release. These are used to test GH release signing.
     REGION: us-east-1
