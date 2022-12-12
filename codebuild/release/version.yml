@@ -6,8 +6,7 @@ version: 0.2
 env:
   variables:
     NODE_OPTIONS: "--max-old-space-size=4096"
-    # TODO for prod release: change to "main" branch
-    BRANCH: "cd"
+    BRANCH: "main"
   git-credential-helper: "yes"
   secrets-manager:
     GH_TOKEN: Github/aws-crypto-tools-ci-bot:ESDK Release Token
