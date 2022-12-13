@@ -9,7 +9,6 @@ import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
-import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
@@ -85,11 +84,7 @@ public class S3EncryptionClientMultipartUploadTest {
         ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
-
-        String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit * 11));
-        String outputAsString = IoUtils.toUtf8String(result.asInputStream());
-        assertEquals(inputAsString, outputAsString);
-
+        assertEquals(fileSizeLimit, result.asInputStream().available());
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
     }
