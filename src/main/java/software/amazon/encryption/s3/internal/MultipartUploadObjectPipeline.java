@@ -1,6 +1,7 @@
 package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -13,6 +14,7 @@ import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
+import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
@@ -20,7 +22,9 @@ import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
 
 import javax.crypto.Cipher;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
@@ -132,6 +136,22 @@ public class MultipartUploadObjectPipeline {
     public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request) {
         _multipartUploadContexts.remove(request.uploadId());
         return _s3Client.abortMultipartUpload(request);
+    }
+
+    public void putLocalObject(RequestBody requestBody, String uploadId, OutputStream os) throws IOException {
+        final MultipartUploadContext uploadContext = _multipartUploadContexts.get(uploadId);
+        Cipher cipher = uploadContext.getCipher();
+        final InputStream cipherInputStream = new AuthenticatedCipherInputStream(requestBody.contentStreamProvider().newStream(), cipher);
+
+        try {
+            IoUtils.copy(cipherInputStream, os);
+            // so it won't crap out with a false negative at the end; (Not
+            // really relevant here)
+            uploadContext.setHasFinalPartBeenSeen(true);
+        } finally {
+            // This will create last part of MultiFileOutputStream upon close
+            IoUtils.closeQuietly(os, null);
+        }
     }
 
     public static class Builder {
