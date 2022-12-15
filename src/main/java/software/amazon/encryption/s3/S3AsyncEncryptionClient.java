@@ -23,13 +23,10 @@ import javax.crypto.SecretKey;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-
-import static java.util.concurrent.CompletableFuture.allOf;
 
 public class S3AsyncEncryptionClient implements S3AsyncClient {
 

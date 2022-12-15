@@ -1,27 +1,13 @@
 package software.amazon.encryption.s3;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import java.security.KeyPair;
-import java.security.Provider;
-import java.util.ArrayList;
-import java.util.List;
-import java.security.SecureRandom;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
-import javax.crypto.SecretKey;
-
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
-import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
@@ -40,6 +26,14 @@ import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
+
+import javax.crypto.SecretKey;
+import java.security.KeyPair;
+import java.security.Provider;
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
