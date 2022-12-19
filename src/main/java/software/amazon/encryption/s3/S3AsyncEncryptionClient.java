@@ -5,20 +5,12 @@ import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.core.sync.ResponseTransformer;
-import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
-import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
@@ -33,24 +25,21 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-/**
- * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
- * on putObject and decrypt objects on getObject using the provided encryption key(s).
- */
-public class S3EncryptionClient implements S3Client {
+public class S3AsyncEncryptionClient implements S3AsyncClient {
 
     // Used for request-scoped encryption contexts for supporting keys
-    public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
+    public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT_ASYNC = new ExecutionAttribute<>("EncryptionContextAsync");
 
-    private final S3Client _wrappedClient;
+    private final S3AsyncClient _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
 
-    private S3EncryptionClient(Builder builder) {
+    private S3AsyncEncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
@@ -65,57 +54,35 @@ public class S3EncryptionClient implements S3Client {
     // Helper function to attach encryption contexts to a request
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalEncryptionContext(Map<String, String> encryptionContext) {
         return builder ->
-                builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
+                builder.putExecutionAttribute(S3AsyncEncryptionClient.ENCRYPTION_CONTEXT_ASYNC, encryptionContext);
     }
 
     @Override
-    public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody)
-            throws AwsServiceException, SdkClientException {
-
-        PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
-                .s3Client(_wrappedClient)
-                .cryptoMaterialsManager(_cryptoMaterialsManager)
-                .secureRandom(_secureRandom)
-                .build();
-
-        return pipeline.putObject(putObjectRequest, requestBody);
-    }
-
-    @Override
-    public <T> T getObject(GetObjectRequest getObjectRequest,
-                           ResponseTransformer<GetObjectResponse, T> responseTransformer)
-            throws AwsServiceException, SdkClientException {
-
-        GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
-                .s3Client(_wrappedClient)
-                .cryptoMaterialsManager(_cryptoMaterialsManager)
-                .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
-                .build();
-
-        return pipeline.getObject(getObjectRequest, responseTransformer);
-    }
-
-    @Override
-    public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) throws AwsServiceException,
-            SdkClientException {
-        // Delete the object
-        DeleteObjectResponse deleteObjectResponse = _wrappedClient.deleteObject(deleteObjectRequest);
-        // If Instruction file exists, delete the instruction file as well.
-        String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
+    public CompletableFuture<DeleteObjectResponse> deleteObject(DeleteObjectRequest deleteObjectRequest) {
+        // TODO: Pass-through requests MUST set the user agent
+        final CompletableFuture<DeleteObjectResponse> response =  _wrappedClient.deleteObject(deleteObjectRequest);
+        final String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
+        // Deleting the instruction file is "fire and forget"
+        // This is necessary because the encryption client must adhere to the
+        // same interface as the default client thus it is not possible to
+        // use e.g. allOf to return a future which includes both deletions.
         _wrappedClient.deleteObject(builder -> builder
                 .bucket(deleteObjectRequest.bucket())
                 .key(instructionObjectKey));
-        return deleteObjectResponse;
+        return response;
     }
 
     @Override
-    public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
+    public CompletableFuture<DeleteObjectsResponse> deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
-        // Delete the objects
-        DeleteObjectsResponse deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest);
+        // TODO: Pass-through requests MUST set the user agent
+        final CompletableFuture<DeleteObjectsResponse> deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest);
         // If Instruction files exists, delete the instruction files as well.
-        List<ObjectIdentifier> deleteObjects = S3EncryptionClientUtilities.instructionFileKeysToDelete(deleteObjectsRequest);
+        final List<ObjectIdentifier> deleteObjects = S3EncryptionClientUtilities.instructionFileKeysToDelete(deleteObjectsRequest);
+        // Deleting the instruction files is "fire and forget"
+        // This is necessary because the encryption client must adhere to the
+        // same interface as the default client thus it is not possible to
+        // use e.g. allOf to return a future which includes both deletions.
         _wrappedClient.deleteObjects(DeleteObjectsRequest.builder()
                 .bucket(deleteObjectsRequest.bucket())
                 .delete(builder -> builder.objects(deleteObjects))
@@ -133,8 +100,9 @@ public class S3EncryptionClient implements S3Client {
         _wrappedClient.close();
     }
 
+    // TODO: The async / non-async clients can probably share a builder - revisit after implementing async
     public static class Builder {
-        private S3Client _wrappedClient = S3Client.builder().build();
+        private S3AsyncClient _wrappedClient = S3AsyncClient.builder().build();
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
         private SecretKey _aesKey;
@@ -153,8 +121,8 @@ public class S3EncryptionClient implements S3Client {
          * S3Client will be reflected in this Builder.
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
-        public Builder wrappedClient(S3Client wrappedClient) {
-            if (wrappedClient instanceof S3EncryptionClient) {
+        public Builder wrappedClient(S3AsyncClient wrappedClient) {
+            if (wrappedClient instanceof S3AsyncEncryptionClient) {
                 throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
             }
 
@@ -242,7 +210,7 @@ public class S3EncryptionClient implements S3Client {
             this._cryptoProvider = cryptoProvider;
             return this;
         }
-           
+
         public Builder secureRandom(SecureRandom secureRandom) {
             if (secureRandom == null) {
                 throw new S3EncryptionClientException("SecureRandom provided to S3EncryptionClient cannot be null");
@@ -251,7 +219,7 @@ public class S3EncryptionClient implements S3Client {
             return this;
         }
 
-        public S3EncryptionClient build() {
+        public S3AsyncEncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
             }
@@ -285,7 +253,7 @@ public class S3EncryptionClient implements S3Client {
                         .build();
             }
 
-            return new S3EncryptionClient(this);
+            return new S3AsyncEncryptionClient(this);
         }
     }
 }

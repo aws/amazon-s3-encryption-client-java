@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+
 public abstract class ContentMetadataStrategy implements ContentMetadataEncodingStrategy, ContentMetadataDecodingStrategy {
 
     private static final Base64.Encoder ENCODER = Base64.getEncoder();
@@ -28,13 +30,11 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
     public static final ContentMetadataDecodingStrategy INSTRUCTION_FILE = new ContentMetadataDecodingStrategy() {
 
-        private static final String FILE_SUFFIX = ".instruction";
-
         @Override
         public ContentMetadata decodeMetadata(S3Client client, GetObjectRequest getObjectRequest, GetObjectResponse response) {
             GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
                     .bucket(getObjectRequest.bucket())
-                    .key(getObjectRequest.key() + FILE_SUFFIX)
+                    .key(getObjectRequest.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
             ResponseInputStream<GetObjectResponse> instruction = client.getObject(
                     instructionGetObjectRequest);
