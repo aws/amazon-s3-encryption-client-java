@@ -96,8 +96,10 @@ public class S3EncryptionClientCompatibilityTest {
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
+        final Map<String, String> objectMetadata = objectResponse.response().metadata();
+        objectMetadata.forEach((k, v) -> System.out.println(k + " " + v));
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
+        //deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 
@@ -131,6 +133,8 @@ public class S3EncryptionClientCompatibilityTest {
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
+        final Map<String, String> objectMetadata = objectResponse.response().metadata();
+        objectMetadata.forEach((k, v) -> System.out.println(k + " " + v));
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
