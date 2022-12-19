@@ -14,6 +14,7 @@ import software.amazon.encryption.s3.S3EncryptionClient;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -58,7 +59,7 @@ public class UploadObjectObserver {
         final UploadPartRequest reqUploadPart =
                 newUploadPartRequest(event);
         final OnFileDelete fileDeleteObserver = event.getFileDeleteObserver();
-        futures.add(es.submit(new Callable<>() {
+        futures.add(es.submit(new Callable<Map<Integer, UploadPartResponse>>() {
             @Override
             public Map<Integer, UploadPartResponse> call() {
                 // Upload the ciphertext directly via the non-encrypting
@@ -117,7 +118,7 @@ public class UploadObjectObserver {
     protected Map<Integer, UploadPartResponse> uploadPart(UploadPartRequest reqUploadPart, RequestBody requestBody) {
         // Upload the ciphertext directly via the non-encrypting
         // s3 client
-        return Map.of(reqUploadPart.partNumber(), s3Client.uploadPart(reqUploadPart, requestBody));
+        return Collections.singletonMap(reqUploadPart.partNumber(), s3Client.uploadPart(reqUploadPart, requestBody));
     }
 
     public List<Future<Map<Integer, UploadPartResponse>>> futures() {
