@@ -39,7 +39,7 @@ public class S3EncryptionClientMultipartUploadTest {
     public void multipartPutObject() {
         final String objectKey = "multipart-put-object";
 
-        final int fileSizeLimit = 1024 * 1024 * 110;
+        final int fileSizeLimit = 1024 * 1024 * 63;
         Random rd = new Random();
         byte[] arr = new byte[fileSizeLimit];
         rd.nextBytes(arr);
@@ -47,7 +47,6 @@ public class S3EncryptionClientMultipartUploadTest {
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableMultipartPutObject(true)
-                .enableDelayedAuthenticationMode(true)
                 .build();
 
         v3Client.putObject(builder -> builder
