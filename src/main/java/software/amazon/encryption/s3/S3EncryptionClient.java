@@ -40,10 +40,12 @@ import javax.crypto.SecretKey;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.instructionFileKeysToDelete;
 
 /**
  * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
@@ -53,8 +55,9 @@ public class S3EncryptionClient implements S3Client {
 
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
+    // TODO: Replace with UploadPartRequest.isLastPart() when launched.
     // Used for multipart uploads
-    public static final ExecutionAttribute<Boolean> isLastPart = new ExecutionAttribute<>("isLastPart");
+    public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
 
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -86,7 +89,7 @@ public class S3EncryptionClient implements S3Client {
     // Helper function to determine last upload part during multipart uploads
     public static Consumer<AwsRequestOverrideConfiguration.Builder> isLastPart(Boolean isLastPart) {
         return builder ->
-                builder.putExecutionAttribute(S3EncryptionClient.isLastPart, isLastPart);
+                builder.putExecutionAttribute(S3EncryptionClient.IS_LAST_PART, isLastPart);
     }
 
     @Override
@@ -123,7 +126,7 @@ public class S3EncryptionClient implements S3Client {
         // Delete the object
         DeleteObjectResponse deleteObjectResponse = _wrappedClient.deleteObject(deleteObjectRequest);
         // If Instruction file exists, delete the instruction file as well.
-        String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
+        String instructionObjectKey = deleteObjectRequest.key() + INSTRUCTION_FILE_SUFFIX;
         _wrappedClient.deleteObject(builder -> builder
                 .bucket(deleteObjectRequest.bucket())
                 .key(instructionObjectKey));
@@ -136,7 +139,7 @@ public class S3EncryptionClient implements S3Client {
         // Delete the objects
         DeleteObjectsResponse deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest);
         // If Instruction files exists, delete the instruction files as well.
-        List<ObjectIdentifier> deleteObjects = S3EncryptionClientUtilities.instructionFileKeysToDelete(deleteObjectsRequest);
+        List<ObjectIdentifier> deleteObjects = instructionFileKeysToDelete(deleteObjectsRequest);
         _wrappedClient.deleteObjects(DeleteObjectsRequest.builder()
                 .bucket(deleteObjectsRequest.bucket())
                 .delete(builder -> builder.objects(deleteObjects))
@@ -163,7 +166,7 @@ public class S3EncryptionClient implements S3Client {
         AwsRequestOverrideConfiguration overrideConfiguration = request.overrideConfiguration().orElse(null);
         boolean isLastPart = false;
         if (!(overrideConfiguration == null)) {
-            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(this.isLastPart).orElse(false);
+            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(this.IS_LAST_PART).orElse(false);
         }
         return _multipartPipeline.uploadPart(request, requestBody, isLastPart);
     }

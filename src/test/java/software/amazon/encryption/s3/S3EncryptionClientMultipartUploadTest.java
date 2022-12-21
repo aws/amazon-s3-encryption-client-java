@@ -5,7 +5,11 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
@@ -37,7 +41,7 @@ public class S3EncryptionClientMultipartUploadTest {
     public void multipartUploadV3OutputStream() throws IOException {
         final String objectKey = "multipart-upload-v3-output-stream";
 
-        // Overall "file" is 60MB, split into 10MB parts
+        // Overall "file" is 100MB, split into 10MB parts
         final long fileSizeLimit = 1024 * 1024 * 100;
         final int PART_SIZE = 10 * 1024 * 1024;
         final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);

@@ -8,7 +8,7 @@ public class EncryptedContent {
     private InputStream _ciphertext;
     private long _ciphertextLength;
     private byte[] _nonce;
-
+    // TODO: Look for Better ways to handle Cipher for Multipart Uploads.
     private Cipher _cipher;
     public EncryptedContent(final byte[] nonce, final InputStream ciphertext, final long ciphertextLength) {
         _nonce = nonce;
