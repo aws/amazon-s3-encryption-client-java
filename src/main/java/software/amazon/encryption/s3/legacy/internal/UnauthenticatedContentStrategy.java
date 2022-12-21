@@ -39,7 +39,6 @@ public class UnauthenticatedContentStrategy implements ContentDecryptionStrategy
         }
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         try {
-            // TODO: Allow configurable Cryptographic provider
             final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
             cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
             InputStream plaintext = new CipherInputStream(ciphertextStream, cipher);

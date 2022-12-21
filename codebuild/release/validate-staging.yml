@@ -1,0 +1,43 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+env:
+  variables:
+    REGION: us-east-1
+    DOMAIN: crypto-tools-internal
+    REPOSITORY: java-s3ec-staging
+  parameter-store:
+    ACCOUNT: /CodeBuild/AccountId
+
+phases:
+  install:
+    commands:
+      - pip install awscli
+    runtime-versions:
+      java: $JAVA_ENV_VERSION
+  pre_build:
+    commands:
+      - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
+      - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
+      - export CODEARTIFACT_REPO_URL=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY}
+      # Test execution environment variables
+      - export AWS_S3EC_TEST_BUCKET=s3ec-release-test-bucket
+      - export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:us-west-2:${ACCOUNT}:key/af4ce40a-05ab-4f7c-b3fa-97bd0c9b7fb1
+      - export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:us-west-2:${ACCOUNT}:alias/S3EC-Release-Testing-KMS-Key
+      - export AWS_REGION=us-west-2
+  build:
+    commands:
+      - |
+        mvn verify \
+          -Pcodeartifact \
+          -Dcheckstyle.skip \
+          -Dmaven.compiler.target=$JAVA_NUMERIC_VERSION \
+          -Dmaven.compiler.source=$JAVA_NUMERIC_VERSION \
+          -Dcodeartifact.token=$CODEARTIFACT_TOKEN \
+          -Dcodeartifact.url=$CODEARTIFACT_REPO_URL \
+          --no-transfer-progress \
+          -T 4 \
+          -s $SETTINGS_FILE
+

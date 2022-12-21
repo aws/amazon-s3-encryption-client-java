@@ -210,12 +210,7 @@ public class S3EncryptionClient implements S3Client {
         // Delete the objects
         DeleteObjectsResponse deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest);
         // If Instruction files exists, delete the instruction files as well.
-        List<ObjectIdentifier> deleteObjects = new ArrayList<>();
-        for (ObjectIdentifier o : deleteObjectsRequest.delete().objects()) {
-            deleteObjects.add(o.toBuilder()
-                    .key(o.key() + ".instruction")
-                    .build());
-        }
+        List<ObjectIdentifier> deleteObjects = S3EncryptionClientUtilities.instructionFileKeysToDelete(deleteObjectsRequest);
         _wrappedClient.deleteObjects(DeleteObjectsRequest.builder()
                 .bucket(deleteObjectsRequest.bucket())
                 .delete(builder -> builder.objects(deleteObjects))

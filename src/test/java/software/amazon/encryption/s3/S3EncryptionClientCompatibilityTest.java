@@ -631,6 +631,7 @@ public class S3EncryptionClientCompatibilityTest {
                         .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)),
                 RequestBody.fromString(input));
 
+        // TODO: Negative testing around encryption context
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
