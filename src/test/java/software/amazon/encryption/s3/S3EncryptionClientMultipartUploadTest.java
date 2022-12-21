@@ -1,5 +1,6 @@
 package software.amazon.encryption.s3;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -20,6 +21,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,10 +49,14 @@ public class S3EncryptionClientMultipartUploadTest {
         final int PART_SIZE = 10 * 1024 * 1024;
         final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
 
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
+
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(provider)
                 .build();
 
         // Create Multipart upload request to S3
