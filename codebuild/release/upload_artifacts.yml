@@ -1,0 +1,71 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+env:
+  variables:
+    BRANCH: "main"
+    # TODO for prod release: Remove variables below; these are used in CodeArtifact, which won't be
+    #   used as part of Prod release. These are used to test GH release signing.
+    REGION: us-east-1
+    DOMAIN: crypto-tools-internal
+    REPOSITORY: java-s3ec-staging
+  git-credential-helper: yes
+  parameter-store:
+    ACCOUNT: /CodeBuild/AccountId
+  secrets-manager:
+    GH_TOKEN: Github/aws-crypto-tools-ci-bot:ESDK Release Token
+
+phases:
+  pre_build:
+    commands:
+      # TODO for prod release: remove codeartifact authoriztion
+      # get codeartifact authorization
+      - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
+      - export CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
+      # get new project version
+      - git checkout $BRANCH
+      - export VERSION=$(grep version pom.xml | head -n 2 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
+      - git config --global user.name "aws-crypto-tools-ci-bot"
+      - git config --global user.email "no-reply@noemail.local"
+      - echo $GH_TOKEN > token.txt
+      - export GH_TOKEN=
+      # install gh cli in order to upload artifacts
+      - curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
+      - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+      - apt update
+      - apt install gh
+  build:
+    commands:
+      - gh version
+      - gh auth login --with-token < token.txt
+      - gh auth status
+      # TODO for prod release: remove -Dcodeartifact*
+      # TODO for prod release: Change -DremoteRepositories to sonatype repo
+      # TODO for prod release: remove "-$CODEBUILD_RESOLVED_SOURCE_VERSION". CodeArtifact seems to need this to find
+      #   the artifact, but sonatype doesn't. I don't think it's worth finding a way to get artifact without version
+      #   hash given prod release doesn't need this.
+      # TODO for prod release: remove -s $SETTINGS_FILE
+      - |
+        mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
+          -Dcodeartifact.token=$CODEARTIFACT_AUTH_TOKEN \
+          -Dcodeartifact.url=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
+          -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
+          -Dartifact=software.amazon.encryption:s3:${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION:jar \
+          -s $SETTINGS_FILE
+      - |
+        mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
+          -Dcodeartifact.token=$CODEARTIFACT_AUTH_TOKEN \
+          -Dcodeartifact.url=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
+          -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
+          -Dartifact=software.amazon.encryption:s3:${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION:jar:sources \
+          -s $SETTINGS_FILE
+      - |
+        mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
+          -Dcodeartifact.token=$CODEARTIFACT_AUTH_TOKEN \
+          -Dcodeartifact.url=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
+          -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
+          -Dartifact=software.amazon.encryption:s3:${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION:jar:javadoc \
+          -s $SETTINGS_FILE
+      - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/s3/${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION/*.jar -d -F CHANGELOG.md -t "AWS S3 Encryption Client ${VERSION} Release -- $(date +%Y-%m-%d)"
