@@ -1,11 +1,12 @@
 package software.amazon.encryption.s3.internal;
 
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
+
+import java.util.Map;
 
 @FunctionalInterface
 public interface ContentMetadataEncodingStrategy {
 
-    PutObjectRequest encodeMetadata(EncryptionMaterials materials,
-            EncryptedContent encryptedContent, PutObjectRequest request);
+    Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] nonce,
+                                              Map<String, String> metadata);
 }

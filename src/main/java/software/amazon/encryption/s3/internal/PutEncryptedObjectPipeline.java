@@ -3,6 +3,8 @@ package software.amazon.encryption.s3.internal;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -19,7 +21,9 @@ public class PutEncryptedObjectPipeline {
     final private ContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
 
-    public static Builder builder() { return new Builder(); }
+    public static Builder builder() {
+        return new Builder();
+    }
 
     private PutEncryptedObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
@@ -37,7 +41,9 @@ public class PutEncryptedObjectPipeline {
 
         EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, requestBody.contentStreamProvider().newStream());
 
-        request = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent, request);
+        Map<String, String> metadata = new HashMap<>(request.metadata());
+        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
+        request = request.toBuilder().metadata(metadata).build();
 
         return _s3Client.putObject(request, RequestBody.fromInputStream(encryptedContent.getCiphertext(), encryptedContent.getCiphertextLength()));
     }
@@ -47,10 +53,11 @@ public class PutEncryptedObjectPipeline {
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         private ContentEncryptionStrategy _contentEncryptionStrategy;
-        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
+        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
 
 
-        private Builder() {}
+        private Builder() {
+        }
 
         /**
          * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
