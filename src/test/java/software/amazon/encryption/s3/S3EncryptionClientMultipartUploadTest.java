@@ -43,10 +43,45 @@ public class S3EncryptionClientMultipartUploadTest {
     }
 
     @Test
+    public void multipartPutObjectStream() throws IOException {
+        final String objectKey = "multipart-put-object-stream";
+
+        final int fileSizeLimit = 1024 * 1024 * 100;
+        final InputStream objectStream = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
+
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableMultipartPutObject(true)
+                .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(provider)
+                .build();
+
+        v3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey), RequestBody.fromInputStream(objectStream, fileSizeLimit));
+
+        // Asserts
+        ResponseBytes<GetObjectResponse> output = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+
+        // Don't do this, uses to much memory
+        //assertEquals(BoundedStreamBufferer.toByteArray(objectStreamForResult, fileSizeLimit), output.asByteArray());
+
+        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+        v3Client.close();
+    }
+
+
+    //@Test
     public void multipartPutObject() {
         final String objectKey = "multipart-put-object";
 
-        final int fileSizeLimit = 1024 * 1024 * 10;
+        final int fileSizeLimit = 1024 * 1024 * 100;
         Random rd = new Random();
         byte[] arr = new byte[fileSizeLimit];
         rd.nextBytes(arr);
