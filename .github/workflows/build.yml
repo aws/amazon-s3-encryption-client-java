@@ -51,7 +51,7 @@ jobs:
           export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:us-west-2:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/c3eafb5f-e87d-4584-9400-cf419ce5d782
           export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:us-west-2:${{ secrets.CI_AWS_ACCOUNT_ID }}:alias/S3EC-Github-KMS-Key
           export AWS_REGION=us-west-2
-          export MAVEN_OPTS='-Xmx1024m -Xms2048m' 
+          export MAVEN_OPTS='-Xmx2048m -Xms1024m' 
           java -XX:+PrintFlagsFinal -version | grep -iE 'heapsize'
           mvn -B -ntp test -DskipCompile
         shell: bash
