@@ -48,7 +48,6 @@ public class S3EncryptionClientMultipartUploadTest {
 
         final int fileSizeLimit = 1024 * 1024 * 100;
         final InputStream objectStream = new BoundedZerosInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
 
         Security.addProvider(new BouncyCastleProvider());
         Provider provider = Security.getProvider("BC");
@@ -65,11 +64,12 @@ public class S3EncryptionClientMultipartUploadTest {
                 .key(objectKey), RequestBody.fromInputStream(objectStream, fileSizeLimit));
 
         // Asserts
-        ResponseBytes<GetObjectResponse> output = v3Client.getObjectAsBytes(builder -> builder
+        v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
 
         // Don't do this, uses to much memory
+        // TODO: validate first and last parts of file, better than nothing
         //assertEquals(BoundedStreamBufferer.toByteArray(objectStreamForResult, fileSizeLimit), output.asByteArray());
 
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
