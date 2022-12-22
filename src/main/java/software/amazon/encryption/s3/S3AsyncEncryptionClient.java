@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
+import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
@@ -63,7 +64,13 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     @Override
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody)
             throws AwsServiceException, SdkClientException {
-        throw new UnsupportedOperationException();
+        PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
+                .s3AsyncClient(_wrappedClient)
+                .cryptoMaterialsManager(_cryptoMaterialsManager)
+                .secureRandom(_secureRandom)
+                .build();
+
+        return pipeline.putObject(putObjectRequest, requestBody);
     }
 
     @Override

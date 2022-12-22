@@ -1,6 +1,7 @@
 package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
@@ -14,7 +15,7 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
-public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
+public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy, AsyncContentEncryptionStrategy {
 
     final private SecureRandom _secureRandom;
 
@@ -36,7 +37,7 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
 
         final byte[] nonce = new byte[algorithmSuite.nonceLengthBytes()];
-        _secureRandom.nextBytes(nonce);
+        //_secureRandom.nextBytes(nonce);
 
         final String cipherName = algorithmSuite.cipherName();
         try {
@@ -68,6 +69,38 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         } catch (GeneralSecurityException e) {
             throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
         }
+    }
+
+    @Override
+    public EncryptedContent encryptContent(EncryptionMaterials materials, AsyncRequestBody content) {
+        // TODO: Shared preamble
+        // TODO: Implement CipherPublisher, use it like AuthenticatedCipherInputStream
+        if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
+                    "the maximum length allowed for GCM encryption.");
+        }
+
+        final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
+
+        final byte[] nonce = new byte[algorithmSuite.nonceLengthBytes()];
+        //_secureRandom.nextBytes(nonce);
+
+        final String cipherName = algorithmSuite.cipherName();
+        try {
+            final Cipher cipher = CryptoFactory.createCipher(cipherName, materials.cryptoProvider());
+
+            cipher.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
+                    new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
+
+            //final long ciphertextLength = materials.getCiphertextLength();
+            //final InputStream ciphertext = new AuthenticatedCipherInputStream(content, cipher);
+            //return new EncryptedContent(nonce, ciphertext, ciphertextLength);
+            AsyncRequestBody encryptedContent = new CipherAsyncRequestBody(cipher, content, materials.getCiphertextLength());
+            return new EncryptedContent(nonce, encryptedContent, materials.getCiphertextLength());
+        } catch (GeneralSecurityException e) {
+            throw new S3EncryptionClientException("Unable to " + cipherName + " content encrypt.", e);
+        }
+
     }
 
     public static class Builder {
