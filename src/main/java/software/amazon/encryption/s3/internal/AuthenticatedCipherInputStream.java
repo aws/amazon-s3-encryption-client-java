@@ -11,7 +11,7 @@ public class AuthenticatedCipherInputStream extends CipherInputStream {
 
     /**
      * True if this input stream is currently involved in a multipart uploads;
-     * false otherwise. For multipart uploads, the doFinal method if the
+     * false otherwise. For multipart uploads, the doFinal method of the
      * underlying cipher has to be triggered via the read methods rather than
      * the close method, since we can't tell if closing the input stream is due
      * to a recoverable error (in which case the cipher's doFinal method should

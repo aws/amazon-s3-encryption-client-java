@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -14,7 +15,6 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedStreamBufferer;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
@@ -23,15 +23,15 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
@@ -234,9 +234,13 @@ public class S3EncryptionClientStreamTest {
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = "large-object-test";
 
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
+
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .cryptoProvider(provider)
                 .build();
 
         // Tight bound on the default limit of 64MiB

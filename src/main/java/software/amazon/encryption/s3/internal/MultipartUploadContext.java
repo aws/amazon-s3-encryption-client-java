@@ -35,7 +35,7 @@ public class MultipartUploadContext {
      * Convenient method to return the content encrypting cipher (which is
      * stateful) for the multipart uploads.
      */
-    Cipher getCipher() {
+    protected Cipher getCipher() {
         return cipher;
     }
 
@@ -51,7 +51,7 @@ public class MultipartUploadContext {
      * @throws S3EncryptionClientException if parallel part upload is detected
      * @see #endPartUpload()
      */
-    void beginPartUpload(final int nextPartNumber) {
+    protected void beginPartUpload(final int nextPartNumber) {
         if (nextPartNumber < 1)
             throw new IllegalArgumentException("part number must be at least 1");
         if (partUploadInProgress) {
@@ -78,7 +78,7 @@ public class MultipartUploadContext {
      *
      * @see #beginPartUpload(int)
      */
-    void endPartUpload() {
+    protected void endPartUpload() {
         partUploadInProgress = false;
     }
 }

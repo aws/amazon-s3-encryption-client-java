@@ -1,7 +1,6 @@
 package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -40,11 +39,11 @@ public class MultipartUploadObjectPipeline {
      * Map of data about in progress encrypted multipart uploads.
      */
     private final Map<String, MultipartUploadContext> _multipartUploadContexts;
-
+    
     public static Builder builder() {
         return new Builder();
     }
-
+    
     private MultipartUploadObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
@@ -59,6 +58,7 @@ public class MultipartUploadObjectPipeline {
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
+        // TODO: Look for Better design models
         EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, null);
 
         Map<String, String> metadata = new HashMap<>(request.metadata());
@@ -79,7 +79,7 @@ public class MultipartUploadObjectPipeline {
         final int blockSize = algorithmSuite.cipherBlockSizeBytes();
         final String uploadId = request.uploadId();
         final long partSize = requestBody.optionalContentLength().orElse(-1L);
-        final int cipherTagLength = isLastPart ? algorithmSuite.cipherTagLengthBits() / 8 : 0;
+        final int cipherTagLength = isLastPart ? algorithmSuite.cipherTagLengthBytes() : 0;
         final boolean partSizeMultipleOfCipherBlockSize = 0 == (partSize % blockSize);
         if (!isLastPart && !partSizeMultipleOfCipherBlockSize) {
             throw new S3EncryptionClientException(
@@ -112,8 +112,9 @@ public class MultipartUploadObjectPipeline {
         } finally {
             uploadContext.endPartUpload();
         }
-        if (isLastPart)
+        if (isLastPart) {
             uploadContext.setHasFinalPartBeenSeen(true);
+        }
         return response;
     }
 
@@ -153,13 +154,12 @@ public class MultipartUploadObjectPipeline {
             IoUtils.closeQuietly(os, null);
         }
     }
-
+    
     public static class Builder {
-        private S3Client _s3Client;
-
         private final Map<String, MultipartUploadContext> _multipartUploadContexts =
                 Collections.synchronizedMap(new HashMap<>());
-
+        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
+        private S3Client _s3Client;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         // To Create Cipher which is used in during uploadPart requests.
@@ -167,8 +167,7 @@ public class MultipartUploadObjectPipeline {
                 MultipartAesGcmContentStrategy
                         .builder()
                         .build();
-        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
-
+                        
         private Builder() {
         }
 
