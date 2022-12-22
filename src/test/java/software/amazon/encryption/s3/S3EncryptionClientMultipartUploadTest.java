@@ -46,7 +46,7 @@ public class S3EncryptionClientMultipartUploadTest {
     public void multipartPutObject() {
         final String objectKey = "multipart-put-object";
 
-        final int fileSizeLimit = 1024 * 1024 * 10;
+        final int fileSizeLimit = 1024 * 1024 * 100;
         Random rd = new Random();
         byte[] arr = new byte[fileSizeLimit];
         rd.nextBytes(arr);
