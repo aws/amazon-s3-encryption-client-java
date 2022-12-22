@@ -39,11 +39,7 @@ public class MultipartUploadObjectPipeline {
      * Map of data about in progress encrypted multipart uploads.
      */
     private final Map<String, MultipartUploadContext> _multipartUploadContexts;
-    
-    public static Builder builder() {
-        return new Builder();
-    }
-    
+
     private MultipartUploadObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
@@ -52,12 +48,15 @@ public class MultipartUploadObjectPipeline {
         this._multipartUploadContexts = builder._multipartUploadContexts;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public CreateMultipartUploadResponse createMultipartUpload(CreateMultipartUploadRequest request) {
         EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
                 .s3Request(request);
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
-
         // TODO: Look for Better design models
         EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, null);
 
@@ -154,7 +153,7 @@ public class MultipartUploadObjectPipeline {
             IoUtils.closeQuietly(os, null);
         }
     }
-    
+
     public static class Builder {
         private final Map<String, MultipartUploadContext> _multipartUploadContexts =
                 Collections.synchronizedMap(new HashMap<>());
@@ -167,7 +166,7 @@ public class MultipartUploadObjectPipeline {
                 MultipartAesGcmContentStrategy
                         .builder()
                         .build();
-                        
+
         private Builder() {
         }
 

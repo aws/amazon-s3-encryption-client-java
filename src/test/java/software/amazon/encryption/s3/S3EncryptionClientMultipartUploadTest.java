@@ -46,14 +46,19 @@ public class S3EncryptionClientMultipartUploadTest {
     public void multipartPutObject() {
         final String objectKey = "multipart-put-object";
 
-        final int fileSizeLimit = 1024 * 1024 * 63;
+        final int fileSizeLimit = 1024 * 1024 * 100;
         Random rd = new Random();
         byte[] arr = new byte[fileSizeLimit];
         rd.nextBytes(arr);
 
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
+
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableMultipartPutObject(true)
+                .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(provider)
                 .build();
 
         v3Client.putObject(builder -> builder
@@ -71,7 +76,7 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
     }
-    
+
     @Test
     public void multipartUploadV3OutputStream() throws IOException {
         final String objectKey = "multipart-upload-v3-output-stream";
@@ -162,7 +167,7 @@ public class S3EncryptionClientMultipartUploadTest {
         String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit));
         String outputAsString = IoUtils.toUtf8String(result.asInputStream());
         assertEquals(inputAsString, outputAsString);
-        
+
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
     }

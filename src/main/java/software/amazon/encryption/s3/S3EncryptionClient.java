@@ -78,8 +78,6 @@ public class S3EncryptionClient implements S3Client {
     private final ClientConfiguration _clientConfiguration;
     private final MultipartUploadObjectPipeline _multipartPipeline;
 
-    private final MultipartUploadObjectPipeline _multipartPipeline;
-
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
@@ -88,6 +86,7 @@ public class S3EncryptionClient implements S3Client {
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
         _enableMultipartPutObject = builder._enableMultipartPutObject;
         _clientConfiguration = builder._clientConfiguration;
+        _multipartPipeline = builder._multipartPipeline;
     }
 
     public static Builder builder() {
