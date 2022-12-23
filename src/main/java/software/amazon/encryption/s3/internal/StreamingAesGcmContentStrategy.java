@@ -37,7 +37,7 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
 
         final byte[] nonce = new byte[algorithmSuite.nonceLengthBytes()];
-        //_secureRandom.nextBytes(nonce);
+        _secureRandom.nextBytes(nonce);
 
         final String cipherName = algorithmSuite.cipherName();
         try {
@@ -74,7 +74,6 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
     @Override
     public EncryptedContent encryptContent(EncryptionMaterials materials, AsyncRequestBody content) {
         // TODO: Shared preamble
-        // TODO: Implement CipherPublisher, use it like AuthenticatedCipherInputStream
         if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
             throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
                     "the maximum length allowed for GCM encryption.");
@@ -83,7 +82,7 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
 
         final byte[] nonce = new byte[algorithmSuite.nonceLengthBytes()];
-        //_secureRandom.nextBytes(nonce);
+        _secureRandom.nextBytes(nonce);
 
         final String cipherName = algorithmSuite.cipherName();
         try {
@@ -92,9 +91,6 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
             cipher.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
                     new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
 
-            //final long ciphertextLength = materials.getCiphertextLength();
-            //final InputStream ciphertext = new AuthenticatedCipherInputStream(content, cipher);
-            //return new EncryptedContent(nonce, ciphertext, ciphertextLength);
             AsyncRequestBody encryptedContent = new CipherAsyncRequestBody(cipher, content, materials.getCiphertextLength());
             return new EncryptedContent(nonce, encryptedContent, materials.getCiphertextLength());
         } catch (GeneralSecurityException e) {
