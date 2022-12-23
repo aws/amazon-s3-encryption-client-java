@@ -9,7 +9,9 @@ import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -18,6 +20,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -156,6 +159,84 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .bucket(BUCKET)
                 .range("bytes=300-400")
                 .key(objectKey)));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void AesCbcV1toV3RangedGetAsync() {
+        final String objectKey = "aes-cbc-v1-to-v3-ranged-get-async";
+
+        // V1 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfiguration v1CryptoConfig =
+                new CryptoConfiguration();
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig)
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
+                "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
+                "2bcdefghijklmnopqrst2BCDEFGHIJKLMNOPQRST" +
+                "3bcdefghijklmnopqrst3BCDEFGHIJKLMNOPQRST" +
+                "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
+
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        // V3 Client
+        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+
+        // Valid Range
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureResponse = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=10-20")
+                .key(objectKey), AsyncResponseTransformer.toBytes());
+        ResponseBytes<GetObjectResponse> response = futureResponse.join();
+        String output = response.asUtf8String();
+        assertEquals("klmnopqrst0", output);
+
+        // Valid start index within input and end index out of range, returns object from start index to End of Stream
+        futureResponse = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=190-300")
+                .key(objectKey), AsyncResponseTransformer.toBytes());
+        response = futureResponse.join();
+        output = response.asUtf8String();
+        assertEquals("KLMNOPQRST", output);
+
+        // Invalid range start index range greater than ending index, returns entire object
+        futureResponse = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=100-50")
+                .key(objectKey), AsyncResponseTransformer.toBytes());
+        response = futureResponse.join();
+        output = response.asUtf8String();
+        assertEquals(input, output);
+
+        // Invalid range format, returns entire object
+        futureResponse = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("10-20")
+                .key(objectKey), AsyncResponseTransformer.toBytes());
+        response = futureResponse.join();
+        output = response.asUtf8String();
+        assertEquals(input, output);
+
+        // Invalid range starting index and ending index greater than object length but within Cipher Block size, returns empty object
+        futureResponse = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=216-217")
+                .key(objectKey), AsyncResponseTransformer.toBytes());
+        response = futureResponse.join();
+        output = response.asUtf8String();
+        assertEquals("", output);
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
