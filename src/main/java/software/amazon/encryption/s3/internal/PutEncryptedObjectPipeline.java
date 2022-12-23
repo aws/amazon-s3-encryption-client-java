@@ -7,7 +7,6 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
@@ -40,11 +39,6 @@ public class PutEncryptedObjectPipeline {
     }
 
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {
-        // TODO: Do this in a way that fails at compile time
-        if (_s3AsyncClient == null) {
-            // TODO better exception, though customers should never reach
-            throw new S3EncryptionClientException("No S3AsyncClient found, you have to configure it.");
-        }
         EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
                 .s3Request(request)
                 .plaintextLength(requestBody.contentLength().orElse(-1L));
@@ -52,7 +46,6 @@ public class PutEncryptedObjectPipeline {
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
         EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
-
 
         Map<String, String> metadata = new HashMap<>(request.metadata());
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);

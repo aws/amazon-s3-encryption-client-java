@@ -50,7 +50,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void putAsyncGetDefault() {
-        final String objectKey = "put-async-get-default-same-nonce";
+        final String objectKey = "put-async-get-default";
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
@@ -60,18 +60,7 @@ public class S3AsyncEncryptionClientTest {
                 .aesKey(AES_KEY)
                 .build();
 
-        final String input = "PutAsyncGetDefault--PutAsyncGetDefault--PutAsyncGetDefault--PutAsyncGetDefault--PutAsyncGetDefault--PutAsyncGetDefault--------PutAsyncGetDefault---"
-                    + "PutAsyncGetDefault--PutAsyncGetDefault--PutAsyncGetDefault--PutAsyncGetDefault--PutAsyncGetDefault--PutAsyncGetDefault--------PutAsyncGetDefault---";
-        // Also put using sync to compare
-        v3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .key("put-default-with-same-nonce")
-                .build(), RequestBody.fromString(input));
-
-        v3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .key("put-default-with-same-nonce-2")
-                .build(), RequestBody.fromString(input));
+        final String input = "PutAsyncGetDefault";
 
         CompletableFuture<PutObjectResponse> futurePut = v3AsyncClient.putObject(builder -> builder
                 .bucket(BUCKET)
@@ -84,7 +73,6 @@ public class S3AsyncEncryptionClientTest {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), ResponseTransformer.toBytes());
-        // Just wait for the future to complete
         assertEquals(input, getResponse.asUtf8String());
 
         // Cleanup
