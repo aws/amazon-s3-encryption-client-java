@@ -3,14 +3,20 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.SdkClientException;
-import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
@@ -29,9 +35,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class S3AsyncEncryptionClient implements S3AsyncClient {
-
-    // Used for request-scoped encryption contexts for supporting keys
-    public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT_ASYNC = new ExecutionAttribute<>("EncryptionContextAsync");
 
     private final S3AsyncClient _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -54,7 +57,26 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     // Helper function to attach encryption contexts to a request
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalEncryptionContext(Map<String, String> encryptionContext) {
         return builder ->
-                builder.putExecutionAttribute(S3AsyncEncryptionClient.ENCRYPTION_CONTEXT_ASYNC, encryptionContext);
+                builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
+    }
+
+    @Override
+    public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody)
+            throws AwsServiceException, SdkClientException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
+                                                           AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
+        GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
+                .s3AsyncClient(_wrappedClient)
+                .cryptoMaterialsManager(_cryptoMaterialsManager)
+                .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
+                .build();
+
+        return pipeline.getObject(getObjectRequest, asyncResponseTransformer);
     }
 
     @Override
