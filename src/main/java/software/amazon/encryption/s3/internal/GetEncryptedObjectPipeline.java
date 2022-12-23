@@ -137,7 +137,7 @@ public class GetEncryptedObjectPipeline {
          * feed it plaintext so that it can transform the plaintext
          * into type T.
          */
-        final AsyncResponseTransformer<GetObjectResponse, T> wrapped;
+        final AsyncResponseTransformer<GetObjectResponse, T> wrappedAsyncResponseTransformer;
         final GetObjectRequest getObjectRequest;
         ContentMetadata contentMetadata;
         GetObjectResponse getObjectResponse;
@@ -145,15 +145,15 @@ public class GetEncryptedObjectPipeline {
 
         CompletableFuture<T> resultFuture;
 
-        DecryptingResponseTransformer(AsyncResponseTransformer<GetObjectResponse, T> wrapped,
+        DecryptingResponseTransformer(AsyncResponseTransformer<GetObjectResponse, T> wrappedAsyncResponseTransformer,
                                       GetObjectRequest getObjectRequest) {
-            this.wrapped = wrapped;
+            this.wrappedAsyncResponseTransformer = wrappedAsyncResponseTransformer;
             this.getObjectRequest = getObjectRequest;
         }
 
         @Override
         public CompletableFuture<T> prepare() {
-            resultFuture = wrapped.prepare();
+            resultFuture = wrappedAsyncResponseTransformer.prepare();
             return resultFuture;
         }
 
@@ -162,12 +162,12 @@ public class GetEncryptedObjectPipeline {
             getObjectResponse = response;
             contentMetadata = ContentMetadataStrategy.decode(null, getObjectRequest, response);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
-            wrapped.onResponse(response);
+            wrappedAsyncResponseTransformer.onResponse(response);
         }
 
         @Override
         public void exceptionOccurred(Throwable error) {
-            wrapped.exceptionOccurred(error);
+            wrappedAsyncResponseTransformer.exceptionOccurred(error);
         }
 
         @Override
@@ -181,7 +181,7 @@ public class GetEncryptedObjectPipeline {
                 cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
 
                 CipherPublisher plaintextPublisher = new CipherPublisher(cipher, ciphertextPublisher, getObjectResponse.contentLength());
-                wrapped.onStream(plaintextPublisher);
+                wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
             } catch (GeneralSecurityException e) {
                 throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
             }

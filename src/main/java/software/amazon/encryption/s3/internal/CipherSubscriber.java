@@ -12,21 +12,21 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final AtomicLong contentRead = new AtomicLong(0);
-    private final Subscriber<? super ByteBuffer> wrapped;
+    private final Subscriber<? super ByteBuffer> wrappedSubscriber;
     private final Cipher cipher;
     private final Long contentLength;
 
     private byte[] outputBuffer;
 
-    CipherSubscriber(Subscriber<? super ByteBuffer> wrapped, Cipher cipher, Long contentLength) {
-        this.wrapped = wrapped;
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Cipher cipher, Long contentLength) {
+        this.wrappedSubscriber = wrappedSubscriber;
         this.cipher = cipher;
         this.contentLength = contentLength;
     }
 
     @Override
     public void onSubscribe(Subscription s) {
-        wrapped.onSubscribe(s);
+        wrappedSubscriber.onSubscribe(s);
     }
 
     @Override
@@ -36,10 +36,10 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         if (amountToReadFromByteBuffer > 0) {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
             outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
-            wrapped.onNext(ByteBuffer.wrap(outputBuffer));
+            wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
         } else {
             // Do nothing
-            wrapped.onNext(byteBuffer);
+            wrappedSubscriber.onNext(byteBuffer);
         }
     }
 
@@ -62,7 +62,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onError(Throwable t) {
-        wrapped.onError(t);
+        wrappedSubscriber.onError(t);
     }
 
     @Override
@@ -70,10 +70,10 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         try {
             outputBuffer = cipher.doFinal();
             // Send the final bytes to the wrapped subscriber
-            wrapped.onNext(ByteBuffer.wrap(outputBuffer));
+            wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
         } catch (final GeneralSecurityException exception) {
             throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
         }
-        wrapped.onComplete();
+        wrappedSubscriber.onComplete();
     }
 }
