@@ -54,12 +54,14 @@ public class MultiFileOutputStream extends OutputStream implements OnFileDelete 
      * this stream is considered fully initialized.
      */
     public MultiFileOutputStream(File root, String namePrefix) {
-        if (root == null || !root.isDirectory() || !root.canWrite())
+        if (root == null || !root.isDirectory() || !root.canWrite()) {
             throw new IllegalArgumentException(root
                     + " must be a writable directory");
-        if (namePrefix == null || namePrefix.trim().length() == 0)
+        }
+        if (namePrefix == null || namePrefix.trim().length() == 0) {
             throw new IllegalArgumentException(
                     "Please specify a non-empty name prefix");
+        }
         this.root = root;
         this.namePrefix = namePrefix;
     }
@@ -81,8 +83,9 @@ public class MultiFileOutputStream extends OutputStream implements OnFileDelete 
      */
     public MultiFileOutputStream init(UploadObjectObserver observer,
                                       long partSize, long diskLimit) {
-        if (observer == null)
+        if (observer == null) {
             throw new IllegalArgumentException("Observer must be specified");
+        }
         this.observer = observer;
         if (diskLimit < partSize << 1) {
             throw new IllegalArgumentException(
@@ -111,8 +114,9 @@ public class MultiFileOutputStream extends OutputStream implements OnFileDelete 
      */
     @Override
     public void write(byte[] b) throws IOException {
-        if (b.length == 0)
+        if (b.length == 0) {
             return;
+        }
         fos().write(b);
         currFileBytesWritten += b.length;
         totalBytesWritten += b.length;
@@ -123,8 +127,9 @@ public class MultiFileOutputStream extends OutputStream implements OnFileDelete 
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        if (b.length == 0)
+        if (b.length == 0) {
             return;
+        }
         fos().write(b, off, len);
         currFileBytesWritten += len;
         totalBytesWritten += len;
@@ -137,8 +142,9 @@ public class MultiFileOutputStream extends OutputStream implements OnFileDelete 
      * @throws InterruptedException if the running thread was interrupted
      */
     private FileOutputStream fos() throws IOException {
-        if (closed)
+        if (closed) {
             throw new IOException("Output stream is already closed");
+        }
         if (os == null || currFileBytesWritten >= partSize) {
             if (os != null) {
                 os.close();
@@ -157,19 +163,21 @@ public class MultiFileOutputStream extends OutputStream implements OnFileDelete 
 
     @Override
     public void onFileDelete(FileDeletionEvent event) {
-        if (diskPermits != null)
+        if (diskPermits != null) {
             diskPermits.release();
+        }
     }
 
     /**
      * Blocks the running thread if running out of disk space.
      *
      * @throws S3EncryptionClientException if the running thread is interrupted while acquiring a
-     *                          semaphore
+     *                                     semaphore
      */
     private void blockIfNecessary() {
-        if (diskPermits == null || diskLimit == Long.MAX_VALUE)
+        if (diskPermits == null || diskLimit == Long.MAX_VALUE) {
             return;
+        }
         try {
             diskPermits.acquire();
         } catch (InterruptedException e) {
@@ -181,14 +189,16 @@ public class MultiFileOutputStream extends OutputStream implements OnFileDelete 
 
     @Override
     public void flush() throws IOException {
-        if (os != null)
+        if (os != null) {
             os.flush();
+        }
     }
 
     @Override
     public void close() throws IOException {
-        if (closed)
+        if (closed) {
             return;
+        }
         closed = true;
         if (os != null) {
             os.close();
@@ -230,7 +240,6 @@ public class MultiFileOutputStream extends OutputStream implements OnFileDelete 
         return new File(root, namePrefix + "." + partNumber);
     }
 
-    // TODO: Confirm whether these get calls required?
     public long getPartSize() {
         return partSize;
     }

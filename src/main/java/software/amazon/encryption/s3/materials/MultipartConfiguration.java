@@ -4,8 +4,9 @@ import software.amazon.encryption.s3.internal.MultiFileOutputStream;
 import software.amazon.encryption.s3.internal.UploadObjectObserver;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class ClientConfiguration {
+public class MultipartConfiguration {
     private final long _partSize;
     private final int _maxConnections;
     private final long _diskLimit;
@@ -13,7 +14,7 @@ public class ClientConfiguration {
     private final ExecutorService _es;
     private final MultiFileOutputStream _outputStream;
 
-    public ClientConfiguration(Builder builder) {
+    public MultipartConfiguration(Builder builder) {
         this._maxConnections = builder._maxConnections;
         this._partSize = builder._partSize;
         this._diskLimit = builder._diskLimit;
@@ -52,13 +53,14 @@ public class ClientConfiguration {
 
     static public class Builder {
         private final long MIN_PART_SIZE = 5 << 20;
-        private MultiFileOutputStream _outputStream = null;
+        private MultiFileOutputStream _outputStream = new MultiFileOutputStream();
         // Default Max Connections is 50
         private int _maxConnections = 50;
         // Set Min Allowed Part Size as Default
         private long _partSize = MIN_PART_SIZE;
         private long _diskLimit = Long.MAX_VALUE;
-        private UploadObjectObserver _observer = null;
+        private UploadObjectObserver _observer = new UploadObjectObserver();
+        // If null, ExecutorService will be initialized in build() based on maxConnections.
         private ExecutorService _es = null;
 
         private Builder() {
@@ -97,8 +99,12 @@ public class ClientConfiguration {
             return this;
         }
 
-        public ClientConfiguration build() {
-            return new ClientConfiguration(this);
+        public MultipartConfiguration build() {
+            if (_es == null) {
+                _es = Executors.newFixedThreadPool(_maxConnections);
+            }
+
+            return new MultipartConfiguration(this);
         }
     }
 }

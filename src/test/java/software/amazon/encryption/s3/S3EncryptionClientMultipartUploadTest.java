@@ -1,9 +1,11 @@
 package software.amazon.encryption.s3;
 
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
@@ -12,6 +14,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
+import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
@@ -24,13 +27,16 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.S3EncryptionClient.isLastPart;
+import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 
 public class S3EncryptionClientMultipartUploadTest {
     private static SecretKey AES_KEY;
@@ -43,35 +49,42 @@ public class S3EncryptionClientMultipartUploadTest {
     }
 
     @Test
-    public void multipartPutObject() {
+    public void multipartPutObject() throws IOException {
         final String objectKey = "multipart-put-object";
 
-        final int fileSizeLimit = 1024 * 1024 * 10;
-        Random rd = new Random();
-        byte[] arr = new byte[fileSizeLimit];
-        rd.nextBytes(arr);
+        final long fileSizeLimit = 1024 * 1024 * 100;
+        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
 
         Security.addProvider(new BouncyCastleProvider());
         Provider provider = Security.getProvider("BC");
 
         S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
+                .kmsKeyId(KMS_KEY_ID)
                 .enableMultipartPutObject(true)
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(provider)
                 .build();
 
+        MultipartConfiguration configuration = MultipartConfiguration.builder()
+                .maxConnections(30)
+                .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
         v3Client.putObject(builder -> builder
                 .bucket(BUCKET)
-                .key(objectKey), RequestBody.fromBytes(arr));
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext, configuration))
+                .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit));
 
         // Asserts
-        ResponseBytes<GetObjectResponse> output = v3Client.getObjectAsBytes(builder -> builder
+        ResponseInputStream<GetObjectResponse> output = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
+                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
                 .key(objectKey));
 
-        String outputAsString = Arrays.toString(output.asByteArray());
-        assertEquals(Arrays.toString(arr), outputAsString);
+        assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
 
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();

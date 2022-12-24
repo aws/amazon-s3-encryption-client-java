@@ -32,11 +32,11 @@ import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.UploadObjectObserver;
 import software.amazon.encryption.s3.materials.AesKeyring;
-import software.amazon.encryption.s3.materials.ClientConfiguration;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
@@ -65,6 +64,7 @@ public class S3EncryptionClient implements S3Client {
 
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
+    public static final ExecutionAttribute<MultipartConfiguration> CONFIGURATION = new ExecutionAttribute<>("MultipartConfiguration");
     // TODO: Replace with UploadPartRequest.isLastPart() when launched.
     // Used for multipart uploads
     public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
@@ -75,7 +75,6 @@ public class S3EncryptionClient implements S3Client {
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
     private final boolean _enableMultipartPutObject;
-    private final ClientConfiguration _clientConfiguration;
     private final MultipartUploadObjectPipeline _multipartPipeline;
 
     private S3EncryptionClient(Builder builder) {
@@ -85,7 +84,6 @@ public class S3EncryptionClient implements S3Client {
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
         _enableMultipartPutObject = builder._enableMultipartPutObject;
-        _clientConfiguration = builder._clientConfiguration;
         _multipartPipeline = builder._multipartPipeline;
     }
 
@@ -94,9 +92,16 @@ public class S3EncryptionClient implements S3Client {
     }
 
     // Helper function to attach encryption contexts to a request
-    public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalEncryptionContext(Map<String, String> encryptionContext) {
+    public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalConfiguration(Map<String, String> encryptionContext) {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
+    }
+
+    // Helper function to attach encryption contexts to a request
+    public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalConfiguration(Map<String, String> encryptionContext, MultipartConfiguration multipartConfiguration) {
+        return builder ->
+                builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext)
+                        .putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
     }
 
     // Helper function to determine last upload part during multipart uploads
@@ -118,7 +123,7 @@ public class S3EncryptionClient implements S3Client {
                         .build();
                 return response;
             } catch (Throwable e) {
-                throw new RuntimeException("Exception while performing Multipart Upload PutObject", e);
+                throw new S3EncryptionClientException("Exception while performing Multipart Upload PutObject", e);
             }
         }
 
@@ -147,27 +152,37 @@ public class S3EncryptionClient implements S3Client {
     }
 
     private CompleteMultipartUploadResponse multipartPutObject(PutObjectRequest request, RequestBody requestBody) throws Throwable {
-        // Set up the pipeline for concurrent encrypt and upload
-        // Set up a thread pool for this pipeline
-        ExecutorService es = _clientConfiguration.executorService();
+
+        AwsRequestOverrideConfiguration overrideConfig = request.overrideConfiguration().get();
+        // If MultipartConfiguration is null, Initialize MultipartConfiguration
+        MultipartConfiguration multipartConfiguration = overrideConfig
+                .executionAttributes()
+                .getOptionalAttribute(S3EncryptionClient.CONFIGURATION)
+                .orElse(MultipartConfiguration.builder().build());
+
+        ExecutorService es = multipartConfiguration.executorService();
         final boolean defaultExecutorService = es == null;
         if (es == null) {
-            es = Executors.newFixedThreadPool(_clientConfiguration.maxConnections());
+            throw new S3EncryptionClientException("ExecutorService should not be null, Please initialize during MultipartConfiguration");
         }
-        UploadObjectObserver observer = _clientConfiguration.uploadObjectObserver();
+
+        UploadObjectObserver observer = multipartConfiguration.uploadObjectObserver();
         if (observer == null) {
-            observer = new UploadObjectObserver();
+            throw new S3EncryptionClientException("UploadObjectObserver should not be null, Please initialize during MultipartConfiguration");
         }
+
         observer.init(request, _wrappedClient, this, es);
         final String uploadId = observer.onUploadCreation(request);
         final List<CompletedPart> partETags = new ArrayList<>();
-        MultiFileOutputStream outputStream = _clientConfiguration.multiFileOutputStream();
+
+        MultiFileOutputStream outputStream = multipartConfiguration.multiFileOutputStream();
         if (outputStream == null) {
-            outputStream = new MultiFileOutputStream();
+            throw new S3EncryptionClientException("MultiFileOutputStream should not be null, Please initialize during MultipartConfiguration");
         }
+
         try {
             // initialize the multi-file output stream
-            outputStream.init(observer, _clientConfiguration.partSize(), _clientConfiguration.diskLimit());
+            outputStream.init(observer, multipartConfiguration.partSize(), multipartConfiguration.diskLimit());
             // Kicks off the encryption-upload pipeline;
             // Note outputStream is automatically closed upon method completion.
             _multipartPipeline.putLocalObject(requestBody, uploadId, outputStream);
@@ -182,9 +197,12 @@ public class S3EncryptionClient implements S3Client {
         } catch (IOException | InterruptedException | ExecutionException | RuntimeException | Error ex) {
             throw onAbort(observer, ex);
         } finally {
-            if (defaultExecutorService)
-                es.shutdownNow();   // shut down the locally created thread pool
-            outputStream.cleanup();       // delete left-over temp files
+            if (defaultExecutorService) {
+                // shut down the locally created thread pool
+                es.shutdownNow();
+            }
+            // delete left-over temp files
+            outputStream.cleanup();
         }
         // Complete upload
         return observer.onCompletion(partETags);
@@ -280,7 +298,6 @@ public class S3EncryptionClient implements S3Client {
         private boolean _enableLegacyUnauthenticatedModes = false;
         private boolean _enableDelayedAuthenticationMode = false;
         private boolean _enableMultipartPutObject = false;
-        private ClientConfiguration _clientConfiguration = null;
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
 
@@ -382,11 +399,6 @@ public class S3EncryptionClient implements S3Client {
             return this;
         }
 
-        public Builder clientConfiguration(ClientConfiguration _clientConfiguration) {
-            this._clientConfiguration = _clientConfiguration;
-            return this;
-        }
-
         public Builder cryptoProvider(Provider cryptoProvider) {
             this._cryptoProvider = cryptoProvider;
             return this;
@@ -439,10 +451,6 @@ public class S3EncryptionClient implements S3Client {
                     .cryptoMaterialsManager(_cryptoMaterialsManager)
                     .secureRandom(_secureRandom)
                     .build();
-
-            if (_enableMultipartPutObject && _clientConfiguration == null) {
-                _clientConfiguration = ClientConfiguration.builder().build();
-            }
 
             return new S3EncryptionClient(this);
         }
