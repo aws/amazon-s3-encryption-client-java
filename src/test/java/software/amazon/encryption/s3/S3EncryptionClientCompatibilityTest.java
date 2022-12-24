@@ -2,7 +2,8 @@ package software.amazon.encryption.s3;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
+import static software.amazon.encryption.s3.S3EncryptionClient.builder;
+import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 import com.amazonaws.regions.Region;
@@ -81,7 +82,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -116,7 +117,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -148,7 +149,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .aesKey(AES_KEY)
                 .build();
 
@@ -183,7 +184,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .aesKey(AES_KEY)
                 .build();
 
@@ -218,7 +219,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .aesKey(AES_KEY)
                 .build();
 
@@ -248,7 +249,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .aesKey(AES_KEY)
                 .build();
 
@@ -271,7 +272,7 @@ public class S3EncryptionClientCompatibilityTest {
         final String objectKey = "aes-gcm-v3-to-v3";
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .aesKey(AES_KEY)
                 .build();
 
@@ -308,7 +309,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -343,7 +344,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
@@ -377,7 +378,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
@@ -407,7 +408,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
@@ -430,7 +431,7 @@ public class S3EncryptionClientCompatibilityTest {
         final String objectKey = "rsa-oaep-v3-to-v3";
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
@@ -469,7 +470,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -501,7 +502,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -521,7 +522,7 @@ public class S3EncryptionClientCompatibilityTest {
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
-                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)));
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext)));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -549,7 +550,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -562,7 +563,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
-                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)), RequestBody.fromString(input));
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext)), RequestBody.fromString(input));
 
         String output = v1Client.getObjectAsString(BUCKET, objectKey);
         assertEquals(input, output);
@@ -586,7 +587,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -599,7 +600,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.putObject(builder -> builder
                         .bucket(BUCKET)
                         .key(objectKey)
-                        .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)),
+                        .overrideConfiguration(withAdditionalConfiguration(encryptionContext)),
                 RequestBody.fromString(input));
 
         String output = v2Client.getObjectAsString(BUCKET, objectKey);
@@ -615,7 +616,7 @@ public class S3EncryptionClientCompatibilityTest {
         final String objectKey = "kms-context-v3-to-v3";
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -628,14 +629,14 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.putObject(builder -> builder
                         .bucket(BUCKET)
                         .key(objectKey)
-                        .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)),
+                        .overrideConfiguration(withAdditionalConfiguration(encryptionContext)),
                 RequestBody.fromString(input));
 
         // TODO: Negative testing around encryption context
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
-                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)));
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext)));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -657,7 +658,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(false)
                 .build();
@@ -687,7 +688,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client v3Client = builder()
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(false)
                 .build();
