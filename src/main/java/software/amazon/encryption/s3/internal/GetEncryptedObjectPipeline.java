@@ -162,7 +162,7 @@ public class GetEncryptedObjectPipeline {
         public void onResponse(GetObjectResponse response) {
             getObjectResponse = response;
             // TODO: Implement instruction file handling - this is a bit less intuitive in async
-            contentMetadata = ContentMetadataStrategy.decode(null, getObjectRequest, response);
+            contentMetadata = ContentMetadataStrategy.decode(_s3AsyncClient, getObjectRequest, response);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
             wrappedAsyncResponseTransformer.onResponse(response);
         }

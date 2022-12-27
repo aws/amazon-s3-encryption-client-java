@@ -46,6 +46,42 @@ public class S3AsyncEncryptionClientTest {
     }
 
     @Test
+    public void AsyncAesGcmV2toV3WithInstructionFile() {
+        final String objectKey = "async-aes-gcm-v2-to-v3-with-instruction-file";
+
+        // V2 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Async Client
+        S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // Asserts
+        final String input = "AesGcmV2toV3";
+        v2Client.putObject(BUCKET, objectKey, input);
+
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureGet = v3AsyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncResponseTransformer.toBytes());
+        String outputAsync = futureGet.join().asUtf8String();
+        assertEquals(input, outputAsync);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3AsyncClient);
+        v3AsyncClient.close();
+    }
+
+    @Test
     public void putDefaultGetAsync() {
         final String objectKey = "put-default-get-async";
 

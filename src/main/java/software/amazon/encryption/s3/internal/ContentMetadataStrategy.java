@@ -1,10 +1,12 @@
 package software.amazon.encryption.s3.internal;
 
-import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter.JsonGenerationException;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -30,17 +32,23 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
     public static final ContentMetadataDecodingStrategy INSTRUCTION_FILE = new ContentMetadataDecodingStrategy() {
 
         @Override
-        public ContentMetadata decodeMetadata(S3Client client, GetObjectRequest getObjectRequest, GetObjectResponse response) {
+        public <T> ContentMetadata decodeMetadata(T client, GetObjectRequest getObjectRequest, GetObjectResponse response) {
             GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
                     .bucket(getObjectRequest.bucket())
                     .key(getObjectRequest.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
-            ResponseInputStream<GetObjectResponse> instruction = client.getObject(
-                    instructionGetObjectRequest);
+            ResponseBytes<GetObjectResponse> instruction;
+            if (client instanceof S3Client) {
+                instruction = ((S3Client) client).getObjectAsBytes(
+                        instructionGetObjectRequest);
+            } else {
+                instruction = ((S3AsyncClient) client).getObject(instructionGetObjectRequest,
+                        AsyncResponseTransformer.toBytes()).join();
+            }
 
             Map<String, String> metadata = new HashMap<>();
             JsonNodeParser parser = JsonNodeParser.create();
-            JsonNode objectNode = parser.parse(instruction);
+            JsonNode objectNode = parser.parse(instruction.asByteArray());
             for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
                 metadata.put(entry.getKey(), entry.getValue().asString());
             }
@@ -52,7 +60,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
         @Override
         public Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] nonce,
-                                                   Map<String, String> metadata) {
+                                                  Map<String, String> metadata) {
             EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
             metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(nonce));
@@ -76,7 +84,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         }
 
         @Override
-        public ContentMetadata decodeMetadata(S3Client client, GetObjectRequest request, GetObjectResponse response) {
+        public <T> ContentMetadata decodeMetadata(T client, GetObjectRequest request, GetObjectResponse response) {
             return ContentMetadataStrategy.readFromMap(response.metadata(), response);
         }
     };
@@ -90,7 +98,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                 || contentEncryptionAlgorithm.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF.cipherName())) {
             algorithmSuite = AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF;
         } else if (contentEncryptionAlgorithm.equals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName())) {
-            algorithmSuite = (contentRange == null ) ? AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF : AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF;
+            algorithmSuite = (contentRange == null) ? AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF : AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF;
         } else {
             throw new S3EncryptionClientException(
                     "Unknown content encryption algorithm: " + contentEncryptionAlgorithm);
@@ -165,7 +173,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                 .build();
     }
 
-    public static ContentMetadata decode(S3Client client, GetObjectRequest request, GetObjectResponse response) {
+    public static <T> ContentMetadata decode(T client, GetObjectRequest request, GetObjectResponse response) {
         Map<String, String> metadata = response.metadata();
         ContentMetadataDecodingStrategy strategy;
         if (metadata != null
