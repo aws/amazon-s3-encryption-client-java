@@ -12,7 +12,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.legacy.internal.AesCtrUtils;
 import software.amazon.encryption.s3.legacy.internal.RangedGetUtils;
 import software.amazon.encryption.s3.legacy.internal.UnauthenticatedContentStrategy;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
@@ -178,15 +177,10 @@ public class GetEncryptedObjectPipeline {
 
         @Override
         public void onStream(SdkPublisher<ByteBuffer> ciphertextPublisher) {
-            long[] desiredRange = RangedGetUtils.getRange(materials.s3Request().range());
-            long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.s3Request().range());
             AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
             SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), contentMetadata.algorithmSuite().dataKeyAlgorithm());
             final int tagLength = algorithmSuite.cipherTagLengthBits();
             byte[] iv = contentMetadata.contentNonce();
-            if (algorithmSuite == AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF) {
-                iv = AesCtrUtils.adjustIV(iv, cryptoRange[0]);
-            }
             try {
                 final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
                 switch (algorithmSuite) {
@@ -194,14 +188,14 @@ public class GetEncryptedObjectPipeline {
                         cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
                         break;
                     case ALG_AES_256_CBC_IV16_NO_KDF:
-                    case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
                         cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
                         break;
+                    case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
+                        // TODO: Ranged Get
                     default:
                         throw new S3EncryptionClientException("Unknown algorithm: " + algorithmSuite.cipherName());
                 }
 
-                // TODO: Need an equivalent to adjustToDesiredRange...
                 CipherPublisher plaintextPublisher = new CipherPublisher(cipher, ciphertextPublisher, getObjectResponse.contentLength());
                 wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
             } catch (GeneralSecurityException e) {
