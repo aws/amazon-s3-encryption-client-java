@@ -1,7 +1,10 @@
 package software.amazon.encryption.s3;
 
+import com.amazonaws.services.s3.AmazonS3Encryption;
+import com.amazonaws.services.s3.AmazonS3EncryptionClient;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
 import com.amazonaws.services.s3.AmazonS3EncryptionV2;
+import com.amazonaws.services.s3.model.CryptoConfiguration;
 import com.amazonaws.services.s3.model.CryptoConfigurationV2;
 import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.CryptoStorageMode;
@@ -76,6 +79,42 @@ public class S3AsyncEncryptionClientTest {
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
         v3AsyncClient.close();
+    }
+
+    @Test
+    public void aesCbcV1toV3Async() {
+        final String objectKey = "aes-cbc-v1-to-v3-ranged-get-async";
+
+        // V1 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfiguration v1CryptoConfig =
+                new CryptoConfiguration();
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig)
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST";
+
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        // V3 Client
+        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureResponse = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey), AsyncResponseTransformer.toBytes());
+        ResponseBytes<GetObjectResponse> response = futureResponse.join();
+        String output = response.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
