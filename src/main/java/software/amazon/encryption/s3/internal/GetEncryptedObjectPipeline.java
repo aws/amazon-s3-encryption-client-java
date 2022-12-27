@@ -58,34 +58,10 @@ public class GetEncryptedObjectPipeline {
     }
 
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest, AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
+        // TODO: Support for ranged gets in async
         // In async, the decryption is done within a response transformation
-        String cryptoRange = RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range());
-        GetObjectRequest adjustedRangeRequest = getObjectRequest.toBuilder().range(cryptoRange).build();
-        return _s3AsyncClient.getObject(adjustedRangeRequest, new DecryptingResponseTransformer<>(asyncResponseTransformer,
+        return _s3AsyncClient.getObject(getObjectRequest, new DecryptingResponseTransformer<>(asyncResponseTransformer,
                 getObjectRequest));
-    }
-
-    /**
-     * This helps reduce code duplication between async and default getObject implementations.
-     */
-    private DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
-                                                            final ContentMetadata contentMetadata) {
-        AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
-        if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
-            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
-        }
-
-        List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
-
-        DecryptMaterialsRequest materialsRequest = DecryptMaterialsRequest.builder()
-                .s3Request(getObjectRequest)
-                .algorithmSuite(algorithmSuite)
-                .encryptedDataKeys(encryptedDataKeys)
-                .encryptionContext(contentMetadata.encryptedDataKeyContext())
-                .ciphertextLength(getObjectResponse.contentLength())
-                .build();
-
-        return _cryptoMaterialsManager.decryptMaterials(materialsRequest);
     }
 
     public <T> T getObject(GetObjectRequest getObjectRequest,
@@ -113,6 +89,29 @@ public class GetEncryptedObjectPipeline {
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
         }
+    }
+
+    /**
+     * This helps reduce code duplication between async and default getObject implementations.
+     */
+    private DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
+                                                            final ContentMetadata contentMetadata) {
+        AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
+        if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
+            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
+        }
+
+        List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
+
+        DecryptMaterialsRequest materialsRequest = DecryptMaterialsRequest.builder()
+                .s3Request(getObjectRequest)
+                .algorithmSuite(algorithmSuite)
+                .encryptedDataKeys(encryptedDataKeys)
+                .encryptionContext(contentMetadata.encryptedDataKeyContext())
+                .ciphertextLength(getObjectResponse.contentLength())
+                .build();
+
+        return _cryptoMaterialsManager.decryptMaterials(materialsRequest);
     }
 
     private ContentDecryptionStrategy selectContentDecryptionStrategy(final DecryptionMaterials materials) {
@@ -165,6 +164,7 @@ public class GetEncryptedObjectPipeline {
             if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
                 throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
             }
+            // TODO: Implement instruction file handling - this is a bit less intuitive in async
             contentMetadata = ContentMetadataStrategy.decode(null, getObjectRequest, response);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
             wrappedAsyncResponseTransformer.onResponse(response);
