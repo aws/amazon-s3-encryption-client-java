@@ -83,7 +83,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void aesCbcV1toV3Async() {
-        final String objectKey = "aes-cbc-v1-to-v3-ranged-get-async";
+        final String objectKey = "aes-cbc-v1-to-v3-async";
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
