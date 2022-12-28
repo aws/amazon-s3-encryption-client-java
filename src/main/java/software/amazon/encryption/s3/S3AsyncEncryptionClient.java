@@ -127,14 +127,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
 
     // TODO: The async / non-async clients can probably share a builder - revisit after implementing async
     public static class Builder {
-        SdkAsyncHttpClient nettyHttpClient =
-                NettyNioAsyncHttpClient.builder()
-                        .connectionTimeout(Duration.ofMinutes(5))
-                        .maxConcurrency(100)
-                        .build();
-
-        private S3AsyncClient _wrappedClient = S3AsyncClient.builder()
-                .httpClient(nettyHttpClient).build();
+        private S3AsyncClient _wrappedClient = S3AsyncClient.builder().build();
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
         private SecretKey _aesKey;
