@@ -198,7 +198,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                     .bucket(request.bucket())
                     .key(request.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
-            instruction = client.getObject(instructionGetObjectRequest,
+            instruction = S3AsyncClient.builder().build().getObject(instructionGetObjectRequest,
                     AsyncResponseTransformer.toBytes()).join();
         }
 
