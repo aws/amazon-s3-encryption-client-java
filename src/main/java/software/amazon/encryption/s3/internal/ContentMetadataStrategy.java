@@ -32,20 +32,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
     public static final ContentMetadataDecodingStrategy INSTRUCTION_FILE = new ContentMetadataDecodingStrategy() {
 
         @Override
-        public <T> ContentMetadata decodeMetadata(T client, GetObjectRequest getObjectRequest, GetObjectResponse response) {
-            GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
-                    .bucket(getObjectRequest.bucket())
-                    .key(getObjectRequest.key() + INSTRUCTION_FILE_SUFFIX)
-                    .build();
-            ResponseBytes<GetObjectResponse> instruction;
-            if (client instanceof S3Client) {
-                instruction = ((S3Client) client).getObjectAsBytes(
-                        instructionGetObjectRequest);
-            } else {
-                instruction = ((S3AsyncClient) client).getObject(instructionGetObjectRequest,
-                        AsyncResponseTransformer.toBytes()).join();
-            }
-
+        public ContentMetadata decodeMetadata(ResponseBytes<GetObjectResponse> instruction, GetObjectResponse response) {
             Map<String, String> metadata = new HashMap<>();
             JsonNodeParser parser = JsonNodeParser.create();
             JsonNode objectNode = parser.parse(instruction.asByteArray());
@@ -84,7 +71,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         }
 
         @Override
-        public <T> ContentMetadata decodeMetadata(T client, GetObjectRequest request, GetObjectResponse response) {
+        public ContentMetadata decodeMetadata(ResponseBytes<GetObjectResponse> instruction, GetObjectResponse response) {
             return ContentMetadataStrategy.readFromMap(response.metadata(), response);
         }
     };
@@ -173,9 +160,10 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                 .build();
     }
 
-    public static <T> ContentMetadata decode(T client, GetObjectRequest request, GetObjectResponse response) {
+    public static ContentMetadata decode(S3Client client, GetObjectRequest request, GetObjectResponse response) {
         Map<String, String> metadata = response.metadata();
         ContentMetadataDecodingStrategy strategy;
+        ResponseBytes<GetObjectResponse> instruction = null;
         if (metadata != null
                 && metadata.containsKey(MetadataKeyConstants.CONTENT_NONCE)
                 && (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
@@ -183,8 +171,37 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             strategy = OBJECT_METADATA;
         } else {
             strategy = INSTRUCTION_FILE;
+            GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
+                    .bucket(request.bucket())
+                    .key(request.key() + INSTRUCTION_FILE_SUFFIX)
+                    .build();
+
+            instruction = client.getObjectAsBytes(
+                    instructionGetObjectRequest);
         }
 
-        return strategy.decodeMetadata(client, request, response);
+        return strategy.decodeMetadata(instruction, response);
+    }
+
+    public static ContentMetadata decode(S3AsyncClient client, GetObjectRequest request, GetObjectResponse response) {
+        Map<String, String> metadata = response.metadata();
+        ContentMetadataDecodingStrategy strategy;
+        ResponseBytes<GetObjectResponse> instruction = null;
+        if (metadata != null
+                && metadata.containsKey(MetadataKeyConstants.CONTENT_NONCE)
+                && (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
+                || metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2))) {
+            strategy = OBJECT_METADATA;
+        } else {
+            strategy = INSTRUCTION_FILE;
+            GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
+                    .bucket(request.bucket())
+                    .key(request.key() + INSTRUCTION_FILE_SUFFIX)
+                    .build();
+            instruction = client.getObject(instructionGetObjectRequest,
+                    AsyncResponseTransformer.toBytes()).join();
+        }
+
+        return strategy.decodeMetadata(instruction, response);
     }
 }

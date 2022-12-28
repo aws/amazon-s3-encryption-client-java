@@ -6,8 +6,6 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.SdkClientException;
-import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
-import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
@@ -31,7 +29,6 @@ import javax.crypto.SecretKey;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -71,7 +68,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
 
     @Override
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
-                                                           AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
+                                              AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
@@ -85,7 +82,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     @Override
     public CompletableFuture<DeleteObjectResponse> deleteObject(DeleteObjectRequest deleteObjectRequest) {
         // TODO: Pass-through requests MUST set the user agent
-        final CompletableFuture<DeleteObjectResponse> response =  _wrappedClient.deleteObject(deleteObjectRequest);
+        final CompletableFuture<DeleteObjectResponse> response = _wrappedClient.deleteObject(deleteObjectRequest);
         final String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
         // Deleting the instruction file is "fire and forget"
         // This is necessary because the encryption client must adhere to the
