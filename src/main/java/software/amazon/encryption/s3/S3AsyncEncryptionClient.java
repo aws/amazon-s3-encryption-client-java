@@ -6,6 +6,8 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
@@ -29,6 +31,7 @@ import javax.crypto.SecretKey;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -124,7 +127,14 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
 
     // TODO: The async / non-async clients can probably share a builder - revisit after implementing async
     public static class Builder {
-        private S3AsyncClient _wrappedClient = S3AsyncClient.builder().build();
+        SdkAsyncHttpClient nettyHttpClient =
+                NettyNioAsyncHttpClient.builder()
+                        .connectionTimeout(Duration.ofMinutes(5))
+                        .maxConcurrency(100)
+                        .build();
+
+        private S3AsyncClient _wrappedClient = S3AsyncClient.builder()
+                .httpClient(nettyHttpClient).build();
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
         private SecretKey _aesKey;
