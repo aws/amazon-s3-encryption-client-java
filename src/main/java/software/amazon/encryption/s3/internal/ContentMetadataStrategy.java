@@ -21,6 +21,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
 
@@ -198,8 +199,14 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                     .bucket(request.bucket())
                     .key(request.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
-            instruction = S3AsyncClient.builder().build().getObject(instructionGetObjectRequest,
-                    AsyncResponseTransformer.toBytes()).join();
+            try {
+                instruction = client.getObject(instructionGetObjectRequest,
+                        AsyncResponseTransformer.toBytes()).get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return strategy.decodeMetadata(instruction, response);
