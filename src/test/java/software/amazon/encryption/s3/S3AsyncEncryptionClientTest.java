@@ -14,14 +14,17 @@ import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import javax.crypto.KeyGenerator;
@@ -46,6 +49,39 @@ public class S3AsyncEncryptionClientTest {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
+    }
+
+    @Test
+    public void putAsyncGetDefault() {
+        final String objectKey = "put-async-get-default";
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        final String input = "PutAsyncGetDefault";
+
+        CompletableFuture<PutObjectResponse> futurePut = v3AsyncClient.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncRequestBody.fromString(input));
+        // Block on completion of the futurePut
+        futurePut.join();
+
+        ResponseBytes<GetObjectResponse> getResponse = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), ResponseTransformer.toBytes());
+        assertEquals(input, getResponse.asUtf8String());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+        v3AsyncClient.close();
     }
 
     @Test
