@@ -40,8 +40,8 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
         final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
         final Cipher cipher = prepareCipher(materials, nonce);
 
-        AsyncRequestBody encryptedContent = new CipherAsyncRequestBody(cipher, content, materials.getCiphertextLength());
-        return new EncryptedContent(nonce, encryptedContent, materials.getCiphertextLength());
+        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(cipher, content, materials.getCiphertextLength());
+        return new EncryptedContent(nonce, encryptedAsyncRequestBody, materials.getCiphertextLength());
     }
 
     @Override

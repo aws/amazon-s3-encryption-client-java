@@ -8,16 +8,16 @@ import java.io.InputStream;
 public class EncryptedContent {
 
     private InputStream _ciphertext;
-    private AsyncRequestBody _asyncCiphertext;
+    private AsyncRequestBody _encryptedRequestBody;
     private long _ciphertextLength = -1;
     private byte[] _nonce;
 
     // TODO: Look for Better ways to handle Cipher for Multipart Uploads.
     private Cipher _cipher;
 
-    public EncryptedContent(final byte[] nonce, final AsyncRequestBody asyncRequestBody, final long ciphertextLength) {
+    public EncryptedContent(final byte[] nonce, final AsyncRequestBody encryptedRequestBody, final long ciphertextLength) {
         _nonce = nonce;
-        _asyncCiphertext = asyncRequestBody;
+        _encryptedRequestBody = encryptedRequestBody;
         _ciphertextLength = ciphertextLength;
     }
     public EncryptedContent(final byte[] nonce, final InputStream ciphertext, final long ciphertextLength) {
@@ -48,7 +48,7 @@ public class EncryptedContent {
     }
 
     public AsyncRequestBody getAsyncCiphertext() {
-        return _asyncCiphertext;
+        return _encryptedRequestBody;
     }
 
 }
