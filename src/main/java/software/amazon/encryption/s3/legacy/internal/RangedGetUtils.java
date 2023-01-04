@@ -1,5 +1,6 @@
 package software.amazon.encryption.s3.legacy.internal;
 
+import org.reactivestreams.Subscriber;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
@@ -55,6 +56,37 @@ public class RangedGetUtils {
         long offset = cipherBlockSize - (rightmostBytePosition % cipherBlockSize);
         long upperBound = rightmostBytePosition + offset + cipherBlockSize;
         return upperBound < 0 ? Long.MAX_VALUE : upperBound;
+    }
+
+    public static Subscriber adjustToDesiredRange(Subscriber subscriber, long[] range, String contentRange, int cipherTagLengthBits) {
+        if (range == null || contentRange == null) {
+            return subscriber;
+        }
+        final long instanceLength;
+        int pos = contentRange.lastIndexOf("/");
+        instanceLength = Long.parseLong(contentRange.substring(pos + 1));
+
+        final long maxOffset = instanceLength - (cipherTagLengthBits / 8) - 1;
+        if (range[1] > maxOffset) {
+            range[1] = maxOffset;
+            if (range[0] > range[1]) {
+                // TODO: Find a way to handle subscriber similar to Empty InputStream (this resolves one edge case error in CBC)
+                try {
+                    return new AdjustedRangeSubscriber(subscriber, range[0], range[1]);
+                } catch (IOException e) {
+                    throw new S3EncryptionClientException(e.getMessage());
+                }
+            }
+        }
+        if (range[0] > range[1]) {
+            // Make no modifications if range is invalid.
+            return subscriber;
+        }
+        try {
+            return new AdjustedRangeSubscriber(subscriber, range[0], range[1]);
+        } catch (IOException e) {
+            throw new S3EncryptionClientException("Error adjusting output to desired byte range: " + e.getMessage());
+        }
     }
 
     public static InputStream adjustToDesiredRange(InputStream plaintext, long[] range, String contentRange, int cipherTagLengthBits) {
