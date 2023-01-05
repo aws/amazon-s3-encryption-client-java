@@ -196,6 +196,9 @@ public class GetEncryptedObjectPipeline {
                         cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
                         break;
                     case ALG_AES_256_CBC_IV16_NO_KDF:
+                        if (materials.s3Request().range() != null) {
+                            throw new UnsupportedOperationException();
+                        }
                     case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
                         cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
                         break;
