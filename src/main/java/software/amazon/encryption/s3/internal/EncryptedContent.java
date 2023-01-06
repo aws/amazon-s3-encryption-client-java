@@ -26,7 +26,7 @@ public class EncryptedContent {
         _ciphertextLength = ciphertextLength;
     }
 
-    public EncryptedContent(byte[] nonce, Cipher cipher) {
+    public EncryptedContent(final byte[] nonce, Cipher cipher) {
         this._nonce = nonce;
         this._cipher = cipher;
     }
