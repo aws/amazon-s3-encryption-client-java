@@ -1,7 +1,6 @@
 package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.async.SdkPublisher;
@@ -23,6 +22,7 @@ import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -64,29 +64,6 @@ public class GetEncryptedObjectPipeline {
                 getObjectRequest));
     }
 
-    /**
-     * This helps reduce code duplication between async and default getObject implementations.
-     */
-    private DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
-                                                            final ContentMetadata contentMetadata) {
-        AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
-        if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
-            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
-        }
-
-        List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
-
-        DecryptMaterialsRequest materialsRequest = DecryptMaterialsRequest.builder()
-                .s3Request(getObjectRequest)
-                .algorithmSuite(algorithmSuite)
-                .encryptedDataKeys(encryptedDataKeys)
-                .encryptionContext(contentMetadata.encryptedDataKeyContext())
-                .ciphertextLength(getObjectResponse.contentLength())
-                .build();
-
-        return _cryptoMaterialsManager.decryptMaterials(materialsRequest);
-    }
-
     public <T> T getObject(GetObjectRequest getObjectRequest,
                            ResponseTransformer<GetObjectResponse, T> responseTransformer) {
         ResponseInputStream<GetObjectResponse> objectStream;
@@ -112,6 +89,29 @@ public class GetEncryptedObjectPipeline {
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
         }
+    }
+
+    /**
+     * This helps reduce code duplication between async and default getObject implementations.
+     */
+    private DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
+                                                            final ContentMetadata contentMetadata) {
+        AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
+        if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
+            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
+        }
+
+        List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
+
+        DecryptMaterialsRequest materialsRequest = DecryptMaterialsRequest.builder()
+                .s3Request(getObjectRequest)
+                .algorithmSuite(algorithmSuite)
+                .encryptedDataKeys(encryptedDataKeys)
+                .encryptionContext(contentMetadata.encryptedDataKeyContext())
+                .ciphertextLength(getObjectResponse.contentLength())
+                .build();
+
+        return _cryptoMaterialsManager.decryptMaterials(materialsRequest);
     }
 
     private ContentDecryptionStrategy selectContentDecryptionStrategy(final DecryptionMaterials materials) {
@@ -161,6 +161,9 @@ public class GetEncryptedObjectPipeline {
         @Override
         public void onResponse(GetObjectResponse response) {
             getObjectResponse = response;
+            if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
+                throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
+            }
             contentMetadata = ContentMetadataStrategy.decode(_s3AsyncClient, getObjectRequest, response);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
             wrappedAsyncResponseTransformer.onResponse(response);
@@ -179,7 +182,18 @@ public class GetEncryptedObjectPipeline {
             byte[] iv = contentMetadata.contentNonce();
             try {
                 final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
-                cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
+                switch (algorithmSuite) {
+                    case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+                        cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
+                        break;
+                    case ALG_AES_256_CBC_IV16_NO_KDF:
+                        cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
+                        break;
+                    case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
+                        // TODO: Ranged Get
+                    default:
+                        throw new S3EncryptionClientException("Unknown algorithm: " + algorithmSuite.cipherName());
+                }
 
                 CipherPublisher plaintextPublisher = new CipherPublisher(cipher, ciphertextPublisher, getObjectResponse.contentLength());
                 wrappedAsyncResponseTransformer.onStream(plaintextPublisher);

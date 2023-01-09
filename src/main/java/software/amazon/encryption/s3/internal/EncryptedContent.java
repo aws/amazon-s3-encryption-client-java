@@ -1,15 +1,25 @@
 package software.amazon.encryption.s3.internal;
 
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+
 import javax.crypto.Cipher;
 import java.io.InputStream;
 
 public class EncryptedContent {
 
     private InputStream _ciphertext;
-    private long _ciphertextLength;
+    private AsyncRequestBody _encryptedRequestBody;
+    private long _ciphertextLength = -1;
     private byte[] _nonce;
+
     // TODO: Look for Better ways to handle Cipher for Multipart Uploads.
     private Cipher _cipher;
+
+    public EncryptedContent(final byte[] nonce, final AsyncRequestBody encryptedRequestBody, final long ciphertextLength) {
+        _nonce = nonce;
+        _encryptedRequestBody = encryptedRequestBody;
+        _ciphertextLength = ciphertextLength;
+    }
     public EncryptedContent(final byte[] nonce, final InputStream ciphertext, final long ciphertextLength) {
         _nonce = nonce;
         _ciphertext = ciphertext;
@@ -17,7 +27,7 @@ public class EncryptedContent {
     }
 
     public EncryptedContent(byte[] nonce, Cipher cipher) {
-        this(nonce, null, 0);
+        this._nonce = nonce;
         this._cipher = cipher;
     }
 
@@ -35,6 +45,10 @@ public class EncryptedContent {
 
     public long getCiphertextLength() {
         return _ciphertextLength;
+    }
+
+    public AsyncRequestBody getAsyncCiphertext() {
+        return _encryptedRequestBody;
     }
 
 }

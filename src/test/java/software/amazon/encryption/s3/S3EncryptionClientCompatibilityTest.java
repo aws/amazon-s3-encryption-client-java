@@ -2,7 +2,7 @@ package software.amazon.encryption.s3;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalEncryptionContext;
+import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 import com.amazonaws.regions.Region;
@@ -521,7 +521,7 @@ public class S3EncryptionClientCompatibilityTest {
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
-                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)));
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext)));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -562,7 +562,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
-                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)), RequestBody.fromString(input));
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext)), RequestBody.fromString(input));
 
         String output = v1Client.getObjectAsString(BUCKET, objectKey);
         assertEquals(input, output);
@@ -599,7 +599,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.putObject(builder -> builder
                         .bucket(BUCKET)
                         .key(objectKey)
-                        .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)),
+                        .overrideConfiguration(withAdditionalConfiguration(encryptionContext)),
                 RequestBody.fromString(input));
 
         String output = v2Client.getObjectAsString(BUCKET, objectKey);
@@ -628,14 +628,14 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.putObject(builder -> builder
                         .bucket(BUCKET)
                         .key(objectKey)
-                        .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)),
+                        .overrideConfiguration(withAdditionalConfiguration(encryptionContext)),
                 RequestBody.fromString(input));
 
         // TODO: Negative testing around encryption context
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
-                .overrideConfiguration(withAdditionalEncryptionContext(encryptionContext)));
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext)));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
