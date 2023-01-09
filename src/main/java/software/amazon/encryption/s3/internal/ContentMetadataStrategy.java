@@ -199,14 +199,8 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                     .bucket(request.bucket())
                     .key(request.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
-            try {
-                instruction = client.getObject(instructionGetObjectRequest,
-                        AsyncResponseTransformer.toBytes()).get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            }
+            instruction = client.getObject(instructionGetObjectRequest,
+                    AsyncResponseTransformer.toBytes()).join();
         }
 
         return strategy.decodeMetadata(instruction, response);
