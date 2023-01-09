@@ -175,6 +175,9 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             strategy = OBJECT_METADATA;
         } else {
             strategy = INSTRUCTION_FILE;
+            if (client == null) {
+                client = S3Client.create();
+            }
         }
 
         return strategy.decodeMetadata(client, request, response);

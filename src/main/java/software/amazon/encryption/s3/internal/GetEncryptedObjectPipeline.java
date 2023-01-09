@@ -164,7 +164,6 @@ public class GetEncryptedObjectPipeline {
             if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
                 throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
             }
-            // TODO: Implement instruction file handling - this is a bit less intuitive in async
             contentMetadata = ContentMetadataStrategy.decode(null, getObjectRequest, response);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
             wrappedAsyncResponseTransformer.onResponse(response);
