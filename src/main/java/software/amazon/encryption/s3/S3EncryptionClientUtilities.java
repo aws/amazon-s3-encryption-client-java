@@ -2,7 +2,13 @@ package software.amazon.encryption.s3;
 
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
-import software.amazon.encryption.s3.materials.*;
+import software.amazon.encryption.s3.materials.AesKeyring;
+import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
+import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
+import software.amazon.encryption.s3.materials.Keyring;
+import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
+import software.amazon.encryption.s3.materials.RsaKeyring;
 
 import javax.crypto.SecretKey;
 import java.security.Provider;
