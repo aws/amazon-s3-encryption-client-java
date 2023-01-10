@@ -18,13 +18,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
-import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
-import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.Keyring;
-import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
-import software.amazon.encryption.s3.materials.RsaKeyring;
 
 import javax.crypto.SecretKey;
 import java.security.KeyPair;
@@ -75,7 +71,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
 
     @Override
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
-                                                           AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
+                                              AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
@@ -89,7 +85,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     @Override
     public CompletableFuture<DeleteObjectResponse> deleteObject(DeleteObjectRequest deleteObjectRequest) {
         // TODO: Pass-through requests MUST set the user agent
-        final CompletableFuture<DeleteObjectResponse> response =  _wrappedClient.deleteObject(deleteObjectRequest);
+        final CompletableFuture<DeleteObjectResponse> response = _wrappedClient.deleteObject(deleteObjectRequest);
         final String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
         // Deleting the instruction file is "fire and forget"
         // This is necessary because the encryption client must adhere to the
@@ -203,26 +199,11 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
 
         // We only want one way to use a key, if more than one is set, throw an error
         private void checkKeyOptions() {
-            if (onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
+            if (S3EncryptionClientUtilities.onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 return;
             }
 
             throw new S3EncryptionClientException("Only one may be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
-        }
-
-        private boolean onlyOneNonNull(Object... values) {
-            boolean haveOneNonNull = false;
-            for (Object o : values) {
-                if (o != null) {
-                    if (haveOneNonNull) {
-                        return false;
-                    }
-
-                    haveOneNonNull = true;
-                }
-            }
-
-            return haveOneNonNull;
         }
 
         public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
@@ -249,38 +230,8 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
         }
 
         public S3AsyncEncryptionClient build() {
-            if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
-                throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
-            }
-
-            if (_keyring == null) {
-                if (_aesKey != null) {
-                    _keyring = AesKeyring.builder()
-                            .wrappingKey(_aesKey)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                            .secureRandom(_secureRandom)
-                            .build();
-                } else if (_rsaKeyPair != null) {
-                    _keyring = RsaKeyring.builder()
-                            .wrappingKeyPair(_rsaKeyPair)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                            .secureRandom(_secureRandom)
-                            .build();
-                } else if (_kmsKeyId != null) {
-                    _keyring = KmsKeyring.builder()
-                            .wrappingKeyId(_kmsKeyId)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                            .secureRandom(_secureRandom)
-                            .build();
-                }
-            }
-
-            if (_cryptoMaterialsManager == null) {
-                _cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
-                        .keyring(_keyring)
-                        .cryptoProvider(_cryptoProvider)
-                        .build();
-            }
+            _cryptoMaterialsManager = S3EncryptionClientUtilities.checkCMM(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId,
+                    _enableLegacyUnauthenticatedModes, _secureRandom, _cryptoProvider);
 
             return new S3AsyncEncryptionClient(this);
         }

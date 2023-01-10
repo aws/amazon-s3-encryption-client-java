@@ -31,14 +31,10 @@ import software.amazon.encryption.s3.internal.MultiFileOutputStream;
 import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.UploadObjectObserver;
-import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
-import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.Keyring;
-import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
-import software.amazon.encryption.s3.materials.RsaKeyring;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
@@ -259,7 +255,7 @@ public class S3EncryptionClient implements S3Client {
         AwsRequestOverrideConfiguration overrideConfiguration = request.overrideConfiguration().orElse(null);
         boolean isLastPart = false;
         if (!(overrideConfiguration == null)) {
-            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(this.IS_LAST_PART).orElse(false);
+            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(IS_LAST_PART).orElse(false);
         }
         return _multipartPipeline.uploadPart(request, requestBody, isLastPart);
     }
@@ -362,26 +358,11 @@ public class S3EncryptionClient implements S3Client {
 
         // We only want one way to use a key, if more than one is set, throw an error
         private void checkKeyOptions() {
-            if (onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
+            if (S3EncryptionClientUtilities.onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 return;
             }
 
             throw new S3EncryptionClientException("Only one may be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
-        }
-
-        private boolean onlyOneNonNull(Object... values) {
-            boolean haveOneNonNull = false;
-            for (Object o : values) {
-                if (o != null) {
-                    if (haveOneNonNull) {
-                        return false;
-                    }
-
-                    haveOneNonNull = true;
-                }
-            }
-
-            return haveOneNonNull;
         }
 
         public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
@@ -413,38 +394,8 @@ public class S3EncryptionClient implements S3Client {
         }
 
         public S3EncryptionClient build() {
-            if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
-                throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
-            }
-
-            if (_keyring == null) {
-                if (_aesKey != null) {
-                    _keyring = AesKeyring.builder()
-                            .wrappingKey(_aesKey)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                            .secureRandom(_secureRandom)
-                            .build();
-                } else if (_rsaKeyPair != null) {
-                    _keyring = RsaKeyring.builder()
-                            .wrappingKeyPair(_rsaKeyPair)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                            .secureRandom(_secureRandom)
-                            .build();
-                } else if (_kmsKeyId != null) {
-                    _keyring = KmsKeyring.builder()
-                            .wrappingKeyId(_kmsKeyId)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                            .secureRandom(_secureRandom)
-                            .build();
-                }
-            }
-
-            if (_cryptoMaterialsManager == null) {
-                _cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
-                        .keyring(_keyring)
-                        .cryptoProvider(_cryptoProvider)
-                        .build();
-            }
+            _cryptoMaterialsManager = S3EncryptionClientUtilities.checkCMM(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId,
+                    _enableLegacyUnauthenticatedModes, _secureRandom, _cryptoProvider);
 
             _multipartPipeline = MultipartUploadObjectPipeline.builder()
                     .s3Client(_wrappedClient)
