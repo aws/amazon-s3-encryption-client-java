@@ -33,6 +33,7 @@ import java.security.Security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.generateObjectKey;
 
 /**
  * Test the streaming functionality using various stream implementations.
@@ -53,7 +54,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void markResetInputStreamV3Encrypt() throws IOException {
-        final String objectKey = "markResetInputStreamV3Encrypt";
+        final String objectKey = generateObjectKey(10);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -86,7 +87,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void ordinaryInputStreamV3Encrypt() throws IOException {
-        final String objectKey = "ordinaryInputStreamV3Encrypt";
+        final String objectKey = generateObjectKey(10);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -120,7 +121,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void ordinaryInputStreamV3Decrypt() throws IOException {
-        final String objectKey = "ordinaryInputStreamV3Decrypt";
+        final String objectKey = generateObjectKey(10);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -156,7 +157,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void markResetInputStreamV3DecryptGcm() throws IOException {
-        final String objectKey = "markResetInputStreamV3DecryptGcm";
+        final String objectKey = generateObjectKey(10);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -192,7 +193,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void ordinaryInputStreamV3DecryptCbc() throws IOException {
-        final String objectKey = "markResetInputStreamV3DecryptCbc";
+        final String objectKey = generateObjectKey(10);
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -232,7 +233,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void delayedAuthModeWithLargeObject() throws IOException {
-        final String objectKey = "large-object-test";
+        final String objectKey = generateObjectKey(10);
 
         Security.addProvider(new BouncyCastleProvider());
         Provider provider = Security.getProvider("BC");
@@ -275,7 +276,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void delayedAuthModeWithLargerThanMaxObjectFails() throws IOException {
-        final String objectKey = "larger-than-max-object-delayed-auth-mode";
+        final String objectKey = generateObjectKey(10);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
