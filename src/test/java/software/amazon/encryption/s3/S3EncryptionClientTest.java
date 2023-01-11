@@ -289,8 +289,8 @@ public class S3EncryptionClientTest {
         KmsKeyring keyring = KmsKeyring.builder().wrappingKeyId(KMS_KEY_ID).build();
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .keyring(keyring)
-            .build();
+                .keyring(keyring)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
     }
@@ -302,12 +302,12 @@ public class S3EncryptionClientTest {
         KmsKeyring keyring = KmsKeyring.builder().wrappingKeyId(KMS_KEY_ID).build();
 
         CryptographicMaterialsManager cmm = DefaultCryptoMaterialsManager.builder()
-            .keyring(keyring)
-            .build();
+                .keyring(keyring)
+                .build();
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .cryptoMaterialsManager(cmm)
-            .build();
+                .cryptoMaterialsManager(cmm)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
     }
@@ -319,9 +319,9 @@ public class S3EncryptionClientTest {
         S3Client wrappedClient = S3Client.builder().build();
 
         S3Client wrappingClient = S3EncryptionClient.builder()
-            .wrappedClient(wrappedClient)
-            .kmsKeyId(KMS_KEY_ID)
-            .build();
+                .wrappedClient(wrappedClient)
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         simpleV3RoundTrip(wrappingClient, objectKey);
     }
@@ -333,21 +333,21 @@ public class S3EncryptionClientTest {
     @Test
     public void s3EncryptionClientWithWrappedS3EncryptionClientFails() {
         S3Client wrappedClient = S3EncryptionClient.builder()
-            .kmsKeyId(KMS_KEY_ID)
-            .build();
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-            .wrappedClient(wrappedClient)
-            .kmsKeyId(KMS_KEY_ID)
-            .build());
+                .wrappedClient(wrappedClient)
+                .kmsKeyId(KMS_KEY_ID)
+                .build());
     }
 
     @Test
     public void s3EncryptionClientWithNullSecureRandomFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-            .aesKey(AES_KEY)
-            .secureRandom(null)
-            .build());
+                .aesKey(AES_KEY)
+                .secureRandom(null)
+                .build());
     }
 
     @Test
@@ -357,8 +357,8 @@ public class S3EncryptionClientTest {
         final String objectKey = generateObjectKey(10);
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .kmsKeyId(KMS_KEY_ID)
-            .build();
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
 
@@ -372,9 +372,9 @@ public class S3EncryptionClientTest {
         final String objectKey = generateObjectKey(10);
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .kmsKeyId(KMS_KEY_ID)
-            .secureRandom(mockSecureRandom)
-            .build();
+                .kmsKeyId(KMS_KEY_ID)
+                .secureRandom(mockSecureRandom)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
 
@@ -390,9 +390,9 @@ public class S3EncryptionClientTest {
         final String objectKey = generateObjectKey(10);
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .aesKey(AES_KEY)
-            .secureRandom(mockSecureRandom)
-            .build();
+                .aesKey(AES_KEY)
+                .secureRandom(mockSecureRandom)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
 
@@ -407,9 +407,9 @@ public class S3EncryptionClientTest {
         final String objectKey = generateObjectKey(10);
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .rsaKeyPair(RSA_KEY_PAIR)
-            .secureRandom(mockSecureRandom)
-            .build();
+                .rsaKeyPair(RSA_KEY_PAIR)
+                .secureRandom(mockSecureRandom)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
 
@@ -423,16 +423,16 @@ public class S3EncryptionClientTest {
         SecureRandom mockSecureRandomClient = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
         AesKeyring keyring = AesKeyring.builder()
-            .wrappingKey(AES_KEY)
-            .secureRandom(mockSecureRandomKeyring)
-            .build();
+                .wrappingKey(AES_KEY)
+                .secureRandom(mockSecureRandomKeyring)
+                .build();
 
         final String objectKey = generateObjectKey(10);
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .keyring(keyring)
-            .secureRandom(mockSecureRandomClient)
-            .build();
+                .keyring(keyring)
+                .secureRandom(mockSecureRandomClient)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
 

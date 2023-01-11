@@ -24,7 +24,8 @@ public class S3EncryptionClientTestResources {
 
     /**
      * Delete the object for the given objectKey in the given bucket.
-     * @param bucket the bucket to delete the object from
+     *
+     * @param bucket    the bucket to delete the object from
      * @param objectKey the key of the object to delete
      */
     public static void deleteObject(final String bucket, final String objectKey, final S3Client s3Client) {
@@ -36,7 +37,8 @@ public class S3EncryptionClientTestResources {
 
     /**
      * Delete the object for the given objectKey in the given bucket.
-     * @param bucket the bucket to delete the object from
+     *
+     * @param bucket    the bucket to delete the object from
      * @param objectKey the key of the object to delete
      */
     public static void deleteObject(final String bucket, final String objectKey, final S3AsyncClient s3Client) {

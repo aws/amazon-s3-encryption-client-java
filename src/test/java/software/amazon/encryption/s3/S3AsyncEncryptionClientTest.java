@@ -101,9 +101,9 @@ public class S3AsyncEncryptionClientTest {
         final String input = "PutDefaultGetAsync";
 
         v3Client.putObject(builder -> builder
-                        .bucket(BUCKET)
-                        .key(objectKey)
-                        .build(), RequestBody.fromString(input));
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
 
         CompletableFuture<ResponseBytes<GetObjectResponse>> futureGet = v3AsyncClient.getObject(builder -> builder
                 .bucket(BUCKET)

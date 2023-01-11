@@ -258,7 +258,7 @@ public class S3EncryptionClientStreamTest {
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
-                
+
         S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableDelayedAuthenticationMode(true)
