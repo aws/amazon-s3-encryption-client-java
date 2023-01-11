@@ -43,6 +43,8 @@ public class S3EncryptionClientMultipartUploadTest {
 
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
+        com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider.install();
+
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
@@ -56,14 +58,10 @@ public class S3EncryptionClientMultipartUploadTest {
         final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
 
-        Security.addProvider(new BouncyCastleProvider());
-        Provider provider = Security.getProvider("BC");
-
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableMultipartPutObject(true)
                 .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(provider)
                 .build();
 
         MultipartConfiguration configuration = MultipartConfiguration.builder()
@@ -99,14 +97,10 @@ public class S3EncryptionClientMultipartUploadTest {
         final int PART_SIZE = 10 * 1024 * 1024;
         final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
 
-        Security.addProvider(new BouncyCastleProvider());
-        Provider provider = Security.getProvider("BC");
-
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(provider)
                 .build();
 
         // Create Multipart upload request to S3

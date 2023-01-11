@@ -142,6 +142,13 @@
       <version>2.11.0</version>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>software.amazon.cryptools</groupId>
+      <artifactId>AmazonCorrettoCryptoProvider</artifactId>
+      <version>[1.0,2.0)</version>
+      <classifier>linux-x86_64</classifier>
+    </dependency>
   </dependencies>
 
   <build>
