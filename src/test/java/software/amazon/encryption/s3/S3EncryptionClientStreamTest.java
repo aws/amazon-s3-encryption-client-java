@@ -7,7 +7,6 @@ import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -27,8 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.Security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -234,13 +231,9 @@ public class S3EncryptionClientStreamTest {
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = "large-object-test";
 
-        Security.addProvider(new BouncyCastleProvider());
-        Provider provider = Security.getProvider("BC");
-
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .cryptoProvider(provider)
                 .build();
 
         // Tight bound on the default limit of 64MiB

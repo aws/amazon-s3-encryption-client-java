@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
+import software.amazon.encryption.s3.internal.CryptoFactory;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.MultiFileOutputStream;
 import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
@@ -259,7 +260,7 @@ public class S3EncryptionClient implements S3Client {
         AwsRequestOverrideConfiguration overrideConfiguration = request.overrideConfiguration().orElse(null);
         boolean isLastPart = false;
         if (!(overrideConfiguration == null)) {
-            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(this.IS_LAST_PART).orElse(false);
+            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(IS_LAST_PART).orElse(false);
         }
         return _multipartPipeline.uploadPart(request, requestBody, isLastPart);
     }
@@ -413,6 +414,10 @@ public class S3EncryptionClient implements S3Client {
         }
 
         public S3EncryptionClient build() {
+            if (_cryptoProvider == null) {
+                CryptoFactory.checkACCP();
+            }
+
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
             }

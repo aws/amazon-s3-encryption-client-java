@@ -1,7 +1,6 @@
 package software.amazon.encryption.s3;
 
 import org.apache.commons.io.IOUtils;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -24,8 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,8 +40,6 @@ public class S3EncryptionClientMultipartUploadTest {
 
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
-        com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider.install();
-
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
