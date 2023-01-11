@@ -1,6 +1,11 @@
 package software.amazon.encryption.s3.internal;
 
+import software.amazon.awssdk.awscore.retry.AwsRetryPolicy;
+import software.amazon.awssdk.awscore.retry.conditions.RetryOnErrorCodeCondition;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.retry.conditions.OrRetryCondition;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
@@ -20,6 +25,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
 
@@ -197,7 +203,26 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                     .bucket(request.bucket())
                     .key(request.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
-            instruction = S3Client.create().getObjectAsBytes(instructionGetObjectRequest);
+            try {
+                instruction = S3AsyncClient.builder()
+                        .overrideConfiguration(
+                                ClientOverrideConfiguration.builder()
+                                        .retryPolicy(AwsRetryPolicy.defaultRetryPolicy()
+                                                .toBuilder()
+                                                .retryCondition(
+                                                        OrRetryCondition.create(
+                                                                AwsRetryPolicy.defaultRetryCondition(),
+                                                                RetryOnErrorCodeCondition.create(
+                                                                        "RequestTimeout"))
+                                                ).build()
+                                        )
+                                        .build())
+                        .build().getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBytes()).get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return strategy.decodeMetadata(instruction, response);
