@@ -49,15 +49,7 @@ public class KmsKeyring extends S3Keyring {
 
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) {
-            DecryptRequest request = DecryptRequest.builder()
-                    .keyId(_wrappingKeyId)
-                    .encryptionContext(materials.encryptionContext())
-                    .ciphertextBlob(SdkBytes.fromByteArray(encryptedDataKey))
-                    .overrideConfiguration(builder -> builder.addApiName(API_NAME))
-                    .build();
-
-            DecryptResponse response = _kmsClient.decrypt(request);
-            return response.plaintext().asByteArray();
+            return KmsKeyring.this.decryptDataKey(materials, encryptedDataKey);
         }
     };
 
@@ -136,20 +128,23 @@ public class KmsKeyring extends S3Keyring {
                 throw new S3EncryptionClientException("Provided encryption context does not match information retrieved from S3");
             }
 
-            DecryptRequest request = DecryptRequest.builder()
-                    .keyId(_wrappingKeyId)
-                    .encryptionContext(materials.encryptionContext())
-                    .ciphertextBlob(SdkBytes.fromByteArray(encryptedDataKey))
-                    .overrideConfiguration(builder -> builder.addApiName(API_NAME))
-                    .build();
-
-            DecryptResponse response = _kmsClient.decrypt(request);
-            return response.plaintext().asByteArray();
+            return KmsKeyring.this.decryptDataKey(materials, encryptedDataKey);
         }
-
     };
 
     private final Map<String, DecryptDataKeyStrategy> decryptStrategies = new HashMap<>();
+
+    private byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) {
+        DecryptRequest request = DecryptRequest.builder()
+                .keyId(_wrappingKeyId)
+                .encryptionContext(materials.encryptionContext())
+                .ciphertextBlob(SdkBytes.fromByteArray(encryptedDataKey))
+                .overrideConfiguration(builder -> builder.addApiName(API_NAME))
+                .build();
+
+        DecryptResponse response = _kmsClient.decrypt(request);
+        return response.plaintext().asByteArray();
+    }
 
     public KmsKeyring(Builder builder) {
         super(builder);
