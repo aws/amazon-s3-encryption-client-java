@@ -29,10 +29,10 @@ public class S3EncryptionClientTestResources {
      * @param objectKey the key of the object to delete
      */
     public static void deleteObject(final String bucket, final String objectKey, final S3Client s3Client) {
-//        s3Client.deleteObject(builder -> builder
-//                .bucket(bucket)
-//                .key(objectKey)
-//                .build());
+        s3Client.deleteObject(builder -> builder
+                .bucket(bucket)
+                .key(objectKey)
+                .build());
     }
 
     /**
