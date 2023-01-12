@@ -147,6 +147,11 @@
   <build>
     <plugins>
       <plugin>
+    	<groupId>com.github.johnpoth</groupId>
+    	<artifactId>jshell-maven-plugin</artifactId>
+    	<version>1.1</version>
+      </plugin>
+      <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.2</version>
         <configuration>
