@@ -7,7 +7,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.S3EncryptionClient;
-import software.amazon.encryption.s3.S3EncryptionClientException;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -18,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class RangedGetExample {
 
-    // Creates a 200 Character Input String
+    // Create a 200 character input string to use as your object in the following examples.
     private static final String OBJECT_CONTENT = "abcdefghijklmnopqrstABCDEFGHIJKLMNOPQRST" +
             "abcdefghijklmnopqrstABCDEFGHIJKLMNOPQRST" +
             "abcdefghijklmnopqrstABCDEFGHIJKLMNOPQRST" +
@@ -38,7 +37,6 @@ public class RangedGetExample {
         simpleAesGcmV3RangedGet(bucket);
         aesGcmV3RangedGetOperations(bucket);
         failsWhenRangeExceedsObjectLength(bucket);
-        failsOnRangeWhenLegacyModeDisabled(bucket);
 
         cleanup(bucket);
     }
@@ -65,13 +63,11 @@ public class RangedGetExample {
     }
 
     public static void simpleAesGcmV3RangedGet(String bucket) {
-        // Instantiate the S3 Encryption Client to encrypt and decrypt
-        // by specifying an AES Key with the aesKey builder parameter,
-        // also enable enableLegacyUnauthenticatedModes() to perform Ranged-get operations.
+        // Instantiate the S3 Encryption Client by specifying an AES Key with the aesKey builder parameter.
+        // You must also specify the enableLegacyUnauthenticatedModes parameter to enable ranged GET requests.
         //
-        // This means that the S3 Encryption Client can perform both encrypt and decrypt operations
-        // as part of the S3 putObject and getObject operations,
-        // also able to perform ranged-get if range is given with getObject call.
+        // This means that the S3 Encryption Client can perform both encrypt and decrypt operations,
+        // and can perform ranged GET requests when a range is provided.
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
@@ -84,46 +80,39 @@ public class RangedGetExample {
                 .key(OBJECT_KEY));
         String output = objectResponse.asUtf8String();
 
-        // Verify that the decrypted ranged-get object matches the original plaintext object with same range.
-        // Note: Ranged Get returns the object with both the start and end indexes included.
+        // Verify that the decrypted object range matches the original plaintext object at the same range.
+        // Note: The start and end indices of the byte range are included in the returned object.
         assertEquals(OBJECT_CONTENT.substring(10, 20 + 1), output);
     }
 
     public static void aesGcmV3RangedGetOperations(String bucket) {
-        // Instantiate the S3 Encryption Client to encrypt and decrypt
-        // by specifying an AES Key with the aesKey builder parameter,
-        // also enable enableLegacyUnauthenticatedModes() to perform Ranged-get operations.
-        //
-        // This means that the S3 Encryption Client can perform both encrypt and decrypt operations
-        // as part of the S3 putObject and getObject operations,
-        // also able to perform ranged-get if range is given with getObject call.
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // 1. Call getObject to retrieve a range of 190-300 bytes,
-        // where 190 is within object range but 300 is out of original plaintext object range.
+        // where 190 is within object range but 300 is outside the original plaintext object range.
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .range("bytes=190-300")
                 .key(OBJECT_KEY));
         String output = objectResponse.asUtf8String();
 
-        // Verify that when range start index within object range and end index out of range,
-        // returns object from start index of the given range to End of original plaintext object range.
+        // Verify that when the start index is within object range and the end index is out of range,
+        // the S3 Encryption Client returns the object from the start index to the end of the original plaintext object.
         assertEquals(OBJECT_CONTENT.substring(190), output);
 
         // 2. Call getObject to retrieve a range of 100-50 bytes,
-        // where start index is greater the end index of the range.
+        // where the start index is greater than the end index.
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .range("bytes=100-50")
                 .key(OBJECT_KEY));
         output = objectResponse.asUtf8String();
 
-        // Verify that the decrypted ranged-get object with
-        // invalid range start index range greater than ending index, returns entire object.
+        // Verify that when the start index is greater than the end index,
+        // the S3 Encryption Client returns the entire object.
         assertEquals(OBJECT_CONTENT, output);
 
         // 3. Call getObject to retrieve a range of 10-20 bytes but with invalid format
@@ -133,20 +122,21 @@ public class RangedGetExample {
                 .key(OBJECT_KEY));
         output = objectResponse.asUtf8String();
 
-        // Verify that the decrypted ranged-get object with invalid range format returns entire object.
-        // Note: Range should always in the format of "bytes=i-j" where i is start index, j is end index
+        // Verify that when the range is specified with an invalid format,
+        // the S3 Encryption Client returns the entire object.
+        // Note: Your byte range should always be specified in the following format: "bytes=start–end"
         assertEquals(OBJECT_CONTENT, output);
 
-        // 4. Call getObject to retrieve a range of 216-217 bytes,
-        // which is out of range with original plaintext object range of 200.
+        // 4. Call getObject to retrieve a range of 216-217 bytes.
+        // Both the start and end indices are greater than the original plaintext object's total length, 200.
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .range("bytes=216-217")
                 .key(OBJECT_KEY));
         output = objectResponse.asUtf8String();
 
-        // Verify that the decrypted ranged-get object with range starting index and ending index greater than object length,
-        // but within Cipher Block size, returns empty object
+        // Verify that when both the start and end indices are greater than the original plaintext object's total length,
+        // but still within the same cipher block, the Amazon S3 Encryption Client returns an empty object.
         assertEquals("", output);
 
         // Close the client
@@ -154,20 +144,14 @@ public class RangedGetExample {
     }
 
     public static void failsWhenRangeExceedsObjectLength(String bucket) {
-
-        // Instantiate the S3 Encryption Client to encrypt and decrypt
-        // by specifying an AES Key with the aesKey builder parameter,
-        // also enable enableLegacyUnauthenticatedModes() to perform Ranged-get operations.
-        //
-        // This means that the S3 Encryption Client can perform both encrypt and decrypt operations
-        // as part of the S3 putObject and getObject operations,
-        // also able to perform ranged-get if range is given with getObject call.
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
-        // Attempt to call getObject with range 300-400 exceeding original plaintext object range of 200.
+        // Attempt to call getObject with range 300-400.
+        // Both the start and end indices are greater than the original plaintext object's total length, 200,
+        // and are outside the object's cipher block.
         try {
             v3Client.getObjectAsBytes(builder -> builder
                     .bucket(bucket)
@@ -180,34 +164,6 @@ public class RangedGetExample {
         }
 
         // Close the client
-        v3Client.close();
-    }
-
-    public static void failsOnRangeWhenLegacyModeDisabled(String bucket) {
-        // Instantiate the S3 Encryption Client to encrypt and decrypt
-        // by specifying an AES Key with the aesKey builder parameter,
-        // but do not specify enableLegacyUnauthenticatedModes(), as it is disabled by default.
-        //
-        // This means that the S3 Encryption Client can perform both encrypt and decrypt operations
-        // as part of the S3 putObject and getObject operations,
-        // but throws an error if range is given with getObject call since enableLegacyUnauthenticatedModes is disabled by default.
-        S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .build();
-
-        // Attempt to call getObject with range to retrieve and decrypt the object from S3.
-        try {
-            v3Client.getObjectAsBytes(builder -> builder
-                    .bucket(bucket)
-                    .key(OBJECT_KEY)
-                    .range("bytes=10-20"));
-            fail("Expected exception! enableLegacyUnauthenticatedModes() is disabled during client configuration.");
-        } catch (final S3EncryptionClientException exception) {
-            // This is expected; the s3Client cannot successfully call getObject with range is given
-            // when instantiated without enabling enableLegacyUnauthenticatedModes().
-        }
-
-        // close the client
         v3Client.close();
     }
 
