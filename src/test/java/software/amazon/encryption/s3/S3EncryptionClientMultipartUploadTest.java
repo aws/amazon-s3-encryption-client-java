@@ -50,7 +50,7 @@ public class S3EncryptionClientMultipartUploadTest {
 
     @Test
     public void multipartPutObject() throws IOException {
-        final String objectKey = "multipart-put-object";
+        final String objectKey = appendDateTime("multipart-put-object");
 
         final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
@@ -92,7 +92,7 @@ public class S3EncryptionClientMultipartUploadTest {
 
     @Test
     public void multipartUploadV3OutputStream() throws IOException {
-        final String objectKey = "multipart-upload-v3-output-stream";
+        final String objectKey = appendDateTime("multipart-upload-v3-output-stream");
 
         // Overall "file" is 100MB, split into 10MB parts
         final long fileSizeLimit = 1024 * 1024 * 100;

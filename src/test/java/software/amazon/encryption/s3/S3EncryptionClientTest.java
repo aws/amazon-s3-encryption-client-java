@@ -75,7 +75,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void deleteObjectWithInstructionFileSuccess() {
-        final String objectKey = "delete-object-with-instruction-file";
+        final String objectKey = appendDateTime("delete-object-with-instruction-file");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -194,7 +194,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void KmsWithAliasARN() {
-        final String objectKey = "kms-with-alias-arn";
+        final String objectKey = appendDateTime("kms-with-alias-arn");
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ALIAS)
                 .build();
@@ -208,7 +208,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void KmsWithShortKeyId() {
-        final String objectKey = "kms-with-short-key-id";
+        final String objectKey = appendDateTime("kms-with-short-key-id");
         // Just assume the ARN is well-formed
         // Also assume that the region is set correctly
         final String shortId = KMS_KEY_ID.split("/")[1];
@@ -226,7 +226,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void KmsAliasARNToKeyId() {
-        final String objectKey = "kms-alias-arn-to-key-id";
+        final String objectKey = appendDateTime("kms-alias-arn-to-key-id");
         S3Client aliasClient = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ALIAS)
                 .build();
@@ -283,7 +283,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void s3EncryptionClientWithKeyringFromKmsKeyIdSucceeds() {
-        final String objectKey = "keyring-from-kms-key-id";
+        final String objectKey = appendDateTime("keyring-from-kms-key-id");
 
         KmsKeyring keyring = KmsKeyring.builder().wrappingKeyId(KMS_KEY_ID).build();
 
@@ -296,7 +296,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void s3EncryptionClientWithCmmFromKmsKeyIdSucceeds() {
-        final String objectKey = "cmm-from-kms-key-id";
+        final String objectKey = appendDateTime("cmm-from-kms-key-id");
 
         KmsKeyring keyring = KmsKeyring.builder().wrappingKeyId(KMS_KEY_ID).build();
 
@@ -313,7 +313,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void s3EncryptionClientWithWrappedS3ClientSucceeds() {
-        final String objectKey = "wrapped-s3-client-with-kms-key-id";
+        final String objectKey = appendDateTime("wrapped-s3-client-with-kms-key-id");
 
         S3Client wrappedClient = S3Client.builder().build();
 
@@ -353,7 +353,7 @@ public class S3EncryptionClientTest {
     public void s3EncryptionClientFromKMSKeyDoesNotUseUnprovidedSecureRandom() {
         SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
-        final String objectKey = "no-secure-random-object-kms";
+        final String objectKey = appendDateTime("no-secure-random-object-kms");
 
         S3Client v3Client = S3EncryptionClient.builder()
             .kmsKeyId(KMS_KEY_ID)
@@ -368,7 +368,7 @@ public class S3EncryptionClientTest {
     public void s3EncryptionClientFromKMSKeyIdWithSecureRandomUsesObjectOnceForRoundTripCall() {
         SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
-        final String objectKey = "secure-random-object-kms";
+        final String objectKey = appendDateTime("secure-random-object-kms");
 
         S3Client v3Client = S3EncryptionClient.builder()
             .kmsKeyId(KMS_KEY_ID)
@@ -386,7 +386,7 @@ public class S3EncryptionClientTest {
     public void s3EncryptionClientFromAESKeyWithSecureRandomUsesObjectTwiceForRoundTripCall() {
         SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
-        final String objectKey = "secure-random-object-aes";
+        final String objectKey = appendDateTime("secure-random-object-aes");
 
         S3Client v3Client = S3EncryptionClient.builder()
             .aesKey(AES_KEY)
@@ -403,7 +403,7 @@ public class S3EncryptionClientTest {
     public void s3EncryptionClientFromRSAKeyWithSecureRandomUsesObjectTwiceForRoundTripCall() {
         SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
-        final String objectKey = "secure-random-object-rsa";
+        final String objectKey = appendDateTime("secure-random-object-rsa");
 
         S3Client v3Client = S3EncryptionClient.builder()
             .rsaKeyPair(RSA_KEY_PAIR)
@@ -426,7 +426,7 @@ public class S3EncryptionClientTest {
             .secureRandom(mockSecureRandomKeyring)
             .build();
 
-        final String objectKey = "secure-random-object-aes-different-keyring";
+        final String objectKey = appendDateTime("secure-random-object-aes-different-keyring");
 
         S3Client v3Client = S3EncryptionClient.builder()
             .keyring(keyring)
@@ -464,7 +464,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void cryptoProviderV3toV3Enabled() {
-        final String objectKey = "crypto-provider-enabled-v3-to-v3";
+        final String objectKey = appendDateTime("crypto-provider-enabled-v3-to-v3");
 
         Security.addProvider(new BouncyCastleProvider());
         Provider provider = Security.getProvider("BC");
@@ -493,7 +493,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void cryptoProviderV2toV3Enabled() {
-        final String objectKey = "crypto-provider-enabled-v2-to-v3";
+        final String objectKey = appendDateTime("crypto-provider-enabled-v2-to-v3");
 
         Security.addProvider(new BouncyCastleProvider());
         Provider provider = Security.getProvider("BC");

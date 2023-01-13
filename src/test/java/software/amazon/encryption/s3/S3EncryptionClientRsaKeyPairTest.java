@@ -31,7 +31,7 @@ public class S3EncryptionClientRsaKeyPairTest {
 
     @Test
     public void RsaPublicAndPrivateKeys() {
-        final String objectKey = "rsa-public-and-private";
+        final String objectKey = appendDateTime("rsa-public-and-private");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -58,7 +58,7 @@ public class S3EncryptionClientRsaKeyPairTest {
 
     @Test
     public void RsaPrivateKeyCanOnlyDecrypt() {
-        final String objectKey = "rsa-private-key-only";
+        final String objectKey = appendDateTime("rsa-private-key-only");
         S3Client v3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
@@ -91,7 +91,7 @@ public class S3EncryptionClientRsaKeyPairTest {
 
     @Test
     public void RsaPublicKeyCanOnlyEncrypt() {
-        final String objectKey = "rsa-public-key-only";
+        final String objectKey = appendDateTime("rsa-public-key-only");
         S3Client v3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
                 .build();
