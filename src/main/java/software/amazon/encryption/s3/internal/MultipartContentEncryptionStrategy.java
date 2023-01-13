@@ -4,5 +4,5 @@ import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 @FunctionalInterface
 public interface MultipartContentEncryptionStrategy {
-    EncryptedContent encryptContent(EncryptionMaterials materials);
+    EncryptedContent initMultipartEncryption(EncryptionMaterials materials);
 }

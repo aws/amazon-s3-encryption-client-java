@@ -36,7 +36,7 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
     }
 
     @Override
-    public EncryptedContent encryptContent(EncryptionMaterials materials) {
+    public EncryptedContent initMultipartEncryption(EncryptionMaterials materials) {
         final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
         final Cipher cipher = prepareCipher(materials, nonce);
         // Return Cipher
