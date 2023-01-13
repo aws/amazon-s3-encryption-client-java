@@ -32,6 +32,7 @@ import java.security.Security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendDateTime;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
