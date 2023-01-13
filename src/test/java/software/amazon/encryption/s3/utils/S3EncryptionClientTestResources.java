@@ -1,10 +1,10 @@
 package software.amazon.encryption.s3.utils;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
-import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -17,6 +17,10 @@ public class S3EncryptionClientTestResources {
     public static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
     // This alias must point to the same key as KMS_KEY_ID
     public static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
+
+    public static String appendDateTime(final String s) {
+        return s + DateTimeFormat.forPattern("yyMMdd-hhmmss").print(new DateTime());
+    }
 
     /**
      * Delete the object for the given objectKey in the given bucket.
