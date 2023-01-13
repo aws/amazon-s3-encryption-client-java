@@ -115,9 +115,9 @@ public class S3EncryptionClientTest {
 
     @Test
     public void deleteObjectsWithInstructionFilesSuccess() {
-        final String[] objectKeys = {"delete-object-with-instruction-file-1",
-                "delete-object-with-instruction-file-2",
-                "delete-object-with-instruction-file-3"};
+        final String[] objectKeys = {appendDateTime("delete-object-with-instruction-file-1"),
+                appendDateTime("delete-object-with-instruction-file-2"),
+                appendDateTime("delete-object-with-instruction-file-3")};
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =

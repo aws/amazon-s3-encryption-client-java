@@ -19,7 +19,7 @@ public class S3EncryptionClientTestResources {
     public static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
 
     public static String appendDateTime(final String s) {
-        return s + DateTimeFormat.forPattern("yyMMdd-hhmmss").print(new DateTime());
+        return s + "-" + DateTimeFormat.forPattern("yyMMdd-hhmmss").print(new DateTime());
     }
 
     /**
