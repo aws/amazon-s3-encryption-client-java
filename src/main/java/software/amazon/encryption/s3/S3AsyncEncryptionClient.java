@@ -230,7 +230,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
         }
 
         public S3AsyncEncryptionClient build() {
-            _cryptoMaterialsManager = S3EncryptionClientUtilities.checkCMM(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId,
+            _cryptoMaterialsManager = S3EncryptionClientUtilities.buildCMM(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId,
                     _enableLegacyUnauthenticatedModes, _secureRandom, _cryptoProvider);
 
             return new S3AsyncEncryptionClient(this);

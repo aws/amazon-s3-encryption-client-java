@@ -394,7 +394,7 @@ public class S3EncryptionClient implements S3Client {
         }
 
         public S3EncryptionClient build() {
-            _cryptoMaterialsManager = S3EncryptionClientUtilities.checkCMM(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId,
+            _cryptoMaterialsManager = S3EncryptionClientUtilities.buildCMM(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId,
                     _enableLegacyUnauthenticatedModes, _secureRandom, _cryptoProvider);
 
             _multipartPipeline = MultipartUploadObjectPipeline.builder()

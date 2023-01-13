@@ -53,7 +53,7 @@ public class S3EncryptionClientUtilities {
         return haveOneNonNull;
     }
 
-    static CryptographicMaterialsManager checkCMM(CryptographicMaterialsManager _cryptoMaterialsManager, Keyring _keyring, SecretKey _aesKey, PartialRsaKeyPair _rsaKeyPair, String _kmsKeyId, boolean _enableLegacyUnauthenticatedModes, SecureRandom _secureRandom, Provider _cryptoProvider) {
+    static CryptographicMaterialsManager buildCMM(CryptographicMaterialsManager _cryptoMaterialsManager, Keyring _keyring, SecretKey _aesKey, PartialRsaKeyPair _rsaKeyPair, String _kmsKeyId, boolean _enableLegacyUnauthenticatedModes, SecureRandom _secureRandom, Provider _cryptoProvider) {
         if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
             throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
         }

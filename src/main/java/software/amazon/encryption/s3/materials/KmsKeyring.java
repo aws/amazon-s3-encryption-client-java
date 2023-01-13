@@ -49,7 +49,7 @@ public class KmsKeyring extends S3Keyring {
 
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) {
-            return KmsKeyring.this.decryptDataKey(materials, encryptedDataKey);
+            return decryptDataKeyWithKms(materials, encryptedDataKey);
         }
     };
 
@@ -128,13 +128,13 @@ public class KmsKeyring extends S3Keyring {
                 throw new S3EncryptionClientException("Provided encryption context does not match information retrieved from S3");
             }
 
-            return KmsKeyring.this.decryptDataKey(materials, encryptedDataKey);
+            return decryptDataKeyWithKms(materials, encryptedDataKey);
         }
     };
 
     private final Map<String, DecryptDataKeyStrategy> decryptStrategies = new HashMap<>();
 
-    private byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) {
+    private byte[] decryptDataKeyWithKms(DecryptionMaterials materials, byte[] encryptedDataKey) {
         DecryptRequest request = DecryptRequest.builder()
                 .keyId(_wrappingKeyId)
                 .encryptionContext(materials.encryptionContext())
