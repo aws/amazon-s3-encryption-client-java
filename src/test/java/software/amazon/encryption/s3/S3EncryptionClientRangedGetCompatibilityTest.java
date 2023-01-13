@@ -22,10 +22,11 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
@@ -44,7 +45,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
     }
 
     @Test
-    public void AsyncAesGcmV3toV3RangedGet() throws ExecutionException, InterruptedException {
+    public void AsyncAesGcmV3toV3RangedGet() {
         final String objectKey = "async-aes-gcm-v3-to-v3-ranged-get";
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
@@ -126,10 +127,15 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), AsyncRequestBody.fromString(input)).join();
-        assertThrows(CompletionException.class, () -> asyncClient.getObject(builder -> builder
-                .bucket(BUCKET)
-                .range("bytes=10-20")
-                .key(objectKey), AsyncResponseTransformer.toBytes()).join());
+
+        try {
+            asyncClient.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .range("bytes=10-20")
+                    .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        } catch (CompletionException e) {
+            assertTrue(e.getMessage().matches(".*S3EncryptionClientException: Enable legacy unauthenticated modes to use Ranged Get.*"));
+        }
 
         // Cleanup
         deleteObject(BUCKET, objectKey, asyncClient);
@@ -279,13 +285,15 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), AsyncRequestBody.fromString(input)).join();
-
-        // Invalid range exceed object length, Throws CompletionException
-        assertThrows(CompletionException.class, () -> asyncClient.getObject(builder -> builder
-                .bucket(BUCKET)
-                .range("bytes=300-400")
-                .key(objectKey), AsyncResponseTransformer.toBytes()).join());
-
+        try {
+            // Invalid range exceed object length, Throws S3Exception nested inside CompletionException
+            asyncClient.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .range("bytes=300-400")
+                    .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        } catch (CompletionException e) {
+            assertTrue(e.getMessage().matches(".*S3Exception: The requested range is not satisfiable.*"));
+        }
         // Cleanup
         deleteObject(BUCKET, objectKey, asyncClient);
         asyncClient.close();
