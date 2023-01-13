@@ -37,7 +37,6 @@ import static software.amazon.encryption.s3.S3EncryptionClient.isLastPart;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.generateObjectKey;
 
 public class S3EncryptionClientMultipartUploadTest {
     private static SecretKey AES_KEY;
@@ -51,7 +50,7 @@ public class S3EncryptionClientMultipartUploadTest {
 
     @Test
     public void multipartPutObject() throws IOException {
-        final String objectKey = generateObjectKey(10);
+        final String objectKey = "multipart-put-object";
 
         final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
@@ -93,7 +92,7 @@ public class S3EncryptionClientMultipartUploadTest {
 
     @Test
     public void multipartUploadV3OutputStream() throws IOException {
-        final String objectKey = generateObjectKey(10);
+        final String objectKey = "multipart-upload-v3-output-stream";
 
         // Overall "file" is 100MB, split into 10MB parts
         final long fileSizeLimit = 1024 * 1024 * 100;

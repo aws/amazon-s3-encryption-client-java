@@ -1,9 +1,10 @@
 package software.amazon.encryption.s3.utils;
 
-import org.apache.commons.text.RandomStringGenerator;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -17,15 +18,9 @@ public class S3EncryptionClientTestResources {
     // This alias must point to the same key as KMS_KEY_ID
     public static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
 
-    public static String generateObjectKey(int size) {
-        RandomStringGenerator randomObjectKeyName = new RandomStringGenerator.Builder().build();
-        return randomObjectKeyName.generate(size);
-    }
-
     /**
      * Delete the object for the given objectKey in the given bucket.
-     *
-     * @param bucket    the bucket to delete the object from
+     * @param bucket the bucket to delete the object from
      * @param objectKey the key of the object to delete
      */
     public static void deleteObject(final String bucket, final String objectKey, final S3Client s3Client) {
@@ -37,8 +32,7 @@ public class S3EncryptionClientTestResources {
 
     /**
      * Delete the object for the given objectKey in the given bucket.
-     *
-     * @param bucket    the bucket to delete the object from
+     * @param bucket the bucket to delete the object from
      * @param objectKey the key of the object to delete
      */
     public static void deleteObject(final String bucket, final String objectKey, final S3AsyncClient s3Client) {
