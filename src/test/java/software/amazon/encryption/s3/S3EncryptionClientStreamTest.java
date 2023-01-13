@@ -53,7 +53,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void markResetInputStreamV3Encrypt() throws IOException {
-        final String objectKey = "markResetInputStreamV3Encrypt";
+        final String objectKey = appendDateTime("markResetInputStreamV3Encrypt");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -86,7 +86,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void ordinaryInputStreamV3Encrypt() throws IOException {
-        final String objectKey = "ordinaryInputStreamV3Encrypt";
+        final String objectKey = appendDateTime("ordinaryInputStreamV3Encrypt");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -120,7 +120,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void ordinaryInputStreamV3Decrypt() throws IOException {
-        final String objectKey = "ordinaryInputStreamV3Decrypt";
+        final String objectKey = appendDateTime("ordinaryInputStreamV3Decrypt");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -156,7 +156,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void markResetInputStreamV3DecryptGcm() throws IOException {
-        final String objectKey = "markResetInputStreamV3DecryptGcm";
+        final String objectKey = appendDateTime("markResetInputStreamV3DecryptGcm");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -192,7 +192,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void ordinaryInputStreamV3DecryptCbc() throws IOException {
-        final String objectKey = "markResetInputStreamV3DecryptCbc";
+        final String objectKey = appendDateTime("markResetInputStreamV3DecryptCbc");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -232,7 +232,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void delayedAuthModeWithLargeObject() throws IOException {
-        final String objectKey = "large-object-test";
+        final String objectKey = appendDateTime("large-object-test");
 
         Security.addProvider(new BouncyCastleProvider());
         Provider provider = Security.getProvider("BC");
@@ -275,7 +275,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void delayedAuthModeWithLargerThanMaxObjectFails() throws IOException {
-        final String objectKey = "larger-than-max-object-delayed-auth-mode";
+        final String objectKey = appendDateTime("larger-than-max-object-delayed-auth-mode");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()

@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendDateTime;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 public class S3AsyncEncryptionClientTest {
@@ -53,7 +54,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void putAsyncGetDefault() {
-        final String objectKey = "put-async-get-default";
+        final String objectKey = appendDateTime("put-async-get-default");
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
@@ -86,7 +87,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void putDefaultGetAsync() {
-        final String objectKey = "put-default-get-async";
+        final String objectKey = appendDateTime("put-default-get-async");
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
@@ -119,7 +120,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void aesCbcV1toV3Async() {
-        final String objectKey = "aes-cbc-v1-to-v3-async";
+        final String objectKey = appendDateTime("aes-cbc-v1-to-v3-async");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -155,7 +156,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void deleteObjectWithInstructionFileSuccessAsync() {
-        final String objectKey = "async-delete-object-with-instruction-file";
+        final String objectKey = appendDateTime("async-delete-object-with-instruction-file");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
