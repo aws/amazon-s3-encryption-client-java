@@ -134,13 +134,12 @@ public class S3EncryptionClient implements S3Client {
                 .secureRandom(_secureRandom)
                 .build();
         try {
-            pipeline.putObject(putObjectRequest, requestBody);
+            return pipeline.putObject(putObjectRequest, requestBody);
         } catch (S3Exception exception) {
             System.out.println("putObject failed for key: " + putObjectRequest.key());
             System.out.println(putObjectRequest);
             throw exception;
         }
-        return
     }
 
     @Override
