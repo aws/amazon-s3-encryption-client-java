@@ -26,8 +26,8 @@ public class S3EncryptionClientTestResources {
      */
     public static String appendTestSuffix(final String s) {
         StringBuilder stringBuilder = new StringBuilder(s);
-        stringBuilder.append(DateTimeFormat.forPattern("yyMMdd-hhmmss-").print(new DateTime()));
-        stringBuilder.append((int) (Math.random() * 10000));
+        stringBuilder.append(DateTimeFormat.forPattern("-yyMMdd-hhmmss-").print(new DateTime()));
+        stringBuilder.append((int) (Math.random() * 100000000));
         return stringBuilder.toString();
     }
 
