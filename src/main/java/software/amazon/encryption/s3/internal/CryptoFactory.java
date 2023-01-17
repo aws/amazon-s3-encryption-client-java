@@ -8,21 +8,26 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.Security;
 
 public class CryptoFactory {
     public static void checkACCP() {
 
         try {
             System.out.println(Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName());
-//            if (!Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
-//                com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider.install();
-//                if (Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
-//                    System.out.println("Successfully Installed");
-//                } else {
-//                    System.out.println("Not installed");
-//                }
-//            }
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            if (!Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
+                @SuppressWarnings("unchecked")
+                Class<Provider> c = (Class<Provider>) Class.forName("com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider");
+                Provider provider = c.newInstance();
+                Security.addProvider(provider);
+                if (Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
+                    System.out.println("Successfully Installed");
+                } else {
+                    System.out.println("Not installed");
+                }
+            }
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InstantiationException | IllegalAccessException |
+                 ClassNotFoundException e) {
             throw new S3EncryptionClientException(e.getMessage());
         }
     }
