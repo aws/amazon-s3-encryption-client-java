@@ -133,7 +133,9 @@ public class S3EncryptionClientTest {
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .build();
+
         final String input = "DeleteObjectsWithInstructionFileSuccess";
+
         List<ObjectIdentifier> objects = new ArrayList<>();
         for (String objectKey : objectKeys) {
             v2Client.putObject(BUCKET, objectKey, input);
