@@ -292,6 +292,10 @@ public class S3EncryptionClientTest {
             .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -309,6 +313,10 @@ public class S3EncryptionClientTest {
             .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -323,6 +331,11 @@ public class S3EncryptionClientTest {
             .build();
 
         simpleV3RoundTrip(wrappingClient, objectKey);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, wrappingClient);
+        wrappedClient.close();
+        wrappingClient.close();
     }
 
     /**
@@ -362,6 +375,10 @@ public class S3EncryptionClientTest {
         simpleV3RoundTrip(v3Client, objectKey);
 
         verify(mockSecureRandom, never()).nextBytes(any());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -380,6 +397,10 @@ public class S3EncryptionClientTest {
         // Should only be called from encryption content strategy.
         // KMS keyring does not use SecureRandom for encryptDataKey.
         verify(mockSecureRandom, times(1)).nextBytes(any());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -397,6 +418,10 @@ public class S3EncryptionClientTest {
 
         // Should be called once from encryption content strategy and again from AES encryptDataKey.
         verify(mockSecureRandom, times(2)).nextBytes(any());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -414,6 +439,10 @@ public class S3EncryptionClientTest {
 
         // Should be called once from encryption content strategy and again from RSA encryptDataKey.
         verify(mockSecureRandom, times(2)).nextBytes(any());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     @Test
@@ -437,6 +466,10 @@ public class S3EncryptionClientTest {
 
         verify(mockSecureRandomKeyring, times(1)).nextBytes(any());
         verify(mockSecureRandomClient, times(1)).nextBytes(any());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     /**
