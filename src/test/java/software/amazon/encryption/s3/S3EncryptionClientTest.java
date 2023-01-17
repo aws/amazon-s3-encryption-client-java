@@ -59,7 +59,6 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
  * under various scenarios.
  */
 public class S3EncryptionClientTest {
-
     private static SecretKey AES_KEY;
     private static KeyPair RSA_KEY_PAIR;
 
