@@ -11,7 +11,9 @@ import java.security.Provider;
 
 public class CryptoFactory {
     public static void checkACCP() {
+
         try {
+            System.out.println(Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName());
             if (!Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
                 com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider.install();
                 if (Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
