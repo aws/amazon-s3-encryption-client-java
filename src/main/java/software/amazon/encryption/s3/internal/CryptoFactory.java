@@ -14,14 +14,14 @@ public class CryptoFactory {
 
         try {
             System.out.println(Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName());
-            if (!Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
-                com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider.install();
-                if (Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
-                    System.out.println("Successfully Installed");
-                } else {
-                    System.out.println("Not installed");
-                }
-            }
+//            if (!Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
+//                com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider.install();
+//                if (Cipher.getInstance("AES/GCM/NoPadding").getProvider().getName().equals(AmazonCorrettoCryptoProvider.PROVIDER_NAME)) {
+//                    System.out.println("Successfully Installed");
+//                } else {
+//                    System.out.println("Not installed");
+//                }
+//            }
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             throw new S3EncryptionClientException(e.getMessage());
         }
