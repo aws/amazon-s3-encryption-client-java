@@ -1,8 +1,8 @@
 name: Continuous Integration Workflow
 
 on:
+  workflow_dispatch:
   pull_request:
-  push:
 
 jobs:
   Static_Analysis:
