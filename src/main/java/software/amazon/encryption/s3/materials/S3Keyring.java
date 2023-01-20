@@ -21,12 +21,12 @@ abstract public class S3Keyring implements Keyring {
 
     public static final String KEY_PROVIDER_ID = "S3Keyring";
 
-    private final boolean _enableLegacyUnauthenticatedModes;
+    private final boolean _enableLegacyKeyring;
     private final SecureRandom _secureRandom;
     private final DataKeyGenerator _dataKeyGenerator;
 
     protected S3Keyring(Builder<?,?> builder) {
-        _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
+        _enableLegacyKeyring = builder._enableLegacyKeyring;
         _secureRandom = builder._secureRandom;
         _dataKeyGenerator = builder._dataKeyGenerator;
     }
@@ -88,8 +88,8 @@ abstract public class S3Keyring implements Keyring {
             throw new S3EncryptionClientException("Unknown key wrap: " + keyProviderInfo);
         }
 
-        if (decryptStrategy.isLegacy() && !_enableLegacyUnauthenticatedModes) {
-            throw new S3EncryptionClientException("Enable legacy modes to use legacy key wrap: " + keyProviderInfo);
+        if (decryptStrategy.isLegacy() && !_enableLegacyKeyring) {
+            throw new S3EncryptionClientException("Enable legacy keyring to use legacy key wrap: " + keyProviderInfo);
         }
 
         try {
@@ -103,7 +103,7 @@ abstract public class S3Keyring implements Keyring {
     abstract protected Map<String,DecryptDataKeyStrategy> decryptStrategies();
 
     abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
-        private boolean _enableLegacyUnauthenticatedModes = false;
+        private boolean _enableLegacyKeyring = false;
         private SecureRandom _secureRandom;
         private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
 
@@ -112,8 +112,8 @@ abstract public class S3Keyring implements Keyring {
 
         protected abstract BuilderT builder();
 
-        public BuilderT enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
-            this._enableLegacyUnauthenticatedModes = shouldEnableLegacyUnauthenticatedModes;
+        public BuilderT enableLegacyKeyring(boolean shouldEnableLegacyKeyring) {
+            this._enableLegacyKeyring = shouldEnableLegacyKeyring;
             return builder();
         }
 

@@ -42,7 +42,9 @@ public class GetEncryptedObjectPipeline {
     private final S3Client _s3Client;
     private final S3AsyncClient _s3AsyncClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
-    private final boolean _enableLegacyUnauthenticatedModes;
+    private final boolean _enableLegacyKeyring;
+
+    private final boolean _enableUnauthenticatedMode;
     private final boolean _enableDelayedAuthentication;
 
     public static Builder builder() {
@@ -53,7 +55,8 @@ public class GetEncryptedObjectPipeline {
         this._s3Client = builder._s3Client;
         this._s3AsyncClient = builder._s3AsyncClient;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
-        this._enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
+        this._enableLegacyKeyring = builder._enableLegacyKeyring;
+        this._enableUnauthenticatedMode = builder._enableUnauthenticatedMode;
         this._enableDelayedAuthentication = builder._enableDelayedAuthentication;
     }
 
@@ -67,8 +70,8 @@ public class GetEncryptedObjectPipeline {
     public <T> T getObject(GetObjectRequest getObjectRequest,
                            ResponseTransformer<GetObjectResponse, T> responseTransformer) {
         ResponseInputStream<GetObjectResponse> objectStream;
-        if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
-            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
+        if (!_enableUnauthenticatedMode && getObjectRequest.range() != null) {
+            throw new S3EncryptionClientException("Enable unauthenticated modes to use Ranged Get.");
         }
         objectStream = _s3Client.getObject(getObjectRequest
                 .toBuilder()
@@ -97,8 +100,8 @@ public class GetEncryptedObjectPipeline {
     private DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
                                                             final ContentMetadata contentMetadata) {
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
-        if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
-            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
+        if (!_enableUnauthenticatedMode && algorithmSuite.isLegacy()) {
+            throw new S3EncryptionClientException("Enable unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
         }
 
         List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
@@ -161,7 +164,7 @@ public class GetEncryptedObjectPipeline {
         @Override
         public void onResponse(GetObjectResponse response) {
             getObjectResponse = response;
-            if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
+            if (!_enableLegacyKeyring && getObjectRequest.range() != null) {
                 throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
             }
             // TODO: Implement instruction file handling - this is a bit less intuitive in async
@@ -205,10 +208,12 @@ public class GetEncryptedObjectPipeline {
     }
 
     public static class Builder {
+
         private S3Client _s3Client;
         private S3AsyncClient _s3AsyncClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
-        private boolean _enableLegacyUnauthenticatedModes;
+        private boolean _enableLegacyKeyring;
+        private boolean _enableUnauthenticatedMode;
         private boolean _enableDelayedAuthentication;
 
         private Builder() {
@@ -239,8 +244,13 @@ public class GetEncryptedObjectPipeline {
             return this;
         }
 
-        public Builder enableLegacyUnauthenticatedModes(boolean enableLegacyUnauthenticatedModes) {
-            this._enableLegacyUnauthenticatedModes = enableLegacyUnauthenticatedModes;
+        public Builder enableLegacyKeyring(boolean enableLegacyKeyring) {
+            this._enableLegacyKeyring = enableLegacyKeyring;
+            return this;
+        }
+
+        public Builder enableUnauthenticatedMode(boolean _enableUnauthenticatedMode) {
+            this._enableUnauthenticatedMode = _enableUnauthenticatedMode;
             return this;
         }
 

@@ -78,7 +78,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(true)
+                .enableUnauthenticatedMode(true)
                 .build();
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -143,7 +143,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(true)
+                .enableUnauthenticatedMode(true)
                 .build();
 
         v3Client.putObject(PutObjectRequest.builder()
@@ -187,7 +187,8 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyKeyring(true)
+                .enableUnauthenticatedMode(true)
                 .build();
 
         // Valid Range
@@ -260,7 +261,8 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyKeyring(true)
+                .enableUnauthenticatedMode(true)
                 .build();
 
         // Invalid range exceed object length, Throws S3Exception

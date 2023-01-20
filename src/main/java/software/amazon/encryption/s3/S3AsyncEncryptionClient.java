@@ -40,14 +40,16 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     private final S3AsyncClient _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
-    private final boolean _enableLegacyUnauthenticatedModes;
+    private final boolean _enableLegacyKeyring;
+    private final boolean _enableUnauthenticatedMode;
     private final boolean _enableDelayedAuthenticationMode;
 
     private S3AsyncEncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
-        _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
+        _enableLegacyKeyring = builder._enableLegacyKeyring;
+        _enableUnauthenticatedMode = builder._enableUnauthenticatedMode;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
     }
 
@@ -79,7 +81,8 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
-                .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                .enableLegacyKeyring(_enableLegacyKeyring)
+                .enableUnauthenticatedMode(_enableUnauthenticatedMode)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .build();
 
@@ -137,7 +140,8 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
         private SecretKey _aesKey;
         private PartialRsaKeyPair _rsaKeyPair;
         private String _kmsKeyId;
-        private boolean _enableLegacyUnauthenticatedModes = false;
+        private boolean _enableLegacyKeyring = false;
+        private boolean _enableUnauthenticatedMode = false;
         private boolean _enableDelayedAuthenticationMode = false;
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
@@ -225,8 +229,13 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
             return haveOneNonNull;
         }
 
-        public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
-            this._enableLegacyUnauthenticatedModes = shouldEnableLegacyUnauthenticatedModes;
+        public Builder enableLegacyKeyring(boolean shouldEnableLegacyKeyring) {
+            this._enableLegacyKeyring = shouldEnableLegacyKeyring;
+            return this;
+        }
+
+        public Builder enableUnauthenticatedMode(boolean _enableUnauthenticatedMode) {
+            this._enableUnauthenticatedMode = _enableUnauthenticatedMode;
             return this;
         }
 
@@ -257,19 +266,19 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
                 if (_aesKey != null) {
                     _keyring = AesKeyring.builder()
                             .wrappingKey(_aesKey)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                            .enableLegacyKeyring(_enableLegacyKeyring)
                             .secureRandom(_secureRandom)
                             .build();
                 } else if (_rsaKeyPair != null) {
                     _keyring = RsaKeyring.builder()
                             .wrappingKeyPair(_rsaKeyPair)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                            .enableLegacyKeyring(_enableLegacyKeyring)
                             .secureRandom(_secureRandom)
                             .build();
                 } else if (_kmsKeyId != null) {
                     _keyring = KmsKeyring.builder()
                             .wrappingKeyId(_kmsKeyId)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                            .enableLegacyKeyring(_enableLegacyKeyring)
                             .secureRandom(_secureRandom)
                             .build();
                 }

@@ -188,7 +188,7 @@ public class S3EncryptionClientTest {
     @Test
     public void s3EncryptionClientWithNoLegacyKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyKeyring(true)
                 .build());
     }
 
