@@ -84,7 +84,7 @@ public class S3EncryptionClientCompatibilityTest {
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableLegacyKeyring(true)
-           //     .enableUnauthenticatedMode(true)
+                .enableUnauthenticatedMode(true)
                 .build();
 
         // Asserts
