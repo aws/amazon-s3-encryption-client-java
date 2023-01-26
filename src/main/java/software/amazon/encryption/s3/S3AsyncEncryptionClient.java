@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class S3AsyncEncryptionClient implements S3AsyncClient {
 
@@ -91,32 +92,26 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
         // TODO: Pass-through requests MUST set the user agent
         final CompletableFuture<DeleteObjectResponse> response =  _wrappedClient.deleteObject(deleteObjectRequest);
         final String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
-        // Deleting the instruction file is "fire and forget"
-        // This is necessary because the encryption client must adhere to the
-        // same interface as the default client thus it is not possible to
-        // use e.g. allOf to return a future which includes both deletions.
-        _wrappedClient.deleteObject(builder -> builder
+        final CompletableFuture<DeleteObjectResponse> instructionResponse =  _wrappedClient.deleteObject(builder -> builder
                 .bucket(deleteObjectRequest.bucket())
                 .key(instructionObjectKey));
-        return response;
+        // Delete the instruction file, then delete the object
+        Function<DeleteObjectResponse, DeleteObjectResponse> deletion = deleteObjectResponse ->
+                response.join();
+        return instructionResponse.thenApplyAsync(deletion);
     }
 
     @Override
     public CompletableFuture<DeleteObjectsResponse> deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
         // TODO: Pass-through requests MUST set the user agent
-        final CompletableFuture<DeleteObjectsResponse> deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest);
-        // If Instruction files exists, delete the instruction files as well.
-        final List<ObjectIdentifier> deleteObjects = S3EncryptionClientUtilities.instructionFileKeysToDelete(deleteObjectsRequest);
-        // Deleting the instruction files is "fire and forget"
-        // This is necessary because the encryption client must adhere to the
-        // same interface as the default client thus it is not possible to
-        // use e.g. allOf to return a future which includes both deletions.
-        _wrappedClient.deleteObjects(DeleteObjectsRequest.builder()
-                .bucket(deleteObjectsRequest.bucket())
-                .delete(builder -> builder.objects(deleteObjects))
+        // Add the instruction file keys to the list of objects to delete
+        final List<ObjectIdentifier> objectsToDelete = S3EncryptionClientUtilities.instructionFileKeysToDelete(deleteObjectsRequest);
+        // Add the original objects
+        objectsToDelete.addAll(deleteObjectsRequest.delete().objects());
+        return _wrappedClient.deleteObjects(deleteObjectsRequest.toBuilder()
+                .delete(builder -> builder.objects(objectsToDelete))
                 .build());
-        return deleteObjectsResponse;
     }
 
     @Override
