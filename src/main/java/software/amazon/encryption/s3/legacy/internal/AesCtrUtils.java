@@ -2,7 +2,6 @@ package software.amazon.encryption.s3.legacy.internal;
 
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 /**
@@ -77,7 +76,7 @@ public class AesCtrUtils {
         if (val > MAX_GCM_BLOCKS) {
             throw new IllegalStateException(); // overflow 2^32-2
         }
-        ((Buffer) bb).rewind();
+        bb.rewind();
         // Get the incremented value (result) as an 8-byte array
         byte[] result = bb.putLong(val).array();
         // Copy the rightmost 32 bits from the resultant array to the input counter;

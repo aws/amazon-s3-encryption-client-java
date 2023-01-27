@@ -59,7 +59,7 @@ public class RangedGetUtils {
         return upperBound < 0 ? Long.MAX_VALUE : upperBound;
     }
 
-    private static long calculateMaxOffset(long[] range, String contentRange, int cipherTagLengthBits) {
+    private static long calculateMaxOffset(String contentRange, int cipherTagLengthBits) {
         final long instanceLength;
         int pos = contentRange.lastIndexOf("/");
         instanceLength = Long.parseLong(contentRange.substring(pos + 1));
@@ -72,7 +72,7 @@ public class RangedGetUtils {
             return subscriber;
         }
 
-        final long maxOffset = calculateMaxOffset(cryptoRange, contentRange, cipherTagLengthBits);
+        final long maxOffset = calculateMaxOffset(contentRange, cipherTagLengthBits);
         if (cryptoRange[1] > maxOffset) {
             cryptoRange[1] = maxOffset;
             if (cryptoRange[0] > cryptoRange[1]) {
@@ -103,17 +103,18 @@ public class RangedGetUtils {
             return plaintext;
         }
 
-        final long maxOffset = calculateMaxOffset(cryptoRange, contentRange, cipherTagLengthBits);
+        final long maxOffset = calculateMaxOffset(contentRange, cipherTagLengthBits);
         if (cryptoRange[1] > maxOffset) {
             cryptoRange[1] = maxOffset;
             if (cryptoRange[0] > cryptoRange[1]) {
                 // Close existing input stream to avoid resource leakage,
                 // return empty input stream
                 try {
-                    if (plaintext != null)
+                    if (plaintext != null) {
                         plaintext.close();
+                    }
                 } catch (IOException e) {
-                    throw new RuntimeException("Error while closing the Input Stream" + e.getMessage());
+                    throw new S3EncryptionClientException("Error while closing the InputStream: " + e.getMessage());
                 }
                 return new ByteArrayInputStream(new byte[0]);
             }
