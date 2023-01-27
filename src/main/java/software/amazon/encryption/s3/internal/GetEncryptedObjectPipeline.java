@@ -51,7 +51,12 @@ public class GetEncryptedObjectPipeline {
     }
 
     private GetEncryptedObjectPipeline(Builder builder) {
-        this._s3Client = builder._s3Client;
+        // TODO: Clean up sync/async options
+        if (builder._s3Client == null) {
+            this._s3Client = S3Client.create();
+        } else {
+            this._s3Client = builder._s3Client;
+        }
         this._s3AsyncClient = builder._s3AsyncClient;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
@@ -167,8 +172,7 @@ public class GetEncryptedObjectPipeline {
             if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
                 throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
             }
-            // TODO: Implement instruction file handling - this is a bit less intuitive in async
-            contentMetadata = ContentMetadataStrategy.decode(null, getObjectRequest, response);
+            contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, response);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
             wrappedAsyncResponseTransformer.onResponse(response);
         }
