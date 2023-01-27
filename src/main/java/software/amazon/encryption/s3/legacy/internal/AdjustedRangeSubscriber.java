@@ -26,7 +26,6 @@ public class AdjustedRangeSubscriber implements Subscriber<ByteBuffer> {
         // To get to the left-most byte desired by a user, we must skip over the 16 bytes of the
         // preliminary cipher block, and then possibly skip a few more bytes into the next block
         // to where the left-most byte is located.
-
         if (rangeBeginning < SYMMETRIC_CIPHER_BLOCK_SIZE_BYTES) {
             numBytesToSkip = (int) rangeBeginning;
         } else {
@@ -46,12 +45,19 @@ public class AdjustedRangeSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onNext(ByteBuffer byteBuffer) {
+        // In edge cases where the beginning index exceeds the offset,
+        // there is never valid data to read, so signal completion immediately.
+        if (virtualAvailable <= 0) {
+            wrappedSubscriber.onComplete();
+        }
+
         if (numBytesToSkip != 0) {
             byte[] buf = byteBuffer.array();
             if (numBytesToSkip > buf.length) {
+                // If we need to skip past the available data,
+                // we are returning nothing, so signal completion
                 numBytesToSkip -= buf.length;
-                // TODO: This Handles CBC mode Edge Condition but not working
-                wrappedSubscriber.onNext(ByteBuffer.wrap(new byte[0]));
+                wrappedSubscriber.onComplete();
             } else {
                 outputBuffer = Arrays.copyOfRange(buf, numBytesToSkip, buf.length);
                 numBytesToSkip = 0;
@@ -64,6 +70,13 @@ public class AdjustedRangeSubscriber implements Subscriber<ByteBuffer> {
             long bytesToRead = Math.min(virtualAvailable, outputBuffer.length);
             virtualAvailable -= bytesToRead;
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer, 0, Math.toIntExact(bytesToRead)));
+        }
+
+        // Since we are skipping some bytes, we may need to signal onComplete
+        // from within onNext to prevent the subscriber from waiting for more
+        // data indefinitely
+        if (virtualAvailable <= 0) {
+            wrappedSubscriber.onComplete();
         }
     }
 
