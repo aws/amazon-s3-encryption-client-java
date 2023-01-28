@@ -9,7 +9,10 @@ import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -18,9 +21,12 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.CompletionException;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -37,6 +43,104 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
+    }
+
+    @Test
+    public void AsyncAesGcmV3toV3RangedGet() {
+        final String objectKey = "async-aes-gcm-v3-to-v3-ranged-get";
+
+        final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
+                "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
+                "2bcdefghijklmnopqrst2BCDEFGHIJKLMNOPQRST" +
+                "3bcdefghijklmnopqrst3BCDEFGHIJKLMNOPQRST" +
+                "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
+
+        // Async Client
+        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+        asyncClient.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncRequestBody.fromString(input)).join();
+
+        // Valid Range
+        ResponseBytes<GetObjectResponse> objectResponse = asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=10-20")
+                .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        String output = objectResponse.asUtf8String();
+        assertEquals("klmnopqrst0", output);
+
+        // Valid start index within input and end index out of range, returns object from start index to End of Stream
+        objectResponse = asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=190-300")
+                .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        output = objectResponse.asUtf8String();
+        assertEquals("KLMNOPQRST", output);
+
+        // Invalid range start index range greater than ending index, returns entire object
+        objectResponse = asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=100-50")
+                .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Invalid range format, returns entire object
+        objectResponse = asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("10-20")
+                .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Invalid range starting index and ending index greater than object length but within Cipher Block size, returns empty object
+        objectResponse = asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=216-217")
+                .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        output = objectResponse.asUtf8String();
+        assertEquals("", output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, asyncClient);
+        asyncClient.close();
+    }
+
+    @Test
+    public void AsyncFailsOnRangeWhenLegacyModeDisabled() {
+        final String objectKey = "fails-when-on-range-when-legacy-disabled";
+        final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
+                "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
+                "2bcdefghijklmnopqrst2BCDEFGHIJKLMNOPQRST" +
+                "3bcdefghijklmnopqrst3BCDEFGHIJKLMNOPQRST" +
+                "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
+
+        // V3 Client
+        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        asyncClient.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncRequestBody.fromString(input)).join();
+
+        try {
+            asyncClient.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .range("bytes=10-20")
+                    .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        } catch (CompletionException e) {
+            assertTrue(e.getMessage().matches(".*S3EncryptionClientException: Enable legacy unauthenticated modes to use Ranged Get.*"));
+        }
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, asyncClient);
+        asyncClient.close();
     }
 
     @Test
@@ -161,6 +265,39 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+    }
+
+    @Test
+    public void AsyncAesGcmV3toV3FailsRangeExceededObjectLength() {
+        final String objectKey = "aes-gcm-v3-to-v3-ranged-get-out-of-range";
+
+        final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
+                "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
+                "2bcdefghijklmnopqrst2BCDEFGHIJKLMNOPQRST" +
+                "3bcdefghijklmnopqrst3BCDEFGHIJKLMNOPQRST" +
+                "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
+
+        // Async Client
+        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+        asyncClient.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncRequestBody.fromString(input)).join();
+        try {
+            // Invalid range exceed object length, Throws S3Exception nested inside CompletionException
+            asyncClient.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .range("bytes=300-400")
+                    .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        } catch (CompletionException e) {
+            assertTrue(e.getMessage().matches(".*S3Exception: The requested range is not satisfiable.*"));
+        }
+        // Cleanup
+        deleteObject(BUCKET, objectKey, asyncClient);
+        asyncClient.close();
     }
 
     @Test
