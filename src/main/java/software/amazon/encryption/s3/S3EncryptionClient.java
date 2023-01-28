@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
@@ -133,13 +132,7 @@ public class S3EncryptionClient implements S3Client {
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
-        try {
-            return pipeline.putObject(putObjectRequest, requestBody);
-        } catch (S3Exception exception) {
-            System.out.println("putObject failed for key: " + putObjectRequest.key());
-            System.out.println(putObjectRequest);
-            throw exception;
-        }
+        return pipeline.putObject(putObjectRequest, requestBody);
     }
 
     @Override
