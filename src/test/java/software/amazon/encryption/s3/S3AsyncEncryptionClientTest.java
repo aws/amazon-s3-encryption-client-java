@@ -156,7 +156,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void AsyncAesGcmV2toV3WithInstructionFile() {
-        final String objectKey = "async-aes-gcm-v2-to-v3-with-instruction-file";
+        final String objectKey = appendTestSuffix("async-aes-gcm-v2-to-v3-with-instruction-file");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -235,9 +235,9 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void deleteObjectsWithInstructionFilesSuccessAsync() {
-        final String[] objectKeys = {"async-delete-object-with-instruction-file-1",
-                "async-delete-object-with-instruction-file-2",
-                "async-delete-object-with-instruction-file-3"};
+        final String[] objectKeys = {appendTestSuffix("async-delete-object-with-instruction-file-1"),
+                appendTestSuffix("async-delete-object-with-instruction-file-2"),
+                appendTestSuffix("async-delete-object-with-instruction-file-3")};
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
