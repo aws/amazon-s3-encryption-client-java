@@ -20,15 +20,16 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 
 public class PartialKeyPairExample {
 
     private static final String OBJECT_CONTENT = "Hello, world!";
 
     // Use unique object keys for each example
-    private static final String PUBLIC_AND_PRIVATE_KEY_OBJECT_KEY = "PublicAndPrivateKeyTestObject";
-    private static final String PUBLIC_KEY_OBJECT_KEY = "PublicKeyTestObject";
-    private static final String PRIVATE_KEY_OBJECT_KEY = "PrivateKeyTestObject";
+    private static final String PUBLIC_AND_PRIVATE_KEY_OBJECT_KEY = appendTestSuffix("PublicAndPrivateKeyTestObject");
+    private static final String PUBLIC_KEY_OBJECT_KEY = appendTestSuffix("PublicKeyTestObject");
+    private static final String PRIVATE_KEY_OBJECT_KEY = appendTestSuffix("PrivateKeyTestObject");
 
     private static final Set<ObjectIdentifier> PARTIAL_KEY_PAIR_EXAMPLE_OBJECT_KEYS = Stream
             .of(PUBLIC_AND_PRIVATE_KEY_OBJECT_KEY, PUBLIC_KEY_OBJECT_KEY, PRIVATE_KEY_OBJECT_KEY)

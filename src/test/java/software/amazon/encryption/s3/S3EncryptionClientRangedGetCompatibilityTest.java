@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
@@ -46,7 +47,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void AsyncAesGcmV3toV3RangedGet() {
-        final String objectKey = "async-aes-gcm-v3-to-v3-ranged-get";
+        final String objectKey = appendTestSuffix("async-aes-gcm-v3-to-v3-ranged-get");
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -111,7 +112,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void AsyncFailsOnRangeWhenLegacyModeDisabled() {
-        final String objectKey = "fails-when-on-range-when-legacy-disabled";
+        final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
                 "2bcdefghijklmnopqrst2BCDEFGHIJKLMNOPQRST" +
@@ -144,7 +145,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void failsOnRangeWhenLegacyModeDisabled() {
-        final String objectKey = "fails-when-on-range-when-legacy-disabled";
+        final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
                 "2bcdefghijklmnopqrst2BCDEFGHIJKLMNOPQRST" +
@@ -171,7 +172,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void AesGcmV3toV3RangedGet() {
-        final String objectKey = "aes-gcm-v3-to-v3-ranged-get";
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get");
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -236,7 +237,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void AesGcmV3toV3FailsRangeExceededObjectLength() {
-        final String objectKey = "aes-gcm-v3-to-v3-ranged-get-out-of-range";
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -268,7 +269,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void AsyncAesGcmV3toV3FailsRangeExceededObjectLength() {
-        final String objectKey = "aes-gcm-v3-to-v3-ranged-get-out-of-range";
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -301,7 +302,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void AesCbcV1toV3RangedGet() {
-        final String objectKey = "aes-cbc-v1-to-v3-ranged-get";
+        final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -374,7 +375,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void AesCbcV1toV3FailsRangeExceededObjectLength() {
-        final String objectKey = "aes-cbc-v1-to-v3-ranged-get-out-of-range";
+        final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get-out-of-range");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
