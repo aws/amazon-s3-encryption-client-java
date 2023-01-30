@@ -8,7 +8,6 @@ import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
@@ -289,7 +288,7 @@ public class S3EncryptionClient implements S3Client {
     }
 
     public static class Builder {
-        private S3Client _wrappedClient = S3Client.builder().region(Region.US_EAST_1)
+        private S3Client _wrappedClient = S3Client.builder()
                 .overrideConfiguration(c -> c
                         .retryPolicy(RetryPolicy.defaultRetryPolicy().toBuilder()
                                 .numRetries(15).build()))
