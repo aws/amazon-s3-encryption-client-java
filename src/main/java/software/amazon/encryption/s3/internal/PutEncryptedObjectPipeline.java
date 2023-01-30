@@ -7,6 +7,8 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
@@ -66,7 +68,12 @@ public class PutEncryptedObjectPipeline {
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
         request = request.toBuilder().metadata(metadata).build();
 
-        return _s3Client.putObject(request, RequestBody.fromInputStream(encryptedContent.getCiphertext(), encryptedContent.getCiphertextLength()));
+        try {
+            return _s3Client.putObject(request, RequestBody.fromInputStream(encryptedContent.getCiphertext(), encryptedContent.getCiphertextLength()));
+        } catch (S3Exception exception) {
+            exception.printStackTrace();
+            throw new S3EncryptionClientException("Unable to putObject!", exception);
+        }
     }
 
     public static class Builder {

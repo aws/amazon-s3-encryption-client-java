@@ -5,8 +5,10 @@ import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
+import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
@@ -287,7 +289,11 @@ public class S3EncryptionClient implements S3Client {
     }
 
     public static class Builder {
-        private S3Client _wrappedClient = S3Client.builder().build();
+        private S3Client _wrappedClient = S3Client.builder().region(Region.US_EAST_1)
+                .overrideConfiguration(c -> c
+                        .retryPolicy(RetryPolicy.defaultRetryPolicy().toBuilder()
+                                .numRetries(15).build()))
+                .build();
 
         private MultipartUploadObjectPipeline _multipartPipeline;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
