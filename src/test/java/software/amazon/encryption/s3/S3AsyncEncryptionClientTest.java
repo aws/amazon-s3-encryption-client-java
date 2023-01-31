@@ -194,6 +194,7 @@ public class S3AsyncEncryptionClientTest {
         v3Client.close();
     }
 
+    @Test
     public void AsyncAesGcmV2toV3WithInstructionFile() {
         final String objectKey = appendTestSuffix("async-aes-gcm-v2-to-v3-with-instruction-file");
 
