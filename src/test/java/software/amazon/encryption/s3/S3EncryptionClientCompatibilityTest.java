@@ -1,10 +1,5 @@
 package software.amazon.encryption.s3;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
-
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Encryption;
@@ -21,18 +16,6 @@ import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -41,6 +24,23 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
  * This class is an integration test for verifying compatibility of ciphertexts
@@ -68,7 +68,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesCbcV1toV3() {
-        final String objectKey = "aes-cbc-v1-to-v3";
+        final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -104,7 +104,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesWrapV1toV3() {
-        final String objectKey = "aes-wrap-v1-to-v3";
+        final String objectKey = appendTestSuffix("aes-wrap-v1-to-v3");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -139,7 +139,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesGcmV2toV3() {
-        final String objectKey = "aes-gcm-v2-to-v3";
+        final String objectKey = appendTestSuffix("aes-gcm-v2-to-v3");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -170,7 +170,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesGcmV2toV3WithInstructionFile() {
-        final String objectKey = "aes-gcm-v2-to-v3-with-instruction-file";
+        final String objectKey = appendTestSuffix("aes-gcm-v2-to-v3-with-instruction-file");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -206,7 +206,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesGcmV3toV1() {
-        final String objectKey = "aes-gcm-v3-to-v1";
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v1");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -239,7 +239,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesGcmV3toV2() {
-        final String objectKey = "aes-gcm-v3-to-v2";
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v2");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -269,7 +269,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesGcmV3toV3() {
-        final String objectKey = "aes-gcm-v3-to-v3";
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -296,7 +296,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void RsaEcbV1toV3() {
-        final String objectKey = "rsa-ecb-v1-to-v3";
+        final String objectKey = appendTestSuffix("rsa-ecb-v1-to-v3");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -331,7 +331,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void RsaOaepV2toV3() {
-        final String objectKey = "rsa-oaep-v2-to-v3";
+        final String objectKey = appendTestSuffix("rsa-oaep-v2-to-v3");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -365,7 +365,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void RsaOaepV3toV1() {
-        final String objectKey = "rsa-oaep-v3-to-v1";
+        final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v1");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -398,7 +398,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void RsaOaepV3toV2() {
-        final String objectKey = "rsa-oaep-v3-to-v2";
+        final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v2");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -428,7 +428,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void RsaOaepV3toV3() {
-        final String objectKey = "rsa-oaep-v3-to-v3";
+        final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v3");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -455,7 +455,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void KmsV1toV3() {
-        final String objectKey = "kms-v1-to-v3";
+        final String objectKey = appendTestSuffix("kms-v1-to-v3");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_KEY_ID);
@@ -492,7 +492,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void KmsContextV2toV3() {
-        final String objectKey = "kms-context-v2-to-v3";
+        final String objectKey = appendTestSuffix("kms-context-v2-to-v3");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_KEY_ID);
@@ -532,7 +532,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void KmsContextV3toV1() {
-        final String objectKey = "kms-context-v3-to-v1";
+        final String objectKey = appendTestSuffix("kms-context-v3-to-v1");
 
         // V1 Client
         KMSEncryptionMaterials kmsMaterials = new KMSEncryptionMaterials(KMS_KEY_ID);
@@ -573,7 +573,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void KmsContextV3toV2() throws IOException {
-        final String objectKey = "kms-context-v3-to-v2";
+        final String objectKey = appendTestSuffix("kms-context-v3-to-v2");
 
         // V2 Client
         KMSEncryptionMaterials kmsMaterials = new KMSEncryptionMaterials(KMS_KEY_ID);
@@ -610,7 +610,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void KmsContextV3toV3() {
-        final String objectKey = "kms-context-v3-to-v3";
+        final String objectKey = appendTestSuffix("kms-context-v3-to-v3");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -642,8 +642,8 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
     @Test
-    public void AesCbcV1toV3FailsWhenDisabled() {
-        final String objectKey = "aes-cbc-v1-to-v3";
+    public void AesCbcV1toV3FailsWhenLegacyModeDisabled() {
+        final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3");
 
         EncryptionMaterialsProvider materialsProvider =
                 new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
@@ -742,7 +742,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesWrapV1toV3FailsWhenLegacyModeDisabled() {
-        final String objectKey = "aes-wrap-v1-to-v3";
+        final String objectKey = appendTestSuffix("aes-wrap-v1-to-v3");
 
         EncryptionMaterialsProvider materialsProvider =
                 new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
