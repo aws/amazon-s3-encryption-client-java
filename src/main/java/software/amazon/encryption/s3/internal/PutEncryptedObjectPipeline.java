@@ -59,7 +59,7 @@ public class PutEncryptedObjectPipeline {
                 .s3Request(request)
                 .plaintextLength(requestBody.optionalContentLength().orElse(-1L));
         System.out.println(request.key());
-        System.out.println("  putting object with plaintext length: " + requestBody.optionalContentLength().orElse(-1L));
+        //System.out.println("  putting object with plaintext length: " + requestBody.optionalContentLength().orElse(-1L));
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
@@ -70,7 +70,7 @@ public class PutEncryptedObjectPipeline {
         request = request.toBuilder().metadata(metadata).build();
 
         try {
-            System.out.println("  putting object with ciphertext length: " + encryptedContent.getCiphertextLength());
+            //System.out.println("  putting object with ciphertext length: " + encryptedContent.getCiphertextLength());
             return _s3Client.putObject(request, RequestBody.fromInputStream(encryptedContent.getCiphertext(), encryptedContent.getCiphertextLength()));
         } catch (S3Exception exception) {
             exception.printStackTrace();
