@@ -16,6 +16,7 @@ public class AesCtrUtils {
     public static byte[] adjustIV(byte[] iv, long byteOffset) {
         // Currently only support iv of length 12 for AES/GCM.
         // Anything else is quite a bit complicated.
+        System.out.println("adjusting iv");
         if (iv.length != 12) {
             throw new UnsupportedOperationException();
         }

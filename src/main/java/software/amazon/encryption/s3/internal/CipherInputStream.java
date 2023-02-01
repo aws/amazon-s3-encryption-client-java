@@ -61,6 +61,7 @@ public class CipherInputStream extends SdkFilterInputStream {
     }
 
     private boolean readNextChunk() throws IOException {
+        System.out.println("reading next chunk..");
         if (currentPosition >= maxPosition) {
             // All buffered data has been read, let's get some more
             if (eofReached) {
@@ -72,9 +73,11 @@ public class CipherInputStream extends SdkFilterInputStream {
                 if (retryCount > MAX_RETRY_COUNT) {
                     throw new IOException("Exceeded maximum number of attempts to read next chunk of data");
                 }
+                System.out.println("getting next chunk..");
                 length = nextChunk();
                 // If outputBuffer != null, it means that data is being read off of the InputStream
                 if (outputBuffer == null) {
+                    System.out.println("retrying..");
                     retryCount++;
                 }
             } while (length == 0);
@@ -155,6 +158,7 @@ public class CipherInputStream extends SdkFilterInputStream {
         outputBuffer = null;
         int length = in.read(inputBuffer);
         if (length == -1) {
+            System.out.println("eof reached");
             return endOfFileReached();
         }
         outputBuffer = cipher.update(inputBuffer, 0, length);
