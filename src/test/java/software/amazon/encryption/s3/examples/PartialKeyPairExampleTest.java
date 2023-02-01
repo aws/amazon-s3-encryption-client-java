@@ -9,6 +9,12 @@ public class PartialKeyPairExampleTest {
     public void testPartialKeyPairExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
 
-        PartialKeyPairExample.main(new String[]{bucket});
+        for (int i = 0; i <= 100; i++) {
+            if (i % 10 == 0) {
+                System.out.println(i + "/100");
+            }
+            PartialKeyPairExample.main(new String[]{bucket});
+        }
+
     }
 }
