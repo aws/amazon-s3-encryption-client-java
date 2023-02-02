@@ -22,7 +22,6 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.CompletionException;
-import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,7 +44,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    //@Test
+    @Test
     public void AsyncAesGcmV3toV3RangedGet() {
         final String objectKey = appendTestSuffix("async-aes-gcm-v3-to-v3-ranged-get");
 

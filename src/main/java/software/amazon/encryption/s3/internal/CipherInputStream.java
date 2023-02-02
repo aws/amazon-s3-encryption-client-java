@@ -47,6 +47,7 @@ public class CipherInputStream extends SdkFilterInputStream {
     public int read(byte buffer[], int off, int targetLength) throws IOException {
         System.out.println("reading with off " + off + " and targetLength " + targetLength);
         if (!readNextChunk()) {
+            // TODO: This case is problematic and causes persistent connection timeouts
             System.out.println("end of stream reached!");
             return -1;
         }
