@@ -172,7 +172,7 @@ public class GetEncryptedObjectPipeline {
         @Override
         public void onResponse(GetObjectResponse response) {
             getObjectResponse = response;
-            if (!_enableLegacyWrappingAlgorithms && getObjectRequest.range() != null) {
+            if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
                 throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
             }
             contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, response);
