@@ -22,7 +22,6 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.CompletionException;
-import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -183,7 +182,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableUnauthenticatedMode(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -248,7 +247,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableUnauthenticatedMode(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         v3Client.putObject(PutObjectRequest.builder()
@@ -325,8 +324,8 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyKeyring(true)
-                .enableUnauthenticatedMode(true)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Valid Range
@@ -399,8 +398,8 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyKeyring(true)
-                .enableUnauthenticatedMode(true)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Invalid range exceed object length, Throws S3Exception

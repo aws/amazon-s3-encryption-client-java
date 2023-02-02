@@ -141,8 +141,8 @@ public class S3AsyncEncryptionClientTest {
         // V3 Client
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyKeyring(true)
-                .enableUnauthenticatedMode(true)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         CompletableFuture<ResponseBytes<GetObjectResponse>> futureResponse = v3Client.getObject(builder -> builder
@@ -178,7 +178,7 @@ public class S3AsyncEncryptionClientTest {
         // V3 Client
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyKeyring(true)
+                .enableLegacyWrappingAlgorithms(true)
                 .build();
         try {
             CompletableFuture<ResponseBytes<GetObjectResponse>> futureResponse = v3Client.getObject(builder -> builder

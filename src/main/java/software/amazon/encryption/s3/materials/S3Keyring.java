@@ -21,12 +21,12 @@ abstract public class S3Keyring implements Keyring {
 
     public static final String KEY_PROVIDER_ID = "S3Keyring";
 
-    private final boolean _enableLegacyKeyring;
+    private final boolean _enableLegacyWrappingAlgorithms;
     private final SecureRandom _secureRandom;
     private final DataKeyGenerator _dataKeyGenerator;
 
     protected S3Keyring(Builder<?,?> builder) {
-        _enableLegacyKeyring = builder._enableLegacyKeyring;
+        _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
         _secureRandom = builder._secureRandom;
         _dataKeyGenerator = builder._dataKeyGenerator;
     }
@@ -88,7 +88,7 @@ abstract public class S3Keyring implements Keyring {
             throw new S3EncryptionClientException("Unknown key wrap: " + keyProviderInfo);
         }
 
-        if (decryptStrategy.isLegacy() && !_enableLegacyKeyring) {
+        if (decryptStrategy.isLegacy() && !_enableLegacyWrappingAlgorithms) {
             throw new S3EncryptionClientException("Enable legacy keyring to use legacy key wrap: " + keyProviderInfo);
         }
 
@@ -103,7 +103,7 @@ abstract public class S3Keyring implements Keyring {
     abstract protected Map<String,DecryptDataKeyStrategy> decryptStrategies();
 
     abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
-        private boolean _enableLegacyKeyring = false;
+        private boolean _enableLegacyWrappingAlgorithms = false;
         private SecureRandom _secureRandom;
         private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
 
@@ -112,8 +112,8 @@ abstract public class S3Keyring implements Keyring {
 
         protected abstract BuilderT builder();
 
-        public BuilderT enableLegacyKeyring(boolean shouldEnableLegacyKeyring) {
-            this._enableLegacyKeyring = shouldEnableLegacyKeyring;
+        public BuilderT enableLegacyWrappingAlgorithms(boolean shouldEnableLegacyWrappingAlgorithms) {
+            this._enableLegacyWrappingAlgorithms = shouldEnableLegacyWrappingAlgorithms;
             return builder();
         }
 

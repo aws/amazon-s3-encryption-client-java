@@ -208,8 +208,8 @@ public class S3EncryptionClientStreamTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyKeyring(true)
-                .enableUnauthenticatedMode(true)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         final int inputLength = DEFAULT_TEST_STREAM_LENGTH;
