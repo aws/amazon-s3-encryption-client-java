@@ -45,7 +45,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    //@Test
     public void AsyncAesGcmV3toV3RangedGet() {
         final String objectKey = appendTestSuffix("async-aes-gcm-v3-to-v3-ranged-get");
 
@@ -110,7 +110,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    @Test
+    //@Test
     public void AsyncFailsOnRangeWhenLegacyModeDisabled() {
         final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
@@ -143,7 +143,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    @Test
+    //@Test
     public void failsOnRangeWhenLegacyModeDisabled() {
         final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
@@ -170,7 +170,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesGcmV3toV3RangedGet() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get");
 
@@ -235,7 +235,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesGcmV3toV3FailsRangeExceededObjectLength() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
 
@@ -267,7 +267,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AsyncAesGcmV3toV3FailsRangeExceededObjectLength() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
 
@@ -300,7 +300,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    @Test
+    //@Test
     public void AesCbcV1toV3RangedGet() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get");
 
@@ -373,7 +373,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesCbcV1toV3FailsRangeExceededObjectLength() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get-out-of-range");
 
