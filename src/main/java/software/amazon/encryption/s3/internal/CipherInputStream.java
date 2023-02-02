@@ -45,10 +45,13 @@ public class CipherInputStream extends SdkFilterInputStream {
 
     @Override
     public int read(byte buffer[], int off, int targetLength) throws IOException {
+        System.out.println("reading with off " + off + " and targetLength " + targetLength);
         if (!readNextChunk()) {
+            System.out.println("end of stream reached!");
             return -1;
         }
         if (targetLength <= 0) {
+            System.out.println("eh return 0 why idk");
             return 0;
         }
         int length = maxPosition - currentPosition;
@@ -57,6 +60,9 @@ public class CipherInputStream extends SdkFilterInputStream {
         }
         System.arraycopy(outputBuffer, currentPosition, buffer, off, length);
         currentPosition += length;
+        System.out.println("max pos: " + maxPosition);
+        System.out.println("cur pos: " + currentPosition);
+        System.out.println("length: " + length);
         return length;
     }
 
@@ -171,13 +177,18 @@ public class CipherInputStream extends SdkFilterInputStream {
         try {
             outputBuffer = cipher.doFinal();
             if (outputBuffer == null) {
+                System.out.println("result of doFinal is null");
                 return -1;
             }
             currentPosition = 0;
+            System.out.println("returning from eofReach, maxPosition of " + outputBuffer.length);
             return maxPosition = outputBuffer.length;
-        } catch (IllegalBlockSizeException | BadPaddingException ignore) {
+        } catch (IllegalBlockSizeException | BadPaddingException exception) {
             // Swallow exceptions
+            System.out.println("error while calling doFinal");
+            exception.printStackTrace();
         }
+        System.out.println("returning from eofReached, -1");
         return -1;
 
     }
