@@ -45,6 +45,11 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
 
     @Override
     public EncryptedContent encryptContent(EncryptionMaterials materials, AsyncRequestBody content) {
+        if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
+                    "the maximum length allowed for GCM encryption.");
+        }
+
         final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
         final Cipher cipher = prepareCipher(materials, nonce);
 
