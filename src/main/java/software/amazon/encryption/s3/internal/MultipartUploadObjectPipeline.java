@@ -2,8 +2,10 @@ package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
@@ -28,10 +30,12 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 public class MultipartUploadObjectPipeline {
 
     final private S3Client _s3Client;
+    final private S3AsyncClient _s3AsyncClient;
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
@@ -42,6 +46,7 @@ public class MultipartUploadObjectPipeline {
 
     private MultipartUploadObjectPipeline(Builder builder) {
         this._s3Client = builder._s3Client;
+        this._s3AsyncClient = S3AsyncClient.create(); // TODO plumbing
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
@@ -97,7 +102,7 @@ public class MultipartUploadObjectPipeline {
         uploadContext.beginPartUpload(request.partNumber());
         Cipher cipher = uploadContext.getCipher();
         try {
-            final InputStream cipherInputStream = new AuthenticatedCipherInputStream(requestBody.contentStreamProvider().newStream(), cipher, true, isLastPart);
+            final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(cipher, AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(), request.contentLength(), Executors.newSingleThreadExecutor()), partSize + cipherTagLength);
             // The last part of the multipart upload will contain an extra
             // 16-byte mac
             if (isLastPart) {
@@ -107,7 +112,7 @@ public class MultipartUploadObjectPipeline {
                                     + "Only the last part of the upload should be marked as the last part.");
                 }
             }
-            response = _s3Client.uploadPart(request, RequestBody.fromInputStream(cipherInputStream, partSize + cipherTagLength));
+            response =  _s3AsyncClient.uploadPart(request, cipherAsyncRequestBody).join();
         } finally {
             uploadContext.endPartUpload();
         }

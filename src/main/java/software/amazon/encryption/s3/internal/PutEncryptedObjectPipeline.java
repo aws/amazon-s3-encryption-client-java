@@ -53,6 +53,7 @@ public class PutEncryptedObjectPipeline {
         return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
     }
 
+    // TODO - remove
     public PutObjectResponse putObject(PutObjectRequest request, RequestBody requestBody) {
         EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
                 .s3Request(request)
