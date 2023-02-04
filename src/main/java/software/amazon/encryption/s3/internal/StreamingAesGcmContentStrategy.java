@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
-public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy, AsyncContentEncryptionStrategy, MultipartContentEncryptionStrategy {
+public class StreamingAesGcmContentStrategy implements ContentDecryptionStrategy, AsyncContentEncryptionStrategy, MultipartContentEncryptionStrategy {
 
     final private SecureRandom _secureRandom;
 
@@ -25,14 +25,6 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    @Override
-    public EncryptedContent encryptContent(EncryptionMaterials materials, InputStream content) {
-        final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
-        final Cipher cipher = prepareCipher(materials, nonce);
-        final InputStream ciphertext = new AuthenticatedCipherInputStream(content, cipher);
-        return new EncryptedContent(nonce, ciphertext, materials.getCiphertextLength());
     }
 
     @Override
