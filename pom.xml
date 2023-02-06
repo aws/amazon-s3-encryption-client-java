@@ -95,6 +95,14 @@
       <optional>true</optional>
     </dependency>
 
+    <dependency>
+      <groupId>software.amazon.cryptools</groupId>
+      <artifactId>AmazonCorrettoCryptoProvider</artifactId>
+      <version>[1.0,2.0)</version>
+      <classifier>linux-x86_64</classifier>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Test Dependencies -->
     <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
     <dependency>
