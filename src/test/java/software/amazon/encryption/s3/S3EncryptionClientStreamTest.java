@@ -32,6 +32,7 @@ import java.security.Security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
@@ -247,12 +248,17 @@ public class S3EncryptionClientStreamTest {
         // Tight bound on the default limit of 64MiB
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
         final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
-        v3Client.putObject(PutObjectRequest.builder()
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
+        try {
+            v3Client.putObject(PutObjectRequest.builder()
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
 
-        largeObjectStream.close();
+            largeObjectStream.close();
+        } catch (final Exception exception) {
+            exception.printStackTrace();
+            fail("exception while putting..");
+        }
 
         // Delayed Authentication is not enabled, so getObject fails
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
