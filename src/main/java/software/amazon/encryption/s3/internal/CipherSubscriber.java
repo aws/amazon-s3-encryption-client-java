@@ -38,7 +38,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             try {
                 outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
             } catch (final IllegalStateException exception) {
-                System.out.println("caught illegal state exception");
+                System.out.println("caught illegal state exception while updating cipher..");
                 // The cipher is in an illegal state, which probably means
                 // we are trying to reinitialize with the same key/IV.
             }
