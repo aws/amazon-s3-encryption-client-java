@@ -33,7 +33,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onNext(ByteBuffer byteBuffer) {
-        System.out.println(" onNext");
         int amountToReadFromByteBuffer = getAmountToReadFromByteBuffer(byteBuffer);
 
         if (amountToReadFromByteBuffer > 0) {
