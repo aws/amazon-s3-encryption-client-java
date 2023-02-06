@@ -37,14 +37,27 @@ public class PutEncryptedObjectPipeline {
                 .s3Request(request)
                 .plaintextLength(requestBody.contentLength().orElse(-1L));
 
-        EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
+        try {
+            EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
-        EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
+            EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
 
-        Map<String, String> metadata = new HashMap<>(request.metadata());
-        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
-        PutObjectRequest encryptedPutRequest = request.toBuilder().metadata(metadata).build();
-        return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
+            Map<String, String> metadata = new HashMap<>(request.metadata());
+            metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
+            PutObjectRequest encryptedPutRequest = request.toBuilder().metadata(metadata).build();
+            return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
+        } catch (IllegalStateException exception) {
+            // Retry with a new data key / IV etc.
+            System.out.println("Retrying after illegal state exception with new IV etc");
+            EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
+
+            EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
+
+            Map<String, String> metadata = new HashMap<>(request.metadata());
+            metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
+            PutObjectRequest encryptedPutRequest = request.toBuilder().metadata(metadata).build();
+            return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
+        }
     }
 
     public static class Builder {
