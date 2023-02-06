@@ -6,6 +6,7 @@ import java.io.InputStream;
  * Test utility class.
  * Stream of a fixed number of zeros. Useful for testing
  * stream uploads of a specific size. Not threadsafe.
+ * Does not support mark/reset, so retries may fail.
  */
 public class BoundedZerosInputStream extends InputStream {
 
