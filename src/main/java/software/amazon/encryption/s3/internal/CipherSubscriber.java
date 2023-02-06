@@ -22,15 +22,18 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         this.wrappedSubscriber = wrappedSubscriber;
         this.cipher = cipher;
         this.contentLength = contentLength;
+        System.out.println(" ctor");
     }
 
     @Override
     public void onSubscribe(Subscription s) {
+        System.out.println(" onSub");
         wrappedSubscriber.onSubscribe(s);
     }
 
     @Override
     public void onNext(ByteBuffer byteBuffer) {
+        System.out.println(" onNext");
         int amountToReadFromByteBuffer = getAmountToReadFromByteBuffer(byteBuffer);
 
         if (amountToReadFromByteBuffer > 0) {
@@ -74,11 +77,13 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onError(Throwable t) {
+        System.out.println(" onError");
         wrappedSubscriber.onError(t);
     }
 
     @Override
     public void onComplete() {
+        System.out.println(" onComplete");
         try {
             outputBuffer = cipher.doFinal();
             // Send the final bytes to the wrapped subscriber

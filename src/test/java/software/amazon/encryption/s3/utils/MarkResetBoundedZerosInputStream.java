@@ -40,6 +40,7 @@ public class MarkResetBoundedZerosInputStream extends InputStream {
 
     @Override
     public void reset() {
+        System.out.println("resetting client stream...");
         _progress = _mark;
         _mark = 0;
     }
