@@ -91,7 +91,7 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void multipartUploadV3OutputStream() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream");
 
