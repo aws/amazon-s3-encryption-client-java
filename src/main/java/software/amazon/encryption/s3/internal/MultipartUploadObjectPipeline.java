@@ -33,7 +33,7 @@ public class MultipartUploadObjectPipeline {
 
     final private S3Client _s3Client;
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
-    final private ContentEncryptionStrategy _contentEncryptionStrategy;
+    final private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
     /**
      * Map of data about in progress encrypted multipart uploads.
@@ -58,7 +58,7 @@ public class MultipartUploadObjectPipeline {
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
         // TODO: Look for Better design models
-        EncryptedContent encryptedContent = _contentEncryptionStrategy.encryptContent(materials, null);
+        EncryptedContent encryptedContent = _contentEncryptionStrategy.initMultipartEncryption(materials);
 
         Map<String, String> metadata = new HashMap<>(request.metadata());
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
@@ -162,10 +162,7 @@ public class MultipartUploadObjectPipeline {
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         // To Create Cipher which is used in during uploadPart requests.
-        private ContentEncryptionStrategy _contentEncryptionStrategy =
-                MultipartAesGcmContentStrategy
-                        .builder()
-                        .build();
+        private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
 
         private Builder() {
         }

@@ -128,7 +128,6 @@ public class S3EncryptionClient implements S3Client {
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
-
         return pipeline.putObject(putObjectRequest, requestBody);
     }
 

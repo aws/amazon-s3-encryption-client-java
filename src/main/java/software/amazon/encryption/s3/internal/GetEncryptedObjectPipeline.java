@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.legacy.internal.AesCtrUtils;
 import software.amazon.encryption.s3.legacy.internal.RangedGetUtils;
 import software.amazon.encryption.s3.legacy.internal.UnauthenticatedContentStrategy;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
@@ -50,7 +51,12 @@ public class GetEncryptedObjectPipeline {
     }
 
     private GetEncryptedObjectPipeline(Builder builder) {
-        this._s3Client = builder._s3Client;
+        // TODO: Clean up sync/async options
+        if (builder._s3Client == null) {
+            this._s3Client = S3Client.create();
+        } else {
+            this._s3Client = builder._s3Client;
+        }
         this._s3AsyncClient = builder._s3AsyncClient;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
@@ -60,7 +66,9 @@ public class GetEncryptedObjectPipeline {
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest, AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
         // TODO: Support for ranged gets in async
         // In async, decryption is done within a response transformation
-        return _s3AsyncClient.getObject(getObjectRequest, new DecryptingResponseTransformer<>(asyncResponseTransformer,
+        String cryptoRange = RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range());
+        GetObjectRequest adjustedRangeRequest = getObjectRequest.toBuilder().range(cryptoRange).build();
+        return _s3AsyncClient.getObject(adjustedRangeRequest, new DecryptingResponseTransformer<>(asyncResponseTransformer,
                 getObjectRequest));
     }
 
@@ -164,7 +172,7 @@ public class GetEncryptedObjectPipeline {
             if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
                 throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
             }
-            contentMetadata = ContentMetadataStrategy.decode(null, getObjectRequest, response);
+            contentMetadata = ContentMetadataStrategy.decode(_s3Client, getObjectRequest, response);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
             wrappedAsyncResponseTransformer.onResponse(response);
         }
@@ -176,10 +184,15 @@ public class GetEncryptedObjectPipeline {
 
         @Override
         public void onStream(SdkPublisher<ByteBuffer> ciphertextPublisher) {
+            long[] desiredRange = RangedGetUtils.getRange(materials.s3Request().range());
+            long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.s3Request().range());
             AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
             SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), contentMetadata.algorithmSuite().dataKeyAlgorithm());
             final int tagLength = algorithmSuite.cipherTagLengthBits();
             byte[] iv = contentMetadata.contentNonce();
+            if (algorithmSuite == AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF) {
+                iv = AesCtrUtils.adjustIV(iv, cryptoRange[0]);
+            }
             try {
                 final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
                 switch (algorithmSuite) {
@@ -187,15 +200,17 @@ public class GetEncryptedObjectPipeline {
                         cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
                         break;
                     case ALG_AES_256_CBC_IV16_NO_KDF:
+                        if (materials.s3Request().range() != null) {
+                            throw new UnsupportedOperationException();
+                        }
+                    case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
                         cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
                         break;
-                    case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
-                        // TODO: Ranged Get
                     default:
                         throw new S3EncryptionClientException("Unknown algorithm: " + algorithmSuite.cipherName());
                 }
 
-                CipherPublisher plaintextPublisher = new CipherPublisher(cipher, ciphertextPublisher, getObjectResponse.contentLength());
+                CipherPublisher plaintextPublisher = new CipherPublisher(cipher, ciphertextPublisher, getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits());
                 wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
             } catch (GeneralSecurityException e) {
                 throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
