@@ -53,7 +53,7 @@ public class S3EncryptionClientMultipartUploadTest {
     public void multipartPutObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object");
 
-        final long fileSizeLimit = 1024 * 1024 * 100;
+        final long fileSizeLimit = 1024 * 1024 * 500;
         final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
 
