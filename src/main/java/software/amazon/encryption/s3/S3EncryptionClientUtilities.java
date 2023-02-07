@@ -53,40 +53,40 @@ public class S3EncryptionClientUtilities {
         return haveOneNonNull;
     }
 
-    static CryptographicMaterialsManager buildCMM(CryptographicMaterialsManager _cryptoMaterialsManager, Keyring _keyring, SecretKey _aesKey, PartialRsaKeyPair _rsaKeyPair, String _kmsKeyId, boolean _enableLegacyUnauthenticatedModes, SecureRandom _secureRandom, Provider _cryptoProvider) {
-        if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
+    static CryptographicMaterialsManager buildCMM(S3ClientBuilder builder) {
+        if (!onlyOneNonNull(builder._cryptoMaterialsManager, builder._keyring, builder._aesKey, builder._rsaKeyPair, builder._kmsKeyId)) {
             throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
         }
 
-        if (_keyring == null) {
-            if (_aesKey != null) {
-                _keyring = AesKeyring.builder()
-                        .wrappingKey(_aesKey)
-                        .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                        .secureRandom(_secureRandom)
+        if (builder._keyring == null) {
+            if (builder._aesKey != null) {
+                builder._keyring = AesKeyring.builder()
+                        .wrappingKey(builder._aesKey)
+                        .enableLegacyUnauthenticatedModes(builder._enableLegacyUnauthenticatedModes)
+                        .secureRandom(builder._secureRandom)
                         .build();
-            } else if (_rsaKeyPair != null) {
-                _keyring = RsaKeyring.builder()
-                        .wrappingKeyPair(_rsaKeyPair)
-                        .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                        .secureRandom(_secureRandom)
+            } else if (builder._rsaKeyPair != null) {
+                builder._keyring = RsaKeyring.builder()
+                        .wrappingKeyPair(builder._rsaKeyPair)
+                        .enableLegacyUnauthenticatedModes(builder._enableLegacyUnauthenticatedModes)
+                        .secureRandom(builder._secureRandom)
                         .build();
-            } else if (_kmsKeyId != null) {
-                _keyring = KmsKeyring.builder()
-                        .wrappingKeyId(_kmsKeyId)
-                        .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
-                        .secureRandom(_secureRandom)
+            } else if (builder._kmsKeyId != null) {
+                builder._keyring = KmsKeyring.builder()
+                        .wrappingKeyId(builder._kmsKeyId)
+                        .enableLegacyUnauthenticatedModes(builder._enableLegacyUnauthenticatedModes)
+                        .secureRandom(builder._secureRandom)
                         .build();
             }
         }
 
-        if (_cryptoMaterialsManager == null) {
-            _cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
-                    .keyring(_keyring)
-                    .cryptoProvider(_cryptoProvider)
+        if (builder._cryptoMaterialsManager == null) {
+            builder._cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
+                    .keyring(builder._keyring)
+                    .cryptoProvider(builder._cryptoProvider)
                     .build();
         }
 
-        return _cryptoMaterialsManager;
+        return builder._cryptoMaterialsManager;
     }
 }

@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -32,14 +31,9 @@ import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.UploadObjectObserver;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
-import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.MultipartConfiguration;
-import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.security.KeyPair;
-import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -281,120 +275,16 @@ public class S3EncryptionClient implements S3Client {
         _wrappedClient.close();
     }
 
-    public static class Builder {
-        private S3Client _wrappedClient = S3Client.builder().build();
-
+    public static class Builder extends S3ClientBuilder {
         private MultipartUploadObjectPipeline _multipartPipeline;
-        private CryptographicMaterialsManager _cryptoMaterialsManager;
-        private Keyring _keyring;
-        private SecretKey _aesKey;
-        private PartialRsaKeyPair _rsaKeyPair;
-        private String _kmsKeyId;
-        private boolean _enableLegacyUnauthenticatedModes = false;
-        private boolean _enableDelayedAuthenticationMode = false;
-        private boolean _enableMultipartPutObject = false;
-        private Provider _cryptoProvider = null;
-        private SecureRandom _secureRandom = new SecureRandom();
 
-        private Builder() {
+        public Builder() {
+            super();
         }
 
-        /**
-         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
-         * S3Client will be reflected in this Builder.
-         */
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
-        public Builder wrappedClient(S3Client wrappedClient) {
-            if (wrappedClient instanceof S3EncryptionClient) {
-                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
-            }
-
-            this._wrappedClient = wrappedClient;
-            return this;
-        }
-
-        public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
-            this._cryptoMaterialsManager = cryptoMaterialsManager;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder keyring(Keyring keyring) {
-            this._keyring = keyring;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder aesKey(SecretKey aesKey) {
-            this._aesKey = aesKey;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder rsaKeyPair(KeyPair rsaKeyPair) {
-            this._rsaKeyPair = new PartialRsaKeyPair(rsaKeyPair);
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder rsaKeyPair(PartialRsaKeyPair partialRsaKeyPair) {
-            this._rsaKeyPair = partialRsaKeyPair;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder kmsKeyId(String kmsKeyId) {
-            this._kmsKeyId = kmsKeyId;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        // We only want one way to use a key, if more than one is set, throw an error
-        private void checkKeyOptions() {
-            if (S3EncryptionClientUtilities.onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
-                return;
-            }
-
-            throw new S3EncryptionClientException("Only one may be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
-        }
-
-        public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
-            this._enableLegacyUnauthenticatedModes = shouldEnableLegacyUnauthenticatedModes;
-            return this;
-        }
-
-        public Builder enableDelayedAuthenticationMode(boolean shouldEnableDelayedAuthenticationMode) {
-            this._enableDelayedAuthenticationMode = shouldEnableDelayedAuthenticationMode;
-            return this;
-        }
-
-        public Builder enableMultipartPutObject(boolean _enableMultipartPutObject) {
-            this._enableMultipartPutObject = _enableMultipartPutObject;
-            return this;
-        }
-
-        public Builder cryptoProvider(Provider cryptoProvider) {
-            this._cryptoProvider = cryptoProvider;
-            return this;
-        }
-
-        public Builder secureRandom(SecureRandom secureRandom) {
-            if (secureRandom == null) {
-                throw new S3EncryptionClientException("SecureRandom provided to S3EncryptionClient cannot be null");
-            }
-            _secureRandom = secureRandom;
-            return this;
-        }
-
+        @Override
         public S3EncryptionClient build() {
-            _cryptoMaterialsManager = S3EncryptionClientUtilities.buildCMM(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId,
-                    _enableLegacyUnauthenticatedModes, _secureRandom, _cryptoProvider);
+            _cryptoMaterialsManager = S3EncryptionClientUtilities.buildCMM(this);
 
             _multipartPipeline = MultipartUploadObjectPipeline.builder()
                     .s3Client(_wrappedClient)

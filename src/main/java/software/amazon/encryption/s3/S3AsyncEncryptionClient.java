@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -19,12 +18,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
-import software.amazon.encryption.s3.materials.Keyring;
-import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 
-import javax.crypto.SecretKey;
-import java.security.KeyPair;
-import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +35,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     private final boolean _enableDelayedAuthenticationMode;
 
     private S3AsyncEncryptionClient(Builder builder) {
-        _wrappedClient = builder._wrappedClient;
+        _wrappedClient = builder._wrappedAsyncClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
@@ -121,112 +115,15 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     }
 
     // TODO: The async / non-async clients can probably share a builder - revisit after implementing async
-    public static class Builder {
-        private S3AsyncClient _wrappedClient = S3AsyncClient.builder().build();
-        private CryptographicMaterialsManager _cryptoMaterialsManager;
-        private Keyring _keyring;
-        private SecretKey _aesKey;
-        private PartialRsaKeyPair _rsaKeyPair;
-        private String _kmsKeyId;
-        private boolean _enableLegacyUnauthenticatedModes = false;
-        private boolean _enableDelayedAuthenticationMode = false;
-        private Provider _cryptoProvider = null;
-        private SecureRandom _secureRandom = new SecureRandom();
+    public static class Builder extends S3ClientBuilder{
 
         private Builder() {
+            super();
         }
 
-        /**
-         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
-         * S3Client will be reflected in this Builder.
-         */
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
-        public Builder wrappedClient(S3AsyncClient wrappedClient) {
-            if (wrappedClient instanceof S3AsyncEncryptionClient) {
-                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
-            }
-
-            this._wrappedClient = wrappedClient;
-            return this;
-        }
-
-        public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
-            this._cryptoMaterialsManager = cryptoMaterialsManager;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder keyring(Keyring keyring) {
-            this._keyring = keyring;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder aesKey(SecretKey aesKey) {
-            this._aesKey = aesKey;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder rsaKeyPair(KeyPair rsaKeyPair) {
-            this._rsaKeyPair = new PartialRsaKeyPair(rsaKeyPair);
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder rsaKeyPair(PartialRsaKeyPair partialRsaKeyPair) {
-            this._rsaKeyPair = partialRsaKeyPair;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        public Builder kmsKeyId(String kmsKeyId) {
-            this._kmsKeyId = kmsKeyId;
-            checkKeyOptions();
-
-            return this;
-        }
-
-        // We only want one way to use a key, if more than one is set, throw an error
-        private void checkKeyOptions() {
-            if (S3EncryptionClientUtilities.onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
-                return;
-            }
-
-            throw new S3EncryptionClientException("Only one may be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
-        }
-
-        public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
-            this._enableLegacyUnauthenticatedModes = shouldEnableLegacyUnauthenticatedModes;
-            return this;
-        }
-
-        public Builder enableDelayedAuthenticationMode(boolean shouldEnableDelayedAuthenticationMode) {
-            this._enableDelayedAuthenticationMode = shouldEnableDelayedAuthenticationMode;
-            return this;
-        }
-
-        public Builder cryptoProvider(Provider cryptoProvider) {
-            this._cryptoProvider = cryptoProvider;
-            return this;
-        }
-
-        public Builder secureRandom(SecureRandom secureRandom) {
-            if (secureRandom == null) {
-                throw new S3EncryptionClientException("SecureRandom provided to S3EncryptionClient cannot be null");
-            }
-            _secureRandom = secureRandom;
-            return this;
-        }
-
+        @Override
         public S3AsyncEncryptionClient build() {
-            _cryptoMaterialsManager = S3EncryptionClientUtilities.buildCMM(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId,
-                    _enableLegacyUnauthenticatedModes, _secureRandom, _cryptoProvider);
+            _cryptoMaterialsManager = S3EncryptionClientUtilities.buildCMM(this);
 
             return new S3AsyncEncryptionClient(this);
         }
