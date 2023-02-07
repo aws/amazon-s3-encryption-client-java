@@ -5,14 +5,9 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
-import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
-import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
-import javax.crypto.SecretKey;
-import java.security.Provider;
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.stream.Collectors;
 
