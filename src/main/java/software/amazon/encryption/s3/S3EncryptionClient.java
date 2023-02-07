@@ -7,6 +7,7 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
@@ -170,7 +171,8 @@ public class S3EncryptionClient implements S3Client {
             throw new S3EncryptionClientException("UploadObjectObserver should not be null, Please initialize during MultipartConfiguration");
         }
 
-        observer.init(request, _wrappedClient, this, es);
+        S3AsyncClient wrappedAsyncClient = S3AsyncClient.crtCreate();
+        observer.init(request, wrappedAsyncClient, this, es);
         final String uploadId = observer.onUploadCreation(request);
         final List<CompletedPart> partETags = new ArrayList<>();
 
