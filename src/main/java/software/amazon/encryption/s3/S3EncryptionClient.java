@@ -118,20 +118,8 @@ public class S3EncryptionClient implements S3Client {
     public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody)
             throws AwsServiceException, SdkClientException {
 
-        if (_enableMultipartPutObject) {
-            try {
-                // TODO: Confirm best way to wrap CompleteMultipartUploadResponse with PutObjectResponse
-                CompleteMultipartUploadResponse completeResponse = multipartPutObject(putObjectRequest, requestBody);
-                PutObjectResponse response = PutObjectResponse.builder()
-                        .eTag(completeResponse.eTag())
-                        .build();
-                return response;
-            } catch (Throwable e) {
-                throw new S3EncryptionClientException("Exception while performing Multipart Upload PutObject", e);
-            }
-        }
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
-                .s3AsyncClient(S3AsyncClient.create())
+                .s3AsyncClient(_enableMultipartPutObject?S3AsyncClient.crtCreate():S3AsyncClient.create())
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
