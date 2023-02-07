@@ -14,7 +14,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
-import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
@@ -67,16 +66,12 @@ public class S3EncryptionClientMultipartUploadTest {
                 .cryptoProvider(provider)
                 .build();
 
-        MultipartConfiguration configuration = MultipartConfiguration.builder()
-                .maxConnections(30)
-                .build();
-
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
         v3Client.putObject(builder -> builder
                 .bucket(BUCKET)
-                .overrideConfiguration(withAdditionalConfiguration(encryptionContext, configuration))
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
                 .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit));
 
         // Asserts
