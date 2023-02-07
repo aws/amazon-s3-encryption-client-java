@@ -246,7 +246,7 @@ public class S3EncryptionClientStreamTest {
 
         // Tight bound on the default limit of 64MiB
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
-        final InputStream largeObjectStream = new MarkResetBoundedZerosInputStream(fileSizeExceedingDefaultLimit);
+        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
