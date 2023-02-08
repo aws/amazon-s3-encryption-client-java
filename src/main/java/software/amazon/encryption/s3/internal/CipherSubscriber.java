@@ -35,7 +35,14 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
         if (amountToReadFromByteBuffer > 0) {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
-            outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
+            try {
+                outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
+            } catch (final IllegalStateException exception) {
+                // Either the cipher was never init'd or we are attempting to reinit
+                // with the same key/IV. The latter is true when retrying.
+                exception.printStackTrace();
+                throw exception;
+            }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
                 // The underlying data is too short to fill in the block cipher
                 // This is true at the end of the file, so complete to get the final
