@@ -7,7 +7,7 @@ public class PartialKeyPairExampleTest {
 
     @Test
     public void invokeTestPKPExamples() {
-        for (int i = 0; i <= 30; i++) {
+        for (int i = 0; i <= 100; i++) {
             testPartialKeyPairExamples();
         }
     }

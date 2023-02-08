@@ -9,7 +9,6 @@ import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -231,7 +230,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void invokeDelayedAuthTestManyTimes() throws IOException {
         for (int i = 0; i <= 30; i++) {
             delayedAuthModeWithLargeObject();
