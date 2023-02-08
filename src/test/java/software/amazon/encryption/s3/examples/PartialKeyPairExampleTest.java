@@ -5,6 +5,13 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 public class PartialKeyPairExampleTest {
 
+    @Test
+    public void invokeTestPKPExamples() {
+        for (int i = 0; i <= 30; i++) {
+            testPartialKeyPairExamples();
+        }
+    }
+
     //@Test
     public void testPartialKeyPairExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
