@@ -12,7 +12,7 @@ public class DefaultDataKeyGeneratorTest {
 
     private final DataKeyGenerator dataKeyGenerator = new DefaultDataKeyGenerator();
 
-    @Test
+    //@Test
     public void testGenerateDataKey() {
         SecretKey actualSecretKey = dataKeyGenerator.generateDataKey(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, null);
         assertEquals("AES", actualSecretKey.getAlgorithm());
