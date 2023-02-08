@@ -1,5 +1,6 @@
 package software.amazon.encryption.s3.examples;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -14,6 +15,8 @@ import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,6 +34,8 @@ public class PartialKeyPairExample {
     private static final String PUBLIC_KEY_OBJECT_KEY = appendTestSuffix("PublicKeyTestObject");
     private static final String PRIVATE_KEY_OBJECT_KEY = appendTestSuffix("PrivateKeyTestObject");
 
+    private static Provider provider;
+
     private static final Set<ObjectIdentifier> PARTIAL_KEY_PAIR_EXAMPLE_OBJECT_KEYS = Stream
             .of(PUBLIC_AND_PRIVATE_KEY_OBJECT_KEY, PUBLIC_KEY_OBJECT_KEY, PRIVATE_KEY_OBJECT_KEY)
             .map(k -> ObjectIdentifier.builder().key(k).build())
@@ -47,6 +52,9 @@ public class PartialKeyPairExample {
         useOnlyPublicKey(bucket);
         useOnlyPrivateKey(bucket);
         cleanup(bucket);
+
+        Security.addProvider(new BouncyCastleProvider());
+        provider = Security.getProvider("BC");
     }
 
     public static void useBothPublicAndPrivateKey(final String bucket) {
@@ -57,6 +65,7 @@ public class PartialKeyPairExample {
         // as part of the S3 putObject and getObject operations.
         S3Client s3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
+                .cryptoProvider(provider)
                 .build();
 
         // Call putObject to encrypt the object and upload it to S3
@@ -84,6 +93,7 @@ public class PartialKeyPairExample {
         // When you specify the public key alone, all GetObject calls will fail
         // because the private key is required to decrypt.
         S3Client s3Client = S3EncryptionClient.builder()
+                .cryptoProvider(provider)
                 .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
                 .build();
 
@@ -115,6 +125,7 @@ public class PartialKeyPairExample {
         // When you specify the private key alone, all PutObject calls will
         // fail because the public key is required to encrypt.
         S3Client s3ClientPrivateKeyOnly = S3EncryptionClient.builder()
+                .cryptoProvider(provider)
                 .rsaKeyPair(new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), null))
                 .build();
 
@@ -134,6 +145,7 @@ public class PartialKeyPairExample {
         // to successfully call PutObject so that the client which only has
         // a private key can call GetObject on a valid S3 Object.
         S3Client s3ClientPublicKeyOnly = S3EncryptionClient.builder()
+                .cryptoProvider(provider)
                 .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
                 .build();
 
