@@ -54,7 +54,12 @@ public class PutEncryptedObjectPipeline {
             return putObjectOnce(request, requestBody);
         } catch (final Exception exception) {
             System.out.println("subscriber reset, retrying once..");
-            return putObjectOnce(request, requestBody);
+            try {
+                return putObjectOnce(request, requestBody);
+            } catch (final Exception exception1) {
+                System.out.println("that wasn't sufficient. ");
+                throw exception1;
+            }
         }
     }
 
