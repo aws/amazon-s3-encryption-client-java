@@ -4,6 +4,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.BinaryUtils;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
+import software.amazon.encryption.s3.SubscriberResetException;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
@@ -41,7 +42,11 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // Either the cipher was never init'd or we are attempting to reinit
                 // with the same key/IV. The latter is true when retrying.
                 exception.printStackTrace();
-                throw exception;
+                System.out.println("contentRead is " + contentRead);
+                System.out.println("contentLength is " + contentLength);
+                System.out.println("amtToReadFromBuffer is " + amountToReadFromByteBuffer);
+                System.out.println("buflen is " + buf.length);
+                throw new SubscriberResetException(exception.getMessage(), exception);
             }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
                 // The underlying data is too short to fill in the block cipher
