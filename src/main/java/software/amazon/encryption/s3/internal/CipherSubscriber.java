@@ -8,10 +8,13 @@ import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final AtomicLong contentRead = new AtomicLong(0);
+    // true means doFinal was called
+    private final AtomicBoolean finalized = new AtomicBoolean(false);
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
     private final Cipher cipher;
     private final Long contentLength;
@@ -27,6 +30,12 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onSubscribe(Subscription s) {
+        if (finalized.get()) {
+            System.out.println("cipher already finalized!");
+            System.out.println("canceling the subscription");
+            s.cancel();
+            //wrappedSubscriber.onComplete();
+        }
         System.out.println("subscribing..");
         this.subscription = s;
         wrappedSubscriber.onSubscribe(s);
@@ -120,13 +129,15 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         try {
             outputBuffer = cipher.doFinal();
             System.out.println("doFinal called successfully.");
-            System.out.println("contentRead is " + contentRead);
-            System.out.println("contentLength is " + contentLength);
+            System.out.println("complete contentRead is " + contentRead);
+            System.out.println("complete contentLength is " + contentLength);
             // Send the final bytes to the wrapped subscriber
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
+            finalized.compareAndSet(false, true);
         } catch (final GeneralSecurityException exception) {
             throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
         }
         wrappedSubscriber.onComplete();
+        System.out.println("complete!");
     }
 }
