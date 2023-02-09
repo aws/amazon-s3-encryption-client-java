@@ -89,8 +89,9 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
                 // Alternatively, it's possible that this is just a race condition, not a retry?
                 // The boolean guard isn't working; this implies race condition.
-                // Let's try doing nothing.
-                System.out.println("returning from onNext without doing anything..");
+                // Let's try signaling completion.
+                System.out.println("attempting completion of stream..");
+                wrappedSubscriber.onComplete();
                 return;
             }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
