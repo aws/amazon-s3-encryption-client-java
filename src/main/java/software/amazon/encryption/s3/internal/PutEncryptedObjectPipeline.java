@@ -5,7 +5,6 @@ import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.encryption.s3.SubscriberResetException;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
@@ -53,7 +52,7 @@ public class PutEncryptedObjectPipeline {
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {
         try {
             return putObjectOnce(request, requestBody);
-        } catch (final SubscriberResetException exception) {
+        } catch (final Exception exception) {
             System.out.println("subscriber reset, retrying once..");
             return putObjectOnce(request, requestBody);
         }
