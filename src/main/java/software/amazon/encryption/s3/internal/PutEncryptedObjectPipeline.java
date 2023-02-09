@@ -32,7 +32,7 @@ public class PutEncryptedObjectPipeline {
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
     }
 
-    public CompletableFuture<PutObjectResponse> putObjectOnce(PutObjectRequest request, AsyncRequestBody requestBody) {
+    public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {
         EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
                 .s3Request(request)
                 .plaintextLength(requestBody.contentLength().orElse(-1L));
@@ -45,22 +45,6 @@ public class PutEncryptedObjectPipeline {
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
         PutObjectRequest encryptedPutRequest = request.toBuilder().metadata(metadata).build();
         return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
-    }
-
-    // TODO: Just a POC, retries should be taken from the wrapped client
-    // The wrapped client can't retry on its own because the cipher doesn't get reset
-    public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {
-        try {
-            return putObjectOnce(request, requestBody);
-        } catch (final Exception exception) {
-            System.out.println("subscriber reset, retrying once..");
-            try {
-                return putObjectOnce(request, requestBody);
-            } catch (final Exception exception1) {
-                System.out.println("that wasn't sufficient. ");
-                throw exception1;
-            }
-        }
     }
 
     public static class Builder {
