@@ -76,15 +76,22 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // implementations of the same idea. The salient difference is that the aux cipher would do a
                 // better job when the "reset" is not at the beginning of the stream. If the reset always goes
                 // back to the beginning, we might as well just reset the cipher and start over with the same IV.
-                System.out.println("illegalstateexception, cipher probably was reinitialized..");
-                System.out.println("contentRead is " + contentRead);
-                System.out.println("contentLength is " + contentLength);
-                System.out.println("amtToReadFromBuffer is " + amountToReadFromByteBuffer);
-                System.out.println("buflen is " + buf.length);
+
+//                System.out.println("illegalstateexception, cipher probably was reinitialized..");
+//                System.out.println("contentRead is " + contentRead);
+//                System.out.println("contentLength is " + contentLength);
+//                System.out.println("amtToReadFromBuffer is " + amountToReadFromByteBuffer);
+//                System.out.println("buflen is " + buf.length);
                 exception.printStackTrace();
-                subscription.cancel();
-                wrappedSubscriber.onError(exception);
+//                subscription.cancel();
+//                wrappedSubscriber.onError(exception);
                 //throw new SubscriberResetException(exception.getMessage(), exception);
+
+                // Alternatively, it's possible that this is just a race condition, not a retry?
+                // The boolean guard isn't working; this implies race condition.
+                // Let's try doing nothing.
+                System.out.println("returning from onNext without doing anything..");
+                return;
             }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
                 // The underlying data is too short to fill in the block cipher
@@ -95,6 +102,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
         } else {
             // Do nothing
+            System.out.println("doing nothing!");
             wrappedSubscriber.onNext(byteBuffer);
         }
     }
@@ -128,12 +136,12 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     public void onComplete() {
         try {
             outputBuffer = cipher.doFinal();
+            finalized.compareAndSet(false, true);
             System.out.println("doFinal called successfully.");
             System.out.println("complete contentRead is " + contentRead);
             System.out.println("complete contentLength is " + contentLength);
             // Send the final bytes to the wrapped subscriber
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
-            finalized.compareAndSet(false, true);
         } catch (final GeneralSecurityException exception) {
             throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
         }
