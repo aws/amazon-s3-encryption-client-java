@@ -4,7 +4,6 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.BinaryUtils;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
-import software.amazon.encryption.s3.SubscriberResetException;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
@@ -76,7 +75,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 exception.printStackTrace();
                 subscription.cancel();
                 wrappedSubscriber.onError(exception);
-                throw new SubscriberResetException(exception.getMessage(), exception);
+                //throw new SubscriberResetException(exception.getMessage(), exception);
             }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
                 // The underlying data is too short to fill in the block cipher

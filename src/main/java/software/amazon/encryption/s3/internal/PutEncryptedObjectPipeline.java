@@ -44,6 +44,7 @@ public class PutEncryptedObjectPipeline {
         Map<String, String> metadata = new HashMap<>(request.metadata());
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
         PutObjectRequest encryptedPutRequest = request.toBuilder().metadata(metadata).build();
+        System.out.println("attempting to put " + request.key() + " with IV " + new String(encryptedContent.getNonce()));
         return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
     }
 
