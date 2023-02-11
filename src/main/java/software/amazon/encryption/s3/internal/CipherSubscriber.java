@@ -36,6 +36,12 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         if (amountToReadFromByteBuffer > 0) {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
             outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
+            if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
+                // The underlying data is too short to fill in the block cipher
+                // This is true at the end of the file, so complete to get the final
+                // bytes
+                this.onComplete();
+            }
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
         } else {
             // Do nothing

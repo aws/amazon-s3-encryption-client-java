@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 public class S3EncryptionClientRsaKeyPairTest {
@@ -31,7 +32,7 @@ public class S3EncryptionClientRsaKeyPairTest {
 
     @Test
     public void RsaPublicAndPrivateKeys() {
-        final String objectKey = "rsa-public-and-private";
+        final String objectKey = appendTestSuffix("rsa-public-and-private");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -58,7 +59,7 @@ public class S3EncryptionClientRsaKeyPairTest {
 
     @Test
     public void RsaPrivateKeyCanOnlyDecrypt() {
-        final String objectKey = "rsa-private-key-only";
+        final String objectKey = appendTestSuffix("rsa-private-key-only");
         S3Client v3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
@@ -91,7 +92,7 @@ public class S3EncryptionClientRsaKeyPairTest {
 
     @Test
     public void RsaPublicKeyCanOnlyEncrypt() {
-        final String objectKey = "rsa-public-key-only";
+        final String objectKey = appendTestSuffix("rsa-public-key-only");
         S3Client v3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
                 .build();

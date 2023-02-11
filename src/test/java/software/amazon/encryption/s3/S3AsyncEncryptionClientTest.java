@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 public class S3AsyncEncryptionClientTest {
@@ -53,7 +54,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void putAsyncGetDefault() {
-        final String objectKey = "put-async-get-default";
+        final String objectKey = appendTestSuffix("put-async-get-default");
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
@@ -86,7 +87,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void putDefaultGetAsync() {
-        final String objectKey = "put-default-get-async";
+        final String objectKey = appendTestSuffix("put-default-get-async");
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
@@ -119,7 +120,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void aesCbcV1toV3Async() {
-        final String objectKey = "aes-cbc-v1-to-v3-async";
+        final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-async");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -154,8 +155,44 @@ public class S3AsyncEncryptionClientTest {
     }
 
     @Test
+    public void AsyncAesGcmV2toV3WithInstructionFile() {
+        final String objectKey = appendTestSuffix("async-aes-gcm-v2-to-v3-with-instruction-file");
+
+        // V2 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Async Client
+        S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // Asserts
+        final String input = "AesGcmV2toV3";
+        v2Client.putObject(BUCKET, objectKey, input);
+
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureGet = v3AsyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncResponseTransformer.toBytes());
+        String outputAsync = futureGet.join().asUtf8String();
+        assertEquals(input, outputAsync);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3AsyncClient);
+        v3AsyncClient.close();
+    }
+
+    @Test
     public void deleteObjectWithInstructionFileSuccessAsync() {
-        final String objectKey = "async-delete-object-with-instruction-file";
+        final String objectKey = appendTestSuffix("async-delete-object-with-instruction-file");
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -198,9 +235,9 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void deleteObjectsWithInstructionFilesSuccessAsync() {
-        final String[] objectKeys = {"async-delete-object-with-instruction-file-1",
-                "async-delete-object-with-instruction-file-2",
-                "async-delete-object-with-instruction-file-3"};
+        final String[] objectKeys = {appendTestSuffix("async-delete-object-with-instruction-file-1"),
+                appendTestSuffix("async-delete-object-with-instruction-file-2"),
+                appendTestSuffix("async-delete-object-with-instruction-file-3")};
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
