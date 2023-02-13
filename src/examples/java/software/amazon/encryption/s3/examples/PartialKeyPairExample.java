@@ -15,6 +15,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -99,9 +100,10 @@ public class PartialKeyPairExample {
                     .bucket(bucket)
                     .key(PUBLIC_KEY_OBJECT_KEY));
             fail("Expected exception! No private key provided for decryption.");
-        } catch (final S3EncryptionClientException exception) {
+        } catch (CompletionException e) {
             // This is expected; the s3Client cannot successfully call getObject
             // when instantiated with a public key.
+            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
         }
 
         // Close the client

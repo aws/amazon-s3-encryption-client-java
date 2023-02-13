@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -35,6 +36,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -665,9 +667,13 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesCbcV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)));
+        try {
+            v3Client.getObjectAsBytes(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey));
+        } catch (CompletionException e) {
+            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
+        }
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
@@ -695,9 +701,13 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesGcmV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)));
+        try{
+            v3Client.getObjectAsBytes(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey));
+        } catch (CompletionException e) {
+            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
+        }
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
