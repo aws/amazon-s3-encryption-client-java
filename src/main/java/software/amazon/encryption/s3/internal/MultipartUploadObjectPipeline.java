@@ -6,7 +6,6 @@ import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
@@ -33,8 +32,6 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 public class MultipartUploadObjectPipeline {
-
-    final private S3Client _s3Client;
     final private S3AsyncClient _s3AsyncClient;
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
@@ -45,8 +42,7 @@ public class MultipartUploadObjectPipeline {
     private final Map<String, MultipartUploadContext> _multipartUploadContexts;
 
     private MultipartUploadObjectPipeline(Builder builder) {
-        this._s3Client = builder._s3Client;
-        this._s3AsyncClient = S3AsyncClient.create(); // TODO plumbing
+        this._s3AsyncClient = builder._s3AsyncClient; // TODO plumbing
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
@@ -69,7 +65,7 @@ public class MultipartUploadObjectPipeline {
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
         request = request.toBuilder().metadata(metadata).build();
 
-        CreateMultipartUploadResponse response = _s3Client.createMultipartUpload(request);
+        CreateMultipartUploadResponse response = _s3AsyncClient.createMultipartUpload(request).join();
 
         MultipartUploadContext multipartUploadContext = new MultipartUploadContext(encryptedContent.getCipher());
         _multipartUploadContexts.put(response.uploadId(), multipartUploadContext);
@@ -131,7 +127,7 @@ public class MultipartUploadObjectPipeline {
                     "Unable to complete an encrypted multipart upload without being told which part was the last.  "
                             + "Without knowing which part was the last, the encrypted data in Amazon S3 is incomplete and corrupt.");
         }
-        CompleteMultipartUploadResponse response = _s3Client.completeMultipartUpload(request);
+        CompleteMultipartUploadResponse response = _s3AsyncClient.completeMultipartUpload(request).join();
 
         _multipartUploadContexts.remove(uploadId);
         return response;
@@ -139,7 +135,7 @@ public class MultipartUploadObjectPipeline {
 
     public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request) {
         _multipartUploadContexts.remove(request.uploadId());
-        return _s3Client.abortMultipartUpload(request);
+        return _s3AsyncClient.abortMultipartUpload(request).join();
     }
 
     public void putLocalObject(RequestBody requestBody, String uploadId, OutputStream os) throws IOException {
@@ -162,7 +158,7 @@ public class MultipartUploadObjectPipeline {
         private final Map<String, MultipartUploadContext> _multipartUploadContexts =
                 Collections.synchronizedMap(new HashMap<>());
         private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
-        private S3Client _s3Client;
+        private S3AsyncClient _s3AsyncClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         // To Create Cipher which is used in during uploadPart requests.
@@ -176,8 +172,8 @@ public class MultipartUploadObjectPipeline {
          * S3Client will be reflected in this Builder.
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
-        public Builder s3Client(S3Client s3Client) {
-            this._s3Client = s3Client;
+        public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
+            this._s3AsyncClient = s3AsyncClient;
             return this;
         }
 

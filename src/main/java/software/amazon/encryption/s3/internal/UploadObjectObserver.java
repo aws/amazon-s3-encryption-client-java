@@ -1,8 +1,8 @@
 package software.amazon.encryption.s3.internal;
 
 import org.apache.commons.logging.LogFactory;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
@@ -25,14 +25,14 @@ public class UploadObjectObserver {
     private final List<Future<Map<Integer, UploadPartResponse>>> futures = new ArrayList<>();
     private PutObjectRequest request;
     private String uploadId;
-    private S3Client s3Client;
+    private S3AsyncClient s3AsyncClient;
     private S3EncryptionClient s3EncryptionClient;
     private ExecutorService es;
 
     public UploadObjectObserver init(PutObjectRequest req,
-                                     S3Client s3Client, S3EncryptionClient s3EncryptionClient, ExecutorService es) {
+                                     S3AsyncClient s3AsyncClient, S3EncryptionClient s3EncryptionClient, ExecutorService es) {
         this.request = req;
-        this.s3Client = s3Client;
+        this.s3AsyncClient = s3AsyncClient;
         this.s3EncryptionClient = s3EncryptionClient;
         this.es = es;
         return this;
@@ -65,7 +65,7 @@ public class UploadObjectObserver {
                 // Upload the ciphertext directly via the non-encrypting
                 // s3 client
                 try {
-                    return uploadPart(reqUploadPart, RequestBody.fromFile(part));
+                    return uploadPart(reqUploadPart, AsyncRequestBody.fromFile(part));
                 } finally {
                     // clean up part already uploaded
                     if (!part.delete()) {
@@ -115,10 +115,10 @@ public class UploadObjectObserver {
                 .build();
     }
 
-    protected Map<Integer, UploadPartResponse> uploadPart(UploadPartRequest reqUploadPart, RequestBody requestBody) {
+    protected Map<Integer, UploadPartResponse> uploadPart(UploadPartRequest reqUploadPart, AsyncRequestBody requestBody) {
         // Upload the ciphertext directly via the non-encrypting
         // s3 client
-        return Collections.singletonMap(reqUploadPart.partNumber(), s3Client.uploadPart(reqUploadPart, requestBody));
+        return Collections.singletonMap(reqUploadPart.partNumber(), s3AsyncClient.uploadPart(reqUploadPart, requestBody).join());
     }
 
     public List<Future<Map<Integer, UploadPartResponse>>> futures() {
