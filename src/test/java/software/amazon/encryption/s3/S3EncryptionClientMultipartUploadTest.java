@@ -3,6 +3,7 @@ package software.amazon.encryption.s3;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -48,11 +49,11 @@ public class S3EncryptionClientMultipartUploadTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    @RepeatedTest(30)
     public void multipartPutObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object");
 
-        final long fileSizeLimit = 1024 * 1024 * 500;
+        final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
 
@@ -86,7 +87,7 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
-    //@Test
+    ////@Test
     public void multipartUploadV3OutputStream() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream");
 
