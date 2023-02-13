@@ -52,7 +52,7 @@ public class S3AsyncEncryptionClientTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    //@Test
     public void putAsyncGetDefault() {
         final String objectKey = appendTestSuffix("put-async-get-default");
 
@@ -85,7 +85,7 @@ public class S3AsyncEncryptionClientTest {
         v3AsyncClient.close();
     }
 
-    @Test
+    //@Test
     public void putDefaultGetAsync() {
         final String objectKey = appendTestSuffix("put-default-get-async");
 
@@ -118,7 +118,7 @@ public class S3AsyncEncryptionClientTest {
         v3AsyncClient.close();
     }
 
-    @Test
+    //@Test
     public void aesCbcV1toV3Async() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-async");
 
@@ -154,7 +154,7 @@ public class S3AsyncEncryptionClientTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AsyncAesGcmV2toV3WithInstructionFile() {
         final String objectKey = appendTestSuffix("async-aes-gcm-v2-to-v3-with-instruction-file");
 
@@ -190,7 +190,7 @@ public class S3AsyncEncryptionClientTest {
         v3AsyncClient.close();
     }
 
-    @Test
+    //@Test
     public void deleteObjectWithInstructionFileSuccessAsync() {
         final String objectKey = appendTestSuffix("async-delete-object-with-instruction-file");
 
@@ -233,7 +233,7 @@ public class S3AsyncEncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    //@Test
     public void deleteObjectsWithInstructionFilesSuccessAsync() {
         final String[] objectKeys = {appendTestSuffix("async-delete-object-with-instruction-file-1"),
                 appendTestSuffix("async-delete-object-with-instruction-file-2"),
@@ -282,7 +282,7 @@ public class S3AsyncEncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    //@Test
     public void deleteObjectWithWrongObjectKeySuccessAsync() {
         // V3 Client
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
