@@ -4,18 +4,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
-public class StreamingAesGcmContentStrategy implements ContentDecryptionStrategy, AsyncContentEncryptionStrategy, MultipartContentEncryptionStrategy {
+public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStrategy, MultipartContentEncryptionStrategy {
 
     final private SecureRandom _secureRandom;
 
@@ -47,23 +43,6 @@ public class StreamingAesGcmContentStrategy implements ContentDecryptionStrategy
 
         AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(cipher, content, materials.getCiphertextLength());
         return new EncryptedContent(nonce, encryptedAsyncRequestBody, materials.getCiphertextLength());
-    }
-
-    @Override
-    public InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials,
-                                      InputStream ciphertextStream) {
-
-        AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
-        SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
-        final int tagLength = algorithmSuite.cipherTagLengthBits();
-        byte[] iv = contentMetadata.contentNonce();
-        try {
-            final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
-            cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
-            return new AuthenticatedCipherInputStream(ciphertextStream, cipher);
-        } catch (GeneralSecurityException e) {
-            throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
-        }
     }
 
     private Cipher prepareCipher(EncryptionMaterials materials, byte[] nonce) {

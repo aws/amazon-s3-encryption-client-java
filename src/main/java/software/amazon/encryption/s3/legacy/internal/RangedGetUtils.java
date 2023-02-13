@@ -4,9 +4,7 @@ import org.reactivestreams.Subscriber;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Utilities for processing Ranged Get functions.
@@ -84,40 +82,6 @@ public class RangedGetUtils {
         }
         try {
             return new AdjustedRangeSubscriber(subscriber, range[0], range[1]);
-        } catch (IOException e) {
-            throw new S3EncryptionClientException("Error adjusting output to desired byte range: " + e.getMessage());
-        }
-    }
-
-    public static InputStream adjustToDesiredRange(InputStream plaintext, long[] range, String contentRange, int cipherTagLengthBits) {
-        if (range == null || contentRange == null) {
-            return plaintext;
-        }
-        final long instanceLength;
-        int pos = contentRange.lastIndexOf("/");
-        instanceLength = Long.parseLong(contentRange.substring(pos + 1));
-
-        final long maxOffset = instanceLength - (cipherTagLengthBits / 8) - 1;
-        if (range[1] > maxOffset) {
-            range[1] = maxOffset;
-            if (range[0] > range[1]) {
-                // Close existing input stream to avoid resource leakage,
-                // return empty input stream
-                try {
-                    if (plaintext != null)
-                        plaintext.close();
-                } catch (IOException e) {
-                    throw new RuntimeException("Error while closing the Input Stream" + e.getMessage());
-                }
-                return new ByteArrayInputStream(new byte[0]);
-            }
-        }
-        if (range[0] > range[1]) {
-            // Make no modifications if range is invalid.
-            return plaintext;
-        }
-        try {
-            return new AdjustedRangeInputStream(plaintext, range[0], range[1]);
         } catch (IOException e) {
             throw new S3EncryptionClientException("Error adjusting output to desired byte range: " + e.getMessage());
         }
