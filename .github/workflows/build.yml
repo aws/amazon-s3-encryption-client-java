@@ -52,8 +52,8 @@ jobs:
           export AWS_REGION=us-west-2
           mvn -B -ntp test -DskipCompile
         shell: bash
-        
+
       - name: Package JAR
         run: |
-          mvn install _DskipTests
+          mvn install -DskipTests
         shell: bash
