@@ -89,7 +89,7 @@ abstract public class S3Keyring implements Keyring {
         }
 
         if (decryptStrategy.isLegacy() && !_enableLegacyWrappingAlgorithms) {
-            throw new S3EncryptionClientException("Enable legacy keyring to use legacy key wrap: " + keyProviderInfo);
+            throw new S3EncryptionClientException("Enable legacy wrapping algorithms to use legacy key wrapping algorithm: " + keyProviderInfo);
         }
 
         try {

@@ -79,7 +79,7 @@ public class GetEncryptedObjectPipeline {
                            ResponseTransformer<GetObjectResponse, T> responseTransformer) {
         ResponseInputStream<GetObjectResponse> objectStream;
         if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
-            throw new S3EncryptionClientException("Enable unauthenticated modes to use Ranged Get.");
+            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
         }
         objectStream = _s3Client.getObject(getObjectRequest
                 .toBuilder()
@@ -109,7 +109,7 @@ public class GetEncryptedObjectPipeline {
                                                             final ContentMetadata contentMetadata) {
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
-            throw new S3EncryptionClientException("Enable unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
+            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
         }
 
         List<EncryptedDataKey> encryptedDataKeys = Collections.singletonList(contentMetadata.encryptedDataKey());
