@@ -144,7 +144,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
     @Test
     public void AsyncAesCbcV1toV3RangedGet() {
-        final String objectKey = "aes-cbc-v1-to-v3-ranged-get-async";
+        final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get-async");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
