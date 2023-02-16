@@ -64,6 +64,7 @@ public class S3EncryptionClient implements S3Client {
     public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
 
     private final S3Client _wrappedClient;
+    private S3AsyncClient _wrappedAsyncClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyUnauthenticatedModes;
@@ -102,7 +103,8 @@ public class S3EncryptionClient implements S3Client {
             throws AwsServiceException, SdkClientException {
 
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
-                .s3AsyncClient(_enableMultipartPutObject?S3AsyncClient.crtCreate():S3AsyncClient.create())
+                .s3AsyncClient(_wrappedAsyncClient)
+                .enableMultipartPutObject(_enableMultipartPutObject)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();

@@ -38,17 +38,19 @@ import java.util.function.Function;
 
 public class S3AsyncEncryptionClient implements S3AsyncClient {
 
-    private final S3AsyncClient _wrappedClient;
+    private S3AsyncClient _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
+    private final boolean _enableMultipartPutObject;
 
     private S3AsyncEncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
+        _enableMultipartPutObject = builder._enableMultipartPutObject;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
     }
 
@@ -67,6 +69,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
             throws AwsServiceException, SdkClientException {
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
+                .enableMultipartPutObject(_enableMultipartPutObject)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
@@ -134,6 +137,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
         private String _kmsKeyId;
         private boolean _enableLegacyUnauthenticatedModes = false;
         private boolean _enableDelayedAuthenticationMode = false;
+        private boolean _enableMultipartPutObject = false;
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
 
@@ -227,6 +231,11 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
 
         public Builder enableDelayedAuthenticationMode(boolean shouldEnableDelayedAuthenticationMode) {
             this._enableDelayedAuthenticationMode = shouldEnableDelayedAuthenticationMode;
+            return this;
+        }
+
+        public Builder enableMultipartPutObject(boolean _enableMultipartPutObject) {
+            this._enableMultipartPutObject = _enableMultipartPutObject;
             return this;
         }
 

@@ -3,11 +3,13 @@ package software.amazon.encryption.s3;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
@@ -30,14 +32,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.S3EncryptionClient.isLastPart;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.*;
 
 public class S3EncryptionClientMultipartUploadTest {
     private static SecretKey AES_KEY;
@@ -86,6 +87,45 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
     }
+
+    @Test
+    public void multipartPutObjectAsync() throws IOException {
+        final String objectKey = appendTestSuffix("multipart-put-object");
+
+        final long fileSizeLimit = 1024 * 1024 * 100;
+        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
+
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
+
+        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .enableMultipartPutObject(true)
+                .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(provider)
+                .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+        v3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, Executors.newSingleThreadExecutor())).join();
+
+        // Asserts
+        ResponseInputStream<GetObjectResponse> output = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+                .key(objectKey), AsyncResponseTransformer.toBlockingInputStream()).join();
+
+        assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
+
+        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+        v3Client.close();
+    }
+
 
     @Test
     public void multipartUploadV3OutputStream() throws IOException {
