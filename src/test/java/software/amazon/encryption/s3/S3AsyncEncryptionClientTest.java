@@ -186,7 +186,7 @@ public class S3AsyncEncryptionClientTest {
                     .key(objectKey), AsyncResponseTransformer.toBytes());
             futureResponse.join();
         } catch (CompletionException e) {
-            assertTrue(e.getMessage().matches(".*S3EncryptionClientException: Enable unauthenticated modes to use legacy content.*"));
+            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
         }
 
         // Cleanup

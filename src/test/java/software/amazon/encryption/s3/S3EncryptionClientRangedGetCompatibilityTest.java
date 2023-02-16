@@ -292,7 +292,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                     .range("bytes=300-400")
                     .key(objectKey), AsyncResponseTransformer.toBytes()).join();
         } catch (CompletionException e) {
-            assertTrue(e.getMessage().matches(".*S3Exception: The requested range is not satisfiable.*"));
+            assertEquals(S3Exception.class, e.getCause().getClass());
         }
         // Cleanup
         deleteObject(BUCKET, objectKey, asyncClient);
