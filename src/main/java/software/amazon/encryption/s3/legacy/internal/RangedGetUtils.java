@@ -5,6 +5,7 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Utilities for processing Ranged Get functions.
