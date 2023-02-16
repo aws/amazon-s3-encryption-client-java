@@ -64,7 +64,7 @@ public class S3EncryptionClient implements S3Client {
     public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
 
     private final S3Client _wrappedClient;
-    private S3AsyncClient _wrappedAsyncClient;
+    private final S3AsyncClient _wrappedAsyncClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyUnauthenticatedModes;
@@ -74,6 +74,7 @@ public class S3EncryptionClient implements S3Client {
 
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
+        _wrappedAsyncClient = builder._wrappedAsyncClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
@@ -202,6 +203,8 @@ public class S3EncryptionClient implements S3Client {
     }
 
     public static class Builder {
+        // TODO: Other PR adds Async Client as default wrapped client
+        private S3AsyncClient _wrappedAsyncClient = S3AsyncClient.builder().build();
         private S3Client _wrappedClient = S3Client.builder().build();
 
         private MultipartUploadObjectPipeline _multipartPipeline;
