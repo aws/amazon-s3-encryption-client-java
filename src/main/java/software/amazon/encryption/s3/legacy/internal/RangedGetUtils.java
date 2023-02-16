@@ -56,32 +56,40 @@ public class RangedGetUtils {
         return upperBound < 0 ? Long.MAX_VALUE : upperBound;
     }
 
-    public static Subscriber adjustToDesiredRange(Subscriber subscriber, long[] range, String contentRange, int cipherTagLengthBits) {
-        if (range == null || contentRange == null) {
-            return subscriber;
-        }
+    private static long calculateMaxOffset(String contentRange, int cipherTagLengthBits) {
         final long instanceLength;
         int pos = contentRange.lastIndexOf("/");
         instanceLength = Long.parseLong(contentRange.substring(pos + 1));
 
-        final long maxOffset = instanceLength - (cipherTagLengthBits / 8) - 1;
-        if (range[1] > maxOffset) {
-            range[1] = maxOffset;
-            if (range[0] > range[1]) {
-                // TODO: Find a way to handle subscriber similar to Empty InputStream (this resolves one edge case error in CBC)
+        return instanceLength - (cipherTagLengthBits / 8) - 1;
+    }
+
+    public static Subscriber<? super ByteBuffer> adjustToDesiredRange(Subscriber<? super ByteBuffer> subscriber, long[] cryptoRange, String contentRange, int cipherTagLengthBits) {
+        if (cryptoRange == null || contentRange == null) {
+            return subscriber;
+        }
+
+        final long maxOffset = calculateMaxOffset(contentRange, cipherTagLengthBits);
+        if (cryptoRange[1] > maxOffset) {
+            cryptoRange[1] = maxOffset;
+            if (cryptoRange[0] > cryptoRange[1]) {
+                // When the beginning of the crypto range is after the max offset,
+                // there is no data to read. The current implementation of
+                // AdjustedRangeSubscriber handles this case itself,
+                // but this might as well be a Null/Noop Subscriber
                 try {
-                    return new AdjustedRangeSubscriber(subscriber, range[0], range[1]);
+                    return new AdjustedRangeSubscriber(subscriber, cryptoRange[0], cryptoRange[1]);
                 } catch (IOException e) {
                     throw new S3EncryptionClientException(e.getMessage());
                 }
             }
         }
-        if (range[0] > range[1]) {
+        if (cryptoRange[0] > cryptoRange[1]) {
             // Make no modifications if range is invalid.
             return subscriber;
         }
         try {
-            return new AdjustedRangeSubscriber(subscriber, range[0], range[1]);
+            return new AdjustedRangeSubscriber(subscriber, cryptoRange[0], cryptoRange[1]);
         } catch (IOException e) {
             throw new S3EncryptionClientException("Error adjusting output to desired byte range: " + e.getMessage());
         }
