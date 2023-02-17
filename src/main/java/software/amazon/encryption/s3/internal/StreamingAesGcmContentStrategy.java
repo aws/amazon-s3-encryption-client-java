@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
-public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy, AsyncContentEncryptionStrategy, MultipartContentEncryptionStrategy {
+public class StreamingAesGcmContentStrategy implements ContentDecryptionStrategy, AsyncContentEncryptionStrategy, MultipartContentEncryptionStrategy {
 
     final private SecureRandom _secureRandom;
 
@@ -28,14 +28,6 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
     }
 
     @Override
-    public EncryptedContent encryptContent(EncryptionMaterials materials, InputStream content) {
-        final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
-        final Cipher cipher = prepareCipher(materials, nonce);
-        final InputStream ciphertext = new AuthenticatedCipherInputStream(content, cipher);
-        return new EncryptedContent(nonce, ciphertext, materials.getCiphertextLength());
-    }
-
-    @Override
     public EncryptedContent initMultipartEncryption(EncryptionMaterials materials) {
         final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
         final Cipher cipher = prepareCipher(materials, nonce);
@@ -45,6 +37,11 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
 
     @Override
     public EncryptedContent encryptContent(EncryptionMaterials materials, AsyncRequestBody content) {
+        if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
+                    "the maximum length allowed for GCM encryption.");
+        }
+
         final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
         final Cipher cipher = prepareCipher(materials, nonce);
 

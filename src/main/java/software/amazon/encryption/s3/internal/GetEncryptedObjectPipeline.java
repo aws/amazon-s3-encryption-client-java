@@ -43,6 +43,8 @@ public class GetEncryptedObjectPipeline {
     private final S3Client _s3Client;
     private final S3AsyncClient _s3AsyncClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
+    private final boolean _enableLegacyWrappingAlgorithms;
+
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthentication;
 
@@ -59,6 +61,7 @@ public class GetEncryptedObjectPipeline {
         }
         this._s3AsyncClient = builder._s3AsyncClient;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
+        this._enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
         this._enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         this._enableDelayedAuthentication = builder._enableDelayedAuthentication;
     }
@@ -199,11 +202,8 @@ public class GetEncryptedObjectPipeline {
                     case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
                         cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
                         break;
-                    case ALG_AES_256_CBC_IV16_NO_KDF:
-                        if (materials.s3Request().range() != null) {
-                            throw new UnsupportedOperationException();
-                        }
                     case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
+                    case ALG_AES_256_CBC_IV16_NO_KDF:
                         cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
                         break;
                     default:
@@ -222,6 +222,7 @@ public class GetEncryptedObjectPipeline {
         private S3Client _s3Client;
         private S3AsyncClient _s3AsyncClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
+        private boolean _enableLegacyWrappingAlgorithms;
         private boolean _enableLegacyUnauthenticatedModes;
         private boolean _enableDelayedAuthentication;
 
@@ -250,6 +251,11 @@ public class GetEncryptedObjectPipeline {
 
         public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
             this._cryptoMaterialsManager = cryptoMaterialsManager;
+            return this;
+        }
+
+        public Builder enableLegacyWrappingAlgorithms(boolean enableLegacyWrappingAlgorithms) {
+            this._enableLegacyWrappingAlgorithms = enableLegacyWrappingAlgorithms;
             return this;
         }
 

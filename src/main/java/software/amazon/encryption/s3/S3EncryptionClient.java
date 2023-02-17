@@ -3,10 +3,12 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
@@ -48,8 +50,10 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
@@ -72,6 +76,7 @@ public class S3EncryptionClient implements S3Client {
     private final S3Client _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
+    private final boolean _enableLegacyWrappingAlgorithms;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
     private final boolean _enableMultipartPutObject;
@@ -81,6 +86,7 @@ public class S3EncryptionClient implements S3Client {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
+        _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
         _enableMultipartPutObject = builder._enableMultipartPutObject;
@@ -126,13 +132,14 @@ public class S3EncryptionClient implements S3Client {
                 throw new S3EncryptionClientException("Exception while performing Multipart Upload PutObject", e);
             }
         }
-
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
-                .s3Client(_wrappedClient)
+                .s3AsyncClient(S3AsyncClient.create())
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
-        return pipeline.putObject(putObjectRequest, requestBody);
+
+        CompletableFuture<PutObjectResponse> futurePut = pipeline.putObject(putObjectRequest, AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(), requestBody.optionalContentLength().orElse(-1L), Executors.newSingleThreadExecutor()));
+        return futurePut.join();
     }
 
     @Override
@@ -143,6 +150,7 @@ public class S3EncryptionClient implements S3Client {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3Client(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
+                .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .build();
@@ -294,11 +302,12 @@ public class S3EncryptionClient implements S3Client {
         private SecretKey _aesKey;
         private PartialRsaKeyPair _rsaKeyPair;
         private String _kmsKeyId;
-        private boolean _enableLegacyUnauthenticatedModes = false;
+        private boolean _enableLegacyWrappingAlgorithms = false;
         private boolean _enableDelayedAuthenticationMode = false;
         private boolean _enableMultipartPutObject = false;
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
+        private boolean _enableLegacyUnauthenticatedModes = false;
 
         private Builder() {
         }
@@ -383,6 +392,11 @@ public class S3EncryptionClient implements S3Client {
             return haveOneNonNull;
         }
 
+        public Builder enableLegacyWrappingAlgorithms(boolean shouldEnableLegacyWrappingAlgorithms) {
+            this._enableLegacyWrappingAlgorithms = shouldEnableLegacyWrappingAlgorithms;
+            return this;
+        }
+
         public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
             this._enableLegacyUnauthenticatedModes = shouldEnableLegacyUnauthenticatedModes;
             return this;
@@ -420,19 +434,19 @@ public class S3EncryptionClient implements S3Client {
                 if (_aesKey != null) {
                     _keyring = AesKeyring.builder()
                             .wrappingKey(_aesKey)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                            .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                             .secureRandom(_secureRandom)
                             .build();
                 } else if (_rsaKeyPair != null) {
                     _keyring = RsaKeyring.builder()
                             .wrappingKeyPair(_rsaKeyPair)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                            .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                             .secureRandom(_secureRandom)
                             .build();
                 } else if (_kmsKeyId != null) {
                     _keyring = KmsKeyring.builder()
                             .wrappingKeyId(_kmsKeyId)
-                            .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
+                            .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                             .secureRandom(_secureRandom)
                             .build();
                 }

@@ -33,7 +33,7 @@ public class CipherPublisher implements SdkPublisher<ByteBuffer> {
     public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
         // Wrap the (customer) subscriber in a CipherSubscriber, then subscribe it
         // to the wrapped (ciphertext) publisher
-        Subscriber wrappedSubscriber = RangedGetUtils.adjustToDesiredRange(subscriber, range, contentRange, cipherTagLengthBits);
+        Subscriber<? super ByteBuffer> wrappedSubscriber = RangedGetUtils.adjustToDesiredRange(subscriber, range, contentRange, cipherTagLengthBits);
         wrappedPublisher.subscribe(new CipherSubscriber(wrappedSubscriber, cipher, contentLength));
     }
 }
