@@ -3,10 +3,12 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
@@ -48,8 +50,10 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
@@ -128,13 +132,14 @@ public class S3EncryptionClient implements S3Client {
                 throw new S3EncryptionClientException("Exception while performing Multipart Upload PutObject", e);
             }
         }
-
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
-                .s3Client(_wrappedClient)
+                .s3AsyncClient(S3AsyncClient.create())
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
-        return pipeline.putObject(putObjectRequest, requestBody);
+
+        CompletableFuture<PutObjectResponse> futurePut = pipeline.putObject(putObjectRequest, AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(), requestBody.optionalContentLength().orElse(-1L), Executors.newSingleThreadExecutor()));
+        return futurePut.join();
     }
 
     @Override
