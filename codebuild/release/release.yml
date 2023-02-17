@@ -69,7 +69,7 @@ batch:
       - validate_staging_release_corretto17
     buildspec: codebuild/release/version.yml
     env:
-      image: aws/codebuild/standard:5.0
+      image: aws/codebuild/standard:6.0
 
   # TODO for prod release: Release to Maven
 
@@ -82,8 +82,8 @@ batch:
       - version
     buildspec: codebuild/release/upload_artifacts.yml
     env:
-      # standard:5.0 (Ubuntu) supports GH CLI; AL2 does not
-      image: aws/codebuild/standard:5.0
+      # standard:6.0 (Ubuntu) supports GH CLI; AL2 does not
+      image: aws/codebuild/standard:6.0
 
   # Generate and update new javadocs
   - identifier: update_javadoc
