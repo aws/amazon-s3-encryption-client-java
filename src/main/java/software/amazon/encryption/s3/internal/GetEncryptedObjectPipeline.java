@@ -219,7 +219,6 @@ public class GetEncryptedObjectPipeline {
     }
 
     public static class Builder {
-
         private S3Client _s3Client;
         private S3AsyncClient _s3AsyncClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;

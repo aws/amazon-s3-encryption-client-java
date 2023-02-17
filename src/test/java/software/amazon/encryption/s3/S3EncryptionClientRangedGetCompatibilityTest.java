@@ -167,6 +167,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
