@@ -83,6 +83,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
@@ -118,7 +119,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyWrappingAlgorithms(true)
                 .build();
 
         // Asserts
@@ -310,7 +311,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .rsaKeyPair(RSA_KEY_PAIR)
-                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyWrappingAlgorithms(true)
                 .build();
 
         // Asserts
@@ -471,7 +472,7 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyWrappingAlgorithms(true)
                 .build();
 
         // Asserts
@@ -503,7 +504,6 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -551,7 +551,6 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -588,7 +587,6 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -617,7 +615,6 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Asserts
@@ -659,9 +656,78 @@ public class S3EncryptionClientCompatibilityTest {
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(false)
                 .enableLegacyUnauthenticatedModes(false)
                 .build();
 
+        final String input = "AesCbcV1toV3";
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void AesCbcV1toV3FailsWhenUnauthencticateModeDisabled() {
+        final String objectKey = "fails-aes-cbc-v1-to-v3-when-unauthencticate-mode-disabled";
+
+        // V1 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfiguration v1CryptoConfig =
+                new CryptoConfiguration(CryptoMode.EncryptionOnly);
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig)
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(false)
+                .build();
+
+        // Asserts
+        final String input = "AesCbcV1toV3";
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void AesCbcV1toV3FailsWhenLegacyKeyringDisabled() {
+        final String objectKey = "fails-aes-cbc-v1-to-v3-when-legacy-keyring-disabled";
+
+        // V1 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfiguration v1CryptoConfig =
+                new CryptoConfiguration(CryptoMode.EncryptionOnly);
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig)
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(false)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+
+        // Asserts
         final String input = "AesCbcV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
@@ -689,7 +755,7 @@ public class S3EncryptionClientCompatibilityTest {
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(false)
+                .enableLegacyWrappingAlgorithms(false)
                 .build();
 
         final String input = "AesGcmV1toV3";

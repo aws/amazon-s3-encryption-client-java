@@ -167,6 +167,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
@@ -369,7 +370,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                     .range("bytes=300-400")
                     .key(objectKey), AsyncResponseTransformer.toBytes()).join();
         } catch (CompletionException e) {
-            assertTrue(e.getMessage().matches(".*S3Exception: The requested range is not satisfiable.*"));
+            assertEquals(S3Exception.class, e.getCause().getClass());
         }
         // Cleanup
         deleteObject(BUCKET, objectKey, asyncClient);
@@ -403,6 +404,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
@@ -487,6 +489,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
