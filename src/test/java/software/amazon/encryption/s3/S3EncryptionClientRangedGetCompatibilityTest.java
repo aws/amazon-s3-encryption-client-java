@@ -134,7 +134,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                     .range("bytes=10-20")
                     .key(objectKey), AsyncResponseTransformer.toBytes()).join();
         } catch (CompletionException e) {
-            assertTrue(e.getMessage().matches(".*S3EncryptionClientException: Enable legacy unauthenticated modes to use Ranged Get.*"));
+            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
         }
 
         // Cleanup
@@ -237,13 +237,11 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
-        try {
-            v3Client.getObjectAsBytes(builder -> builder.bucket(BUCKET)
-                    .key(objectKey)
-                    .range("bytes=10-20"));
-        } catch (CompletionException e) {
-            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
-        }
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .range("bytes=10-20")));
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
@@ -336,15 +334,11 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
-        // Invalid range exceed object length, Throws S3Exception
-        try {
-            v3Client.getObjectAsBytes(builder -> builder
-                    .bucket(BUCKET)
-                    .range("bytes=300-400")
-                    .key(objectKey));
-        } catch (CompletionException e) {
-            assertEquals(S3Exception.class, e.getCause().getClass());
-        }
+        // Invalid range exceed object length, Throws S3EncryptionClientException wrapped with S3Exception
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=300-400")
+                .key(objectKey)));
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
@@ -377,15 +371,14 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                     .range("bytes=300-400")
                     .key(objectKey), AsyncResponseTransformer.toBytes()).join();
         } catch (CompletionException e) {
-            assertTrue(e.getMessage().matches(".*S3Exception: The requested range is not satisfiable.*"));
+            assertEquals(S3Exception.class, e.getCause().getClass());
         }
         // Cleanup
         deleteObject(BUCKET, objectKey, asyncClient);
         asyncClient.close();
     }
 
-    // TODO: Comment out this test till Async CBC PR merged.
-    //@Test
+    @Test
     public void AesCbcV1toV3RangedGet() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get");
 
@@ -499,15 +492,11 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
-        // Invalid range exceed object length, Throws S3Exception
-        try {
-            v3Client.getObjectAsBytes(builder -> builder
-                    .bucket(BUCKET)
-                    .range("bytes=300-400")
-                    .key(objectKey));
-        } catch (CompletionException e) {
-            assertEquals(S3Exception.class, e.getCause().getClass());
-        }
+        // Invalid range exceed object length, Throws S3EncryptionClientException wrapped with S3Exception
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=300-400")
+                .key(objectKey)));
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);

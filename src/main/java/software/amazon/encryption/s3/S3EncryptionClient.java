@@ -53,11 +53,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
@@ -157,9 +153,11 @@ public class S3EncryptionClient implements S3Client {
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .build();
 
-        ResponseBytes<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBytes()).join();
         try {
+            ResponseBytes<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBytes()).join();
             return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet.asInputStream()));
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage());
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
         }
