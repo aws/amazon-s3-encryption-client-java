@@ -33,10 +33,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -100,9 +102,9 @@ public class S3AsyncEncryptionClientTest {
         final String input = "PutDefaultGetAsync";
 
         v3Client.putObject(builder -> builder
-                        .bucket(BUCKET)
-                        .key(objectKey)
-                        .build(), RequestBody.fromString(input));
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
 
         CompletableFuture<ResponseBytes<GetObjectResponse>> futureGet = v3AsyncClient.getObject(builder -> builder
                 .bucket(BUCKET)
@@ -139,6 +141,7 @@ public class S3AsyncEncryptionClientTest {
         // V3 Client
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
@@ -148,6 +151,43 @@ public class S3AsyncEncryptionClientTest {
         ResponseBytes<GetObjectResponse> response = futureResponse.join();
         String output = response.asUtf8String();
         assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void failAesCbcV1toV3AsyncWhenDisabled() {
+        final String objectKey = appendTestSuffix("fail-aes-cbc-v1-to-v3-async-when-disabled");
+
+        // V1 Client
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        CryptoConfiguration v1CryptoConfig =
+                new CryptoConfiguration();
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig)
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST";
+
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        // V3 Client
+        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
+                .build();
+        try {
+            CompletableFuture<ResponseBytes<GetObjectResponse>> futureResponse = v3Client.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey), AsyncResponseTransformer.toBytes());
+            futureResponse.join();
+        } catch (CompletionException e) {
+            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
+        }
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
