@@ -30,12 +30,14 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
     public static final ContentMetadataDecodingStrategy INSTRUCTION_FILE = new ContentMetadataDecodingStrategy() {
 
         @Override
-        public ContentMetadata decodeMetadata(S3Client client, GetObjectRequest getObjectRequest, GetObjectResponse response) {
+        public ContentMetadata decodeMetadata(GetObjectRequest getObjectRequest, GetObjectResponse response) {
             GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
                     .bucket(getObjectRequest.bucket())
                     .key(getObjectRequest.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
-            ResponseInputStream<GetObjectResponse> instruction = client.getObject(
+
+            S3Client s3Client = S3Client.create();
+            ResponseInputStream<GetObjectResponse> instruction = s3Client.getObject(
                     instructionGetObjectRequest);
 
             Map<String, String> metadata = new HashMap<>();
@@ -76,7 +78,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         }
 
         @Override
-        public ContentMetadata decodeMetadata(S3Client client, GetObjectRequest request, GetObjectResponse response) {
+        public ContentMetadata decodeMetadata(GetObjectRequest request, GetObjectResponse response) {
             return ContentMetadataStrategy.readFromMap(response.metadata(), response);
         }
     };
@@ -165,7 +167,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                 .build();
     }
 
-    public static ContentMetadata decode(S3Client client, GetObjectRequest request, GetObjectResponse response) {
+    public static ContentMetadata decode(GetObjectRequest request, GetObjectResponse response) {
         Map<String, String> metadata = response.metadata();
         ContentMetadataDecodingStrategy strategy;
         if (metadata != null
@@ -177,6 +179,6 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             strategy = INSTRUCTION_FILE;
         }
 
-        return strategy.decodeMetadata(client, request, response);
+        return strategy.decodeMetadata(request, response);
     }
 }

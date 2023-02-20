@@ -25,7 +25,6 @@ import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -134,7 +133,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                     .range("bytes=10-20")
                     .key(objectKey), AsyncResponseTransformer.toBytes()).join();
         } catch (CompletionException e) {
-            assertTrue(e.getMessage().matches(".*S3EncryptionClientException: Enable legacy unauthenticated modes to use Ranged Get.*"));
+            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
         }
 
         // Cleanup
@@ -238,7 +237,9 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder.bucket(BUCKET)
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
                 .key(objectKey)
                 .range("bytes=10-20")));
 
@@ -333,8 +334,8 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
-        // Invalid range exceed object length, Throws S3Exception
-        assertThrows(S3Exception.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        // Invalid range exceed object length, Throws S3EncryptionClientException wrapped with S3Exception
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=300-400")
                 .key(objectKey)));
@@ -493,8 +494,8 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
-        // Invalid range exceed object length, Throws S3Exception
-        assertThrows(S3Exception.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        // Invalid range exceed object length, Throws S3EncryptionClientException wrapped with S3Exception
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=300-400")
                 .key(objectKey)));

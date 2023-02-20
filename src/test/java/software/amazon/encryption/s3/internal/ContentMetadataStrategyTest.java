@@ -50,7 +50,7 @@ public class ContentMetadataStrategyTest {
                 .contentNonce(bytes)
                 .build();
 
-        ContentMetadata contentMetadata = ContentMetadataStrategy.decode(mockS3client, getObjectRequest, getObjectResponse);
+        ContentMetadata contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, getObjectResponse);
         assertEquals(expectedContentMetadata.algorithmSuite(), contentMetadata.algorithmSuite());
         String actualContentNonce = Arrays.toString(contentMetadata.contentNonce());
         String expectedContentNonce = Arrays.toString(expectedContentMetadata.contentNonce());

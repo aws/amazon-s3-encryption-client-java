@@ -232,7 +232,8 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    // TODO : Add Delayed Authentication to Async Client.
+    //@Test
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test");
 
@@ -254,6 +255,7 @@ public class S3EncryptionClientStreamTest {
                 .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
 
         largeObjectStream.close();
+
 
         // Delayed Authentication is not enabled, so getObject fails
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder

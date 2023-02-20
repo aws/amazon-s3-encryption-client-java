@@ -3,11 +3,14 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
@@ -51,6 +54,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,6 +78,7 @@ public class S3EncryptionClient implements S3Client {
     public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
 
     private final S3Client _wrappedClient;
+    private final S3AsyncClient _wrappedAsyncClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyWrappingAlgorithms;
@@ -84,6 +89,7 @@ public class S3EncryptionClient implements S3Client {
 
     private S3EncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
+        _wrappedAsyncClient = builder._wrappedAsyncClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
         _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
@@ -133,7 +139,7 @@ public class S3EncryptionClient implements S3Client {
             }
         }
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
-                .s3AsyncClient(S3AsyncClient.create())
+                .s3AsyncClient(_wrappedAsyncClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
@@ -148,14 +154,21 @@ public class S3EncryptionClient implements S3Client {
             throws AwsServiceException, SdkClientException {
 
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
-                .s3Client(_wrappedClient)
+                .s3AsyncClient(_wrappedAsyncClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .build();
 
-        return pipeline.getObject(getObjectRequest, responseTransformer);
+        try {
+            ResponseBytes<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBytes()).join();
+            return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet.asInputStream()));
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
+        } catch (Exception e) {
+            throw new S3EncryptionClientException("Unable to transform response.", e);
+        }
     }
 
     private CompleteMultipartUploadResponse multipartPutObject(PutObjectRequest request, RequestBody requestBody) throws Throwable {
@@ -295,6 +308,7 @@ public class S3EncryptionClient implements S3Client {
 
     public static class Builder {
         private S3Client _wrappedClient = S3Client.builder().build();
+        private S3AsyncClient _wrappedAsyncClient = S3AsyncClient.create();
 
         private MultipartUploadObjectPipeline _multipartPipeline;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -323,6 +337,16 @@ public class S3EncryptionClient implements S3Client {
             }
 
             this._wrappedClient = wrappedClient;
+            return this;
+        }
+
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
+        public Builder _wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
+            if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
+                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
+            }
+
+            this._wrappedAsyncClient = _wrappedAsyncClient;
             return this;
         }
 
