@@ -5,7 +5,7 @@ version: 0.2
 
 env:
   variables:
-    BRANCH: "main"
+    BRANCH: "cd-dev"
     # TODO for prod release: Remove variables below; these are used in CodeArtifact, which won't be
     #   used as part of Prod release. These are used to test GH release signing.
     REGION: us-east-1
@@ -27,6 +27,7 @@ phases:
       # get new project version
       - git checkout $BRANCH
       - export VERSION=$(grep version pom.xml | head -n 2 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
+      - echo $VERSION
       - git config --global user.name "aws-crypto-tools-ci-bot"
       - git config --global user.email "no-reply@noemail.local"
       - echo $GH_TOKEN > token.txt
