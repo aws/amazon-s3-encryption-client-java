@@ -7,17 +7,16 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.*;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 public class S3EncryptionClientRsaKeyPairTest {
     private static final String BUCKET = System.getenv("AWS_S3EC_TEST_BUCKET");
@@ -103,13 +102,9 @@ public class S3EncryptionClientRsaKeyPairTest {
                 .key(objectKey)
                 .build(), RequestBody.fromString(objectKey));
 
-        try {
-            v3Client.getObjectAsBytes(builder -> builder
-                    .bucket(BUCKET)
-                    .key(objectKey));
-        } catch (CompletionException e) {
-            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
-        }
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);

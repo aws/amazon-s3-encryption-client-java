@@ -665,13 +665,9 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesCbcV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        try {
-            v3Client.getObjectAsBytes(builder -> builder
-                    .bucket(BUCKET)
-                    .key(objectKey));
-        } catch (CompletionException e) {
-            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
-        }
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
@@ -767,13 +763,9 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesGcmV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        try{
-            v3Client.getObjectAsBytes(builder -> builder
-                    .bucket(BUCKET)
-                    .key(objectKey));
-        } catch (CompletionException e) {
-            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
-        }
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);

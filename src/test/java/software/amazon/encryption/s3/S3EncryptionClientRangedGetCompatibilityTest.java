@@ -379,8 +379,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    // TODO: Comment out this test till Async CBC PR merged.
-    //@Test
+    @Test
     public void AesCbcV1toV3RangedGet() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get");
 
