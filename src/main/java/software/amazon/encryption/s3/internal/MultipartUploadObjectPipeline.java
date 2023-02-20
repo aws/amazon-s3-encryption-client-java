@@ -42,7 +42,7 @@ public class MultipartUploadObjectPipeline {
     private final Map<String, MultipartUploadContext> _multipartUploadContexts;
 
     private MultipartUploadObjectPipeline(Builder builder) {
-        this._s3AsyncClient = builder._s3AsyncClient; // TODO plumbing
+        this._s3AsyncClient = builder._s3AsyncClient;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
