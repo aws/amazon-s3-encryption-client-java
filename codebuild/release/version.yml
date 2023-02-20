@@ -6,7 +6,7 @@ version: 0.2
 env:
   variables:
     NODE_OPTIONS: "--max-old-space-size=4096"
-    BRANCH: "main"
+    BRANCH: "cd-dev"
   git-credential-helper: "yes"
   secrets-manager:
     GH_TOKEN: Github/aws-crypto-tools-ci-bot:ESDK Release Token
