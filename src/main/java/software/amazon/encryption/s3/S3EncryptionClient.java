@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -157,9 +158,11 @@ public class S3EncryptionClient implements S3Client {
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .build();
 
-        ResponseBytes<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBytes()).join();
         try {
+            ResponseBytes<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBytes()).join();
             return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet.asInputStream()));
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
         }
@@ -301,7 +304,6 @@ public class S3EncryptionClient implements S3Client {
     }
 
     public static class Builder {
-       // private S3Client _wrappedClient = S3Client.builder().build();
         private S3AsyncClient _wrappedAsyncClient = S3AsyncClient.create();
 
         private MultipartUploadObjectPipeline _multipartPipeline;
@@ -326,6 +328,16 @@ public class S3EncryptionClient implements S3Client {
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
+            if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
+                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
+            }
+
+            this._wrappedAsyncClient = _wrappedAsyncClient;
+            return this;
+        }
+
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
+        public Builder _wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
             if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
                 throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
             }
