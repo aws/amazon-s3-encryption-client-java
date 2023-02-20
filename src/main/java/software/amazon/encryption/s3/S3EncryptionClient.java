@@ -162,7 +162,7 @@ public class S3EncryptionClient implements S3Client {
             ResponseBytes<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBytes()).join();
             return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet.asInputStream()));
         } catch (CompletionException e) {
-            throw new S3EncryptionClientException(e.getCause().getMessage());
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
         }
