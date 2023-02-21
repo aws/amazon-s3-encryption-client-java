@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.1.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.1.0...v2.1.1) (2023-02-21)
+
+
+### Fixes
+
+* export the release date to fix its interpolation ([809dabb](https://github.com/aws/aws-s3-encryption-client-java/commit/809dabbfd2ea714060bc51ab183b7cd61fb0b461))
+
 ## [2.1.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.0.0...v2.1.0) (2023-02-21)
 
 
