@@ -76,8 +76,6 @@ public class S3EncryptionClient implements S3Client {
     // TODO: Replace with UploadPartRequest.isLastPart() when launched.
     // Used for multipart uploads
     public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
-
-    private final S3Client _wrappedClient;
     private final S3AsyncClient _wrappedAsyncClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
@@ -88,7 +86,6 @@ public class S3EncryptionClient implements S3Client {
     private final MultipartUploadObjectPipeline _multipartPipeline;
 
     private S3EncryptionClient(Builder builder) {
-        _wrappedClient = builder._wrappedClient;
         _wrappedAsyncClient = builder._wrappedAsyncClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
@@ -191,7 +188,7 @@ public class S3EncryptionClient implements S3Client {
             throw new S3EncryptionClientException("UploadObjectObserver should not be null, Please initialize during MultipartConfiguration");
         }
 
-        observer.init(request, _wrappedClient, this, es);
+        observer.init(request, _wrappedAsyncClient, this, es);
         final String uploadId = observer.onUploadCreation(request);
         final List<CompletedPart> partETags = new ArrayList<>();
 
@@ -237,12 +234,12 @@ public class S3EncryptionClient implements S3Client {
     public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) throws AwsServiceException,
             SdkClientException {
         // Delete the object
-        DeleteObjectResponse deleteObjectResponse = _wrappedClient.deleteObject(deleteObjectRequest);
+        DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(deleteObjectRequest).join();
         // If Instruction file exists, delete the instruction file as well.
         String instructionObjectKey = deleteObjectRequest.key() + INSTRUCTION_FILE_SUFFIX;
-        _wrappedClient.deleteObject(builder -> builder
+        _wrappedAsyncClient.deleteObject(builder -> builder
                 .bucket(deleteObjectRequest.bucket())
-                .key(instructionObjectKey));
+                .key(instructionObjectKey)).join();
         return deleteObjectResponse;
     }
 
@@ -250,13 +247,13 @@ public class S3EncryptionClient implements S3Client {
     public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
         // Delete the objects
-        DeleteObjectsResponse deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest);
+        DeleteObjectsResponse deleteObjectsResponse = _wrappedAsyncClient.deleteObjects(deleteObjectsRequest).join();
         // If Instruction files exists, delete the instruction files as well.
         List<ObjectIdentifier> deleteObjects = instructionFileKeysToDelete(deleteObjectsRequest);
-        _wrappedClient.deleteObjects(DeleteObjectsRequest.builder()
+        _wrappedAsyncClient.deleteObjects(DeleteObjectsRequest.builder()
                 .bucket(deleteObjectsRequest.bucket())
                 .delete(builder -> builder.objects(deleteObjects))
-                .build());
+                .build()).join();
         return deleteObjectsResponse;
     }
 
@@ -279,7 +276,7 @@ public class S3EncryptionClient implements S3Client {
         AwsRequestOverrideConfiguration overrideConfiguration = request.overrideConfiguration().orElse(null);
         boolean isLastPart = false;
         if (!(overrideConfiguration == null)) {
-            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(this.IS_LAST_PART).orElse(false);
+            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(IS_LAST_PART).orElse(false);
         }
         return _multipartPipeline.uploadPart(request, requestBody, isLastPart);
     }
@@ -298,16 +295,15 @@ public class S3EncryptionClient implements S3Client {
 
     @Override
     public String serviceName() {
-        return _wrappedClient.serviceName();
+        return _wrappedAsyncClient.serviceName();
     }
 
     @Override
     public void close() {
-        _wrappedClient.close();
+        _wrappedAsyncClient.close();
     }
 
     public static class Builder {
-        private S3Client _wrappedClient = S3Client.builder().build();
         private S3AsyncClient _wrappedAsyncClient = S3AsyncClient.create();
 
         private MultipartUploadObjectPipeline _multipartPipeline;
@@ -327,16 +323,16 @@ public class S3EncryptionClient implements S3Client {
         }
 
         /**
-         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
-         * S3Client will be reflected in this Builder.
+         * Note that this does NOT create a defensive clone of S3AsyncClient. Any modifications made to the wrapped
+         * S3AsyncClient will be reflected in this Builder.
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
-        public Builder wrappedClient(S3Client wrappedClient) {
-            if (wrappedClient instanceof S3EncryptionClient) {
+        public Builder wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
+            if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
                 throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
             }
 
-            this._wrappedClient = wrappedClient;
+            this._wrappedAsyncClient = _wrappedAsyncClient;
             return this;
         }
 
@@ -484,7 +480,7 @@ public class S3EncryptionClient implements S3Client {
             }
 
             _multipartPipeline = MultipartUploadObjectPipeline.builder()
-                    .s3Client(_wrappedClient)
+                    .s3AsyncClient(_wrappedAsyncClient)
                     .cryptoMaterialsManager(_cryptoMaterialsManager)
                     .secureRandom(_secureRandom)
                     .build();

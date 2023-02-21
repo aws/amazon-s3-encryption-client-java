@@ -238,6 +238,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
+        // Asserts
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)

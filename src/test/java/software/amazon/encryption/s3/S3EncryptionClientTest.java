@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
@@ -324,10 +325,10 @@ public class S3EncryptionClientTest {
     public void s3EncryptionClientWithWrappedS3ClientSucceeds() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-kms-key-id");
 
-        S3Client wrappedClient = S3Client.builder().build();
+        S3AsyncClient wrappedClient = S3AsyncClient.builder().build();
 
         S3Client wrappingClient = S3EncryptionClient.builder()
-            .wrappedClient(wrappedClient)
+            .wrappedAsyncClient(wrappedClient)
             .kmsKeyId(KMS_KEY_ID)
             .build();
 
@@ -345,12 +346,12 @@ public class S3EncryptionClientTest {
      */
     @Test
     public void s3EncryptionClientWithWrappedS3EncryptionClientFails() {
-        S3Client wrappedClient = S3EncryptionClient.builder()
+        S3AsyncClient wrappedAsyncClient = S3AsyncEncryptionClient.builder()
             .kmsKeyId(KMS_KEY_ID)
             .build();
 
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-            .wrappedClient(wrappedClient)
+            .wrappedAsyncClient(wrappedAsyncClient)
             .kmsKeyId(KMS_KEY_ID)
             .build());
     }

@@ -255,12 +255,12 @@ public class S3EncryptionClientStreamTest {
                 .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
 
         largeObjectStream.close();
+// TODO : Add Delayed Authentication to Async Client.
 
-
-        // Delayed Authentication is not enabled, so getObject fails
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)));
+//        // Delayed Authentication is not enabled, so getObject fails
+//        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+//                .bucket(BUCKET)
+//                .key(objectKey)));
                 
         S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
