@@ -42,6 +42,7 @@ phases:
       - gh version
       - gh auth login --with-token < token.txt
       - gh auth status
+      - export RELEASE_DATE=$(date +%Y-%m-%d)
       # TODO for prod release: remove -Dcodeartifact*
       # TODO for prod release: Change -DremoteRepositories to sonatype repo
       # TODO for prod release: remove "-$CODEBUILD_RESOLVED_SOURCE_VERSION". CodeArtifact seems to need this to find
@@ -69,4 +70,4 @@ phases:
           -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -Dartifact=software.amazon.encryption:s3:${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION:jar:javadoc \
           -s $SETTINGS_FILE
-      - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/s3/${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION/*.jar -d -F CHANGELOG.md -t "AWS S3 Encryption Client ${VERSION} Release -- $(date +%Y-%m-%d)"
+      - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/s3/${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION/*.jar -d -F CHANGELOG.md -t "AWS S3 Encryption Client ${VERSION} Release -- ${RELEASE_DATE}"
