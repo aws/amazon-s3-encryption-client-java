@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.0.0...v2.1.0) (2023-02-21)
+
+
+### Features
+
+* not actually a feature, just a dummy commit to trigger a minor version bump ([ee5e90b](https://github.com/aws/aws-s3-encryption-client-java/commit/ee5e90beb12af80171b68bcbb39182c56b2847ea))
+
+
+### Fixes
+
+* update pom to 2.0.0 to match release tag ([9fe2509](https://github.com/aws/aws-s3-encryption-client-java/commit/9fe2509eb4c0aff2833b2ccd9bfaff655619cdb3))
+
 ## 1.0.0 (2023-02-20)
 
 
