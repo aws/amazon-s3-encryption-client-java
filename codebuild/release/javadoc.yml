@@ -5,8 +5,7 @@ version: 0.2
 
 env:
   variables:
-    # TODO for prod release: change to "main"
-    BRANCH: "cd"
+    BRANCH: "main"
     GH_PAGES: "gh-pages"
   git-credential-helper: yes
 
