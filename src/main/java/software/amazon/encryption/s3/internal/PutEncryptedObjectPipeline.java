@@ -49,6 +49,7 @@ public class PutEncryptedObjectPipeline {
 
     public static class Builder {
         private S3AsyncClient _s3AsyncClient;
+        private boolean _enableMultipartPutObject = false;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
@@ -68,6 +69,11 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
+        public Builder enableMultipartPutObject(boolean enableMultipartPutObject) {
+            this._enableMultipartPutObject = enableMultipartPutObject;
+            return this;
+        }
+
         public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
             this._cryptoMaterialsManager = cryptoMaterialsManager;
             return this;
@@ -79,6 +85,10 @@ public class PutEncryptedObjectPipeline {
         }
 
         public PutEncryptedObjectPipeline build() {
+            if (_enableMultipartPutObject) {
+                _s3AsyncClient = S3AsyncClient.crtCreate();
+            }
+
             // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
             if (_asyncContentEncryptionStrategy == null) {
                 _asyncContentEncryptionStrategy = StreamingAesGcmContentStrategy
