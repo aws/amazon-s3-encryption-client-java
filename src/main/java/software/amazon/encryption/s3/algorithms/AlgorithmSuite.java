@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3.algorithms;
 
 public enum AlgorithmSuite {
-    ALG_AES_256_GCM_IV12_TAG16_NO_KDF(0x0078,
+    ALG_AES_256_GCM_IV12_TAG16_NO_KDF(0x0072,
             false,
             "AES",
             256,
@@ -10,7 +10,7 @@ public enum AlgorithmSuite {
             96,
             128,
             AlgorithmConstants.GCM_MAX_CONTENT_LENGTH_BITS),
-    ALG_AES_256_CTR_IV16_TAG16_NO_KDF(0x0074,
+    ALG_AES_256_CTR_IV16_TAG16_NO_KDF(0x0071,
             true,
             "AES",
             256,
