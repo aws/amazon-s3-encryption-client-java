@@ -6,7 +6,7 @@ version: 0.2
 env:
   variables:
     REGION: us-east-1
-    DOMAIN: crypto-tools-internal
+    DOMAIN: s3-ec-preview
     REPOSITORY: java-s3ec-staging
   parameter-store:
     ACCOUNT: /CodeBuild/AccountId
