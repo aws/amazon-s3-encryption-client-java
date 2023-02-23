@@ -38,7 +38,6 @@ public class GetEncryptedObjectPipeline {
     private final boolean _enableLegacyWrappingAlgorithms;
 
     private final boolean _enableLegacyUnauthenticatedModes;
-    // TODO: Find a way to use for async client
     private final boolean _enableDelayedAuthentication;
 
     public static Builder builder() {
@@ -54,7 +53,6 @@ public class GetEncryptedObjectPipeline {
     }
 
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest, AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
-        // TODO: Support for ranged gets in async
         // In async, decryption is done within a response transformation
         String cryptoRange = RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range());
         GetObjectRequest adjustedRangeRequest = getObjectRequest.toBuilder().range(cryptoRange).build();
