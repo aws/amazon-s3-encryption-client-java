@@ -13,7 +13,7 @@ Parameters:
   ProjectDescription:
     Type: String
     Description: The description for the CodeBuild Project
-    Default: CFN stack for managing CodeBuild projects for the AWS S3EC Java
+    Default: CFN stack for managing CodeBuild projects for the Amazon S3EC Java
   SourceLocation:
     Type: String
     Description: The https GitHub URL for the project
