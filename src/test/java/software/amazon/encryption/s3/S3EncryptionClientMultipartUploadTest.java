@@ -34,8 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static software.amazon.encryption.s3.S3EncryptionClient.isLastPart;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
@@ -51,6 +50,39 @@ public class S3EncryptionClientMultipartUploadTest {
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
     }
+
+    @Test
+    public void failsMultipartPutObjectWhenWrappedClientIsEnabled() throws IOException {
+        final String objectKey = appendTestSuffix("multipart-put-object");
+
+        final long fileSizeLimit = 1024 * 1024 * 100;
+        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
+
+        S3AsyncClient wrappedClient = S3AsyncClient.create();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .wrappedClient(wrappedClient)
+                .enableMultipartPutObject(true)
+                .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(provider)
+                .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+        assertThrows(S3EncryptionClientException.class ,() -> v3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit)));
+
+        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+        v3Client.close();
+    }
+
     @Test
     public void multipartPutObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object");

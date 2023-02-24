@@ -3,8 +3,10 @@ package software.amazon.encryption.s3.internal;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
@@ -49,6 +51,7 @@ public class PutEncryptedObjectPipeline {
 
     public static class Builder {
         private S3AsyncClient _s3AsyncClient;
+        private S3AsyncClient _s3CrtClient;
         private boolean _enableMultipartPutObject = false;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
@@ -69,6 +72,11 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
+        public Builder crtClient(S3AsyncClient crtClient) {
+            this._s3CrtClient = crtClient;
+            return this;
+        }
+
         public Builder enableMultipartPutObject(boolean enableMultipartPutObject) {
             this._enableMultipartPutObject = enableMultipartPutObject;
             return this;
@@ -85,8 +93,12 @@ public class PutEncryptedObjectPipeline {
         }
 
         public PutEncryptedObjectPipeline build() {
-            if (_enableMultipartPutObject) {
-                _s3AsyncClient = S3AsyncClient.crtCreate();
+            if (_enableMultipartPutObject & _s3CrtClient != null) {
+                if (_s3CrtClient instanceof S3CrtAsyncClient) {
+                    _s3AsyncClient = _s3CrtClient;
+                } else {
+                    throw new S3EncryptionClientException("WrappedAsyncClient should be instance of S3CrtAsyncClient when enableMultipartPutObject is enabled.");
+                }
             }
 
             // Default to AesGcm since it is the only active (non-legacy) content encryption strategy

@@ -66,7 +66,8 @@ public class S3EncryptionClient implements S3Client {
     // TODO: Replace with UploadPartRequest.isLastPart() when launched.
     // Used for multipart uploads
     public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
-    private final S3AsyncClient _wrappedAsyncClient;
+    private final S3AsyncClient _wrappedClient;
+    private final S3AsyncClient _wrappedCrtClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyWrappingAlgorithms;
@@ -76,7 +77,8 @@ public class S3EncryptionClient implements S3Client {
     private final MultipartUploadObjectPipeline _multipartPipeline;
 
     private S3EncryptionClient(Builder builder) {
-        _wrappedAsyncClient = builder._wrappedAsyncClient;
+        _wrappedClient = builder._wrappedClient;
+        _wrappedCrtClient = builder._wrappedCrtClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
         _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
@@ -107,7 +109,8 @@ public class S3EncryptionClient implements S3Client {
             throws AwsServiceException, SdkClientException {
 
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
-                .s3AsyncClient(_wrappedAsyncClient)
+                .s3AsyncClient(_wrappedClient)
+                .crtClient(_wrappedCrtClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .enableMultipartPutObject(_enableMultipartPutObject)
                 .secureRandom(_secureRandom)
@@ -123,7 +126,7 @@ public class S3EncryptionClient implements S3Client {
             throws AwsServiceException, SdkClientException {
 
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
-                .s3AsyncClient(_wrappedAsyncClient)
+                .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
@@ -144,10 +147,10 @@ public class S3EncryptionClient implements S3Client {
     public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) throws AwsServiceException,
             SdkClientException {
         // Delete the object
-        DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(deleteObjectRequest).join();
+        DeleteObjectResponse deleteObjectResponse = _wrappedClient.deleteObject(deleteObjectRequest).join();
         // If Instruction file exists, delete the instruction file as well.
         String instructionObjectKey = deleteObjectRequest.key() + INSTRUCTION_FILE_SUFFIX;
-        _wrappedAsyncClient.deleteObject(builder -> builder
+        _wrappedClient.deleteObject(builder -> builder
                 .bucket(deleteObjectRequest.bucket())
                 .key(instructionObjectKey)).join();
         return deleteObjectResponse;
@@ -157,10 +160,10 @@ public class S3EncryptionClient implements S3Client {
     public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
         // Delete the objects
-        DeleteObjectsResponse deleteObjectsResponse = _wrappedAsyncClient.deleteObjects(deleteObjectsRequest).join();
+        DeleteObjectsResponse deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest).join();
         // If Instruction files exists, delete the instruction files as well.
         List<ObjectIdentifier> deleteObjects = instructionFileKeysToDelete(deleteObjectsRequest);
-        _wrappedAsyncClient.deleteObjects(DeleteObjectsRequest.builder()
+        _wrappedClient.deleteObjects(DeleteObjectsRequest.builder()
                 .bucket(deleteObjectsRequest.bucket())
                 .delete(builder -> builder.objects(deleteObjects))
                 .build()).join();
@@ -205,16 +208,17 @@ public class S3EncryptionClient implements S3Client {
 
     @Override
     public String serviceName() {
-        return _wrappedAsyncClient.serviceName();
+        return _wrappedClient.serviceName();
     }
 
     @Override
     public void close() {
-        _wrappedAsyncClient.close();
+        _wrappedClient.close();
     }
 
     public static class Builder {
-        private S3AsyncClient _wrappedAsyncClient = S3AsyncClient.create();
+        private S3AsyncClient _wrappedClient = S3AsyncClient.create();
+        private S3AsyncClient _wrappedCrtClient = null;
 
         private MultipartUploadObjectPipeline _multipartPipeline;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -237,12 +241,13 @@ public class S3EncryptionClient implements S3Client {
          * S3AsyncClient will be reflected in this Builder.
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
-        public Builder wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
-            if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
-                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
+        public Builder wrappedClient(S3AsyncClient wrappedClient) {
+            if (wrappedClient instanceof S3AsyncEncryptionClient) {
+                throw new S3EncryptionClientException("Cannot use S3AsyncEncryptionClient as wrapped client");
             }
-
-            this._wrappedAsyncClient = _wrappedAsyncClient;
+            // Initializes only when wrappedClient is configured by user.
+            this._wrappedCrtClient = wrappedClient;
+            this._wrappedClient = wrappedClient;
             return this;
         }
 
@@ -380,7 +385,7 @@ public class S3EncryptionClient implements S3Client {
             }
 
             _multipartPipeline = MultipartUploadObjectPipeline.builder()
-                    .s3AsyncClient(_wrappedAsyncClient)
+                    .s3AsyncClient(_wrappedClient)
                     .cryptoMaterialsManager(_cryptoMaterialsManager)
                     .secureRandom(_secureRandom)
                     .build();

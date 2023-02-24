@@ -39,6 +39,7 @@ import java.util.function.Function;
 public class S3AsyncEncryptionClient implements S3AsyncClient {
 
     private final S3AsyncClient _wrappedClient;
+    private final S3AsyncClient _wrappedCrtClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyWrappingAlgorithms;
@@ -48,6 +49,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
 
     private S3AsyncEncryptionClient(Builder builder) {
         _wrappedClient = builder._wrappedClient;
+        _wrappedCrtClient = builder._wrappedCrtClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
         _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
@@ -71,6 +73,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
             throws AwsServiceException, SdkClientException {
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
+                .crtClient(_wrappedCrtClient)
                 .enableMultipartPutObject(_enableMultipartPutObject)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
@@ -133,6 +136,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     // TODO: The async / non-async clients can probably share a builder - revisit after implementing async
     public static class Builder {
         private S3AsyncClient _wrappedClient = S3AsyncClient.builder().build();
+        private S3AsyncClient _wrappedCrtClient = null;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
         private SecretKey _aesKey;
@@ -157,7 +161,8 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
             if (wrappedClient instanceof S3AsyncEncryptionClient) {
                 throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
             }
-
+            // Initializes only when wrappedAsyncClient is configured by user.
+            this._wrappedCrtClient = wrappedClient;
             this._wrappedClient = wrappedClient;
             return this;
         }
