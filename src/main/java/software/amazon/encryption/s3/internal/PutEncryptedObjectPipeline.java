@@ -97,7 +97,7 @@ public class PutEncryptedObjectPipeline {
                 if (_s3CrtClient instanceof S3CrtAsyncClient) {
                     _s3AsyncClient = _s3CrtClient;
                 } else {
-                    throw new S3EncryptionClientException("WrappedAsyncClient should be instance of S3CrtAsyncClient when enableMultipartPutObject is enabled.");
+                    throw new S3EncryptionClientException("WrappedClient must be instance of S3CrtAsyncClient when enableMultipartPutObject is enabled.");
                 }
             }
 
