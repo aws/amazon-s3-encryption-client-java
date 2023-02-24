@@ -54,6 +54,7 @@ public class GetEncryptedObjectPipeline {
 
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest, AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
         // In async, decryption is done within a response transformation
+        System.out.println("get pipeline");
         String cryptoRange = RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range());
         GetObjectRequest adjustedRangeRequest = getObjectRequest.toBuilder().range(cryptoRange).build();
         return _s3AsyncClient.getObject(adjustedRangeRequest, new DecryptingResponseTransformer<>(asyncResponseTransformer,
