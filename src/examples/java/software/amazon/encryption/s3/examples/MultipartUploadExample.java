@@ -9,7 +9,6 @@ import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
@@ -28,29 +27,24 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.S3EncryptionClient.isLastPart;
-import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 
 public class MultipartUploadExample {
-
     // Create a 200 character input string to use as your object in the following examples.
     // Overall "file" is 100MB, split into 10MB parts
     public static final long fileSizeLimit = 1024 * 1024 * 100;
     public static final int PART_SIZE = 10 * 1024 * 1024;
-
-    public static final String OBJECT_KEY = "Multipart-upload-example";
+    public static String BUCKET;
+    public static final String OBJECT_KEY = appendTestSuffix("multipart-upload-example");
 
     // This example generates a new key. In practice, you would
     // retrieve your key from an existing keystore.
     private static final SecretKey AES_KEY = retrieveAesKey();
-
     public static void main(final String[] args) throws IOException {
-        final String bucket = args[0];
-
+        BUCKET = args[0];
         LowLevelMultipartUpload();
         HighLevelMultipartPutObject();
-        cleanup(bucket);
+        cleanup(BUCKET);
     }
 
     public static void LowLevelMultipartUpload() throws IOException {
@@ -180,17 +174,9 @@ public class MultipartUploadExample {
                 .enableDelayedAuthenticationMode(true)
                 .build();
 
-        // MultipartConfiguration can be used to set max no of connections, part size.
-        // Note: Part Size is 5 MB and Max Connections is 50 by default, if not specified.
-        MultipartConfiguration configuration = MultipartConfiguration.builder()
-                .maxConnections(30)
-                .partSize(PART_SIZE)
-                .build();
-
         // Call putObject to encrypt the object and upload it to S3.
         v3Client.putObject(builder -> builder
                 .bucket(BUCKET)
-                .overrideConfiguration(withAdditionalConfiguration(null, configuration))
                 .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit));
 
         // Asserts
