@@ -78,6 +78,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             // Send the final bytes to the wrapped subscriber
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
         } catch (final GeneralSecurityException exception) {
+            wrappedSubscriber.onError(exception);
             throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
         }
         wrappedSubscriber.onComplete();

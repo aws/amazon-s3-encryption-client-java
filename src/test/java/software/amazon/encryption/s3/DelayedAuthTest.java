@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.utils.IoUtils;
+import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -204,38 +205,173 @@ public class DelayedAuthTest {
                 .bucket(BUCKET)
                 .key(BUCKET_KEY)
                 .build(), RequestBody.fromString(input));
-//
-//        // Use an unencrypted (plaintext) client to interact with the encrypted object
-//        final S3Client plaintextS3Client = S3Client.builder().build();
-//        ResponseBytes<GetObjectResponse> objectResponse = plaintextS3Client.getObjectAsBytes(builder -> builder
-//                .bucket(BUCKET)
-//                .key(BUCKET_KEY));
-//        final byte[] encryptedBytes = objectResponse.asByteArray();
-//        final int tagLength = 16;
-//        final byte[] tamperedBytes = new byte[inputLength + tagLength];
-//        // Copy the enciphered bytes
-//        System.arraycopy(encryptedBytes, 0, tamperedBytes, 0, inputLength);
-//        final byte[] tamperedTag = new byte[tagLength];
-//        // Increment the first byte of the tag
-//        tamperedTag[0] = (byte) (encryptedBytes[inputLength + 1] + 1);
-//        // Copy the rest of the tag as-is
-//        System.arraycopy(encryptedBytes, inputLength + 1, tamperedTag, 1, tagLength - 1);
-//        // Append the tampered tag
-//        System.arraycopy(tamperedTag, 0, tamperedBytes, inputLength, tagLength);
-//
-//        // Sanity check that the objects differ
-//        assertNotEquals(encryptedBytes, tamperedBytes);
-//
-//        // Replace the encrypted object with the tampered object
-//        PutObjectRequest tamperedPut = PutObjectRequest.builder()
-//                .bucket(BUCKET)
-//                .key(BUCKET_KEY)
-//                .metadata(objectResponse.response().metadata()) // Preserve metadata from encrypted object
-//                .build();
-//        System.out.println("putting object");
-//        plaintextS3Client.putObject(tamperedPut, RequestBody.fromBytes(tamperedBytes));
-//
+
+        // Use an unencrypted (plaintext) client to interact with the encrypted object
+        final S3Client plaintextS3Client = S3Client.builder().build();
+        ResponseBytes<GetObjectResponse> objectResponse = plaintextS3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY));
+        final byte[] encryptedBytes = objectResponse.asByteArray();
+        final int tagLength = 16;
+        final byte[] tamperedBytes = new byte[inputLength + tagLength];
+        // Copy the enciphered bytes
+        System.arraycopy(encryptedBytes, 0, tamperedBytes, 0, inputLength);
+        final byte[] tamperedTag = new byte[tagLength];
+        // Increment the first byte of the tag
+        tamperedTag[0] = (byte) (encryptedBytes[inputLength + 1] + 1);
+        // Copy the rest of the tag as-is
+        System.arraycopy(encryptedBytes, inputLength + 1, tamperedTag, 1, tagLength - 1);
+        // Append the tampered tag
+        System.arraycopy(tamperedTag, 0, tamperedBytes, inputLength, tagLength);
+
+        // Sanity check that the objects differ
+        assertNotEquals(encryptedBytes, tamperedBytes);
+
+        // Replace the encrypted object with the tampered object
+        PutObjectRequest tamperedPut = PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .metadata(objectResponse.response().metadata()) // Preserve metadata from encrypted object
+                .build();
+        System.out.println("putting object");
+        plaintextS3Client.putObject(tamperedPut, RequestBody.fromBytes(tamperedBytes));
+
         // Get (and decrypt) the (modified) object from S3
+        System.out.println("getting object");
+        ResponseInputStream<GetObjectResponse> dataStream = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY));
+
+        // Use a few different byte arrays to demonstrate streaming
+        final int chunkSize = 300;
+        final int leftOverSize = inputLength - 2 * chunkSize;
+        final byte[] chunk1 = new byte[chunkSize];
+        final byte[] chunk2 = new byte[chunkSize];
+        final byte[] restOfInput = new byte[leftOverSize];
+        System.out.println("Starting to read..");
+
+        try {
+            dataStream.read(chunk1, 0, chunkSize);
+            System.out.println("read 1.." + new String(chunk1));
+            dataStream.read(chunk2, 0, chunkSize);
+            System.out.println("So far we have: " + new String(chunk1) + new String(chunk2));
+            dataStream.read(restOfInput, 0, leftOverSize);
+            System.out.println("done reading..");
+        } catch (final IOException ioException) {
+            // Just wrap the checked exception so test fails
+            throw new RuntimeException(ioException);
+        }
+
+        // Should be a StringBuilder, oh well, we shouldn't get this far
+        final String readOutput = new String(chunk1) + new String(chunk2) + new String(restOfInput);
+        assertEquals(input, readOutput);
+    }
+
+    @Test
+    public void AesGcmV3toV3StreamWithTamperedTagLargeObject() {
+        final String BUCKET_KEY = "aes-gcm-v3-to-v3-stream-large-object";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        final int inputLength = 10000000;
+        final InputStream input = new BoundedZerosInputStream(inputLength);
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .build(), RequestBody.fromInputStream(input, inputLength));
+
+        // Use an unencrypted (plaintext) client to interact with the encrypted object
+        final S3Client plaintextS3Client = S3Client.builder().build();
+        ResponseBytes<GetObjectResponse> objectResponse = plaintextS3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY));
+        final byte[] encryptedBytes = objectResponse.asByteArray();
+        final int tagLength = 16;
+        final byte[] tamperedBytes = new byte[inputLength + tagLength];
+        // Copy the enciphered bytes
+        System.arraycopy(encryptedBytes, 0, tamperedBytes, 0, inputLength);
+        final byte[] tamperedTag = new byte[tagLength];
+        // Increment the first byte of the tag
+        tamperedTag[0] = (byte) (encryptedBytes[inputLength + 1] + 1);
+        // Copy the rest of the tag as-is
+        System.arraycopy(encryptedBytes, inputLength + 1, tamperedTag, 1, tagLength - 1);
+        // Append the tampered tag
+        System.arraycopy(tamperedTag, 0, tamperedBytes, inputLength, tagLength);
+
+        // Sanity check that the objects differ
+        assertNotEquals(encryptedBytes, tamperedBytes);
+
+        // Replace the encrypted object with the tampered object
+        PutObjectRequest tamperedPut = PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .metadata(objectResponse.response().metadata()) // Preserve metadata from encrypted object
+                .build();
+        System.out.println("putting object");
+        plaintextS3Client.putObject(tamperedPut, RequestBody.fromBytes(tamperedBytes));
+
+        // Get (and decrypt) the (modified) object from S3
+        System.out.println("getting object");
+        ResponseInputStream<GetObjectResponse> dataStream = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY));
+
+        // Use a few different byte arrays to demonstrate streaming
+        final int chunkSize = 300;
+        final int leftOverSize = inputLength - 2 * chunkSize;
+        final byte[] chunk1 = new byte[chunkSize];
+        final byte[] chunk2 = new byte[chunkSize];
+        final byte[] restOfInput = new byte[leftOverSize];
+        System.out.println("Starting to read..");
+
+        try {
+            dataStream.read(chunk1, 0, chunkSize);
+            System.out.println("read 1.." + new String(chunk1));
+            dataStream.read(chunk2, 0, chunkSize);
+            System.out.println("So far we have: " + new String(chunk1) + new String(chunk2));
+            dataStream.read(restOfInput, 0, leftOverSize);
+            System.out.println("done reading..");
+        } catch (final IOException ioException) {
+            // Just wrap the checked exception so test fails
+            throw new RuntimeException(ioException);
+        }
+
+        // Should be a StringBuilder, oh well, we shouldn't get this far
+        //final String readOutput = new String(chunk1) + new String(chunk2) + new String(restOfInput);
+        //assertEquals(input, readOutput);
+    }
+
+
+    @Test
+    public void AesGcmV3toV3StreamWithoutTamper() {
+        final String BUCKET_KEY = "aes-gcm-v3-to-v3-stream";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // 640 bytes of gibberish - enough to cover multiple blocks
+        final String input = "1esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "2esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "3esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "4esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "5esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "6esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "7esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "8esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "9esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "10sAAAYoAesAAAEndOfChunkAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo";
+        final int inputLength = input.length();
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .build(), RequestBody.fromString(input));
+
+        // Get (and decrypt) the object from S3
         System.out.println("getting object");
         ResponseInputStream<GetObjectResponse> dataStream = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
