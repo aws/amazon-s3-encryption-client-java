@@ -76,6 +76,43 @@ public class S3EncryptionClientTest {
     }
 
     @Test
+    public void copyObjectTransparently() {
+        final String objectKey = appendTestSuffix("copy-object-from-here");
+        final String newObjectKey = appendTestSuffix("copy-object-to-here");
+
+        S3Client s3EncryptionClient = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        final String input = "SimpleTestOfV3EncryptionClientCopyObject";
+
+        s3EncryptionClient.putObject(builder -> builder
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .build(),
+                RequestBody.fromString(input));
+
+        s3EncryptionClient.copyObject(builder -> builder
+                .sourceBucket(BUCKET)
+                .destinationBucket(BUCKET)
+                .sourceKey(objectKey)
+                .destinationKey(newObjectKey)
+                .build());
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3EncryptionClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(newObjectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3EncryptionClient);
+        deleteObject(BUCKET, newObjectKey, s3EncryptionClient);
+        s3EncryptionClient.close();
+    }
+
+    @Test
     public void deleteObjectWithInstructionFileSuccess() {
         final String objectKey = appendTestSuffix("delete-object-with-instruction-file");
 

@@ -6,6 +6,7 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.DelegatingS3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
@@ -36,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class S3AsyncEncryptionClient implements S3AsyncClient {
+public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
     private final S3AsyncClient _wrappedClient;
     private final S3AsyncClient _wrappedCrtClient;
@@ -48,6 +49,7 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
     private final boolean _enableMultipartPutObject;
 
     private S3AsyncEncryptionClient(Builder builder) {
+        super(builder._wrappedClient);
         _wrappedClient = builder._wrappedClient;
         _wrappedCrtClient = builder._wrappedCrtClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
@@ -121,11 +123,6 @@ public class S3AsyncEncryptionClient implements S3AsyncClient {
         return _wrappedClient.deleteObjects(deleteObjectsRequest.toBuilder()
                 .delete(builder -> builder.objects(objectsToDelete))
                 .build());
-    }
-
-    @Override
-    public String serviceName() {
-        return _wrappedClient.serviceName();
     }
 
     @Override
