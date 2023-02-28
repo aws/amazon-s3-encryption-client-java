@@ -3,7 +3,7 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -134,8 +134,8 @@ public class S3EncryptionClient implements S3Client {
                 .build();
 
         try {
-            ResponseBytes<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBytes()).join();
-            return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet.asInputStream()));
+            ResponseInputStream<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
+            return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet));
         } catch (CompletionException e) {
             throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
         } catch (Exception e) {
