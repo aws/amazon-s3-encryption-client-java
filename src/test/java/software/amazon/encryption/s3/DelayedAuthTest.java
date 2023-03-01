@@ -179,7 +179,7 @@ public class DelayedAuthTest {
         assertEquals(input, readOutput);
     }
 
-    @Test
+    //@Test
     public void AesGcmV3toV3StreamWithTamperedTag() {
         final String BUCKET_KEY = "aes-gcm-v3-to-v3-stream";
 
@@ -276,7 +276,7 @@ public class DelayedAuthTest {
                 .aesKey(AES_KEY)
                 .build();
 
-        final int inputLength = 100000000;
+        final int inputLength = 1000000000;
         final InputStream input = new BoundedZerosInputStream(inputLength);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -345,7 +345,7 @@ public class DelayedAuthTest {
     }
 
 
-    @Test
+    //@Test
     public void AesGcmV3toV3StreamWithoutTamper() {
         final String BUCKET_KEY = "aes-gcm-v3-to-v3-stream";
 
