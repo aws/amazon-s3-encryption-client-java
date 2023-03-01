@@ -11,6 +11,7 @@ import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.AbortableInputStream;
+import software.amazon.awssdk.services.s3.DelegatingS3Client;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
@@ -59,13 +60,14 @@ import static software.amazon.encryption.s3.S3EncryptionClientUtilities.instruct
  * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
  * on putObject and decrypt objects on getObject using the provided encryption key(s).
  */
-public class S3EncryptionClient implements S3Client {
+public class S3EncryptionClient extends DelegatingS3Client {
 
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
     // TODO: Replace with UploadPartRequest.isLastPart() when launched.
     // Used for multipart uploads
     public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
+
     private final S3AsyncClient _wrappedClient;
     private final S3AsyncClient _wrappedCrtClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -77,6 +79,9 @@ public class S3EncryptionClient implements S3Client {
     private final MultipartUploadObjectPipeline _multipartPipeline;
 
     private S3EncryptionClient(Builder builder) {
+        // The non-encrypted APIs will use a default client.
+        // In the future, we may want to make this configurable.
+        super(S3Client.create());
         _wrappedClient = builder._wrappedClient;
         _wrappedCrtClient = builder._wrappedCrtClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
@@ -204,11 +209,6 @@ public class S3EncryptionClient implements S3Client {
     public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request)
             throws AwsServiceException, SdkClientException {
         return _multipartPipeline.abortMultipartUpload(request);
-    }
-
-    @Override
-    public String serviceName() {
-        return _wrappedClient.serviceName();
     }
 
     @Override
