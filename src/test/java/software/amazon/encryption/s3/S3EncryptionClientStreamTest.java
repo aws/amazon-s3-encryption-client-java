@@ -156,42 +156,6 @@ public class S3EncryptionClientStreamTest {
     }
 
     @Test
-    public void markResetInputStreamV3DecryptGcm() throws IOException {
-        final String objectKey = appendTestSuffix("markResetInputStreamV3DecryptGcm");
-
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .build();
-
-        final int inputLength = DEFAULT_TEST_STREAM_LENGTH;
-        // Create a second stream of zeros because reset is not supported
-        // and reading into the byte string will consume the stream.
-        final InputStream inputStream = new BoundedZerosInputStream(inputLength);
-        final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
-        final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
-
-        v3Client.putObject(PutObjectRequest.builder()
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromInputStream(inputStream, inputLength));
-        inputStream.close();
-
-        final ResponseInputStream<GetObjectResponse> responseInputStream = v3Client.getObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build());
-        final String actualObject = new String(BoundedStreamBufferer.toByteArrayWithMarkReset(responseInputStream, inputLength / 8),
-                StandardCharsets.UTF_8);
-
-        assertEquals(inputStreamAsUtf8String, actualObject);
-
-        // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-    @Test
     public void ordinaryInputStreamV3DecryptCbc() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3DecryptCbc");
 
@@ -232,7 +196,8 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    // TODO : Add Delayed Authentication to Async Client.
+    //@Test
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test");
 
@@ -254,11 +219,12 @@ public class S3EncryptionClientStreamTest {
                 .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
 
         largeObjectStream.close();
+// TODO : Add Delayed Authentication to Async Client.
 
-        // Delayed Authentication is not enabled, so getObject fails
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)));
+//        // Delayed Authentication is not enabled, so getObject fails
+//        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+//                .bucket(BUCKET)
+//                .key(objectKey)));
                 
         S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)

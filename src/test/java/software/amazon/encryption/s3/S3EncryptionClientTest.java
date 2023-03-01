@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
@@ -72,6 +73,43 @@ public class S3EncryptionClientTest {
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
         keyPairGen.initialize(2048);
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
+    }
+
+    @Test
+    public void copyObjectTransparently() {
+        final String objectKey = appendTestSuffix("copy-object-from-here");
+        final String newObjectKey = appendTestSuffix("copy-object-to-here");
+
+        S3Client s3EncryptionClient = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        final String input = "SimpleTestOfV3EncryptionClientCopyObject";
+
+        s3EncryptionClient.putObject(builder -> builder
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .build(),
+                RequestBody.fromString(input));
+
+        s3EncryptionClient.copyObject(builder -> builder
+                .sourceBucket(BUCKET)
+                .destinationBucket(BUCKET)
+                .sourceKey(objectKey)
+                .destinationKey(newObjectKey)
+                .build());
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3EncryptionClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(newObjectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3EncryptionClient);
+        deleteObject(BUCKET, newObjectKey, s3EncryptionClient);
+        s3EncryptionClient.close();
     }
 
     @Test
@@ -324,7 +362,7 @@ public class S3EncryptionClientTest {
     public void s3EncryptionClientWithWrappedS3ClientSucceeds() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-kms-key-id");
 
-        S3Client wrappedClient = S3Client.builder().build();
+        S3AsyncClient wrappedClient = S3AsyncClient.builder().build();
 
         S3Client wrappingClient = S3EncryptionClient.builder()
             .wrappedClient(wrappedClient)
@@ -345,12 +383,12 @@ public class S3EncryptionClientTest {
      */
     @Test
     public void s3EncryptionClientWithWrappedS3EncryptionClientFails() {
-        S3Client wrappedClient = S3EncryptionClient.builder()
+        S3AsyncClient wrappedAsyncClient = S3AsyncEncryptionClient.builder()
             .kmsKeyId(KMS_KEY_ID)
             .build();
 
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-            .wrappedClient(wrappedClient)
+            .wrappedClient(wrappedAsyncClient)
             .kmsKeyId(KMS_KEY_ID)
             .build());
     }

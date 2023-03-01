@@ -20,11 +20,6 @@ public class EncryptedContent {
         _encryptedRequestBody = encryptedRequestBody;
         _ciphertextLength = ciphertextLength;
     }
-    public EncryptedContent(final byte[] nonce, final InputStream ciphertext, final long ciphertextLength) {
-        _nonce = nonce;
-        _ciphertext = ciphertext;
-        _ciphertextLength = ciphertextLength;
-    }
 
     public EncryptedContent(final byte[] nonce, Cipher cipher) {
         this._nonce = nonce;

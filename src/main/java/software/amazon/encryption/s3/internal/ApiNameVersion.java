@@ -6,7 +6,7 @@ import software.amazon.awssdk.core.ApiName;
  * Provides the information for the ApiName APIs for the AWS SDK
  */
 public class ApiNameVersion {
-    public static final String API_NAME = "AwsS3Encrypt";
+    public static final String API_NAME = "AmazonS3Encrypt";
 
     public static final String API_VERSION_UNKNOWN = "unknown";
 

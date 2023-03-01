@@ -4,9 +4,7 @@ import org.reactivestreams.Subscriber;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -93,38 +91,6 @@ public class RangedGetUtils {
         }
         try {
             return new AdjustedRangeSubscriber(subscriber, cryptoRange[0], cryptoRange[1]);
-        } catch (IOException e) {
-            throw new S3EncryptionClientException("Error adjusting output to desired byte range: " + e.getMessage());
-        }
-    }
-
-    public static InputStream adjustToDesiredRange(InputStream plaintext, long[] cryptoRange, String contentRange, int cipherTagLengthBits) {
-        if (cryptoRange == null || contentRange == null) {
-            return plaintext;
-        }
-
-        final long maxOffset = calculateMaxOffset(contentRange, cipherTagLengthBits);
-        if (cryptoRange[1] > maxOffset) {
-            cryptoRange[1] = maxOffset;
-            if (cryptoRange[0] > cryptoRange[1]) {
-                // Close existing input stream to avoid resource leakage,
-                // return empty input stream
-                try {
-                    if (plaintext != null) {
-                        plaintext.close();
-                    }
-                } catch (IOException e) {
-                    throw new S3EncryptionClientException("Error while closing the InputStream: " + e.getMessage());
-                }
-                return new ByteArrayInputStream(new byte[0]);
-            }
-        }
-        if (cryptoRange[0] > cryptoRange[1]) {
-            // Make no modifications if range is invalid.
-            return plaintext;
-        }
-        try {
-            return new AdjustedRangeInputStream(plaintext, cryptoRange[0], cryptoRange[1]);
         } catch (IOException e) {
             throw new S3EncryptionClientException("Error adjusting output to desired byte range: " + e.getMessage());
         }
