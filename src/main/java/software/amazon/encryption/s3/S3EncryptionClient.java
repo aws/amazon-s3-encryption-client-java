@@ -3,7 +3,7 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -11,13 +11,13 @@ import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.AbortableInputStream;
+import software.amazon.awssdk.services.s3.DelegatingS3Client;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
-import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -32,33 +32,25 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
-import software.amazon.encryption.s3.internal.MultiFileOutputStream;
 import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
-import software.amazon.encryption.s3.internal.UploadObjectObserver;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
-import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
 import javax.crypto.SecretKey;
-import java.io.IOException;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
@@ -68,15 +60,16 @@ import static software.amazon.encryption.s3.S3EncryptionClientUtilities.instruct
  * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
  * on putObject and decrypt objects on getObject using the provided encryption key(s).
  */
-public class S3EncryptionClient implements S3Client {
+public class S3EncryptionClient extends DelegatingS3Client {
 
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
-    public static final ExecutionAttribute<MultipartConfiguration> CONFIGURATION = new ExecutionAttribute<>("MultipartConfiguration");
     // TODO: Replace with UploadPartRequest.isLastPart() when launched.
     // Used for multipart uploads
     public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
-    private final S3AsyncClient _wrappedAsyncClient;
+
+    private final S3AsyncClient _wrappedClient;
+    private final S3AsyncClient _wrappedCrtClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyWrappingAlgorithms;
@@ -86,7 +79,11 @@ public class S3EncryptionClient implements S3Client {
     private final MultipartUploadObjectPipeline _multipartPipeline;
 
     private S3EncryptionClient(Builder builder) {
-        _wrappedAsyncClient = builder._wrappedAsyncClient;
+        // The non-encrypted APIs will use a default client.
+        // In the future, we may want to make this configurable.
+        super(S3Client.create());
+        _wrappedClient = builder._wrappedClient;
+        _wrappedCrtClient = builder._wrappedCrtClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
         _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
@@ -106,13 +103,6 @@ public class S3EncryptionClient implements S3Client {
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
     }
 
-    // Helper function to attach encryption contexts to a request
-    public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalConfiguration(Map<String, String> encryptionContext, MultipartConfiguration multipartConfiguration) {
-        return builder ->
-                builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext)
-                        .putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
-    }
-
     // Helper function to determine last upload part during multipart uploads
     public static Consumer<AwsRequestOverrideConfiguration.Builder> isLastPart(Boolean isLastPart) {
         return builder ->
@@ -123,21 +113,11 @@ public class S3EncryptionClient implements S3Client {
     public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody)
             throws AwsServiceException, SdkClientException {
 
-        if (_enableMultipartPutObject) {
-            try {
-                // TODO: Confirm best way to wrap CompleteMultipartUploadResponse with PutObjectResponse
-                CompleteMultipartUploadResponse completeResponse = multipartPutObject(putObjectRequest, requestBody);
-                PutObjectResponse response = PutObjectResponse.builder()
-                        .eTag(completeResponse.eTag())
-                        .build();
-                return response;
-            } catch (Throwable e) {
-                throw new S3EncryptionClientException("Exception while performing Multipart Upload PutObject", e);
-            }
-        }
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
-                .s3AsyncClient(_wrappedAsyncClient)
+                .s3AsyncClient(_wrappedClient)
+                .crtClient(_wrappedCrtClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
+                .enableMultipartPutObject(_enableMultipartPutObject)
                 .secureRandom(_secureRandom)
                 .build();
 
@@ -151,7 +131,7 @@ public class S3EncryptionClient implements S3Client {
             throws AwsServiceException, SdkClientException {
 
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
-                .s3AsyncClient(_wrappedAsyncClient)
+                .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
@@ -159,8 +139,8 @@ public class S3EncryptionClient implements S3Client {
                 .build();
 
         try {
-            ResponseBytes<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBytes()).join();
-            return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet.asInputStream()));
+            ResponseInputStream<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
+            return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet));
         } catch (CompletionException e) {
             throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
         } catch (Exception e) {
@@ -168,76 +148,14 @@ public class S3EncryptionClient implements S3Client {
         }
     }
 
-    private CompleteMultipartUploadResponse multipartPutObject(PutObjectRequest request, RequestBody requestBody) throws Throwable {
-
-        AwsRequestOverrideConfiguration overrideConfig = request.overrideConfiguration().get();
-        // If MultipartConfiguration is null, Initialize MultipartConfiguration
-        MultipartConfiguration multipartConfiguration = overrideConfig
-                .executionAttributes()
-                .getOptionalAttribute(S3EncryptionClient.CONFIGURATION)
-                .orElse(MultipartConfiguration.builder().build());
-
-        ExecutorService es = multipartConfiguration.executorService();
-        final boolean defaultExecutorService = es == null;
-        if (es == null) {
-            throw new S3EncryptionClientException("ExecutorService should not be null, Please initialize during MultipartConfiguration");
-        }
-
-        UploadObjectObserver observer = multipartConfiguration.uploadObjectObserver();
-        if (observer == null) {
-            throw new S3EncryptionClientException("UploadObjectObserver should not be null, Please initialize during MultipartConfiguration");
-        }
-
-        observer.init(request, _wrappedAsyncClient, this, es);
-        final String uploadId = observer.onUploadCreation(request);
-        final List<CompletedPart> partETags = new ArrayList<>();
-
-        MultiFileOutputStream outputStream = multipartConfiguration.multiFileOutputStream();
-        if (outputStream == null) {
-            throw new S3EncryptionClientException("MultiFileOutputStream should not be null, Please initialize during MultipartConfiguration");
-        }
-
-        try {
-            // initialize the multi-file output stream
-            outputStream.init(observer, multipartConfiguration.partSize(), multipartConfiguration.diskLimit());
-            // Kicks off the encryption-upload pipeline;
-            // Note outputStream is automatically closed upon method completion.
-            _multipartPipeline.putLocalObject(requestBody, uploadId, outputStream);
-            // block till all part have been uploaded
-            for (Future<Map<Integer, UploadPartResponse>> future : observer.futures()) {
-                Map<Integer, UploadPartResponse> partResponseMap = future.get();
-                partResponseMap.forEach((partNumber, uploadPartResponse) -> partETags.add(CompletedPart.builder()
-                        .partNumber(partNumber)
-                        .eTag(uploadPartResponse.eTag())
-                        .build()));
-            }
-        } catch (IOException | InterruptedException | ExecutionException | RuntimeException | Error ex) {
-            throw onAbort(observer, ex);
-        } finally {
-            if (defaultExecutorService) {
-                // shut down the locally created thread pool
-                es.shutdownNow();
-            }
-            // delete left-over temp files
-            outputStream.cleanup();
-        }
-        // Complete upload
-        return observer.onCompletion(partETags);
-    }
-
-    private <T extends Throwable> T onAbort(UploadObjectObserver observer, T t) {
-        observer.onAbort();
-        return t;
-    }
-
     @Override
     public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) throws AwsServiceException,
             SdkClientException {
         // Delete the object
-        DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(deleteObjectRequest).join();
+        DeleteObjectResponse deleteObjectResponse = _wrappedClient.deleteObject(deleteObjectRequest).join();
         // If Instruction file exists, delete the instruction file as well.
         String instructionObjectKey = deleteObjectRequest.key() + INSTRUCTION_FILE_SUFFIX;
-        _wrappedAsyncClient.deleteObject(builder -> builder
+        _wrappedClient.deleteObject(builder -> builder
                 .bucket(deleteObjectRequest.bucket())
                 .key(instructionObjectKey)).join();
         return deleteObjectResponse;
@@ -247,10 +165,10 @@ public class S3EncryptionClient implements S3Client {
     public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
         // Delete the objects
-        DeleteObjectsResponse deleteObjectsResponse = _wrappedAsyncClient.deleteObjects(deleteObjectsRequest).join();
+        DeleteObjectsResponse deleteObjectsResponse = _wrappedClient.deleteObjects(deleteObjectsRequest).join();
         // If Instruction files exists, delete the instruction files as well.
         List<ObjectIdentifier> deleteObjects = instructionFileKeysToDelete(deleteObjectsRequest);
-        _wrappedAsyncClient.deleteObjects(DeleteObjectsRequest.builder()
+        _wrappedClient.deleteObjects(DeleteObjectsRequest.builder()
                 .bucket(deleteObjectsRequest.bucket())
                 .delete(builder -> builder.objects(deleteObjects))
                 .build()).join();
@@ -294,17 +212,13 @@ public class S3EncryptionClient implements S3Client {
     }
 
     @Override
-    public String serviceName() {
-        return _wrappedAsyncClient.serviceName();
-    }
-
-    @Override
     public void close() {
-        _wrappedAsyncClient.close();
+        _wrappedClient.close();
     }
 
     public static class Builder {
-        private S3AsyncClient _wrappedAsyncClient = S3AsyncClient.create();
+        private S3AsyncClient _wrappedClient = S3AsyncClient.create();
+        private S3AsyncClient _wrappedCrtClient = null;
 
         private MultipartUploadObjectPipeline _multipartPipeline;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -327,22 +241,13 @@ public class S3EncryptionClient implements S3Client {
          * S3AsyncClient will be reflected in this Builder.
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
-        public Builder wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
-            if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
-                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
+        public Builder wrappedClient(S3AsyncClient wrappedClient) {
+            if (wrappedClient instanceof S3AsyncEncryptionClient) {
+                throw new S3EncryptionClientException("Cannot use S3AsyncEncryptionClient as wrapped client");
             }
-
-            this._wrappedAsyncClient = _wrappedAsyncClient;
-            return this;
-        }
-
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
-        public Builder _wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
-            if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
-                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
-            }
-
-            this._wrappedAsyncClient = _wrappedAsyncClient;
+            // Initializes only when wrappedClient is configured by user.
+            this._wrappedCrtClient = wrappedClient;
+            this._wrappedClient = wrappedClient;
             return this;
         }
 
@@ -480,7 +385,7 @@ public class S3EncryptionClient implements S3Client {
             }
 
             _multipartPipeline = MultipartUploadObjectPipeline.builder()
-                    .s3AsyncClient(_wrappedAsyncClient)
+                    .s3AsyncClient(_wrappedClient)
                     .cryptoMaterialsManager(_cryptoMaterialsManager)
                     .secureRandom(_secureRandom)
                     .build();

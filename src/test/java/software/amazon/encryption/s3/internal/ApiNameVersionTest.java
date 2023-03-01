@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ApiNameVersionTest {
 
-    private final static String EXPECTED_API_NAME = "AwsS3Encrypt";
+    private final static String EXPECTED_API_NAME = "AmazonS3Encrypt";
     private final static String EXPECTED_API_VERSION = "unknown";
 
     @Test

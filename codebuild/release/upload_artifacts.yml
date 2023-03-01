@@ -68,4 +68,4 @@ phases:
           -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
           -Dartifact=software.amazon.encryption:s3:${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION:jar:javadoc \
           -s $SETTINGS_FILE
-      - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/s3/${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION/*.jar -d -F CHANGELOG.md -t "AWS S3 Encryption Client ${VERSION} Release -- $(date +%Y-%m-%d)"
+      - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/s3/${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION/*.jar -d -F CHANGELOG.md -t "Amazon S3 Encryption Client ${VERSION} Release -- $(date +%Y-%m-%d)"
