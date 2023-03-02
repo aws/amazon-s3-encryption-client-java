@@ -1,6 +1,10 @@
 package software.amazon.encryption.s3.internal;
 
+
 import software.amazon.awssdk.core.ApiName;
+
+import java.io.IOException;
+import java.util.Properties;
 
 /**
  * Provides the information for the ApiName APIs for the AWS SDK
@@ -18,7 +22,13 @@ public class ApiNameVersion {
     }
 
     private static String apiVersion() {
-        // TODO: Use a resources file akin to ESDK to populate this
-        return API_VERSION_UNKNOWN;
+        try {
+            final Properties properties = new Properties();
+            final ClassLoader loader = ApiNameVersion.class.getClassLoader();
+            properties.load(loader.getResourceAsStream("project.properties"));
+            return properties.getProperty("version");
+        } catch (final IOException ex) {
+            return API_VERSION_UNKNOWN;
+        }
     }
 }
