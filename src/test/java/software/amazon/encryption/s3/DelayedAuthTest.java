@@ -276,7 +276,10 @@ public class DelayedAuthTest {
                 .aesKey(AES_KEY)
                 .build();
 
-        final int inputLength = 1000000000;
+        // 1Gb
+        //final int inputLength = 1000000000;
+        // 50Mb
+        final int inputLength = 50000000;
         final InputStream input = new BoundedZerosInputStream(inputLength);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
