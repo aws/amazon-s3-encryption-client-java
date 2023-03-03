@@ -10,6 +10,7 @@ import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -21,6 +22,7 @@ import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 import software.amazon.encryption.s3.utils.MarkResetBoundedZerosInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
+import javax.crypto.AEADBadTagException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.security.Provider;
 import java.security.Security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -196,8 +199,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    // TODO : Add Delayed Authentication to Async Client.
-    //@Test
+    @Test
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test");
 
@@ -219,12 +221,11 @@ public class S3EncryptionClientStreamTest {
                 .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
 
         largeObjectStream.close();
-// TODO : Add Delayed Authentication to Async Client.
 
-//        // Delayed Authentication is not enabled, so getObject fails
-//        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
-//                .bucket(BUCKET)
-//                .key(objectKey)));
+        // Delayed Authentication is not enabled, so getObject fails
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
                 
         S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
@@ -262,5 +263,72 @@ public class S3EncryptionClientStreamTest {
 
         // Cleanup
         v3Client.close();
+    }
+
+    @Test
+    public void AesGcmV3toV3StreamWithTamperedTag() {
+        final String BUCKET_KEY = "aes-gcm-v3-to-v3-stream-tamper-tag";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // 640 bytes of gibberish - enough to cover multiple blocks
+        final String input = "1esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "2esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "3esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "4esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "5esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "6esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "7esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "8esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "9esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
+                + "10sAAAYoAesAAAEndOfChunkAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo";
+        final int inputLength = input.length();
+        v3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .build(), RequestBody.fromString(input));
+
+        // Use an unencrypted (plaintext) client to interact with the encrypted object
+        final S3Client plaintextS3Client = S3Client.builder().build();
+        ResponseBytes<GetObjectResponse> objectResponse = plaintextS3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY));
+        final byte[] encryptedBytes = objectResponse.asByteArray();
+        final int tagLength = 16;
+        final byte[] tamperedBytes = new byte[inputLength + tagLength];
+        // Copy the enciphered bytes
+        System.arraycopy(encryptedBytes, 0, tamperedBytes, 0, inputLength);
+        final byte[] tamperedTag = new byte[tagLength];
+        // Increment the first byte of the tag
+        tamperedTag[0] = (byte) (encryptedBytes[inputLength + 1] + 1);
+        // Copy the rest of the tag as-is
+        System.arraycopy(encryptedBytes, inputLength + 1, tamperedTag, 1, tagLength - 1);
+        // Append the tampered tag
+        System.arraycopy(tamperedTag, 0, tamperedBytes, inputLength, tagLength);
+
+        // Sanity check that the objects differ
+        assertNotEquals(encryptedBytes, tamperedBytes);
+
+        // Replace the encrypted object with the tampered object
+        PutObjectRequest tamperedPut = PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(BUCKET_KEY)
+                .metadata(objectResponse.response().metadata()) // Preserve metadata from encrypted object
+                .build();
+        plaintextS3Client.putObject(tamperedPut, RequestBody.fromBytes(tamperedBytes));
+
+        // Get (and decrypt) the (modified) object from S3
+        ResponseInputStream<GetObjectResponse> dataStream = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(BUCKET_KEY));
+
+        final int chunkSize = 300;
+        final byte[] chunk1 = new byte[chunkSize];
+
+        // Stream decryption will throw an exception on the first byte read
+        assertThrows(AEADBadTagException.class, () -> dataStream.read(chunk1, 0, chunkSize));
     }
 }

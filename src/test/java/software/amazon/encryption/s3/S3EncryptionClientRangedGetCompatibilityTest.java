@@ -408,6 +408,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
+                .enableDelayedAuthenticationMode(true)
                 .build();
 
         // Valid Range
