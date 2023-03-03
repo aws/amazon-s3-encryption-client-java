@@ -50,20 +50,26 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onNext(ByteBuffer byteBuffer) {
+        System.out.println("onNext w BB remaining" + byteBuffer.remaining());
+        System.out.println("onNext w BB cap" + byteBuffer.capacity());
         int amountToReadFromByteBuffer = getAmountToReadFromByteBuffer(byteBuffer);
+        System.out.println("amt to read from BB: " + amountToReadFromByteBuffer);
 
         if (amountToReadFromByteBuffer > 0) {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
+            System.out.println("cipher update");
             outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
 
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
                 // The underlying data is too short to fill in the block cipher
                 // This is true at the end of the file, so complete to get the final
                 // bytes
+                System.out.println("right to complete");
                 this.onComplete();
             }
 
             // Enqueue the buffer until all data is read
+            System.out.println("enqueue output buffer");
             buffers.add(ByteBuffer.wrap(outputBuffer));
         }
 
@@ -88,21 +94,31 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onComplete() {
+        System.out.println("onComplete");
         try {
+            System.out.println("doFinal");
             outputBuffer = cipher.doFinal();
+            System.out.println("doneFinal");
             // Once doFinal is called, then we can release the plaintext
             if (contentRead.get() == contentLength) {
+                System.out.println("start release");
                 while (!buffers.isEmpty()) {
+                    System.out.println("releasing...");
                     wrappedSubscriber.onNext(buffers.remove());
                 }
             }
+            System.out.println("now final bytes...");
             // Send the final bytes to the wrapped subscriber
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
         } catch (final GeneralSecurityException exception) {
+            System.out.println("ope...");
+            exception.printStackTrace();
             // Forward error, else the wrapped subscriber waits indefinitely
             wrappedSubscriber.onError(exception);
             throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
         }
+        System.out.println("completing!");
         wrappedSubscriber.onComplete();
+        System.out.println("donezo");
     }
 }

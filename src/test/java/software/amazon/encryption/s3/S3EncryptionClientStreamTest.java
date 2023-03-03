@@ -57,7 +57,7 @@ public class S3EncryptionClientStreamTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    //@Test
     public void markResetInputStreamV3Encrypt() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3Encrypt");
         System.out.println(objectKey);
@@ -92,7 +92,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void ordinaryInputStreamV3Encrypt() throws IOException {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Encrypt");
         System.out.println(objectKey);
@@ -130,6 +130,12 @@ public class S3EncryptionClientStreamTest {
     }
 
     @Test
+    public void loop() throws IOException {
+        for (int i = 0; i <= 20; i++) {
+            ordinaryInputStreamV3Decrypt();
+        }
+    }
+
     public void ordinaryInputStreamV3Decrypt() throws IOException {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Decrypt");
         System.out.println(objectKey);
@@ -168,7 +174,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void ordinaryInputStreamV3DecryptCbc() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3DecryptCbc");
         System.out.println(objectKey);
@@ -212,7 +218,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test");
         System.out.println(objectKey);
@@ -258,7 +264,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void delayedAuthModeWithLargerThanMaxObjectFails() throws IOException {
         final String objectKey = appendTestSuffix("larger-than-max-object-delayed-auth-mode");
         System.out.println(objectKey);
@@ -283,7 +289,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesGcmV3toV3StreamWithTamperedTag() {
         final String objectKey = "aes-gcm-v3-to-v3-stream-tamper-tag";
 

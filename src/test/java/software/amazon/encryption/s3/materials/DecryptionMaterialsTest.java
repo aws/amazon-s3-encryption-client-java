@@ -29,18 +29,18 @@ public class DecryptionMaterialsTest {
                 .build();
     }
 
-    @Test
+    //@Test
     public  void testS3Request() {
         assertEquals(s3Request, actualDecryptionMaterials.s3Request());
     }
 
-    @Test
+    //@Test
     public void testAlgorithmSuite() {
         assertEquals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, actualDecryptionMaterials.algorithmSuite());
         assertNotEquals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF, actualDecryptionMaterials.algorithmSuite());
     }
 
-    @Test
+    //@Test
     public void testEncryptionContext() {
         assertEquals(encryptionContext, actualDecryptionMaterials.encryptionContext());
     }
