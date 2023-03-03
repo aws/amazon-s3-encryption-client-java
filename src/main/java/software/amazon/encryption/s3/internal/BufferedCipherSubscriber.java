@@ -10,6 +10,7 @@ import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -25,6 +26,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     private static final long BUFFERED_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * BUFFERED_MAX_CONTENT_LENGTH_MiB;
 
     private final AtomicInteger contentRead = new AtomicInteger(0);
+    private final AtomicBoolean doneFinal = new AtomicBoolean(false);
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
     private final Cipher cipher;
     private final int contentLength;
@@ -103,9 +105,14 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     @Override
     public void onComplete() {
         System.out.println("onComplete");
+        if (doneFinal.get()) {
+            // doFinal has already been called, bail out
+            return;
+        }
         try {
             System.out.println("doFinal");
             outputBuffer = cipher.doFinal();
+            doneFinal.set(true);
             System.out.println("doneFinal");
             // Once doFinal is called, then we can release the plaintext
             if (contentRead.get() == contentLength) {
