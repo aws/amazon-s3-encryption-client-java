@@ -76,6 +76,8 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
 
             // Sometimes, onComplete won't be called, so we check if all
             // data is read to avoid hanging indefinitely
+            System.out.println("content read: " + contentRead.get());
+            System.out.println("content length: " + contentLength);
             if (contentRead.get() == contentLength) {
                 System.out.println("competing from onNext");
                 this.onComplete();
