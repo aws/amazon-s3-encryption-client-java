@@ -35,6 +35,8 @@ import java.security.Security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
@@ -329,6 +331,13 @@ public class S3EncryptionClientStreamTest {
         final byte[] chunk1 = new byte[chunkSize];
 
         // Stream decryption will throw an exception on the first byte read
-        assertThrows(AEADBadTagException.class, () -> dataStream.read(chunk1, 0, chunkSize));
+        try {
+            dataStream.read(chunk1, 0, chunkSize);
+        } catch (RuntimeException outerEx) {
+            assertTrue(outerEx.getCause() instanceof AEADBadTagException);
+        } catch (IOException unexpected) {
+            // Not expected, but fail the test anyway
+            fail(unexpected);
+        }
     }
 }
