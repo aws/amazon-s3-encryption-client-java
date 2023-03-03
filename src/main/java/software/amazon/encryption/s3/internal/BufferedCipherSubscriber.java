@@ -84,6 +84,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
                 this.onComplete();
             }
             System.out.println("end of onNext...");
+            wrappedSubscriber.onNext(ByteBuffer.allocate(0));
         }
 
     }
