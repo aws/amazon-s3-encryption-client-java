@@ -131,7 +131,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void loop() throws IOException {
-        for (int i = 0; i <= 20; i++) {
+        for (int i = 0; i <= 100; i++) {
             ordinaryInputStreamV3Decrypt();
         }
     }
