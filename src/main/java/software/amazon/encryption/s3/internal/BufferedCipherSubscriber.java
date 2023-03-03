@@ -9,7 +9,8 @@ import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +33,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     private final int contentLength;
 
     private byte[] outputBuffer;
-    private final LinkedList<ByteBuffer> buffers = new LinkedList<>();
+    private final Queue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
 
     BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Cipher cipher, Long contentLength) {
         this.wrappedSubscriber = wrappedSubscriber;
@@ -82,7 +83,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
                 System.out.println("competing from onNext");
                 this.onComplete();
             }
-
+            System.out.println("end of onNext...");
         }
 
     }
