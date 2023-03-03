@@ -60,7 +60,7 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void markResetInputStreamV3Encrypt() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3Encrypt");
-
+        System.out.println(objectKey);
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
@@ -72,12 +72,14 @@ public class S3EncryptionClientStreamTest {
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStream);
         inputStream.reset();
 
+        System.out.println("put " + objectKey);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromInputStream(inputStream, inputLength));
         inputStream.close();
 
+        System.out.println("get " + objectKey);
         final String actualObject = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -93,6 +95,7 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void ordinaryInputStreamV3Encrypt() throws IOException {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Encrypt");
+        System.out.println(objectKey);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -106,12 +109,14 @@ public class S3EncryptionClientStreamTest {
         final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
+        System.out.println("put " + objectKey);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromInputStream(inputStream, inputLength));
         inputStream.close();
 
+        System.out.println("get " + objectKey);
         final String actualObject = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -127,6 +132,7 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void ordinaryInputStreamV3Decrypt() throws IOException {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Decrypt");
+        System.out.println(objectKey);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -140,12 +146,14 @@ public class S3EncryptionClientStreamTest {
         final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
+        System.out.println("put " + objectKey);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromInputStream(inputStream, inputLength));
         inputStream.close();
 
+        System.out.println("get " + objectKey);
         final ResponseInputStream<GetObjectResponse> responseInputStream = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -163,6 +171,7 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void ordinaryInputStreamV3DecryptCbc() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3DecryptCbc");
+        System.out.println(objectKey);
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -185,8 +194,10 @@ public class S3EncryptionClientStreamTest {
         final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
+        System.out.println("put "+ objectKey);
         v1Client.putObject(BUCKET, objectKey, inputStreamAsUtf8String);
 
+        System.out.println("get " + objectKey);
         final ResponseInputStream<GetObjectResponse> responseInputStream = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -204,6 +215,7 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test");
+        System.out.println(objectKey);
 
         Security.addProvider(new BouncyCastleProvider());
         Provider provider = Security.getProvider("BC");
@@ -217,6 +229,7 @@ public class S3EncryptionClientStreamTest {
         // Tight bound on the default limit of 64MiB
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
         final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
+        System.out.println("put " + objectKey);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -235,6 +248,7 @@ public class S3EncryptionClientStreamTest {
                 .build();
 
         // Once enabled, the getObject request passes
+        System.out.println("get " + objectKey);
         v3ClientWithDelayedAuth.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
@@ -247,6 +261,7 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void delayedAuthModeWithLargerThanMaxObjectFails() throws IOException {
         final String objectKey = appendTestSuffix("larger-than-max-object-delayed-auth-mode");
+        System.out.println(objectKey);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -256,6 +271,7 @@ public class S3EncryptionClientStreamTest {
 
         final long fileSizeExceedingGCMLimit = (1L << 39) - 256 / 8;
         final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingGCMLimit);
+        System.out.println("get " + objectKey);
         assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -269,7 +285,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void AesGcmV3toV3StreamWithTamperedTag() {
-        final String BUCKET_KEY = "aes-gcm-v3-to-v3-stream-tamper-tag";
+        final String objectKey = "aes-gcm-v3-to-v3-stream-tamper-tag";
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -288,16 +304,17 @@ public class S3EncryptionClientStreamTest {
                 + "9esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
                 + "10sAAAYoAesAAAEndOfChunkAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo";
         final int inputLength = input.length();
+        System.out.println("put " + objectKey);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)
+                .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
         // Use an unencrypted (plaintext) client to interact with the encrypted object
         final S3Client plaintextS3Client = S3Client.builder().build();
         ResponseBytes<GetObjectResponse> objectResponse = plaintextS3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(BUCKET_KEY));
+                .key(objectKey));
         final byte[] encryptedBytes = objectResponse.asByteArray();
         final int tagLength = 16;
         final byte[] tamperedBytes = new byte[inputLength + tagLength];
@@ -317,15 +334,16 @@ public class S3EncryptionClientStreamTest {
         // Replace the encrypted object with the tampered object
         PutObjectRequest tamperedPut = PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(BUCKET_KEY)
+                .key(objectKey)
                 .metadata(objectResponse.response().metadata()) // Preserve metadata from encrypted object
                 .build();
         plaintextS3Client.putObject(tamperedPut, RequestBody.fromBytes(tamperedBytes));
 
         // Get (and decrypt) the (modified) object from S3
+        System.out.println("get " + objectKey);
         ResponseInputStream<GetObjectResponse> dataStream = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
-                .key(BUCKET_KEY));
+                .key(objectKey));
 
         final int chunkSize = 300;
         final byte[] chunk1 = new byte[chunkSize];
