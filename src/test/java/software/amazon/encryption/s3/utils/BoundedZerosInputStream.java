@@ -22,7 +22,7 @@ public class BoundedZerosInputStream extends InputStream {
             return -1;
         }
         _progress++;
-        return 0;
+        return 12;
     }
 }
 
