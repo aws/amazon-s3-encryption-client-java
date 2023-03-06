@@ -365,7 +365,7 @@ public class S3EncryptionClientTest {
         S3AsyncClient wrappedClient = S3AsyncClient.builder().build();
 
         S3Client wrappingClient = S3EncryptionClient.builder()
-            .wrappedClient(wrappedClient)
+            .wrappedAsyncClient(wrappedClient)
             .kmsKeyId(KMS_KEY_ID)
             .build();
 
@@ -388,7 +388,7 @@ public class S3EncryptionClientTest {
             .build();
 
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-            .wrappedClient(wrappedAsyncClient)
+            .wrappedAsyncClient(wrappedAsyncClient)
             .kmsKeyId(KMS_KEY_ID)
             .build());
     }
