@@ -129,14 +129,10 @@ public class S3EncryptionClientCRTTest {
                 .key(objectKey)
                 .build(), AsyncRequestBody.fromString(input)).join();
 
-        try {
-            asyncClient.getObject(builder -> builder
-                    .bucket(BUCKET)
-                    .range("bytes=10-20")
-                    .key(objectKey), AsyncResponseTransformer.toBytes()).join();
-        } catch (CompletionException e) {
-            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
-        }
+        assertThrows(S3EncryptionClientException.class, () -> asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=10-20")
+                .key(objectKey), AsyncResponseTransformer.toBytes()).join());
 
         // Cleanup
         deleteObject(BUCKET, objectKey, asyncClient);
