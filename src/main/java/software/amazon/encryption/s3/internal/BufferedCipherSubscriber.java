@@ -38,7 +38,11 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Cipher cipher, Long contentLength) {
         this.wrappedSubscriber = wrappedSubscriber;
         this.cipher = cipher;
-        if (contentLength == null || contentLength > BUFFERED_MAX_CONTENT_LENGTH_BYTES) {
+        if (contentLength == null) {
+            throw new S3EncryptionClientException("contentLength cannot be null in buffered mode. To enable unbounded " +
+                    "streaming, reconfigure the S3 Encryption Client with Delayed Authentication mode enabled.");
+        }
+        if (contentLength > BUFFERED_MAX_CONTENT_LENGTH_BYTES) {
             throw new S3EncryptionClientException(String.format("The object you are attempting to decrypt exceeds the maximum content " +
                     "length allowed in default mode. Please enable Delayed Authentication mode to decrypt objects larger" +
                     "than %d", BUFFERED_MAX_CONTENT_LENGTH_MiB));
