@@ -54,10 +54,12 @@ public class GetEncryptedObjectPipeline {
     }
 
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest, AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
-        // TODO: Support for ranged gets in async
         // In async, decryption is done within a response transformation
         String cryptoRange = RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range());
         GetObjectRequest adjustedRangeRequest = getObjectRequest.toBuilder().range(cryptoRange).build();
+        if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
+            throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
+        }
         return _s3AsyncClient.getObject(adjustedRangeRequest, new DecryptingResponseTransformer<>(asyncResponseTransformer,
                 getObjectRequest));
     }
@@ -111,9 +113,6 @@ public class GetEncryptedObjectPipeline {
         @Override
         public void onResponse(GetObjectResponse response) {
             getObjectResponse = response;
-            if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
-                throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
-            }
             contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, response);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
             wrappedAsyncResponseTransformer.onResponse(response);

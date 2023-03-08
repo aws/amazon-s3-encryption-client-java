@@ -32,7 +32,7 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 /**
  * This class is an integration test for Unauthenticated Ranged Get for AES/CBC and AES/GCM modes
  */
-public class S3EncryptionClientRangedGetCompatibilityTest {
+public class S3EncryptionClientCRTTest {
 
     private static SecretKey AES_KEY;
 
@@ -57,6 +57,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
+                .wrappedClient(S3AsyncClient.crtCreate())
                 .build();
         asyncClient.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -119,6 +120,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
         // V3 Client
         S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+                .wrappedClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .build();
 
@@ -162,6 +164,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         // V3 Client
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .wrappedClient(S3AsyncClient.crtCreate())
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -226,6 +229,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
+                .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .build();
 
@@ -257,6 +261,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
+                .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -322,6 +327,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
+                .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -354,6 +360,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
         // Async Client
         S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+                .wrappedClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
@@ -401,6 +408,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
+                .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
@@ -489,6 +497,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
+                .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .build();
 
         // Invalid range exceed object length, Throws S3EncryptionClientException wrapped with S3Exception
