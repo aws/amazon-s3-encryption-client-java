@@ -97,7 +97,8 @@ class Example {
         // V3
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(aesKey)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true) // for enabling legacy content decryption modes
+                .enableLegacyWrappingAlgorithms(true) // for enabling legacy key wrapping modes 
                 .build();
     }
 }

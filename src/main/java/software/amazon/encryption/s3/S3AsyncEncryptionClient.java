@@ -40,22 +40,18 @@ import java.util.function.Function;
 public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
     private final S3AsyncClient _wrappedClient;
-    private final S3AsyncClient _wrappedCrtClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyWrappingAlgorithms;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
-    private final boolean _enableMultipartPutObject;
 
     private S3AsyncEncryptionClient(Builder builder) {
         super(builder._wrappedClient);
         _wrappedClient = builder._wrappedClient;
-        _wrappedCrtClient = builder._wrappedCrtClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
         _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
-        _enableMultipartPutObject = builder._enableMultipartPutObject;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
     }
@@ -75,8 +71,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             throws AwsServiceException, SdkClientException {
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
-                .crtClient(_wrappedCrtClient)
-                .enableMultipartPutObject(_enableMultipartPutObject)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
@@ -133,7 +127,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     // TODO: The async / non-async clients can probably share a builder - revisit after implementing async
     public static class Builder {
         private S3AsyncClient _wrappedClient = S3AsyncClient.builder().build();
-        private S3AsyncClient _wrappedCrtClient = null;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
         private SecretKey _aesKey;
@@ -141,8 +134,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private String _kmsKeyId;
         private boolean _enableLegacyWrappingAlgorithms = false;
         private boolean _enableLegacyUnauthenticatedModes = false;
-        private boolean _enableMultipartPutObject = false;
         private boolean _enableDelayedAuthenticationMode = false;
+        private boolean _enableMultipartPutObject = false;
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
 
@@ -158,8 +151,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             if (wrappedClient instanceof S3AsyncEncryptionClient) {
                 throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
             }
-            // Initializes only when wrappedAsyncClient is configured by user.
-            this._wrappedCrtClient = wrappedClient;
+
             this._wrappedClient = wrappedClient;
             return this;
         }
@@ -246,7 +238,9 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         public Builder enableMultipartPutObject(boolean _enableMultipartPutObject) {
-            this._enableMultipartPutObject = _enableMultipartPutObject;
+            if (_enableMultipartPutObject) {
+                throw new S3EncryptionClientException("Async multipart PutObject is currently disabled.");
+            }
             return this;
         }
 
