@@ -1,13 +1,12 @@
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 public class DecryptMaterialsRequest {
 
