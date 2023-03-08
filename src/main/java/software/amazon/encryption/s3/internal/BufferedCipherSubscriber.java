@@ -6,7 +6,6 @@ import software.amazon.awssdk.utils.BinaryUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
 
-import javax.annotation.Nonnull;
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -36,10 +35,10 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     private byte[] outputBuffer;
     private final Queue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
 
-    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Cipher cipher, @Nonnull Long contentLength) {
+    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Cipher cipher, Long contentLength) {
         this.wrappedSubscriber = wrappedSubscriber;
         this.cipher = cipher;
-        if (contentLength > BUFFERED_MAX_CONTENT_LENGTH_BYTES) {
+        if (contentLength == null || contentLength > BUFFERED_MAX_CONTENT_LENGTH_BYTES) {
             throw new S3EncryptionClientException(String.format("The object you are attempting to decrypt exceeds the maximum content " +
                     "length allowed in default mode. Please enable Delayed Authentication mode to decrypt objects larger" +
                     "than %d", BUFFERED_MAX_CONTENT_LENGTH_MiB));

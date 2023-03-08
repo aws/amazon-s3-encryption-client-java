@@ -35,7 +35,10 @@ import java.util.concurrent.CompletableFuture;
 public class GetEncryptedObjectPipeline {
     private final S3AsyncClient _s3AsyncClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
+    private final boolean _enableLegacyWrappingAlgorithms;
+
     private final boolean _enableLegacyUnauthenticatedModes;
+    // TODO: Find a way to use for async client
     private final boolean _enableDelayedAuthentication;
 
     public static Builder builder() {
@@ -45,6 +48,7 @@ public class GetEncryptedObjectPipeline {
     private GetEncryptedObjectPipeline(Builder builder) {
         this._s3AsyncClient = builder._s3AsyncClient;
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
+        this._enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
         this._enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         this._enableDelayedAuthentication = builder._enableDelayedAuthentication;
     }
@@ -166,6 +170,7 @@ public class GetEncryptedObjectPipeline {
     public static class Builder {
         private S3AsyncClient _s3AsyncClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
+        private boolean _enableLegacyWrappingAlgorithms;
         private boolean _enableLegacyUnauthenticatedModes;
         private boolean _enableDelayedAuthentication;
 
@@ -184,6 +189,11 @@ public class GetEncryptedObjectPipeline {
 
         public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
             this._cryptoMaterialsManager = cryptoMaterialsManager;
+            return this;
+        }
+
+        public Builder enableLegacyWrappingAlgorithms(boolean enableLegacyWrappingAlgorithms) {
+            this._enableLegacyWrappingAlgorithms = enableLegacyWrappingAlgorithms;
             return this;
         }
 
