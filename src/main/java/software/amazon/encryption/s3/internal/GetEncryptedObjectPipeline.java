@@ -148,8 +148,19 @@ public class GetEncryptedObjectPipeline {
                         throw new S3EncryptionClientException("Unknown algorithm: " + algorithmSuite.cipherName());
                 }
 
-                CipherPublisher plaintextPublisher = new CipherPublisher(cipher, ciphertextPublisher, getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits());
-                wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
+                if (algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF) || _enableDelayedAuthentication) {
+                    // CBC and GCM with delayed auth enabled use a standard publisher
+                    CipherPublisher plaintextPublisher = new CipherPublisher(cipher, ciphertextPublisher,
+                            getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits());
+                    wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
+                } else {
+                    // Use buffered publisher for GCM when delayed auth is not enabled
+                    BufferedCipherPublisher plaintextPublisher = new BufferedCipherPublisher(cipher, ciphertextPublisher,
+                            getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits());
+                    wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
+
+                }
+
             } catch (GeneralSecurityException e) {
                 throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
             }
