@@ -146,7 +146,7 @@
       <groupId>software.amazon.awssdk.crt</groupId>
       <artifactId>aws-crt</artifactId>
       <version>0.21.7</version>
-      <optional>true</optional>
+      <scope>test</scope>
     </dependency>
 
   </dependencies>
