@@ -5,6 +5,7 @@ import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
@@ -33,17 +34,38 @@ public class PutEncryptedObjectPipeline {
     }
 
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {
-        EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
-                .s3Request(request)
-                .plaintextLength(requestBody.contentLength().orElse(-1L));
+        final Long contentLength;
+        if (request.contentLength() != null) {
+            if (requestBody.contentLength().isPresent() && !request.contentLength().equals(requestBody.contentLength().get())) {
+                // if the contentLength values do not match, throw an exception, since we don't know which is correct
+                throw new S3EncryptionClientException("The contentLength provided in the request object MUST match the " +
+                        "contentLength in the request body");
+            } else if (!requestBody.contentLength().isPresent()) {
+                // no contentLength in request body, use the one in request
+                contentLength = request.contentLength();
+            } else {
+                // only remaining case is when the values match, so either works here
+                contentLength = request.contentLength();
+            }
+        } else {
+            contentLength = requestBody.contentLength().orElse(-1L);
+        }
 
-        EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
+        EncryptionMaterialsRequest encryptionMaterialsRequest = EncryptionMaterialsRequest.builder()
+                .s3Request(request)
+                .plaintextLength(contentLength)
+                .build();
+
+        EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(encryptionMaterialsRequest);
 
         EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
 
         Map<String, String> metadata = new HashMap<>(request.metadata());
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
-        PutObjectRequest encryptedPutRequest = request.toBuilder().metadata(metadata).build();
+        PutObjectRequest encryptedPutRequest = request.toBuilder()
+                .contentLength(encryptedContent.getCiphertextLength())
+                .metadata(metadata)
+                .build();
         return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
     }
 
