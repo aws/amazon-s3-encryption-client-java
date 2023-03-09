@@ -148,7 +148,9 @@ public class GetEncryptedObjectPipeline {
                         throw new S3EncryptionClientException("Unknown algorithm: " + algorithmSuite.cipherName());
                 }
 
-                if (algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF) || _enableDelayedAuthentication) {
+                if (algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF)
+                        || algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF)
+                        || _enableDelayedAuthentication) {
                     // CBC and GCM with delayed auth enabled use a standard publisher
                     CipherPublisher plaintextPublisher = new CipherPublisher(cipher, ciphertextPublisher,
                             getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits());
