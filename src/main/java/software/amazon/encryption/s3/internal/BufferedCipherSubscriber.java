@@ -69,11 +69,6 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
             // Enqueue the buffer until all data is read
             buffers.add(ByteBuffer.wrap(outputBuffer));
 
-            // Sometimes, onComplete won't be called, so we check if all
-            // data is read to avoid hanging indefinitely
-            if (contentRead.get() == contentLength) {
-                this.onComplete();
-            }
             // This avoids the subscriber waiting indefinitely for more data
             // without actually releasing any plaintext before it can be authenticated
             wrappedSubscriber.onNext(ByteBuffer.allocate(0));
