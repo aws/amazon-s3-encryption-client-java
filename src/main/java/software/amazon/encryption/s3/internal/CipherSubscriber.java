@@ -38,6 +38,9 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             try {
                 outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
             } catch (final IllegalStateException exception) {
+                // This happens when the stream is reset and the cipher is reused with the
+                // same key/IV. It's actually fine here, because the data is the same, but any
+                // sane implementation will throw an exception.
                 // TODO: Implement retries. For now, forward and rethrow.
                 this.onError(exception);
                 throw exception;
