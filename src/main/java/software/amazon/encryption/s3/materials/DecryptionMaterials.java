@@ -1,16 +1,14 @@
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import java.security.Provider;
-import java.util.Collections;
-import java.util.Map;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import java.security.Provider;
+import java.util.Collections;
+import java.util.Map;
 
 final public class DecryptionMaterials implements CryptographicMaterials {
 
@@ -68,7 +66,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
     }
 
     public SecretKey dataKey() {
-        return new SecretKeySpec(_plaintextDataKey, "AES");
+        return new SecretKeySpec(_plaintextDataKey, algorithmSuite().dataKeyAlgorithm());
     }
 
     public Provider cryptoProvider() {

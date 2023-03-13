@@ -19,7 +19,6 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -124,7 +123,7 @@ public class GetEncryptedObjectPipeline {
             long[] desiredRange = RangedGetUtils.getRange(materials.s3Request().range());
             long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.s3Request().range());
             AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-            SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), contentMetadata.algorithmSuite().dataKeyAlgorithm());
+            SecretKey contentKey = materials.dataKey();
             final int tagLength = algorithmSuite.cipherTagLengthBits();
             byte[] iv = contentMetadata.contentNonce();
             if (algorithmSuite == AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF) {
@@ -148,13 +147,14 @@ public class GetEncryptedObjectPipeline {
                         || algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF)
                         || _enableDelayedAuthentication) {
                     // CBC and GCM with delayed auth enabled use a standard publisher
-                    CipherPublisher plaintextPublisher = new CipherPublisher(cipher, ciphertextPublisher,
-                            getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits());
+                    CipherPublisher plaintextPublisher = new CipherPublisher(ciphertextPublisher,
+                            getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits(), materials, iv);
                     wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
                 } else {
                     // Use buffered publisher for GCM when delayed auth is not enabled
-                    BufferedCipherPublisher plaintextPublisher = new BufferedCipherPublisher(cipher, ciphertextPublisher,
-                            getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits());
+                    BufferedCipherPublisher plaintextPublisher = new BufferedCipherPublisher(ciphertextPublisher,
+                            getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits(),
+                            materials, iv);
                     wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
                 }
 

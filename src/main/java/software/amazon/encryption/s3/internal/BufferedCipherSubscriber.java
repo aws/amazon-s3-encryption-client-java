@@ -5,6 +5,7 @@ import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.BinaryUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
+import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
@@ -29,15 +30,16 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     private final AtomicInteger contentRead = new AtomicInteger(0);
     private final AtomicBoolean doneFinal = new AtomicBoolean(false);
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
-    private final Cipher cipher;
     private final int contentLength;
+    private Cipher cipher;
+    private final CryptographicMaterials materials;
+    private byte[] iv;
 
     private byte[] outputBuffer;
     private final Queue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
 
-    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Cipher cipher, Long contentLength) {
+    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
         this.wrappedSubscriber = wrappedSubscriber;
-        this.cipher = cipher;
         if (contentLength == null) {
             throw new S3EncryptionClientException("contentLength cannot be null in buffered mode. To enable unbounded " +
                     "streaming, reconfigure the S3 Encryption Client with Delayed Authentication mode enabled.");
@@ -48,6 +50,9 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
                     "than %d", BUFFERED_MAX_CONTENT_LENGTH_MiB));
         }
         this.contentLength = Math.toIntExact(contentLength);
+        this.materials = materials;
+        this.iv = iv;
+        cipher = CipherProvider.getCipher(materials, iv);
     }
 
     @Override
@@ -67,9 +72,9 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
                 // This happens when the stream is reset and the cipher is reused with the
                 // same key/IV. It's actually fine here, because the data is the same, but any
                 // sane implementation will throw an exception.
-                // TODO: Implement retries. For now, forward and rethrow.
-                this.onError(exception);
-                throw exception;
+                // Request a new cipher using the same materials to avoid reinit issues
+                System.out.println("exception caught, regenerating cipher!");
+                cipher = CipherProvider.getCipher(materials, iv);
             }
 
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {

@@ -23,10 +23,28 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
         return new Builder();
     }
 
+    // TODO: fix MPU
     @Override
     public EncryptedContent initMultipartEncryption(EncryptionMaterials materials) {
         final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
-        final Cipher cipher = prepareCipher(materials, nonce);
+        Cipher result;
+        if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
+                    "the maximum length allowed for GCM encryption.");
+        }
+
+        final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
+
+        final String cipherName = algorithmSuite.cipherName();
+        try {
+            final Cipher cipher1 = CryptoFactory.createCipher(cipherName, materials.cryptoProvider());
+            cipher1.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
+                    new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
+            result = cipher1;
+        } catch (GeneralSecurityException e) {
+            throw new S3EncryptionClientException("Unable to prepare " + cipherName + " for content encryption.", e);
+        }
+        final Cipher cipher = result;
         // Return Cipher
         return new EncryptedContent(nonce, cipher);
     }
@@ -39,31 +57,10 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
         }
 
         final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
-        final Cipher cipher = prepareCipher(materials, nonce);
-
-        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(cipher, content, materials.getCiphertextLength());
-        return new EncryptedContent(nonce, encryptedAsyncRequestBody, materials.getCiphertextLength());
-    }
-
-    private Cipher prepareCipher(EncryptionMaterials materials, byte[] nonce) {
-        if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
-            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
-                    "the maximum length allowed for GCM encryption.");
-        }
-
-        final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-
         _secureRandom.nextBytes(nonce);
 
-        final String cipherName = algorithmSuite.cipherName();
-        try {
-            final Cipher cipher = CryptoFactory.createCipher(cipherName, materials.cryptoProvider());
-            cipher.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
-                    new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
-            return cipher;
-        } catch (GeneralSecurityException e) {
-            throw new S3EncryptionClientException("Unable to prepare " + cipherName + " for content encryption.", e);
-        }
+        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(content, materials.getCiphertextLength(), materials, nonce);
+        return new EncryptedContent(nonce, encryptedAsyncRequestBody, materials.getCiphertextLength());
     }
 
     public static class Builder {

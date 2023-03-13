@@ -4,7 +4,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.BinaryUtils;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
-import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
+import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
@@ -16,14 +16,17 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
     private Cipher cipher;
     private final Long contentLength;
-    private final CryptographicMaterialsManager cmm;
+    private final CryptographicMaterials materials;
+    private byte[] iv;
 
     private byte[] outputBuffer;
 
-    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterialsManager cmm) {
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
         this.wrappedSubscriber = wrappedSubscriber;
         this.contentLength = contentLength;
-        this.cmm = cmm;
+        this.materials = materials;
+        this.iv = iv;
+        cipher = CipherProvider.getCipher(materials, iv);
     }
 
     @Override
@@ -43,9 +46,9 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // This happens when the stream is reset and the cipher is reused with the
                 // same key/IV. It's actually fine here, because the data is the same, but any
                 // sane implementation will throw an exception.
-                // TODO: Implement retries. For now, forward and rethrow.
-                this.onError(exception);
-                throw exception;
+                // Request a new cipher using the same materials to avoid reinit issues
+                System.out.println("exception caught, regenerating cipher!");
+                cipher = CipherProvider.getCipher(materials, iv);
             }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
                 // The underlying data is too short to fill in the block cipher

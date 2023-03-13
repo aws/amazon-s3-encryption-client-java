@@ -2,7 +2,6 @@ package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -16,7 +15,6 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
@@ -29,7 +27,6 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
 
 public class MultipartUploadObjectPipeline {
     final private S3AsyncClient _s3AsyncClient;
@@ -74,46 +71,49 @@ public class MultipartUploadObjectPipeline {
 
     public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody, boolean isLastPart)
             throws AwsServiceException, SdkClientException {
-        final AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
-        final int blockSize = algorithmSuite.cipherBlockSizeBytes();
-        final long partSize = requestBody.optionalContentLength().orElse(-1L);
-        final int cipherTagLength = isLastPart ? algorithmSuite.cipherTagLengthBytes() : 0;
-        final long ciphertextLength = partSize + cipherTagLength;
-        final boolean partSizeMultipleOfCipherBlockSize = 0 == (partSize % blockSize);
 
-        if (!isLastPart && !partSizeMultipleOfCipherBlockSize) {
-            throw new S3EncryptionClientException("Invalid part size: part sizes for encrypted multipart uploads must " +
-                    "be multiples of the cipher block size (" + blockSize + ") with the exception of the last part.");
-        }
-
-        final String uploadId = request.uploadId();
-        final MultipartUploadContext uploadContext = _multipartUploadContexts.get(uploadId);
-        if (uploadContext == null) {
-            throw new S3EncryptionClientException("No client-side information available on upload ID " + uploadId);
-        }
-        final UploadPartResponse response;
-        // Checks the parts are uploaded in series
-        uploadContext.beginPartUpload(request.partNumber());
-        Cipher cipher = uploadContext.getCipher();
-        try {
-            final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(cipher, AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(), request.contentLength(), Executors.newSingleThreadExecutor()), ciphertextLength);
-            // The last part of the multipart upload will contain an extra
-            // 16-byte mac
-            if (isLastPart) {
-                if (uploadContext.hasFinalPartBeenSeen()) {
-                    throw new S3EncryptionClientException("This part was specified as the last part in a multipart " +
-                            "upload, but a previous part was already marked as the last part. Only the last part of the " +
-                            "upload should be marked as the last part.");
-                }
-            }
-            response =  _s3AsyncClient.uploadPart(request, cipherAsyncRequestBody).join();
-        } finally {
-            uploadContext.endPartUpload();
-        }
-        if (isLastPart) {
-            uploadContext.setHasFinalPartBeenSeen(true);
-        }
-        return response;
+        // TODO: Fix MPU
+        throw new UnsupportedOperationException("no MPU support right now.");
+//        final AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
+//        final int blockSize = algorithmSuite.cipherBlockSizeBytes();
+//        final long partSize = requestBody.optionalContentLength().orElse(-1L);
+//        final int cipherTagLength = isLastPart ? algorithmSuite.cipherTagLengthBytes() : 0;
+//        final long ciphertextLength = partSize + cipherTagLength;
+//        final boolean partSizeMultipleOfCipherBlockSize = 0 == (partSize % blockSize);
+//
+//        if (!isLastPart && !partSizeMultipleOfCipherBlockSize) {
+//            throw new S3EncryptionClientException("Invalid part size: part sizes for encrypted multipart uploads must " +
+//                    "be multiples of the cipher block size (" + blockSize + ") with the exception of the last part.");
+//        }
+//
+//        final String uploadId = request.uploadId();
+//        final MultipartUploadContext uploadContext = _multipartUploadContexts.get(uploadId);
+//        if (uploadContext == null) {
+//            throw new S3EncryptionClientException("No client-side information available on upload ID " + uploadId);
+//        }
+//        final UploadPartResponse response;
+//        // Checks the parts are uploaded in series
+//        uploadContext.beginPartUpload(request.partNumber());
+//        Cipher cipher = uploadContext.getCipher();
+//        try {
+//            final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(), request.contentLength(), Executors.newSingleThreadExecutor()), ciphertextLength);
+//            // The last part of the multipart upload will contain an extra
+//            // 16-byte mac
+//            if (isLastPart) {
+//                if (uploadContext.hasFinalPartBeenSeen()) {
+//                    throw new S3EncryptionClientException("This part was specified as the last part in a multipart " +
+//                            "upload, but a previous part was already marked as the last part. Only the last part of the " +
+//                            "upload should be marked as the last part.");
+//                }
+//            }
+//            response =  _s3AsyncClient.uploadPart(request, cipherAsyncRequestBody).join();
+//        } finally {
+//            uploadContext.endPartUpload();
+//        }
+//        if (isLastPart) {
+//            uploadContext.setHasFinalPartBeenSeen(true);
+//        }
+//        return response;
     }
 
     public CompleteMultipartUploadResponse completeMultipartUpload(CompleteMultipartUploadRequest request)
