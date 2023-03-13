@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.3.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.2.0...v2.3.0) (2023-03-13)
+
+
+### Features
+
+* implement BufferedCipherSubscriber to enforce buffered decrypti… ([#99](https://github.com/aws/aws-s3-encryption-client-java/issues/99)) ([87411c8](https://github.com/aws/aws-s3-encryption-client-java/commit/87411c83d43761ec8548d77287585cca99b8aeaa))
+
+
+### Maintenance
+
+* add a new test class for ranged gets using the CRT client ([#104](https://github.com/aws/aws-s3-encryption-client-java/issues/104)) ([9b244be](https://github.com/aws/aws-s3-encryption-client-java/commit/9b244be7a40527e69942ace7137cb0898eb8411f))
+
+
+### Fixes
+
+* handle contentLength in request object ([#106](https://github.com/aws/aws-s3-encryption-client-java/issues/106)) ([58ee9bc](https://github.com/aws/aws-s3-encryption-client-java/commit/58ee9bc1e97ff52854edd2f6e0c28a3f7e31e38a))
+* regression in ranged gets when using buffered subscriber ([#107](https://github.com/aws/aws-s3-encryption-client-java/issues/107)) ([ebcddbf](https://github.com/aws/aws-s3-encryption-client-java/commit/ebcddbf4a0fdd2c1c3327f50119d4dec009abf97))
+* remove duplicate call to appendTestPrefix in deleteObjects ([#97](https://github.com/aws/aws-s3-encryption-client-java/issues/97)) ([62953a6](https://github.com/aws/aws-s3-encryption-client-java/commit/62953a667112c18e5575ecb483d779d6fb4f1a6e))
+* Revert "feat: Add S3CrtAsyncClient as MultipartPutobject ([#90](https://github.com/aws/aws-s3-encryption-client-java/issues/90))" ([#103](https://github.com/aws/aws-s3-encryption-client-java/issues/103)) ([93011f2](https://github.com/aws/aws-s3-encryption-client-java/commit/93011f253d23cd5e953f00fd5130e57021293313))
+* update README to reflect option split ([#105](https://github.com/aws/aws-s3-encryption-client-java/issues/105)) ([5efabf8](https://github.com/aws/aws-s3-encryption-client-java/commit/5efabf8624c836676fc8e0859c0941925b91a700))
+
 ## [2.2.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.1.1...v2.2.0) (2023-03-01)
 
 
