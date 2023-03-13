@@ -42,7 +42,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     private final S3AsyncClient _wrappedClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
-    private final boolean _enableLegacyWrappingAlgorithms;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
 
@@ -51,7 +50,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _wrappedClient = builder._wrappedClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
-        _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
     }
@@ -84,7 +82,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
-                .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .build();
