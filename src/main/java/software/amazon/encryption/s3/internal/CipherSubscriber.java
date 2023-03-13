@@ -4,6 +4,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.BinaryUtils;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
+import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
@@ -13,15 +14,16 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final AtomicLong contentRead = new AtomicLong(0);
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
-    private final Cipher cipher;
+    private Cipher cipher;
     private final Long contentLength;
+    private final CryptographicMaterialsManager cmm;
 
     private byte[] outputBuffer;
 
-    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Cipher cipher, Long contentLength) {
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterialsManager cmm) {
         this.wrappedSubscriber = wrappedSubscriber;
-        this.cipher = cipher;
         this.contentLength = contentLength;
+        this.cmm = cmm;
     }
 
     @Override
@@ -93,4 +95,5 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         }
         wrappedSubscriber.onComplete();
     }
+
 }

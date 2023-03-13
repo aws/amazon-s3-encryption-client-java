@@ -64,7 +64,7 @@ public class GetEncryptedObjectPipeline {
                 getObjectRequest));
     }
 
-    private DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
+    DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
                                                             final ContentMetadata contentMetadata) {
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
@@ -127,7 +127,7 @@ public class GetEncryptedObjectPipeline {
         public void onStream(SdkPublisher<ByteBuffer> ciphertextPublisher) {
             long[] desiredRange = RangedGetUtils.getRange(materials.s3Request().range());
             long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.s3Request().range());
-            AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
+            AlgorithmSuite algorithmSuite = materials.algorithmSuite();
             SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), contentMetadata.algorithmSuite().dataKeyAlgorithm());
             final int tagLength = algorithmSuite.cipherTagLengthBits();
             byte[] iv = contentMetadata.contentNonce();
@@ -160,7 +160,6 @@ public class GetEncryptedObjectPipeline {
                     BufferedCipherPublisher plaintextPublisher = new BufferedCipherPublisher(cipher, ciphertextPublisher,
                             getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits());
                     wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
-
                 }
 
             } catch (GeneralSecurityException e) {
