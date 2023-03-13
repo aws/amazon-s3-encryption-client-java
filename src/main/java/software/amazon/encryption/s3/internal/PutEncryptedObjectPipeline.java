@@ -3,7 +3,6 @@ package software.amazon.encryption.s3.internal;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
@@ -35,24 +34,43 @@ public class PutEncryptedObjectPipeline {
     }
 
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {
-        EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
-                .s3Request(request)
-                .plaintextLength(requestBody.contentLength().orElse(-1L));
+        final Long contentLength;
+        if (request.contentLength() != null) {
+            if (requestBody.contentLength().isPresent() && !request.contentLength().equals(requestBody.contentLength().get())) {
+                // if the contentLength values do not match, throw an exception, since we don't know which is correct
+                throw new S3EncryptionClientException("The contentLength provided in the request object MUST match the " +
+                        "contentLength in the request body");
+            } else if (!requestBody.contentLength().isPresent()) {
+                // no contentLength in request body, use the one in request
+                contentLength = request.contentLength();
+            } else {
+                // only remaining case is when the values match, so either works here
+                contentLength = request.contentLength();
+            }
+        } else {
+            contentLength = requestBody.contentLength().orElse(-1L);
+        }
 
-        EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
+        EncryptionMaterialsRequest encryptionMaterialsRequest = EncryptionMaterialsRequest.builder()
+                .s3Request(request)
+                .plaintextLength(contentLength)
+                .build();
+
+        EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(encryptionMaterialsRequest);
 
         EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
 
         Map<String, String> metadata = new HashMap<>(request.metadata());
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
-        PutObjectRequest encryptedPutRequest = request.toBuilder().metadata(metadata).build();
+        PutObjectRequest encryptedPutRequest = request.toBuilder()
+                .contentLength(encryptedContent.getCiphertextLength())
+                .metadata(metadata)
+                .build();
         return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
     }
 
     public static class Builder {
         private S3AsyncClient _s3AsyncClient;
-        private S3AsyncClient _s3CrtClient;
-        private boolean _enableMultipartPutObject = false;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
@@ -72,16 +90,6 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
-        public Builder crtClient(S3AsyncClient crtClient) {
-            this._s3CrtClient = crtClient;
-            return this;
-        }
-
-        public Builder enableMultipartPutObject(boolean enableMultipartPutObject) {
-            this._enableMultipartPutObject = enableMultipartPutObject;
-            return this;
-        }
-
         public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
             this._cryptoMaterialsManager = cryptoMaterialsManager;
             return this;
@@ -93,14 +101,6 @@ public class PutEncryptedObjectPipeline {
         }
 
         public PutEncryptedObjectPipeline build() {
-            if (_enableMultipartPutObject & _s3CrtClient != null) {
-                if (_s3CrtClient instanceof S3CrtAsyncClient) {
-                    _s3AsyncClient = _s3CrtClient;
-                } else {
-                    throw new S3EncryptionClientException("WrappedClient must be instance of S3CrtAsyncClient when enableMultipartPutObject is enabled.");
-                }
-            }
-
             // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
             if (_asyncContentEncryptionStrategy == null) {
                 _asyncContentEncryptionStrategy = StreamingAesGcmContentStrategy

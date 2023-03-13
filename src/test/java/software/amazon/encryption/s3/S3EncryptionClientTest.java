@@ -175,7 +175,7 @@ public class S3EncryptionClientTest {
         final String input = "DeleteObjectsWithInstructionFileSuccess";
         List<ObjectIdentifier> objects = new ArrayList<>();
         for (String objectKey : objectKeys) {
-            v2Client.putObject(BUCKET, appendTestSuffix(objectKey), input);
+            v2Client.putObject(BUCKET, objectKey, input);
             objects.add(ObjectIdentifier.builder().key(objectKey).build());
         }
 
@@ -365,7 +365,7 @@ public class S3EncryptionClientTest {
         S3AsyncClient wrappedClient = S3AsyncClient.builder().build();
 
         S3Client wrappingClient = S3EncryptionClient.builder()
-            .wrappedClient(wrappedClient)
+            .wrappedAsyncClient(wrappedClient)
             .kmsKeyId(KMS_KEY_ID)
             .build();
 
@@ -388,7 +388,7 @@ public class S3EncryptionClientTest {
             .build();
 
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-            .wrappedClient(wrappedAsyncClient)
+            .wrappedAsyncClient(wrappedAsyncClient)
             .kmsKeyId(KMS_KEY_ID)
             .build());
     }
@@ -511,29 +511,6 @@ public class S3EncryptionClientTest {
         v3Client.close();
     }
 
-    /**
-     * A simple, reusable round-trip (encryption + decryption) using a given
-     * S3Client. Useful for testing client configuration.
-     *
-     * @param v3Client the client under test
-     */
-    private void simpleV3RoundTrip(final S3Client v3Client, final String objectKey) {
-        final String input = "SimpleTestOfV3EncryptionClient";
-
-        v3Client.putObject(builder -> builder
-                        .bucket(BUCKET)
-                        .key(objectKey)
-                        .build(),
-                RequestBody.fromString(input));
-
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build());
-        String output = objectResponse.asUtf8String();
-        assertEquals(input, output);
-    }
-
     @Test
     public void cryptoProviderV3toV3Enabled() {
         final String objectKey = appendTestSuffix("crypto-provider-enabled-v3-to-v3");
@@ -599,4 +576,58 @@ public class S3EncryptionClientTest {
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
+
+    @Test
+    public void contentLengthRequest() {
+        final String objectKey = appendTestSuffix("content-length");
+
+        S3Client s3EncryptionClient = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        final String input = "SimpleTestOfV3EncryptionClientCopyObject";
+        final int inputLength = input.length();
+
+        s3EncryptionClient.putObject(builder -> builder
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .contentLength((long) inputLength)
+                        .build(),
+                RequestBody.fromString(input));
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3EncryptionClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3EncryptionClient);
+        s3EncryptionClient.close();
+    }
+
+    /**
+     * A simple, reusable round-trip (encryption + decryption) using a given
+     * S3Client. Useful for testing client configuration.
+     *
+     * @param v3Client the client under test
+     */
+    private void simpleV3RoundTrip(final S3Client v3Client, final String objectKey) {
+        final String input = "SimpleTestOfV3EncryptionClient";
+
+        v3Client.putObject(builder -> builder
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .build(),
+                RequestBody.fromString(input));
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+    }
+
 }
