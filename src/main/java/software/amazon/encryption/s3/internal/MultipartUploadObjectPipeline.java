@@ -58,7 +58,6 @@ public class MultipartUploadObjectPipeline {
                 .s3Request(request);
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
-        // TODO: Look for Better design models
         EncryptedContent encryptedContent = _contentEncryptionStrategy.initMultipartEncryption(materials);
 
         Map<String, String> metadata = new HashMap<>(request.metadata());
