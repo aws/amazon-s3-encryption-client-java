@@ -89,11 +89,12 @@ public class S3EncryptionClientMultipartUploadTest {
 
     @Test
     public void testLoop() throws IOException {
-        for (int i = 0; i < 15; i++) {
-            System.out.println(i);
+        for (int i = 0; i < 50; i++) {
+            if (i % 5 == 0) {
+                System.out.println(i);
+            }
             multipartUploadV3OutputStream();
         }
-
     }
 
     //@Test
