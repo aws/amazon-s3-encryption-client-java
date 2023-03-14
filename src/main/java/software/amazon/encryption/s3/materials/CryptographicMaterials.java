@@ -23,5 +23,4 @@ public interface CryptographicMaterials {
 
     Cipher getCipher(byte[] iv);
 
-    Cipher getCipher();
 }

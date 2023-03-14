@@ -11,6 +11,7 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Provider;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -65,20 +66,19 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
     private volatile boolean partUploadInProgress;
 
     /**
-     * Convenient method to return the content encrypting cipher (which is
-     * stateful) for the multipart uploads.
-     */
-    @Override
-    public Cipher getCipher() {
-        return _cipher;
-    }
-
-    /**
-     * Calling with an IV is NOT supported by multipart materials.
+     * When calling with an IV, sanity check that the given IV matches the
+     * one in the cipher. Then just return the cipher.
      */
     @Override
     public Cipher getCipher(byte[] iv) {
-        throw new UnsupportedOperationException("MultipartUploadMaterials getCipher() MUST NOT be called with an iv.");
+        if (!Arrays.equals(iv, _cipher.getIV())) {
+            throw new S3EncryptionClientException("IVs in MultipartUploadMaterials do not match!");
+        }
+        return _cipher;
+    }
+
+    public byte[] getIv() {
+        return _cipher.getIV();
     }
 
     /**
