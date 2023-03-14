@@ -3,6 +3,7 @@ package software.amazon.encryption.s3.materials;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.CipherProvider;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -81,6 +82,11 @@ final public class DecryptionMaterials implements CryptographicMaterials {
     @Override
     public int opMode() {
         return Cipher.DECRYPT_MODE;
+    }
+
+    @Override
+    public Cipher getCipher(byte[] iv) {
+        return CipherProvider.createAndInitCipher(this, iv);
     }
 
     public Builder toBuilder() {

@@ -2,6 +2,7 @@ package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -15,6 +16,7 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
@@ -27,6 +29,7 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 public class MultipartUploadObjectPipeline {
     final private S3AsyncClient _s3AsyncClient;
@@ -36,7 +39,7 @@ public class MultipartUploadObjectPipeline {
     /**
      * Map of data about in progress encrypted multipart uploads.
      */
-    private final Map<String, MultipartUploadContext> _multipartUploadContexts;
+    private final Map<String, MultipartUploadMaterials> _multipartUploadContexts;
 
     private MultipartUploadObjectPipeline(Builder builder) {
         this._s3AsyncClient = builder._s3AsyncClient;
@@ -63,8 +66,12 @@ public class MultipartUploadObjectPipeline {
 
         CreateMultipartUploadResponse response = _s3AsyncClient.createMultipartUpload(request).join();
 
-        MultipartUploadContext multipartUploadContext = new MultipartUploadContext(encryptedContent.getCipher());
-        _multipartUploadContexts.put(response.uploadId(), multipartUploadContext);
+        MultipartUploadMaterials mpuMaterials = MultipartUploadMaterials.builder()
+                .fromEncryptionMaterials(materials)
+                .cipher(encryptedContent.getCipher())
+                .build();
+
+        _multipartUploadContexts.put(response.uploadId(), mpuMaterials);
 
         return response;
     }
@@ -72,54 +79,53 @@ public class MultipartUploadObjectPipeline {
     public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody, boolean isLastPart)
             throws AwsServiceException, SdkClientException {
 
-        // TODO: Fix MPU
-        throw new UnsupportedOperationException("no MPU support right now.");
-//        final AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
-//        final int blockSize = algorithmSuite.cipherBlockSizeBytes();
-//        final long partSize = requestBody.optionalContentLength().orElse(-1L);
-//        final int cipherTagLength = isLastPart ? algorithmSuite.cipherTagLengthBytes() : 0;
-//        final long ciphertextLength = partSize + cipherTagLength;
-//        final boolean partSizeMultipleOfCipherBlockSize = 0 == (partSize % blockSize);
-//
-//        if (!isLastPart && !partSizeMultipleOfCipherBlockSize) {
-//            throw new S3EncryptionClientException("Invalid part size: part sizes for encrypted multipart uploads must " +
-//                    "be multiples of the cipher block size (" + blockSize + ") with the exception of the last part.");
-//        }
-//
-//        final String uploadId = request.uploadId();
-//        final MultipartUploadContext uploadContext = _multipartUploadContexts.get(uploadId);
-//        if (uploadContext == null) {
-//            throw new S3EncryptionClientException("No client-side information available on upload ID " + uploadId);
-//        }
-//        final UploadPartResponse response;
-//        // Checks the parts are uploaded in series
-//        uploadContext.beginPartUpload(request.partNumber());
-//        Cipher cipher = uploadContext.getCipher();
-//        try {
-//            final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(), request.contentLength(), Executors.newSingleThreadExecutor()), ciphertextLength);
-//            // The last part of the multipart upload will contain an extra
-//            // 16-byte mac
-//            if (isLastPart) {
-//                if (uploadContext.hasFinalPartBeenSeen()) {
-//                    throw new S3EncryptionClientException("This part was specified as the last part in a multipart " +
-//                            "upload, but a previous part was already marked as the last part. Only the last part of the " +
-//                            "upload should be marked as the last part.");
-//                }
-//            }
-//            response =  _s3AsyncClient.uploadPart(request, cipherAsyncRequestBody).join();
-//        } finally {
-//            uploadContext.endPartUpload();
-//        }
-//        if (isLastPart) {
-//            uploadContext.setHasFinalPartBeenSeen(true);
-//        }
-//        return response;
+        final AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
+        final int blockSize = algorithmSuite.cipherBlockSizeBytes();
+        final long partSize = requestBody.optionalContentLength().orElse(-1L);
+        final int cipherTagLength = isLastPart ? algorithmSuite.cipherTagLengthBytes() : 0;
+        final long ciphertextLength = partSize + cipherTagLength;
+        final boolean partSizeMultipleOfCipherBlockSize = 0 == (partSize % blockSize);
+
+        if (!isLastPart && !partSizeMultipleOfCipherBlockSize) {
+            throw new S3EncryptionClientException("Invalid part size: part sizes for encrypted multipart uploads must " +
+                    "be multiples of the cipher block size (" + blockSize + ") with the exception of the last part.");
+        }
+
+        final String uploadId = request.uploadId();
+        final MultipartUploadMaterials uploadContext = _multipartUploadContexts.get(uploadId);
+        if (uploadContext == null) {
+            throw new S3EncryptionClientException("No client-side information available on upload ID " + uploadId);
+        }
+        final UploadPartResponse response;
+        // Checks the parts are uploaded in series
+        uploadContext.beginPartUpload(request.partNumber());
+        try {
+            final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(),
+                    request.contentLength(), Executors.newSingleThreadExecutor()), ciphertextLength, uploadContext, uploadContext.getCipher(null).getIV());
+
+            // The last part of the multipart upload will contain an extra
+            // 16-byte mac
+            if (isLastPart) {
+                if (uploadContext.hasFinalPartBeenSeen()) {
+                    throw new S3EncryptionClientException("This part was specified as the last part in a multipart " +
+                            "upload, but a previous part was already marked as the last part. Only the last part of the " +
+                            "upload should be marked as the last part.");
+                }
+            }
+            response =  _s3AsyncClient.uploadPart(request, cipherAsyncRequestBody).join();
+        } finally {
+            uploadContext.endPartUpload();
+        }
+        if (isLastPart) {
+            uploadContext.setHasFinalPartBeenSeen(true);
+        }
+        return response;
     }
 
     public CompleteMultipartUploadResponse completeMultipartUpload(CompleteMultipartUploadRequest request)
             throws AwsServiceException, SdkClientException {
         String uploadId = request.uploadId();
-        final MultipartUploadContext uploadContext = _multipartUploadContexts.get(uploadId);
+        final MultipartUploadMaterials uploadContext = _multipartUploadContexts.get(uploadId);
 
         if (uploadContext != null && !uploadContext.hasFinalPartBeenSeen()) {
             throw new S3EncryptionClientException(
@@ -138,8 +144,8 @@ public class MultipartUploadObjectPipeline {
     }
 
     public void putLocalObject(RequestBody requestBody, String uploadId, OutputStream os) throws IOException {
-        final MultipartUploadContext uploadContext = _multipartUploadContexts.get(uploadId);
-        Cipher cipher = uploadContext.getCipher();
+        final MultipartUploadMaterials uploadContext = _multipartUploadContexts.get(uploadId);
+        Cipher cipher = uploadContext.getCipher(null);
         final InputStream cipherInputStream = new AuthenticatedCipherInputStream(requestBody.contentStreamProvider().newStream(), cipher);
 
         try {
@@ -154,7 +160,7 @@ public class MultipartUploadObjectPipeline {
     }
 
     public static class Builder {
-        private final Map<String, MultipartUploadContext> _multipartUploadContexts =
+        private final Map<String, MultipartUploadMaterials> _multipartUploadContexts =
                 Collections.synchronizedMap(new HashMap<>());
         private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
         private S3AsyncClient _s3AsyncClient;

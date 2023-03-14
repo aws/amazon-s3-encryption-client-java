@@ -3,6 +3,7 @@ package software.amazon.encryption.s3.materials;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import java.security.Provider;
 import java.util.Map;
@@ -19,4 +20,6 @@ public interface CryptographicMaterials {
     Provider cryptoProvider();
 
     int opMode();
+
+    Cipher getCipher(byte[] iv);
 }
