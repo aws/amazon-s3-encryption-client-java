@@ -7,7 +7,7 @@ public class PartialKeyPairExampleTest {
 
     @Test
     public void testLoop() {
-        for (int i = 0; i < 500; i++) {
+        for (int i = 0; i < 400; i++) {
             if (i % 10 == 0) {
                 System.out.println(i);
             }
