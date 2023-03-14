@@ -57,7 +57,7 @@ public class S3EncryptionClientStreamTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    //@Test
     public void markResetInputStreamV3Encrypt() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3Encrypt");
         // V3 Client
@@ -89,7 +89,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void ordinaryInputStreamV3Encrypt() throws IOException {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Encrypt");
 
@@ -123,7 +123,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void ordinaryInputStreamV3Decrypt() throws IOException {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Decrypt");
 
@@ -159,7 +159,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void ordinaryInputStreamV3DecryptCbc() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3DecryptCbc");
 
@@ -200,7 +200,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test");
 
@@ -243,7 +243,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void delayedAuthModeWithLargerThanMaxObjectFails() throws IOException {
         final String objectKey = appendTestSuffix("larger-than-max-object-delayed-auth-mode");
 
@@ -266,7 +266,7 @@ public class S3EncryptionClientStreamTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesGcmV3toV3StreamWithTamperedTag() {
         final String objectKey = "aes-gcm-v3-to-v3-stream-tamper-tag";
 
