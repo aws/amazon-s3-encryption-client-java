@@ -156,15 +156,6 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.2</version>
-        <configuration>
-          <environmentVariables>
-            <AWS_S3EC_TEST_BUCKET>s3-encryption-client-v3-java-justplaz-us-east-2</AWS_S3EC_TEST_BUCKET>
-            <AWS_S3EC_TEST_KMS_KEY_ID>arn:aws:kms:us-east-2:657301468084:key/1f469b1a-5cfa-4879-9bdf-27b3abd9b8d5</AWS_S3EC_TEST_KMS_KEY_ID>
-            <AWS_S3EC_TEST_KMS_KEY_ALIAS>arn:aws:kms:us-east-2:657301468084:alias/s3-encryption-client-v3-java-justplaz-us-east-2</AWS_S3EC_TEST_KMS_KEY_ALIAS>
-            <AWS_REGION>us-east-2</AWS_REGION>
-            <REGION>us-east-2</REGION>
-          </environmentVariables>
-        </configuration>
       </plugin>
 
       <plugin>
@@ -217,12 +208,12 @@
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.0</minimum>
+                      <minimum>0.8</minimum>
                     </limit>
                     <limit>
                       <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.0</minimum>
+                      <minimum>0.5</minimum>
                     </limit>
                   </limits>
                 </rule>
