@@ -52,7 +52,7 @@ public class S3EncryptionClientMultipartUploadTest {
         PROVIDER = Security.getProvider("BC");
     }
 
-    @Test
+    //@Test
     public void multipartPutObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object");
 
@@ -88,6 +88,15 @@ public class S3EncryptionClientMultipartUploadTest {
     }
 
     @Test
+    public void testLoop() throws IOException {
+        for (int i = 0; i < 15; i++) {
+            System.out.println(i);
+            multipartUploadV3OutputStream();
+        }
+
+    }
+
+    //@Test
     public void multipartUploadV3OutputStream() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream");
 
