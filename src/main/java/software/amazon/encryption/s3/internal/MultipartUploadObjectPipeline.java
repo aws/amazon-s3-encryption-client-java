@@ -101,7 +101,7 @@ public class MultipartUploadObjectPipeline {
         uploadContext.beginPartUpload(request.partNumber());
         try {
             final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(),
-                    request.contentLength(), Executors.newSingleThreadExecutor()), ciphertextLength, uploadContext, uploadContext.getCipher(null).getIV());
+                    request.contentLength(), Executors.newSingleThreadExecutor()), ciphertextLength, uploadContext, uploadContext.getCipher().getIV());
 
             // The last part of the multipart upload will contain an extra
             // 16-byte mac
@@ -145,7 +145,7 @@ public class MultipartUploadObjectPipeline {
 
     public void putLocalObject(RequestBody requestBody, String uploadId, OutputStream os) throws IOException {
         final MultipartUploadMaterials uploadContext = _multipartUploadContexts.get(uploadId);
-        Cipher cipher = uploadContext.getCipher(null);
+        Cipher cipher = uploadContext.getCipher();
         final InputStream cipherInputStream = new AuthenticatedCipherInputStream(requestBody.contentStreamProvider().newStream(), cipher);
 
         try {

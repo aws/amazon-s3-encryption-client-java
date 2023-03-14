@@ -103,6 +103,11 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     }
 
     @Override
+    public Cipher getCipher() {
+        throw new UnsupportedOperationException("EncryptionMaterials getCipher() MUST be called with an iv.");
+    }
+
+    @Override
     public Cipher getCipher(byte[] iv) {
         return CipherProvider.createAndInitCipher(this, iv);
     }

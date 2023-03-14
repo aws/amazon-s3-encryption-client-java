@@ -22,4 +22,6 @@ public interface CryptographicMaterials {
     int opMode();
 
     Cipher getCipher(byte[] iv);
+
+    Cipher getCipher();
 }

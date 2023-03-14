@@ -71,8 +71,16 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
      * stateful) for the multipart uploads.
      */
     @Override
-    public Cipher getCipher(byte[] iv) {
+    public Cipher getCipher() {
         return _cipher;
+    }
+
+    /**
+     * Calling with an IV is NOT supported by multipart materials.
+     */
+    @Override
+    public Cipher getCipher(byte[] iv) {
+        throw new UnsupportedOperationException("MultipartUploadMaterials getCipher() MUST NOT be called with an iv.");
     }
 
     /**
