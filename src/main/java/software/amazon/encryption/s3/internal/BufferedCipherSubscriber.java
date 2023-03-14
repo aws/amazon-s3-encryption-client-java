@@ -33,7 +33,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     private final int contentLength;
     private Cipher cipher;
     private final CryptographicMaterials materials;
-    private byte[] iv;
+    private final byte[] iv;
 
     private byte[] outputBuffer;
     private final Queue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
@@ -52,7 +52,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
         this.contentLength = Math.toIntExact(contentLength);
         this.materials = materials;
         this.iv = iv;
-        cipher = CipherProvider.getCipher(materials, iv);
+        cipher = CipherProvider.createAndInitCipher(materials, iv);
     }
 
     @Override
@@ -73,8 +73,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
                 // same key/IV. It's actually fine here, because the data is the same, but any
                 // sane implementation will throw an exception.
                 // Request a new cipher using the same materials to avoid reinit issues
-                System.out.println("exception caught, regenerating cipher!");
-                cipher = CipherProvider.getCipher(materials, iv);
+                cipher = CipherProvider.createAndInitCipher(materials, iv);
             }
 
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {

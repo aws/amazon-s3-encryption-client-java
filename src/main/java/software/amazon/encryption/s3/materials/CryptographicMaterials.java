@@ -17,4 +17,6 @@ public interface CryptographicMaterials {
     SecretKey dataKey();
 
     Provider cryptoProvider();
+
+    int opMode();
 }

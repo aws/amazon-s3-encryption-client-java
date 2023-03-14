@@ -4,6 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Provider;
@@ -93,6 +94,11 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
     public Provider cryptoProvider() {
         return _cryptoProvider;
+    }
+
+    @Override
+    public int opMode() {
+        return Cipher.ENCRYPT_MODE;
     }
 
     public Builder toBuilder() {

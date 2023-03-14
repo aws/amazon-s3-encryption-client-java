@@ -26,7 +26,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         this.contentLength = contentLength;
         this.materials = materials;
         this.iv = iv;
-        cipher = CipherProvider.getCipher(materials, iv);
+        cipher = CipherProvider.createAndInitCipher(materials, iv);
     }
 
     @Override
@@ -47,8 +47,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // same key/IV. It's actually fine here, because the data is the same, but any
                 // sane implementation will throw an exception.
                 // Request a new cipher using the same materials to avoid reinit issues
-                System.out.println("exception caught, regenerating cipher!");
-                cipher = CipherProvider.getCipher(materials, iv);
+                cipher = CipherProvider.createAndInitCipher(materials, iv);
             }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
                 // The underlying data is too short to fill in the block cipher
