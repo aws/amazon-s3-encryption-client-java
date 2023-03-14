@@ -26,7 +26,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         this.contentLength = contentLength;
         this.materials = materials;
         this.iv = iv;
-        //cipher = CipherProvider.createAndInitCipher(materials, iv);
         cipher = materials.getCipher(iv);
     }
 

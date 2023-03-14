@@ -1,17 +1,17 @@
 package software.amazon.encryption.s3.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.CryptographicMaterials;
-import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Provider;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 public class MultipartUploadMaterials implements CryptographicMaterials {
@@ -29,7 +29,6 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
     private final byte[] _plaintextDataKey;
     private final Provider _cryptoProvider;
     private final long _plaintextLength;
-    private final long _ciphertextLength;
     private boolean hasFinalPartBeenSeen;
     private final Cipher _cipher;
 
@@ -40,7 +39,6 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
         this._plaintextDataKey = builder._plaintextDataKey;
         this._cryptoProvider = builder._cryptoProvider;
         this._plaintextLength = builder._plaintextLength;
-        this._ciphertextLength = _plaintextLength + _algorithmSuite.cipherTagLengthBytes();
         this._cipher = builder._cipher;
     }
 
@@ -128,39 +126,44 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
 
     @Override
     public AlgorithmSuite algorithmSuite() {
-        return null;
+        return _algorithmSuite;
     }
 
     @Override
     public S3Request s3Request() {
-        return null;
+        return _s3Request;
     }
 
+    /**
+     * Note that the underlying implementation uses a Collections.unmodifiableMap which is
+     * immutable.
+     */
     @Override
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
+            + " implementation is immutable")
     public Map<String, String> encryptionContext() {
-        return null;
+        return _encryptionContext;
     }
 
     @Override
     public SecretKey dataKey() {
-        return null;
+        return new SecretKeySpec(_plaintextDataKey, algorithmSuite().dataKeyAlgorithm());
     }
 
     @Override
     public Provider cryptoProvider() {
-        return null;
+        return _cryptoProvider;
     }
 
     @Override
     public int opMode() {
-        return 0;
+        return Cipher.ENCRYPT_MODE;
     }
 
     static public class Builder {
         private S3Request _s3Request = null;
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
-        private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private byte[] _plaintextDataKey = null;
         private long _plaintextLength = -1;
         private Provider _cryptoProvider = null;
@@ -186,24 +189,13 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
             return this;
         }
 
-        public Builder encryptedDataKeys(List<EncryptedDataKey> encryptedDataKeys) {
-            _encryptedDataKeys = encryptedDataKeys == null
-                    ? Collections.emptyList()
-                    : Collections.unmodifiableList(encryptedDataKeys);
-            return this;
-        }
-
         public Builder plaintextDataKey(byte[] plaintextDataKey) {
             _plaintextDataKey = plaintextDataKey == null ? null : plaintextDataKey.clone();
             return this;
         }
+
         public Builder cryptoProvider(Provider cryptoProvider) {
             _cryptoProvider = cryptoProvider;
-            return this;
-        }
-
-        public Builder plaintextLength(long plaintextLength) {
-            _plaintextLength = plaintextLength;
             return this;
         }
 

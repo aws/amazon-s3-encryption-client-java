@@ -52,7 +52,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
         this.contentLength = Math.toIntExact(contentLength);
         this.materials = materials;
         this.iv = iv;
-        cipher = CipherProvider.createAndInitCipher(materials, iv);
+        cipher = materials.getCipher(iv);
     }
 
     @Override
