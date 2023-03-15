@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -17,7 +16,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
-import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
 
 import javax.crypto.KeyGenerator;
@@ -36,7 +34,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.S3EncryptionClient.isLastPart;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
@@ -185,6 +182,7 @@ public class S3EncryptionClientMultipartUploadTest {
             bytesSent = 0;
             partsSent++;
         }
+        inputStream.close();
 
         // Last Part
         UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
@@ -211,13 +209,12 @@ public class S3EncryptionClientMultipartUploadTest {
                 .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         // Asserts
-        ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
+        InputStream resultStream = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(objectKey));
+                .key(objectKey)).asInputStream();
 
-        String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit));
-        String outputAsString = IoUtils.toUtf8String(result.asInputStream());
-        assertEquals(inputAsString, outputAsString);
+        assertTrue(IOUtils.contentEquals(new BoundedZerosInputStream(fileSizeLimit), resultStream));
+        resultStream.close();
 
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
