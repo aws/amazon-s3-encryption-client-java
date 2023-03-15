@@ -260,9 +260,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         public Builder enableMultipartPutObject(boolean _enableMultipartPutObject) {
-            if (_enableMultipartPutObject) {
-                throw new S3EncryptionClientException("Async multipart PutObject is currently disabled.");
-            }
+            this._enableMultipartPutObject = _enableMultipartPutObject;
             return this;
         }
 
