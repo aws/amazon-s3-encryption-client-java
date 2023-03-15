@@ -76,10 +76,29 @@ public class MultipartUploadObjectPipeline {
             throws AwsServiceException, SdkClientException {
         final AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         final int blockSize = algorithmSuite.cipherBlockSizeBytes();
-        final long partSize = requestBody.optionalContentLength().orElse(-1L);
+        // Validate the partSize / contentLength in the request and requestBody
+        // There is similar logic in PutEncryptedObjectPipeline,
+        // but this uses non-async requestBody, so the code is not shared
+        final long partContentLength;
+        if (request.contentLength() != null) {
+            if (requestBody.optionalContentLength().isPresent() && !request.contentLength().equals(requestBody.optionalContentLength().get())) {
+                // if the contentLength values do not match, throw an exception, since we don't know which is correct
+                throw new S3EncryptionClientException("The contentLength provided in the request object MUST match the " +
+                        "contentLength in the request body");
+            } else if (!requestBody.optionalContentLength().isPresent()) {
+                // no contentLength in request body, use the one in request
+                partContentLength = request.contentLength();
+            } else {
+                // only remaining case is when the values match, so either works here
+                partContentLength = request.contentLength();
+            }
+        } else {
+            partContentLength = requestBody.optionalContentLength().orElse(-1L);
+        }
+
         final int cipherTagLength = isLastPart ? algorithmSuite.cipherTagLengthBytes() : 0;
-        final long ciphertextLength = partSize + cipherTagLength;
-        final boolean partSizeMultipleOfCipherBlockSize = 0 == (partSize % blockSize);
+        final long ciphertextLength = partContentLength + cipherTagLength;
+        final boolean partSizeMultipleOfCipherBlockSize = 0 == (partContentLength % blockSize);
 
         if (!isLastPart && !partSizeMultipleOfCipherBlockSize) {
             throw new S3EncryptionClientException("Invalid part size: part sizes for encrypted multipart uploads must " +
