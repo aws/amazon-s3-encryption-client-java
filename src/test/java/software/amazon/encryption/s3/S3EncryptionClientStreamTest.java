@@ -202,50 +202,6 @@ public class S3EncryptionClientStreamTest {
     }
 
     @Test
-    public void delayedAuthModeWithVeryLargeObject() throws IOException {
-        final String objectKey = appendTestSuffix("very-large-object-test");
-
-        Security.addProvider(new BouncyCastleProvider());
-        Provider provider = Security.getProvider("BC");
-
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .cryptoProvider(provider)
-                .build();
-
-        // 128MiB
-        final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 128;
-        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
-        v3Client.putObject(PutObjectRequest.builder()
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
-
-        largeObjectStream.close();
-
-        // Delayed Authentication is not enabled, so getObject fails
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)));
-
-        S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .enableDelayedAuthenticationMode(true)
-                .build();
-
-        // Once enabled, the getObject request passes
-        v3ClientWithDelayedAuth.getObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey));
-
-        // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-
-    @Test
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test");
 
