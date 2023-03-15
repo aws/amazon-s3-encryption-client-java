@@ -8,17 +8,16 @@ import com.amazonaws.services.s3.model.CryptoStorageMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
@@ -47,7 +46,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
-
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
@@ -605,6 +603,29 @@ public class S3EncryptionClientTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, s3EncryptionClient);
         s3EncryptionClient.close();
+    }
+
+    @Test
+    public void attemptToDecryptPlaintext() {
+        final String objectKey = "plaintext-object";
+
+        final S3Client plaintextS3Client = S3Client.builder().build();
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        final String input = "SomePlaintext";
+        plaintextS3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
+
+        // Attempt to get (and decrypt) the (plaintext) object from S3
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
     }
 
     /**
