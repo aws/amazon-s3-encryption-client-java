@@ -151,8 +151,6 @@ public class MultipartUploadObjectPipeline {
 
         try {
             IoUtils.copy(cipherInputStream, os);
-            // so it won't crap out with a false negative at the end; (Not
-            // really relevant here)
             materials.setHasFinalPartBeenSeen(true);
         } finally {
             // This will create last part of MultiFileOutputStream upon close

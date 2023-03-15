@@ -7,8 +7,6 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
-import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
 public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStrategy, MultipartContentEncryptionStrategy {
@@ -23,29 +21,17 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
         return new Builder();
     }
 
-    // TODO: fix MPU
     @Override
     public EncryptedContent initMultipartEncryption(EncryptionMaterials materials) {
-        final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
-        Cipher result;
         if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
             throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
                     "the maximum length allowed for GCM encryption.");
         }
 
-        final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
+        final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
+        _secureRandom.nextBytes(nonce);
 
-        final String cipherName = algorithmSuite.cipherName();
-        try {
-            final Cipher cipher1 = CryptoFactory.createCipher(cipherName, materials.cryptoProvider());
-            cipher1.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
-                    new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
-            result = cipher1;
-        } catch (GeneralSecurityException e) {
-            throw new S3EncryptionClientException("Unable to prepare " + cipherName + " for content encryption.", e);
-        }
-        final Cipher cipher = result;
-        // Return Cipher
+        final Cipher cipher = CipherProvider.createAndInitCipher(materials, nonce);
         return new EncryptedContent(nonce, cipher);
     }
 
