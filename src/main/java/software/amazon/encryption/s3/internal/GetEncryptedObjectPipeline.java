@@ -59,7 +59,7 @@ public class GetEncryptedObjectPipeline {
                 getObjectRequest));
     }
 
-    DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
+    private DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
                                                             final ContentMetadata contentMetadata) {
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
