@@ -626,6 +626,10 @@ public class S3EncryptionClientTest {
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     /**
