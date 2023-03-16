@@ -1,12 +1,14 @@
 package software.amazon.encryption.s3.internal;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
 import software.amazon.encryption.s3.materials.CryptographicMaterials;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
+import java.util.Arrays;
 
 /**
  * Composes a CMM to provide S3 specific functionality
@@ -19,7 +21,20 @@ public class CipherProvider {
         this.cmm = cmm;
     }
 
+    /**
+     * Given some materials and an IV, create and init a Cipher object.
+     * @param materials the materials which dictate e.g. algorithm suite
+     * @param iv the IV, it MUST be initialized before use
+     * @return a Cipher object, initialized and ready to use
+     */
     public static Cipher createAndInitCipher(final CryptographicMaterials materials, byte[] iv) {
+        // Validate that the IV has been populated. There is a small chance
+        // that an IV containing only 0s is (validly) randomly generated,
+        // but the tradeoff is worth the protection, and an IV of 0s is
+        // not entirely unlike randomly generating "password" as your password.
+        if (Arrays.equals(iv, new byte[iv.length])) {
+            throw new S3EncryptionClientSecurityException("IV has not been initialized!");
+        }
         try {
             Cipher cipher = CryptoFactory.createCipher(materials.algorithmSuite().cipherName(), materials.cryptoProvider());
             switch (materials.algorithmSuite()) {
