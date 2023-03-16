@@ -1,18 +1,18 @@
 package software.amazon.encryption.s3.materials;
 
+import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.CryptoFactory;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-
-import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.internal.CryptoFactory;
 
 /**
  * This keyring can wrap keys with the active keywrap algorithm and
@@ -77,7 +77,7 @@ public class AesKeyring extends S3Keyring {
 
         private static final String KEY_PROVIDER_INFO = "AES/GCM";
         private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
-        private static final int NONCE_LENGTH_BYTES = 12;
+        private static final int IV_LENGTH_BYTES = 12;
         private static final int TAG_LENGTH_BYTES = 16;
         private static final int TAG_LENGTH_BITS = TAG_LENGTH_BYTES * 8;
 
@@ -95,9 +95,9 @@ public class AesKeyring extends S3Keyring {
         public byte[] encryptDataKey(SecureRandom secureRandom,
                 EncryptionMaterials materials)
                 throws GeneralSecurityException {
-            byte[] nonce = new byte[NONCE_LENGTH_BYTES];
-            secureRandom.nextBytes(nonce);
-            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
+            byte[] iv = new byte[IV_LENGTH_BYTES];
+            secureRandom.nextBytes(iv);
+            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, iv);
 
             final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.ENCRYPT_MODE, _wrappingKey, gcmParameterSpec, secureRandom);
@@ -106,10 +106,10 @@ public class AesKeyring extends S3Keyring {
             cipher.updateAAD(aADBytes);
             byte[] ciphertext = cipher.doFinal(materials.plaintextDataKey());
 
-            // The encrypted data key is the nonce prepended to the ciphertext
-            byte[] encodedBytes = new byte[nonce.length + ciphertext.length];
-            System.arraycopy(nonce, 0, encodedBytes, 0, nonce.length);
-            System.arraycopy(ciphertext, 0, encodedBytes, nonce.length, ciphertext.length);
+            // The encrypted data key is the iv prepended to the ciphertext
+            byte[] encodedBytes = new byte[iv.length + ciphertext.length];
+            System.arraycopy(iv, 0, encodedBytes, 0, iv.length);
+            System.arraycopy(ciphertext, 0, encodedBytes, iv.length, ciphertext.length);
 
             return encodedBytes;
         }
@@ -117,13 +117,13 @@ public class AesKeyring extends S3Keyring {
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
             byte[] encodedBytes = encryptedDataKey;
-            byte[] nonce = new byte[NONCE_LENGTH_BYTES];
-            byte[] ciphertext = new byte[encodedBytes.length - nonce.length];
+            byte[] iv = new byte[IV_LENGTH_BYTES];
+            byte[] ciphertext = new byte[encodedBytes.length - iv.length];
 
-            System.arraycopy(encodedBytes, 0, nonce, 0, nonce.length);
-            System.arraycopy(encodedBytes, nonce.length, ciphertext, 0, ciphertext.length);
+            System.arraycopy(encodedBytes, 0, iv, 0, iv.length);
+            System.arraycopy(encodedBytes, iv.length, ciphertext, 0, ciphertext.length);
 
-            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, nonce);
+            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, iv);
             final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.DECRYPT_MODE, _wrappingKey, gcmParameterSpec);
 

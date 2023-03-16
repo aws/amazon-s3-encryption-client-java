@@ -4,6 +4,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.BinaryUtils;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
+import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
@@ -13,15 +14,19 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final AtomicLong contentRead = new AtomicLong(0);
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
-    private final Cipher cipher;
+    private Cipher cipher;
     private final Long contentLength;
+    private final CryptographicMaterials materials;
+    private byte[] iv;
 
     private byte[] outputBuffer;
 
-    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Cipher cipher, Long contentLength) {
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
         this.wrappedSubscriber = wrappedSubscriber;
-        this.cipher = cipher;
         this.contentLength = contentLength;
+        this.materials = materials;
+        this.iv = iv;
+        cipher = materials.getCipher(iv);
     }
 
     @Override
@@ -41,9 +46,8 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // This happens when the stream is reset and the cipher is reused with the
                 // same key/IV. It's actually fine here, because the data is the same, but any
                 // sane implementation will throw an exception.
-                // TODO: Implement retries. For now, forward and rethrow.
-                this.onError(exception);
-                throw exception;
+                // Request a new cipher using the same materials to avoid reinit issues
+                cipher = CipherProvider.createAndInitCipher(materials, iv);
             }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
                 // The underlying data is too short to fill in the block cipher
@@ -93,4 +97,5 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         }
         wrappedSubscriber.onComplete();
     }
+
 }

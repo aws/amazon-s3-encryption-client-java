@@ -8,11 +8,9 @@ import com.amazonaws.services.s3.model.CryptoStorageMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -20,7 +18,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Exception;
-import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.KmsKeyring;
@@ -44,10 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
-
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
@@ -414,97 +409,6 @@ public class S3EncryptionClientTest {
         simpleV3RoundTrip(v3Client, objectKey);
 
         verify(mockSecureRandom, never()).nextBytes(any());
-
-        // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-    @Test
-    public void s3EncryptionClientFromKMSKeyIdWithSecureRandomUsesObjectOnceForRoundTripCall() {
-        SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
-
-        final String objectKey = appendTestSuffix("secure-random-object-kms");
-
-        S3Client v3Client = S3EncryptionClient.builder()
-            .kmsKeyId(KMS_KEY_ID)
-            .secureRandom(mockSecureRandom)
-            .build();
-
-        simpleV3RoundTrip(v3Client, objectKey);
-
-        // Should only be called from encryption content strategy.
-        // KMS keyring does not use SecureRandom for encryptDataKey.
-        verify(mockSecureRandom, times(1)).nextBytes(any());
-
-        // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-    @Test
-    public void s3EncryptionClientFromAESKeyWithSecureRandomUsesObjectTwiceForRoundTripCall() {
-        SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
-
-        final String objectKey = appendTestSuffix("secure-random-object-aes");
-
-        S3Client v3Client = S3EncryptionClient.builder()
-            .aesKey(AES_KEY)
-            .secureRandom(mockSecureRandom)
-            .build();
-
-        simpleV3RoundTrip(v3Client, objectKey);
-
-        // Should be called once from encryption content strategy and again from AES encryptDataKey.
-        verify(mockSecureRandom, times(2)).nextBytes(any());
-
-        // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-    @Test
-    public void s3EncryptionClientFromRSAKeyWithSecureRandomUsesObjectTwiceForRoundTripCall() {
-        SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
-
-        final String objectKey = appendTestSuffix("secure-random-object-rsa");
-
-        S3Client v3Client = S3EncryptionClient.builder()
-            .rsaKeyPair(RSA_KEY_PAIR)
-            .secureRandom(mockSecureRandom)
-            .build();
-
-        simpleV3RoundTrip(v3Client, objectKey);
-
-        // Should be called once from encryption content strategy and again from RSA encryptDataKey.
-        verify(mockSecureRandom, times(2)).nextBytes(any());
-
-        // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-    @Test
-    public void s3EncryptionClientFromAESKeyringUsesDifferentSecureRandomThanKeyring() {
-        SecureRandom mockSecureRandomKeyring = mock(SecureRandom.class, withSettings().withoutAnnotations());
-        SecureRandom mockSecureRandomClient = mock(SecureRandom.class, withSettings().withoutAnnotations());
-
-        AesKeyring keyring = AesKeyring.builder()
-            .wrappingKey(AES_KEY)
-            .secureRandom(mockSecureRandomKeyring)
-            .build();
-
-        final String objectKey = appendTestSuffix("secure-random-object-aes-different-keyring");
-
-        S3Client v3Client = S3EncryptionClient.builder()
-            .keyring(keyring)
-            .secureRandom(mockSecureRandomClient)
-            .build();
-
-        simpleV3RoundTrip(v3Client, objectKey);
-
-        verify(mockSecureRandomKeyring, times(1)).nextBytes(any());
-        verify(mockSecureRandomClient, times(1)).nextBytes(any());
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);

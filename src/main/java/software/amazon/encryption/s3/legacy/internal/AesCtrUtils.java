@@ -39,10 +39,10 @@ public class AesCtrUtils {
      * "https://github.com/bcgit/bc-java/blob/master/core/src/main/java/org/bouncycastle/crypto/modes/GCMBlockCipher.java"
      * >GCMBlockCipher.java</a>
      */
-    private static byte[] computeJ0(byte[] nonce) {
+    private static byte[] computeJ0(byte[] iv) {
         final int blockSizeBytes = CIPHER_BLOCK_SIZE;
         byte[] J0 = new byte[blockSizeBytes];
-        System.arraycopy(nonce, 0, J0, 0, nonce.length);
+        System.arraycopy(iv, 0, J0, 0, iv.length);
         J0[blockSizeBytes - 1] = 0x01;
         return incrementBlocks(J0, 1);
     }
