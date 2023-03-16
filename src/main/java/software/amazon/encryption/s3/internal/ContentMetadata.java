@@ -1,12 +1,11 @@
 package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
 import java.util.Collections;
 import java.util.Map;
-
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
 public class ContentMetadata {
 
@@ -16,7 +15,7 @@ public class ContentMetadata {
     private final String _encryptedDataKeyAlgorithm;
     private final Map<String, String> _encryptedDataKeyContext;
 
-    private final byte[] _contentNonce;
+    private final byte[] _contentIv;
     private final String _contentCipher;
     private final String _contentCipherTagLength;
     private final String _contentRange;
@@ -28,7 +27,7 @@ public class ContentMetadata {
         _encryptedDataKeyAlgorithm = builder._encryptedDataKeyAlgorithm;
         _encryptedDataKeyContext = builder._encryptedDataKeyContext;
 
-        _contentNonce = builder._contentNonce;
+        _contentIv = builder._contentIv;
         _contentCipher = builder._contentCipher;
         _contentCipherTagLength = builder._contentCipherTagLength;
         _contentRange = builder._contentRange;
@@ -60,11 +59,11 @@ public class ContentMetadata {
         return _encryptedDataKeyContext;
     }
 
-    public byte[] contentNonce() {
-        if (_contentNonce == null) {
+    public byte[] contentIv() {
+        if (_contentIv == null) {
             return null;
         }
-        return _contentNonce.clone();
+        return _contentIv.clone();
     }
 
     public String contentCipher() {
@@ -86,7 +85,7 @@ public class ContentMetadata {
         private String _encryptedDataKeyAlgorithm;
         private Map<String, String> _encryptedDataKeyContext;
 
-        private byte[] _contentNonce;
+        private byte[] _contentIv;
         private String _contentCipher;
         private String _contentCipherTagLength;
         public String _contentRange;
@@ -115,8 +114,8 @@ public class ContentMetadata {
             return this;
         }
 
-        public Builder contentNonce(byte[] contentNonce) {
-            _contentNonce = contentNonce.clone();
+        public Builder contentIv(byte[] contentIv) {
+            _contentIv = contentIv.clone();
             return this;
         }
 

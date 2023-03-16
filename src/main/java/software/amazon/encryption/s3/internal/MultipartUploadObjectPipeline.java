@@ -61,7 +61,7 @@ public class MultipartUploadObjectPipeline {
         EncryptedContent encryptedContent = _contentEncryptionStrategy.initMultipartEncryption(materials);
 
         Map<String, String> metadata = new HashMap<>(request.metadata());
-        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
+        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), metadata);
         request = request.toBuilder().metadata(metadata).build();
 
         CreateMultipartUploadResponse response = _s3AsyncClient.createMultipartUpload(request).join();

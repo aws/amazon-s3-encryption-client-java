@@ -61,7 +61,7 @@ public class PutEncryptedObjectPipeline {
         EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
 
         Map<String, String> metadata = new HashMap<>(request.metadata());
-        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getNonce(), metadata);
+        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), metadata);
         PutObjectRequest encryptedPutRequest = request.toBuilder()
                 .contentLength(encryptedContent.getCiphertextLength())
                 .metadata(metadata)

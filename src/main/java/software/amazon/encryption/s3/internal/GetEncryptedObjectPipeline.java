@@ -125,7 +125,7 @@ public class GetEncryptedObjectPipeline {
             AlgorithmSuite algorithmSuite = materials.algorithmSuite();
             SecretKey contentKey = materials.dataKey();
             final int tagLength = algorithmSuite.cipherTagLengthBits();
-            byte[] iv = contentMetadata.contentNonce();
+            byte[] iv = contentMetadata.contentIv();
             if (algorithmSuite == AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF) {
                 iv = AesCtrUtils.adjustIV(iv, cryptoRange[0]);
             }

@@ -53,11 +53,11 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
     public static final ContentMetadataStrategy OBJECT_METADATA = new ContentMetadataStrategy() {
 
         @Override
-        public Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] nonce,
+        public Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] iv,
                                                    Map<String, String> metadata) {
             EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
-            metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(nonce));
+            metadata.put(MetadataKeyConstants.CONTENT_IV, ENCODER.encodeToString(iv));
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, new String(edk.keyProviderInfo(), StandardCharsets.UTF_8));
@@ -155,14 +155,14 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             throw new RuntimeException(e);
         }
 
-        // Get content nonce
-        byte[] nonce = DECODER.decode(metadata.get(MetadataKeyConstants.CONTENT_NONCE));
+        // Get content iv
+        byte[] iv = DECODER.decode(metadata.get(MetadataKeyConstants.CONTENT_IV));
 
         return ContentMetadata.builder()
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKey(edk)
                 .encryptedDataKeyContext(encryptionContext)
-                .contentNonce(nonce)
+                .contentIv(iv)
                 .contentRange(contentRange)
                 .build();
     }
@@ -171,7 +171,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         Map<String, String> metadata = response.metadata();
         ContentMetadataDecodingStrategy strategy;
         if (metadata != null
-                && metadata.containsKey(MetadataKeyConstants.CONTENT_NONCE)
+                && metadata.containsKey(MetadataKeyConstants.CONTENT_IV)
                 && (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
                 || metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2))) {
             strategy = OBJECT_METADATA;

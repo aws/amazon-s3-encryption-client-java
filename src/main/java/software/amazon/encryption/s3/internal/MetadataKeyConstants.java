@@ -7,7 +7,7 @@ public class MetadataKeyConstants {
     public static final String ENCRYPTED_DATA_KEY_ALGORITHM = "x-amz-wrap-alg";
     public static final String ENCRYPTED_DATA_KEY_CONTEXT = "x-amz-matdesc";
 
-    public static final String CONTENT_NONCE = "x-amz-iv";
+    public static final String CONTENT_IV = "x-amz-iv";
     // This is usually an actual Java cipher e.g. AES/GCM/NoPadding
     public static final String CONTENT_CIPHER = "x-amz-cek-alg";
     public static final String CONTENT_CIPHER_TAG_LENGTH = "x-amz-tag-len";

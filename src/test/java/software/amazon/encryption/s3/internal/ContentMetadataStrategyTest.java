@@ -47,13 +47,13 @@ public class ContentMetadataStrategyTest {
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .encryptedDataKeyAlgorithm(null)
                 .encryptedDataKeyContext(new HashMap())
-                .contentNonce(bytes)
+                .contentIv(bytes)
                 .build();
 
         ContentMetadata contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, getObjectResponse);
         assertEquals(expectedContentMetadata.algorithmSuite(), contentMetadata.algorithmSuite());
-        String actualContentNonce = Arrays.toString(contentMetadata.contentNonce());
-        String expectedContentNonce = Arrays.toString(expectedContentMetadata.contentNonce());
-        assertEquals(expectedContentNonce, actualContentNonce);
+        String actualContentIv = Arrays.toString(contentMetadata.contentIv());
+        String expectedContentIv = Arrays.toString(expectedContentMetadata.contentIv());
+        assertEquals(expectedContentIv, actualContentIv);
     }
 }

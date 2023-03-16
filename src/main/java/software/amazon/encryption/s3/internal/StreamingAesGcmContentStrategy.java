@@ -28,11 +28,11 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
                     "the maximum length allowed for GCM encryption.");
         }
 
-        final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
-        _secureRandom.nextBytes(nonce);
+        final byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
+        _secureRandom.nextBytes(iv);
 
-        final Cipher cipher = CipherProvider.createAndInitCipher(materials, nonce);
-        return new EncryptedContent(nonce, cipher);
+        final Cipher cipher = CipherProvider.createAndInitCipher(materials, iv);
+        return new EncryptedContent(iv, cipher);
     }
 
     @Override
@@ -42,11 +42,11 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
                     "the maximum length allowed for GCM encryption.");
         }
 
-        final byte[] nonce = new byte[materials.algorithmSuite().nonceLengthBytes()];
-        _secureRandom.nextBytes(nonce);
+        final byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
+        _secureRandom.nextBytes(iv);
 
-        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(content, materials.getCiphertextLength(), materials, nonce);
-        return new EncryptedContent(nonce, encryptedAsyncRequestBody, materials.getCiphertextLength());
+        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(content, materials.getCiphertextLength(), materials, iv);
+        return new EncryptedContent(iv, encryptedAsyncRequestBody, materials.getCiphertextLength());
     }
 
     public static class Builder {
