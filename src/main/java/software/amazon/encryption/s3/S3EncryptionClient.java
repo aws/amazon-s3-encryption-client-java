@@ -297,6 +297,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
     @Override
     public void close() {
+        _wrappedClient.close();
         _wrappedAsyncClient.close();
     }
 
