@@ -8,6 +8,7 @@ import software.amazon.awssdk.protocols.jsoncore.JsonWriter.JsonGenerationExcept
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
@@ -37,8 +38,15 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                     .build();
 
             S3Client s3Client = S3Client.create();
-            ResponseInputStream<GetObjectResponse> instruction = s3Client.getObject(
-                    instructionGetObjectRequest);
+            ResponseInputStream<GetObjectResponse> instruction;
+            try {
+                instruction = s3Client.getObject(instructionGetObjectRequest);
+            } catch (NoSuchKeyException exception) {
+                // Most likely, the customer is attempting to decrypt an object
+                // which is not encrypted with the S3 EC.
+                throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
+                        " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
+            }
 
             Map<String, String> metadata = new HashMap<>();
             JsonNodeParser parser = JsonNodeParser.create();

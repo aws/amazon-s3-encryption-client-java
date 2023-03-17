@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
@@ -509,6 +510,33 @@ public class S3EncryptionClientTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, s3EncryptionClient);
         s3EncryptionClient.close();
+    }
+
+    @Test
+    public void attemptToDecryptPlaintext() {
+        final String objectKey = "plaintext-object";
+
+        final S3Client plaintextS3Client = S3Client.builder().build();
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        final String input = "SomePlaintext";
+        plaintextS3Client.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
+
+        // Attempt to get (and decrypt) the (plaintext) object from S3
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 
     /**
