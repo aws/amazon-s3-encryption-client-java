@@ -6,11 +6,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
@@ -29,6 +33,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,6 +58,44 @@ public class S3EncryptionClientMultipartUploadTest {
         Security.addProvider(new BouncyCastleProvider());
         PROVIDER = Security.getProvider("BC");
     }
+
+    @Test
+    public void multipartPutObjectAsync() throws IOException {
+        final String objectKey = appendTestSuffix("multipart-put-object-async");
+
+        final long fileSizeLimit = 1024 * 1024 * 100;
+        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
+
+        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .enableMultipartPutObject(true)
+                .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(PROVIDER)
+                .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+        CompletableFuture<PutObjectResponse> futurePut = v3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, Executors.newSingleThreadExecutor()));
+        futurePut.join();
+
+        // Asserts
+        CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+                .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
+        ResponseInputStream<GetObjectResponse> output = getFuture.join();
+
+        assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
+
+        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+        v3Client.close();
+    }
+
 
     @Test
     public void multipartPutObject() throws IOException {
@@ -142,6 +186,7 @@ public class S3EncryptionClientMultipartUploadTest {
             bytesSent = 0;
             partsSent++;
         }
+        inputStream.close();
 
         // Last Part
         UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
@@ -168,13 +213,12 @@ public class S3EncryptionClientMultipartUploadTest {
                 .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         // Asserts
-        ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
+        InputStream resultStream = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .key(objectKey));
+                .key(objectKey)).asInputStream();
 
-        String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit));
-        String outputAsString = IoUtils.toUtf8String(result.asInputStream());
-        assertEquals(inputAsString, outputAsString);
+        assertTrue(IOUtils.contentEquals(new BoundedZerosInputStream(fileSizeLimit), resultStream));
+        resultStream.close();
 
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();

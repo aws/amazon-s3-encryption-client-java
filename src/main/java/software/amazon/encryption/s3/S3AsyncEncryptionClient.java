@@ -8,6 +8,7 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.DelegatingS3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
@@ -44,6 +45,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     private final SecureRandom _secureRandom;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
+    private final boolean _enableMultipartPutObject;
 
     private S3AsyncEncryptionClient(Builder builder) {
         super(builder._wrappedClient);
@@ -52,6 +54,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _secureRandom = builder._secureRandom;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
+        _enableMultipartPutObject = builder._enableMultipartPutObject;
     }
 
     public static Builder builder() {
@@ -67,12 +70,34 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     @Override
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody)
             throws AwsServiceException, SdkClientException {
+
+        if (_enableMultipartPutObject) {
+            return multipartPutObject(putObjectRequest, requestBody);
+        }
+
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
 
+        return pipeline.putObject(putObjectRequest, requestBody);
+    }
+
+    public CompletableFuture<PutObjectResponse> multipartPutObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody) {
+        S3AsyncClient crtClient;
+        if (_wrappedClient instanceof S3CrtAsyncClient) {
+            // if the wrappedClient is a CRT, use it
+            crtClient = _wrappedClient;
+        } else {
+            // else create a default one
+            crtClient = S3AsyncClient.crtCreate();
+        }
+        PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
+                .s3AsyncClient(crtClient)
+                .cryptoMaterialsManager(_cryptoMaterialsManager)
+                .secureRandom(_secureRandom)
+                .build();
         return pipeline.putObject(putObjectRequest, requestBody);
     }
 
@@ -235,9 +260,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         public Builder enableMultipartPutObject(boolean _enableMultipartPutObject) {
-            if (_enableMultipartPutObject) {
-                throw new S3EncryptionClientException("Async multipart PutObject is currently disabled.");
-            }
+            this._enableMultipartPutObject = _enableMultipartPutObject;
             return this;
         }
 

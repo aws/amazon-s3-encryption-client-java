@@ -35,7 +35,7 @@ public enum AlgorithmSuite {
     private int _dataKeyLengthBits;
     private String _cipherName;
     private int _cipherBlockSizeBits;
-    private int _cipherNonceLengthBits;
+    private int _cipherIvLengthBits;
     private int _cipherTagLengthBits;
     private long _cipherMaxContentLengthBits;
 
@@ -45,7 +45,7 @@ public enum AlgorithmSuite {
                    int dataKeyLengthBits,
                    String cipherName,
                    int cipherBlockSizeBits,
-                   int cipherNonceLengthBits,
+                   int cipherIvLengthBits,
                    int cipherTagLengthBits,
                    long cipherMaxContentLengthBits
     ) {
@@ -55,7 +55,7 @@ public enum AlgorithmSuite {
         this._dataKeyLengthBits = dataKeyLengthBits;
         this._cipherName = cipherName;
         this._cipherBlockSizeBits = cipherBlockSizeBits;
-        this._cipherNonceLengthBits = cipherNonceLengthBits;
+        this._cipherIvLengthBits = cipherIvLengthBits;
         this._cipherTagLengthBits = cipherTagLengthBits;
         this._cipherMaxContentLengthBits = cipherMaxContentLengthBits;
     }
@@ -88,8 +88,8 @@ public enum AlgorithmSuite {
         return _cipherTagLengthBits / 8;
     }
 
-    public int nonceLengthBytes() {
-        return _cipherNonceLengthBits / 8;
+    public int iVLengthBytes() {
+        return _cipherIvLengthBits / 8;
     }
 
     public int cipherBlockSizeBytes() {
