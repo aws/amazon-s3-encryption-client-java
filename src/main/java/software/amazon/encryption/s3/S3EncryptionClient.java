@@ -82,7 +82,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
     private final S3AsyncClient _wrappedAsyncClient;
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final SecureRandom _secureRandom;
-    private final boolean _enableLegacyWrappingAlgorithms;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthenticationMode;
     private final boolean _enableMultipartPutObject;
@@ -94,7 +93,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
         _wrappedAsyncClient = builder._wrappedAsyncClient;
         _cryptoMaterialsManager = builder._cryptoMaterialsManager;
         _secureRandom = builder._secureRandom;
-        _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
         _enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
         _enableMultipartPutObject = builder._enableMultipartPutObject;
@@ -158,7 +156,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedAsyncClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
-                .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .build();
@@ -300,6 +297,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
     @Override
     public void close() {
+        _wrappedClient.close();
         _wrappedAsyncClient.close();
     }
 
@@ -331,16 +329,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
-            if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
-                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
-            }
-
-            this._wrappedAsyncClient = _wrappedAsyncClient;
-            return this;
-        }
-
-        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
-        public Builder _wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
             if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
                 throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
             }

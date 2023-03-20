@@ -55,7 +55,7 @@ public class BufferedAesGcmContentStrategy implements ContentDecryptionStrategy 
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         final int tagLength = algorithmSuite.cipherTagLengthBits();
-        byte[] iv = contentMetadata.contentNonce();
+        byte[] iv = contentMetadata.contentIv();
         final Cipher cipher;
         byte[] plaintext;
         try {

@@ -7,6 +7,6 @@ import java.util.Map;
 @FunctionalInterface
 public interface ContentMetadataEncodingStrategy {
 
-    Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] nonce,
+    Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] iv,
                                               Map<String, String> metadata);
 }

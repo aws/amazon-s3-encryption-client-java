@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -234,9 +235,13 @@ public class S3EncryptionClientStreamTest {
                 .build();
 
         // Once enabled, the getObject request passes
-        v3ClientWithDelayedAuth.getObject(builder -> builder
+        ResponseInputStream<GetObjectResponse> response = v3ClientWithDelayedAuth.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
+
+
+        assertTrue(IOUtils.contentEquals(new BoundedZerosInputStream(fileSizeExceedingDefaultLimit), response));
+        response.close();
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);

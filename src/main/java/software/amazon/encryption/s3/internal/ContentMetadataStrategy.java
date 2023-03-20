@@ -8,6 +8,7 @@ import software.amazon.awssdk.protocols.jsoncore.JsonWriter.JsonGenerationExcept
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
@@ -37,8 +38,15 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                     .build();
 
             S3Client s3Client = S3Client.create();
-            ResponseInputStream<GetObjectResponse> instruction = s3Client.getObject(
-                    instructionGetObjectRequest);
+            ResponseInputStream<GetObjectResponse> instruction;
+            try {
+                instruction = s3Client.getObject(instructionGetObjectRequest);
+            } catch (NoSuchKeyException exception) {
+                // Most likely, the customer is attempting to decrypt an object
+                // which is not encrypted with the S3 EC.
+                throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
+                        " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
+            }
 
             Map<String, String> metadata = new HashMap<>();
             JsonNodeParser parser = JsonNodeParser.create();
@@ -53,11 +61,11 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
     public static final ContentMetadataStrategy OBJECT_METADATA = new ContentMetadataStrategy() {
 
         @Override
-        public Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] nonce,
+        public Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] iv,
                                                    Map<String, String> metadata) {
             EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
-            metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(nonce));
+            metadata.put(MetadataKeyConstants.CONTENT_IV, ENCODER.encodeToString(iv));
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, new String(edk.keyProviderInfo(), StandardCharsets.UTF_8));
@@ -155,14 +163,14 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             throw new RuntimeException(e);
         }
 
-        // Get content nonce
-        byte[] nonce = DECODER.decode(metadata.get(MetadataKeyConstants.CONTENT_NONCE));
+        // Get content iv
+        byte[] iv = DECODER.decode(metadata.get(MetadataKeyConstants.CONTENT_IV));
 
         return ContentMetadata.builder()
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKey(edk)
                 .encryptedDataKeyContext(encryptionContext)
-                .contentNonce(nonce)
+                .contentIv(iv)
                 .contentRange(contentRange)
                 .build();
     }
@@ -171,7 +179,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         Map<String, String> metadata = response.metadata();
         ContentMetadataDecodingStrategy strategy;
         if (metadata != null
-                && metadata.containsKey(MetadataKeyConstants.CONTENT_NONCE)
+                && metadata.containsKey(MetadataKeyConstants.CONTENT_IV)
                 && (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
                 || metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2))) {
             strategy = OBJECT_METADATA;
