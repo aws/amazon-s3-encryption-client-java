@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.4.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.3.0...v2.4.0) (2023-03-20)
+
+
+### Features
+
+* implement retries in (Buffered)CipherSubscriber ([#109](https://github.com/aws/aws-s3-encryption-client-java/issues/109)) ([12dd80c](https://github.com/aws/aws-s3-encryption-client-java/commit/12dd80cf18e7f6c8f94f245e234ee19acd2f6e32))
+* multipart putObject async ([#114](https://github.com/aws/aws-s3-encryption-client-java/issues/114)) ([b985a4e](https://github.com/aws/aws-s3-encryption-client-java/commit/b985a4e18135943e11104bcbdaca836aaed5603e))
+
+
+### Maintenance
+
+* clean up some dead code and resolved TODOs ([#108](https://github.com/aws/aws-s3-encryption-client-java/issues/108)) ([72f75d0](https://github.com/aws/aws-s3-encryption-client-java/commit/72f75d0dd1acc1fa2063e5135a377bd303002acd))
+
+
+### Fixes
+
+* also close the default wrapped client ([#117](https://github.com/aws/aws-s3-encryption-client-java/issues/117)) ([7700fbb](https://github.com/aws/aws-s3-encryption-client-java/commit/7700fbb938757972b34d32a98f29503d4b170e0d))
+* set release version to Java 8 to ensure bytecode compatibility a… ([#111](https://github.com/aws/aws-s3-encryption-client-java/issues/111)) ([1886895](https://github.com/aws/aws-s3-encryption-client-java/commit/188689516b3583500352bc6ceed3eb5588a23bf6))
+* wrap the NoSuchKeyException when decrypting plaintext ([#116](https://github.com/aws/aws-s3-encryption-client-java/issues/116)) ([8d89adf](https://github.com/aws/aws-s3-encryption-client-java/commit/8d89adff421df65a9db77340bfd8aa5b47bf67fc))
+
 ## [2.3.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.2.0...v2.3.0) (2023-03-13)
 
 
