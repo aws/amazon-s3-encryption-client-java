@@ -102,7 +102,7 @@ public class MultipartUploadObjectPipeline {
             partContentLength = requestBody.optionalContentLength().orElse(-1L);
         }
 
-        final boolean isLastPart = request.sdkPartType().equals(SdkPartType.LAST);
+        final boolean isLastPart = request.sdkPartType() != null && request.sdkPartType().equals(SdkPartType.LAST);
         final int cipherTagLength = isLastPart ? algorithmSuite.cipherTagLengthBytes() : 0;
         final long ciphertextLength = partContentLength + cipherTagLength;
         final boolean partSizeMultipleOfCipherBlockSize = 0 == (partContentLength % blockSize);
@@ -123,7 +123,7 @@ public class MultipartUploadObjectPipeline {
         Cipher cipher = materials.getCipher(materials.getIv());
         try {
             final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(),
-                    request.contentLength(), Executors.newSingleThreadExecutor()), ciphertextLength, materials, cipher.getIV());
+                    request.contentLength(), Executors.newSingleThreadExecutor()), ciphertextLength, materials, cipher.getIV(), isLastPart);
 
             // The last part of the multipart upload will contain an extra
             // 16-byte mac
