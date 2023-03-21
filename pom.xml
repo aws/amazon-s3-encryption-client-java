@@ -6,7 +6,7 @@
 
   <groupId>software.amazon.encryption</groupId>
   <artifactId>s3</artifactId>
-  <version>2.4.0</version>
+  <version>2.4.1</version>
   <packaging>jar</packaging>
 
   <name>Amazon S3 Encryption Client</name>
