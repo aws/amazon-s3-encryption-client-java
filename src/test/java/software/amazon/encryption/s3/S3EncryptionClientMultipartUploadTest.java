@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.s3.model.SdkPartType;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
-import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
+import software.amazon.encryption.s3.utils.BoundedInputStream;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -64,8 +64,8 @@ public class S3EncryptionClientMultipartUploadTest {
         final String objectKey = appendTestSuffix("multipart-put-object-async");
 
         final long fileSizeLimit = 1024 * 1024 * 100;
-        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
@@ -102,8 +102,8 @@ public class S3EncryptionClientMultipartUploadTest {
         final String objectKey = appendTestSuffix("multipart-put-object");
 
         final long fileSizeLimit = 1024 * 1024 * 100;
-        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
@@ -139,11 +139,12 @@ public class S3EncryptionClientMultipartUploadTest {
         // Overall "file" is 100MB, split into 10MB parts
         final long fileSizeLimit = 1024 * 1024 * 100;
         final int PART_SIZE = 10 * 1024 * 1024;
-        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
+                .kmsKeyId(KMS_KEY_ID)
+
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();
@@ -216,7 +217,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .bucket(BUCKET)
                 .key(objectKey)).asInputStream();
 
-        assertTrue(IOUtils.contentEquals(new BoundedZerosInputStream(fileSizeLimit), resultStream));
+        assertTrue(IOUtils.contentEquals(new BoundedInputStream(fileSizeLimit), resultStream));
         resultStream.close();
 
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
@@ -230,11 +231,12 @@ public class S3EncryptionClientMultipartUploadTest {
         // Overall "file" is 30MB, split into 10MB parts
         final long fileSizeLimit = 1024 * 1024 * 30;
         final int PART_SIZE = 10 * 1024 * 1024;
-        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
+                .kmsKeyId(KMS_KEY_ID)
+
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();
@@ -307,7 +309,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .bucket(BUCKET)
                 .key(objectKey));
 
-        String inputAsString = IoUtils.toUtf8String(new BoundedZerosInputStream(fileSizeLimit));
+        String inputAsString = IoUtils.toUtf8String(new BoundedInputStream(fileSizeLimit));
         String outputAsString = IoUtils.toUtf8String(result.asInputStream());
         assertEquals(inputAsString, outputAsString);
 
@@ -322,11 +324,12 @@ public class S3EncryptionClientMultipartUploadTest {
         // Overall "file" is 30MB, split into 10MB parts
         final long fileSizeLimit = 1024 * 1024 * 30;
         final int PART_SIZE = 10 * 1024 * 1024;
-        final InputStream inputStream = new BoundedZerosInputStream(fileSizeLimit);
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
+                .kmsKeyId(KMS_KEY_ID)
+
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();

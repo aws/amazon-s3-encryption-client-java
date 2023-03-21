@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedStreamBufferer;
-import software.amazon.encryption.s3.utils.BoundedZerosInputStream;
+import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.MarkResetBoundedZerosInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
@@ -102,8 +102,8 @@ public class S3EncryptionClientStreamTest {
         final int inputLength = DEFAULT_TEST_STREAM_LENGTH;
         // Create a second stream of zeros because reset is not supported
         // and reading into the byte string will consume the stream.
-        final InputStream inputStream = new BoundedZerosInputStream(inputLength);
-        final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
+        final InputStream inputStream = new BoundedInputStream(inputLength);
+        final InputStream inputStreamForString = new BoundedInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
         v3Client.putObject(PutObjectRequest.builder()
@@ -136,8 +136,8 @@ public class S3EncryptionClientStreamTest {
         final int inputLength = DEFAULT_TEST_STREAM_LENGTH;
         // Create a second stream of zeros because reset is not supported
         // and reading into the byte string will consume the stream.
-        final InputStream inputStream = new BoundedZerosInputStream(inputLength);
-        final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
+        final InputStream inputStream = new BoundedInputStream(inputLength);
+        final InputStream inputStreamForString = new BoundedInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
         v3Client.putObject(PutObjectRequest.builder()
@@ -182,7 +182,7 @@ public class S3EncryptionClientStreamTest {
                 .build();
 
         final int inputLength = DEFAULT_TEST_STREAM_LENGTH;
-        final InputStream inputStreamForString = new BoundedZerosInputStream(inputLength);
+        final InputStream inputStreamForString = new BoundedInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
         v1Client.putObject(BUCKET, objectKey, inputStreamAsUtf8String);
@@ -216,7 +216,7 @@ public class S3EncryptionClientStreamTest {
 
         // Tight bound on the default limit of 64MiB
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
-        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingDefaultLimit);
+        final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -240,7 +240,7 @@ public class S3EncryptionClientStreamTest {
                 .key(objectKey));
 
 
-        assertTrue(IOUtils.contentEquals(new BoundedZerosInputStream(fileSizeExceedingDefaultLimit), response));
+        assertTrue(IOUtils.contentEquals(new BoundedInputStream(fileSizeExceedingDefaultLimit), response));
         response.close();
 
         // Cleanup
@@ -259,7 +259,7 @@ public class S3EncryptionClientStreamTest {
                 .build();
 
         final long fileSizeExceedingGCMLimit = (1L << 39) - 256 / 8;
-        final InputStream largeObjectStream = new BoundedZerosInputStream(fileSizeExceedingGCMLimit);
+        final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingGCMLimit);
         assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -343,5 +343,6 @@ public class S3EncryptionClientStreamTest {
             // Not expected, but fail the test anyway
             fail(unexpected);
         }
+        
     }
 }
