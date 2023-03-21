@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.SdkPartType;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
@@ -76,7 +77,7 @@ public class MultipartUploadObjectPipeline {
         return response;
     }
 
-    public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody, boolean isLastPart)
+    public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody)
             throws AwsServiceException, SdkClientException {
 
         final AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
@@ -101,6 +102,7 @@ public class MultipartUploadObjectPipeline {
             partContentLength = requestBody.optionalContentLength().orElse(-1L);
         }
 
+        final boolean isLastPart = request.sdkPartType().equals(SdkPartType.LAST);
         final int cipherTagLength = isLastPart ? algorithmSuite.cipherTagLengthBytes() : 0;
         final long ciphertextLength = partContentLength + cipherTagLength;
         final boolean partSizeMultipleOfCipherBlockSize = 0 == (partContentLength % blockSize);

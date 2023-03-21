@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.SdkPartType;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
@@ -39,7 +40,6 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static software.amazon.encryption.s3.S3EncryptionClient.isLastPart;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
@@ -172,7 +172,6 @@ public class S3EncryptionClientMultipartUploadTest {
                     .key(objectKey)
                     .uploadId(initiateResult.uploadId())
                     .partNumber(partsSent)
-                    .overrideConfiguration(isLastPart(false))
                     .build();
 
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
@@ -194,7 +193,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .key(objectKey)
                 .uploadId(initiateResult.uploadId())
                 .partNumber(partsSent)
-                .overrideConfiguration(isLastPart(true))
+                .sdkPartType(SdkPartType.LAST)
                 .build();
 
         final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
@@ -266,7 +265,6 @@ public class S3EncryptionClientMultipartUploadTest {
                     .uploadId(initiateResult.uploadId())
                     .partNumber(partsSent)
                     .contentLength((long) partInputStream.available())
-                    .overrideConfiguration(isLastPart(false))
                     .build();
 
             UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
@@ -286,7 +284,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .key(objectKey)
                 .uploadId(initiateResult.uploadId())
                 .partNumber(partsSent)
-                .overrideConfiguration(isLastPart(true))
+                .sdkPartType(SdkPartType.LAST)
                 .build();
 
         final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
@@ -337,8 +335,6 @@ public class S3EncryptionClientMultipartUploadTest {
         CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
                 builder.bucket(BUCKET).key(objectKey));
 
-        List<CompletedPart> partETags = new ArrayList<>();
-
         int bytesRead, bytesSent = 0;
         // 10MB parts
         byte[] partData = new byte[PART_SIZE];
@@ -359,7 +355,6 @@ public class S3EncryptionClientMultipartUploadTest {
                     .uploadId(initiateResult.uploadId())
                     .partNumber(partsSent)
                     .contentLength((long) partInputStream.available() + 1) // mismatch
-                    .overrideConfiguration(isLastPart(false))
                     .build();
 
             assertThrows(S3EncryptionClientException.class, () -> v3Client.uploadPart(uploadPartRequest,

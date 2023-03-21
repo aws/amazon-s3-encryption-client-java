@@ -8,6 +8,7 @@ import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.SdkPartType;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.S3EncryptionClient;
@@ -106,11 +107,17 @@ public class UploadObjectObserver {
     }
 
     protected UploadPartRequest newUploadPartRequest(PartCreationEvent event) {
+        final SdkPartType partType;
+        if (event.isLastPart()) {
+            partType = SdkPartType.LAST;
+        } else {
+            partType = SdkPartType.DEFAULT;
+        }
         return UploadPartRequest.builder()
                 .bucket(request.bucket())
                 .key(request.key())
                 .partNumber(event.getPartNumber())
-                .overrideConfiguration(S3EncryptionClient.isLastPart(event.isLastPart()))
+                .sdkPartType(partType)
                 .uploadId(uploadId)
                 .build();
     }
