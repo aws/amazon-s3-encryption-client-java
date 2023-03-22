@@ -74,9 +74,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
     public static final ExecutionAttribute<MultipartConfiguration> CONFIGURATION = new ExecutionAttribute<>("MultipartConfiguration");
-    // TODO: Replace with UploadPartRequest.isLastPart() when launched.
-    // Used for multipart uploads
-    public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
 
     private final S3Client _wrappedClient;
     private final S3AsyncClient _wrappedAsyncClient;
@@ -114,12 +111,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext)
                         .putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
-    }
-
-    // Helper function to determine last upload part during multipart uploads
-    public static Consumer<AwsRequestOverrideConfiguration.Builder> isLastPart(Boolean isLastPart) {
-        return builder ->
-                builder.putExecutionAttribute(S3EncryptionClient.IS_LAST_PART, isLastPart);
     }
 
     @Override
@@ -275,12 +266,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     @Override
     public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody)
             throws AwsServiceException, SdkClientException {
-        AwsRequestOverrideConfiguration overrideConfiguration = request.overrideConfiguration().orElse(null);
-        boolean isLastPart = false;
-        if (!(overrideConfiguration == null)) {
-            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(IS_LAST_PART).orElse(false);
-        }
-        return _multipartPipeline.uploadPart(request, requestBody, isLastPart);
+        return _multipartPipeline.uploadPart(request, requestBody);
     }
 
     @Override
@@ -303,7 +289,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
     public static class Builder {
         // The non-encrypted APIs will use a default client.
-        // In the future, we may want to make this configurable.
         private S3Client _wrappedClient = S3Client.create();
         private S3AsyncClient _wrappedAsyncClient = S3AsyncClient.create();
 
@@ -324,13 +309,32 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         /**
+         * Sets the wrappedClient to be used for non-cryptographic operations.
+         */
+        /*
+         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
+         * S3Client will be reflected in this Builder.
+         */
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
+        public Builder wrappedClient(S3Client _wrappedClient) {
+            if (_wrappedClient instanceof S3EncryptionClient) {
+                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
+            }
+            this._wrappedClient = _wrappedClient;
+            return this;
+        }
+
+        /**
+         * Sets the wrappedAsyncClient to be used for cryptographic operations.
+         */
+        /*
          * Note that this does NOT create a defensive clone of S3AsyncClient. Any modifications made to the wrapped
          * S3AsyncClient will be reflected in this Builder.
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder wrappedAsyncClient(S3AsyncClient _wrappedAsyncClient) {
             if (_wrappedAsyncClient instanceof S3AsyncEncryptionClient) {
-                throw new S3EncryptionClientException("Cannot use S3EncryptionClient as wrapped client");
+                throw new S3EncryptionClientException("Cannot use S3AsyncEncryptionClient as wrapped client");
             }
 
             this._wrappedAsyncClient = _wrappedAsyncClient;
