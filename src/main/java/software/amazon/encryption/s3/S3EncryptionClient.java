@@ -326,8 +326,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
          * Sets the wrappedClient to be used for non-cryptographic operations.
          */
         /*
-         * Note that this does NOT create a defensive clone of S3AsyncClient. Any modifications made to the wrapped
-         * S3AsyncClient will be reflected in this Builder.
+         * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
+         * S3Client will be reflected in this Builder.
          */
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
         public Builder wrappedClient(S3Client _wrappedClient) {
