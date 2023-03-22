@@ -21,8 +21,6 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -46,15 +44,10 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 
 public class S3EncryptionClientMultipartUploadTest {
-    private static SecretKey AES_KEY;
     private static Provider PROVIDER;
 
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(256);
-        AES_KEY = keyGen.generateKey();
-
         Security.addProvider(new BouncyCastleProvider());
         PROVIDER = Security.getProvider("BC");
     }
@@ -144,7 +137,6 @@ public class S3EncryptionClientMultipartUploadTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();
@@ -236,7 +228,6 @@ public class S3EncryptionClientMultipartUploadTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();
@@ -329,7 +320,6 @@ public class S3EncryptionClientMultipartUploadTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();
