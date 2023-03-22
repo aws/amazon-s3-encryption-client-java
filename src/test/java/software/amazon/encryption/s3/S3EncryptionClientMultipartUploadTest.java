@@ -4,6 +4,7 @@ import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -144,7 +145,6 @@ public class S3EncryptionClientMultipartUploadTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();
@@ -224,6 +224,33 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
+    @Test
+    public void singleObjectTest() throws IOException {
+        //final String objectKey = "multipart-put-object-async-230321-050328-1505";
+        //final String objectKey = "multipart-put-object-async-230321-043632-33283";
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(PROVIDER)
+                .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+        ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+                .key(objectKey));
+
+        final long fileSizeLimit = 1024 * 1024 * 100;
+        String inputAsString = IoUtils.toUtf8String(new BoundedInputStream(fileSizeLimit));
+        String outputAsString = IoUtils.toUtf8String(result.asInputStream());
+        assertEquals(inputAsString, outputAsString);
+
+    }
+
     @RepeatedTest(10)
     public void multipartUploadV3OutputStreamPartSize() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size");
@@ -236,7 +263,6 @@ public class S3EncryptionClientMultipartUploadTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();
