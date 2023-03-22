@@ -343,5 +343,9 @@ public class S3EncryptionClientStreamTest {
             // Not expected, but fail the test anyway
             fail(unexpected);
         }
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 }
