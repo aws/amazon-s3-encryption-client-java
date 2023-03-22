@@ -23,7 +23,9 @@ public class BoundedInputStream extends InputStream {
             return -1;
         }
         _progress++;
-        return ((int) (_progress % 95)) % 95 + 32;
+        // There are 95 printable ASCII characters, starting at 32
+        // So take modulo 95 and add 32 to keep within that range
+        return ((int) (_progress % 95)) + 32;
     }
 }
 
