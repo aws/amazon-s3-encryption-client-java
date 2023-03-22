@@ -18,15 +18,22 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final Long contentLength;
     private final CryptographicMaterials materials;
     private byte[] iv;
+    private boolean isLastPart;
 
     private byte[] outputBuffer;
 
-    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, boolean isLastPart) {
         this.wrappedSubscriber = wrappedSubscriber;
         this.contentLength = contentLength;
         this.materials = materials;
         this.iv = iv;
         cipher = materials.getCipher(iv);
+        this.isLastPart = isLastPart;
+    }
+
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
+        // When no partType is specified, it's not multipart, so there's one part, which must be the last
+        this(wrappedSubscriber, contentLength, materials, iv, true);
     }
 
     @Override
@@ -86,6 +93,11 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onComplete() {
+        if (!isLastPart) {
+            // If this isn't the last part, skip doFinal, we aren't done
+            wrappedSubscriber.onComplete();
+            return;
+        }
         try {
             outputBuffer = cipher.doFinal();
             // Send the final bytes to the wrapped subscriber

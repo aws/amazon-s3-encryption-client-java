@@ -74,9 +74,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
     public static final ExecutionAttribute<MultipartConfiguration> CONFIGURATION = new ExecutionAttribute<>("MultipartConfiguration");
-    // TODO: Replace with UploadPartRequest.isLastPart() when launched.
-    // Used for multipart uploads
-    public static final ExecutionAttribute<Boolean> IS_LAST_PART = new ExecutionAttribute<>("isLastPart");
 
     private final S3Client _wrappedClient;
     private final S3AsyncClient _wrappedAsyncClient;
@@ -114,12 +111,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext)
                         .putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
-    }
-
-    // Helper function to determine last upload part during multipart uploads
-    public static Consumer<AwsRequestOverrideConfiguration.Builder> isLastPart(Boolean isLastPart) {
-        return builder ->
-                builder.putExecutionAttribute(S3EncryptionClient.IS_LAST_PART, isLastPart);
     }
 
     @Override
@@ -275,12 +266,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     @Override
     public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody)
             throws AwsServiceException, SdkClientException {
-        AwsRequestOverrideConfiguration overrideConfiguration = request.overrideConfiguration().orElse(null);
-        boolean isLastPart = false;
-        if (!(overrideConfiguration == null)) {
-            isLastPart = overrideConfiguration.executionAttributes().getOptionalAttribute(IS_LAST_PART).orElse(false);
-        }
-        return _multipartPipeline.uploadPart(request, requestBody, isLastPart);
+        return _multipartPipeline.uploadPart(request, requestBody);
     }
 
     @Override

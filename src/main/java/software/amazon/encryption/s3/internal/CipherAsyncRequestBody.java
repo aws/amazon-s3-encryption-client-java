@@ -18,11 +18,16 @@ public class CipherAsyncRequestBody implements AsyncRequestBody {
     private final CryptographicMaterials materials;
     private final byte[] iv;
 
-    public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv) {
+    public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv, final boolean isLastPart) {
         this.wrappedAsyncRequestBody = wrappedAsyncRequestBody;
         this.ciphertextLength = ciphertextLength;
         this.materials = materials;
         this.iv = iv;
+    }
+
+    public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv) {
+        // When no partType is specified, it's not multipart, so there's one part, which must be the last
+        this(wrappedAsyncRequestBody, ciphertextLength, materials, iv, true);
     }
 
     @Override
