@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3.internal;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
@@ -37,28 +37,28 @@ public class ContentMetadataTest {
                 .build();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testAlgorithmSuite() {
         assertEquals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, actualContentMetadata.algorithmSuite());
         assertNotEquals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF, actualContentMetadata.algorithmSuite());
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testEncryptedDataKey() {
         assertEquals(encryptedDataKey, actualContentMetadata.encryptedDataKey());
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testEncryptedDataKeyAlgorithm() {
         assertEquals(encryptedDataKeyAlgorithm, actualContentMetadata.encryptedDataKeyAlgorithm());
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testEncryptedDataKeyContext() {
         assertEquals(encryptedDataKeyContext, actualContentMetadata.encryptedDataKeyContext());
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testContentIv() {
         assertEquals(Arrays.toString(contentIv),Arrays.toString(actualContentMetadata.contentIv()));
     }

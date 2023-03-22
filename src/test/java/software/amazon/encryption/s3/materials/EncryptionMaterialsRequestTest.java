@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.util.HashMap;
@@ -24,12 +24,12 @@ public class EncryptionMaterialsRequestTest {
                 .s3Request(request).encryptionContext(encryptionContext).build();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testS3Request() {
         assertEquals(request, actualRequestBuilder.s3Request());
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testEncryptionContext() {
         assertEquals(encryptionContext, actualRequestBuilder.encryptionContext());
     }

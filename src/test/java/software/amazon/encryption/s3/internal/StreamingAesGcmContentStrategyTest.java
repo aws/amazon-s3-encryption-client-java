@@ -1,14 +1,13 @@
 package software.amazon.encryption.s3.internal;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.RepeatedTest;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class StreamingAesGcmContentStrategyTest {
 
-    @Test
+    @RepeatedTest(10)
     public void buildStreamingAesGcmContentStrategyWithNullSecureRandomFails() {
       assertThrows(S3EncryptionClientException.class, () -> StreamingAesGcmContentStrategy.builder().secureRandom(null));
     }

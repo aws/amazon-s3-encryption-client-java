@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3.materials;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import javax.crypto.SecretKey;
@@ -12,7 +12,7 @@ public class DefaultDataKeyGeneratorTest {
 
     private final DataKeyGenerator dataKeyGenerator = new DefaultDataKeyGenerator();
 
-    @Test
+    @RepeatedTest(10)
     public void testGenerateDataKey() {
         SecretKey actualSecretKey = dataKeyGenerator.generateDataKey(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, null);
         assertEquals("AES", actualSecretKey.getAlgorithm());

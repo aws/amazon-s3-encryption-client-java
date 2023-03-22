@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 
 import java.util.Arrays;
 
@@ -27,17 +27,17 @@ public class EncryptedDataKeyTest {
                 .build();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void keyProviderId() {
         assertEquals(keyProviderId, actualEncryptedDataKey.keyProviderId());
     }
 
-    @Test
+    @RepeatedTest(10)
     public void keyProviderInfo() {
         assertEquals(Arrays.toString(keyProviderInfo), Arrays.toString(actualEncryptedDataKey.keyProviderInfo()));
     }
 
-    @Test
+    @RepeatedTest(10)
     public void ciphertext() {
         assertEquals(Arrays.toString(encryptedDataKey), Arrays.toString(actualEncryptedDataKey.encryptedDatakey()));
     }

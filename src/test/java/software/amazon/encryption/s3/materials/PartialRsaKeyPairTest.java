@@ -1,14 +1,16 @@
 package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PartialRsaKeyPairTest {
 
@@ -22,7 +24,7 @@ public class PartialRsaKeyPairTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testGetPublicKey() {
         PartialRsaKeyPair partialRsaKeyPair = new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic());
 
@@ -31,7 +33,7 @@ public class PartialRsaKeyPairTest {
         assertEquals(KEY_ALGORITHM, partialRsaKeyPair.getPublicKey().getAlgorithm());
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testGetPrivateKey() {
         PartialRsaKeyPair partialRsaKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), null);
 
@@ -40,12 +42,12 @@ public class PartialRsaKeyPairTest {
         assertEquals(KEY_ALGORITHM, partialRsaKeyPair.getPrivateKey().getAlgorithm());
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testBothKeysNull() {
         assertThrows(S3EncryptionClientException.class, () -> new PartialRsaKeyPair(null, null));
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testBuilder() {
         PartialRsaKeyPair expectedKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
 
@@ -57,7 +59,7 @@ public class PartialRsaKeyPairTest {
         assertEquals(expectedKeyPair, actualKeyPair);
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testInequality() {
         PartialRsaKeyPair firstKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
         PartialRsaKeyPair onlyPublicKeyPair = new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic());
@@ -69,7 +71,7 @@ public class PartialRsaKeyPairTest {
         assertNotEquals(onlyPrivateKeyPair, onlyPublicKeyPair);
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testHashCodeSameKeyPair() {
         PartialRsaKeyPair firstKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
         PartialRsaKeyPair secondKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
@@ -77,7 +79,7 @@ public class PartialRsaKeyPairTest {
         assertEquals(firstKeyPair.hashCode(), secondKeyPair.hashCode());
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testHashCodeDifferentKeyPair() {
         PartialRsaKeyPair firstKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
         PartialRsaKeyPair secondKeyPair = new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic());

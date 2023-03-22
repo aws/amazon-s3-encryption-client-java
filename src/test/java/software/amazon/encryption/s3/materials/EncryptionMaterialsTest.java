@@ -1,11 +1,15 @@
 package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -32,33 +36,33 @@ class EncryptionMaterialsTest {
                 .plaintextDataKey(plaintextDataKey)
                 .build();
     }
-    @Test
+    @RepeatedTest(10)
     void testS3Request() {
         assertEquals(s3Request, actualEncryptionMaterials.s3Request());
     }
 
-    @Test
+    @RepeatedTest(10)
     void testAlgorithmSuite() {
         assertEquals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, actualEncryptionMaterials.algorithmSuite());
         assertNotEquals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF, actualEncryptionMaterials.algorithmSuite());
     }
 
-    @Test
+    @RepeatedTest(10)
     void testEncryptionContext() {
         assertEquals(encryptionContext, actualEncryptionMaterials.encryptionContext());
     }
 
-    @Test
+    @RepeatedTest(10)
     void testEncryptedDataKeys() {
         assertEquals(encryptedDataKeys, actualEncryptionMaterials.encryptedDataKeys());
     }
 
-    @Test
+    @RepeatedTest(10)
     void testPlaintextDataKey() {
         assertEquals(Arrays.toString(plaintextDataKey), Arrays.toString(actualEncryptionMaterials.plaintextDataKey()));
     }
 
-    @Test
+    @RepeatedTest(10)
     void testToBuilder() {
         EncryptionMaterials actualToBuilder = actualEncryptionMaterials.toBuilder().build();
         assertEquals(s3Request, actualToBuilder.s3Request());

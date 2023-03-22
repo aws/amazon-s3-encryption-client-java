@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3.internal;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -37,7 +37,7 @@ public class ContentMetadataStrategyTest {
                 .build();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void decodeWithObjectMetadata() {
         getObjectResponse = GetObjectResponse.builder()
                 .metadata(metadata)

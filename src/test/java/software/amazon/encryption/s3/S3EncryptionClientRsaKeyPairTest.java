@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -30,7 +30,7 @@ public class S3EncryptionClientRsaKeyPairTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void RsaPublicAndPrivateKeys() {
         final String objectKey = appendTestSuffix("rsa-public-and-private");
 
@@ -57,7 +57,7 @@ public class S3EncryptionClientRsaKeyPairTest {
         v3Client.close();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void RsaPrivateKeyCanOnlyDecrypt() {
         final String objectKey = appendTestSuffix("rsa-private-key-only");
         S3Client v3Client = S3EncryptionClient.builder()
@@ -90,7 +90,7 @@ public class S3EncryptionClientRsaKeyPairTest {
         v3Client.close();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void RsaPublicKeyCanOnlyEncrypt() {
         final String objectKey = appendTestSuffix("rsa-public-key-only");
         S3Client v3Client = S3EncryptionClient.builder()

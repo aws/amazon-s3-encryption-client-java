@@ -7,7 +7,7 @@ import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -43,7 +43,7 @@ public class S3EncryptionClientCRTTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void AsyncAesGcmV3toV3RangedGet() {
         final String objectKey = appendTestSuffix("async-aes-gcm-v3-to-v3-ranged-get");
 
@@ -109,7 +109,7 @@ public class S3EncryptionClientCRTTest {
         asyncClient.close();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void AsyncFailsOnRangeWhenLegacyModeDisabled() {
         final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
@@ -139,7 +139,7 @@ public class S3EncryptionClientCRTTest {
         asyncClient.close();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void AsyncAesCbcV1toV3RangedGet() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get-async");
 
@@ -218,7 +218,7 @@ public class S3EncryptionClientCRTTest {
     }
 
 
-    @Test
+    @RepeatedTest(10)
     public void failsOnRangeWhenLegacyModeDisabled() {
         final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
@@ -249,7 +249,7 @@ public class S3EncryptionClientCRTTest {
         v3Client.close();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void AesGcmV3toV3RangedGet() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get");
 
@@ -315,7 +315,7 @@ public class S3EncryptionClientCRTTest {
         v3Client.close();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void AesGcmV3toV3FailsRangeExceededObjectLength() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
 
@@ -348,7 +348,7 @@ public class S3EncryptionClientCRTTest {
         v3Client.close();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void AsyncAesGcmV3toV3FailsRangeExceededObjectLength() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
 
@@ -382,7 +382,7 @@ public class S3EncryptionClientCRTTest {
         asyncClient.close();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void AesCbcV1toV3RangedGet() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get");
 
@@ -470,7 +470,7 @@ public class S3EncryptionClientCRTTest {
         v3Client.close();
     }
 
-    @Test
+    @RepeatedTest(10)
     public void AesCbcV1toV3FailsRangeExceededObjectLength() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get-out-of-range");
 
