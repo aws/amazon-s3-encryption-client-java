@@ -42,6 +42,7 @@ import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalCon
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 public class S3EncryptionClientMultipartUploadTest {
     private static Provider PROVIDER;
@@ -85,7 +86,7 @@ public class S3EncryptionClientMultipartUploadTest {
 
         assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
 
-        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+        deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 
