@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.5.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.4.1...v2.5.0) (2023-03-23)
+
+
+### Features
+
+* makes the default wrapped client configurable through the builder ([#122](https://github.com/aws/aws-s3-encryption-client-java/issues/122)) ([41d8471](https://github.com/aws/aws-s3-encryption-client-java/commit/41d8471ba5680ebf34ed813507bed427cb995e24))
+
+
+### Maintenance
+
+* properly cleanup after tests ([#120](https://github.com/aws/aws-s3-encryption-client-java/issues/120)) ([51ec36d](https://github.com/aws/aws-s3-encryption-client-java/commit/51ec36d30591b2e4db41449e57879910f7261ba7))
+
+
+### Fixes
+
+* cast ByteBuffer to Buffer for Java 8 compatibility ([#123](https://github.com/aws/aws-s3-encryption-client-java/issues/123)) ([f7fab26](https://github.com/aws/aws-s3-encryption-client-java/commit/f7fab26a7517b372d326018d63c558fcc23d8df9))
+* move to isLastPart parameter in uploadPart and fix its usage ([#119](https://github.com/aws/aws-s3-encryption-client-java/issues/119)) ([6470fb8](https://github.com/aws/aws-s3-encryption-client-java/commit/6470fb87126d252f698bc8e6e92f8b693ed3d26b))
+
 ### [2.4.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.4.0...v2.4.1) (2023-03-21)
 
 
