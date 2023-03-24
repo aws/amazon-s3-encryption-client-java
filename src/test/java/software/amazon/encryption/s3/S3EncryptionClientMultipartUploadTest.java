@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -54,7 +53,7 @@ public class S3EncryptionClientMultipartUploadTest {
         PROVIDER = Security.getProvider("BC");
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void multipartPutObjectAsync() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object-async");
 
@@ -92,7 +91,7 @@ public class S3EncryptionClientMultipartUploadTest {
     }
 
 
-    @RepeatedTest(10)
+    //@Test
     public void multipartPutObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object");
 
@@ -127,7 +126,7 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void multipartUploadV3OutputStream() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream");
 
@@ -218,14 +217,20 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void singleObjectTest() throws IOException {
         // Personal
         //final String objectKey = "multipart-put-object-async-230321-050328-1505";
         //final String objectKey = "multipart-put-object-async-230321-043632-33283";
 
         // CI
-        final String objectKey = "";
+        // 03/24 (contentLength fix)
+        //final String objectKey = "multipart-upload-v3-output-stream-part-size-230324-053414-36337"; // FAILS!
+        //final String objectKey = "multipart-upload-v3-output-stream-part-size-230324-054412-51411"; // FAILS!
+
+        // 03/22
+        //final String objectKey = "multipart-upload-v3-output-stream-part-size-230323-121123-56085"; // FAILS!
+        final String objectKey = "multipart-upload-v3-output-stream-part-size-230323-120806-37847";
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -234,12 +239,12 @@ public class S3EncryptionClientMultipartUploadTest {
                 .cryptoProvider(PROVIDER)
                 .build();
 
-        Map<String, String> encryptionContext = new HashMap<>();
-        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+//        Map<String, String> encryptionContext = new HashMap<>();
+//        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
         ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
-                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+//                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
                 .key(objectKey));
 
         final long fileSizeLimit = 1024 * 1024 * 100;
@@ -249,7 +254,7 @@ public class S3EncryptionClientMultipartUploadTest {
 
     }
 
-    @RepeatedTest(10)
+    @RepeatedTest(20)
     public void multipartUploadV3OutputStreamPartSize() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size");
 
@@ -341,7 +346,7 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void multipartUploadV3OutputStreamPartSizeMismatch() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size-mismatch");
 

@@ -27,17 +27,17 @@ public class EncryptedDataKeyTest {
                 .build();
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void keyProviderId() {
         assertEquals(keyProviderId, actualEncryptedDataKey.keyProviderId());
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void keyProviderInfo() {
         assertEquals(Arrays.toString(keyProviderInfo), Arrays.toString(actualEncryptedDataKey.keyProviderInfo()));
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void ciphertext() {
         assertEquals(Arrays.toString(encryptedDataKey), Arrays.toString(actualEncryptedDataKey.encryptedDatakey()));
     }

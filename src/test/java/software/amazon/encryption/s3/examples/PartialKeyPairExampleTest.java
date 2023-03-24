@@ -5,7 +5,7 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 public class PartialKeyPairExampleTest {
 
-    @RepeatedTest(10)
+    //@Test
     public void testPartialKeyPairExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
 

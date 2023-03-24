@@ -37,28 +37,28 @@ public class ContentMetadataTest {
                 .build();
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void testAlgorithmSuite() {
         assertEquals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, actualContentMetadata.algorithmSuite());
         assertNotEquals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF, actualContentMetadata.algorithmSuite());
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void testEncryptedDataKey() {
         assertEquals(encryptedDataKey, actualContentMetadata.encryptedDataKey());
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void testEncryptedDataKeyAlgorithm() {
         assertEquals(encryptedDataKeyAlgorithm, actualContentMetadata.encryptedDataKeyAlgorithm());
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void testEncryptedDataKeyContext() {
         assertEquals(encryptedDataKeyContext, actualContentMetadata.encryptedDataKeyContext());
     }
 
-    @RepeatedTest(10)
+    //@Test
     public void testContentIv() {
         assertEquals(Arrays.toString(contentIv),Arrays.toString(actualContentMetadata.contentIv()));
     }

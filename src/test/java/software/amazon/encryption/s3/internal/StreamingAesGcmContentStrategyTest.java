@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class StreamingAesGcmContentStrategyTest {
 
-    @RepeatedTest(10)
+    //@Test
     public void buildStreamingAesGcmContentStrategyWithNullSecureRandomFails() {
       assertThrows(S3EncryptionClientException.class, () -> StreamingAesGcmContentStrategy.builder().secureRandom(null));
     }

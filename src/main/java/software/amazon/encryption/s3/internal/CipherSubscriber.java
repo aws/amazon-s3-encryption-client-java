@@ -48,6 +48,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         if (amountToReadFromByteBuffer > 0) {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
             try {
+                System.out.println(String.format("encrypting %d bytes", amountToReadFromByteBuffer));
                 outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
             } catch (final IllegalStateException exception) {
                 // This happens when the stream is reset and the cipher is reused with the
@@ -76,12 +77,17 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             return byteBuffer.remaining();
         }
 
+        System.out.println(String.format("contentRead before update: %d ", contentRead));
         long amountReadSoFar = contentRead.getAndAdd(byteBuffer.remaining());
         long amountRemaining = Math.max(0, contentLength - amountReadSoFar);
 
+        System.out.println(String.format("read so far: %d ", amountReadSoFar));
+        System.out.println(String.format("remaining  : %d", amountRemaining));
         if (amountRemaining > byteBuffer.remaining()) {
+            System.out.println(String.format("actually remaining: %d", byteBuffer.remaining()));
             return byteBuffer.remaining();
         } else {
+            System.out.println(String.format("actually remaining: %d", Math.toIntExact(amountRemaining)));
             return Math.toIntExact(amountRemaining);
         }
     }

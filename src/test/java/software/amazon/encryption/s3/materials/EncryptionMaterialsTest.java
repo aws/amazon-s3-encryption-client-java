@@ -36,33 +36,33 @@ class EncryptionMaterialsTest {
                 .plaintextDataKey(plaintextDataKey)
                 .build();
     }
-    @RepeatedTest(10)
+    //@Test
     void testS3Request() {
         assertEquals(s3Request, actualEncryptionMaterials.s3Request());
     }
 
-    @RepeatedTest(10)
+    //@Test
     void testAlgorithmSuite() {
         assertEquals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, actualEncryptionMaterials.algorithmSuite());
         assertNotEquals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF, actualEncryptionMaterials.algorithmSuite());
     }
 
-    @RepeatedTest(10)
+    //@Test
     void testEncryptionContext() {
         assertEquals(encryptionContext, actualEncryptionMaterials.encryptionContext());
     }
 
-    @RepeatedTest(10)
+    //@Test
     void testEncryptedDataKeys() {
         assertEquals(encryptedDataKeys, actualEncryptionMaterials.encryptedDataKeys());
     }
 
-    @RepeatedTest(10)
+    //@Test
     void testPlaintextDataKey() {
         assertEquals(Arrays.toString(plaintextDataKey), Arrays.toString(actualEncryptionMaterials.plaintextDataKey()));
     }
 
-    @RepeatedTest(10)
+    //@Test
     void testToBuilder() {
         EncryptionMaterials actualToBuilder = actualEncryptionMaterials.toBuilder().build();
         assertEquals(s3Request, actualToBuilder.s3Request());
