@@ -116,11 +116,21 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         switch (algorithmSuite) {
             case ALG_AES_256_CBC_IV16_NO_KDF:
                 // Extract encrypted data key ciphertext
-                edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1));
+                if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)) {
+                    edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1));
+                } else if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)) {
+                    // when using v1 to encrypt in its default mode, it may use the v2 EDK key
+                    // despite also using CBC as the content encryption algorithm, presumably due
+                    // to how the v2 changes were backported to v1
+                    edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2));
+                } else {
+                    // this shouldn't happen under normal circumstances- only if out-of-band modification
+                    // to the metadata is performed. it is most likely that the data is unrecoverable in this case
+                    throw new S3EncryptionClientException("Malformed object metadata! Could not find the encrypted data key.");
+                }
 
-                // Hardcode the key provider id to match what V1 does
-                keyProviderInfo = "AES";
-
+                // Fall back on AES when wrap alg is missing to match V1 behavior
+                keyProviderInfo = metadata.getOrDefault(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, "AES");
                 break;
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
             case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:

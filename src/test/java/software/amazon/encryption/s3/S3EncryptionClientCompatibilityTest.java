@@ -2,6 +2,8 @@ package software.amazon.encryption.s3;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.kms.AWSKMS;
+import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3Encryption;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
@@ -449,6 +451,42 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void KmsCBCV1ToV3() {
+        String objectKey = appendTestSuffix("v1-kms-cbc-to-v3");
+
+        AWSKMS kmsClient = AWSKMSClientBuilder.standard()
+                .withRegion(KMS_REGION.toString())
+                .build();
+        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_KEY_ID);
+
+        // v1 Client in default mode
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withEncryptionMaterials(materialsProvider)
+                .withKmsClient(kmsClient)
+                .build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyWrappingAlgorithms(true)
+                .build();
+
+        String input = "This is some content to encrypt using v1 client";
+
+        v1Client.putObject(BUCKET, objectKey, input);
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+
+        assertEquals(input, output);
+
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
