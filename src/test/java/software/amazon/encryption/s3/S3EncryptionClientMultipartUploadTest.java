@@ -258,8 +258,8 @@ public class S3EncryptionClientMultipartUploadTest {
     public void multipartUploadV3OutputStreamPartSize() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size");
 
-        // Overall "file" is 30MB, split into 10MB parts
-        final long fileSizeLimit = 1024 * 1024 * 30;
+        // Overall "file" is 35MB, split into 10MB parts
+        final long fileSizeLimit = 1024 * 1024 * 35;
         System.out.println(String.format("  TEST: Upload obj with %d total bytes", fileSizeLimit));
         final int PART_SIZE = 10 * 1024 * 1024;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
