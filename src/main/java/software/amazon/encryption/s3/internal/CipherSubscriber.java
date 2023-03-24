@@ -77,8 +77,9 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             return byteBuffer.remaining();
         }
 
-        System.out.println(String.format("contentRead before update: %d ", contentRead));
+        System.out.println(String.format("contentRead before update: %d ", contentRead.get()));
         long amountReadSoFar = contentRead.getAndAdd(byteBuffer.remaining());
+        System.out.println(String.format("contentRead after update: %d ", contentRead.get()));
         long amountRemaining = Math.max(0, contentLength - amountReadSoFar);
 
         System.out.println(String.format("read so far: %d ", amountReadSoFar));
