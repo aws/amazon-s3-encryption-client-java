@@ -48,8 +48,9 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         if (amountToReadFromByteBuffer > 0) {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
             try {
-                boolean shouldPrint = byteBuffer.remaining() % materials.algorithmSuite().cipherBlockSizeBytes() != 0 ||
-                        amountToReadFromByteBuffer % materials.algorithmSuite().cipherBlockSizeBytes() != 0;
+                boolean shouldPrint = materials.opMode() == Cipher.ENCRYPT_MODE &&
+                        (byteBuffer.remaining() % materials.algorithmSuite().cipherBlockSizeBytes() != 0 ||
+                        amountToReadFromByteBuffer % materials.algorithmSuite().cipherBlockSizeBytes() != 0);
                 if (shouldPrint) {
                     System.out.println(String.format("encrypting %d bytes", amountToReadFromByteBuffer));
                 }
@@ -81,13 +82,8 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             return byteBuffer.remaining();
         }
 
-        boolean shouldPrint = true;
-        if (byteBuffer.remaining() % materials.algorithmSuite().cipherBlockSizeBytes() == 0) {
-            shouldPrint = false;
-        }
-        if (shouldPrint) {
-
-        }
+        boolean shouldPrint = materials.opMode() == Cipher.ENCRYPT_MODE &&
+                byteBuffer.remaining() % materials.algorithmSuite().cipherBlockSizeBytes() != 0;
 
         if (shouldPrint) {
             System.out.println(String.format("contentRead before update: %d ", contentRead.get()));
