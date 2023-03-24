@@ -112,21 +112,26 @@ public class MultipartUploadObjectPipeline {
                     "be multiples of the cipher block size (" + blockSize + ") with the exception of the last part.");
         }
 
-        final String uploadId = request.uploadId();
+        // Once we have (a valid) ciphertext length, set the request contentLength
+        UploadPartRequest actualRequest = request.toBuilder()
+                .contentLength(ciphertextLength)
+                .build();
+
+        final String uploadId = actualRequest.uploadId();
         final MultipartUploadMaterials materials = _multipartUploadMaterials.get(uploadId);
         if (materials == null) {
             throw new S3EncryptionClientException("No client-side information available on upload ID " + uploadId);
         }
         final UploadPartResponse response;
         // Checks the parts are uploaded in series
-        materials.beginPartUpload(request.partNumber());
+        materials.beginPartUpload(actualRequest.partNumber());
         Cipher cipher = materials.getCipher(materials.getIv());
         try {
             final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(),
-                    request.contentLength(), Executors.newSingleThreadExecutor()), ciphertextLength, materials, cipher.getIV(), isLastPart);
+                    partContentLength, // this MUST be the original contentLength; it refers to the plaintext stream
+                    Executors.newSingleThreadExecutor()), ciphertextLength, materials, cipher.getIV(), isLastPart);
 
-            // The last part of the multipart upload will contain an extra
-            // 16-byte mac
+            // Ensure we haven't already seen the last part
             if (isLastPart) {
                 if (materials.hasFinalPartBeenSeen()) {
                     throw new S3EncryptionClientException("This part was specified as the last part in a multipart " +
@@ -134,7 +139,7 @@ public class MultipartUploadObjectPipeline {
                             "upload should be marked as the last part.");
                 }
             }
-            response =  _s3AsyncClient.uploadPart(request, cipherAsyncRequestBody).join();
+            response =  _s3AsyncClient.uploadPart(actualRequest, cipherAsyncRequestBody).join();
         } finally {
             materials.endPartUpload();
         }
