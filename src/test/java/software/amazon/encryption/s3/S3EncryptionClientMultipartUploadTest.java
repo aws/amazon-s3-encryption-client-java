@@ -227,10 +227,12 @@ public class S3EncryptionClientMultipartUploadTest {
         // 03/24 (contentLength fix)
         //final String objectKey = "multipart-upload-v3-output-stream-part-size-230324-053414-36337"; // FAILS!
         //final String objectKey = "multipart-upload-v3-output-stream-part-size-230324-054412-51411"; // FAILS!
+        final String objectKey = "multipart-upload-v3-output-stream-part-size-230324-072854-67050";
+
 
         // 03/22
         //final String objectKey = "multipart-upload-v3-output-stream-part-size-230323-121123-56085"; // FAILS!
-        final String objectKey = "multipart-upload-v3-output-stream-part-size-230323-120806-37847";
+        //final String objectKey = "multipart-upload-v3-output-stream-part-size-230323-120806-37847";
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()

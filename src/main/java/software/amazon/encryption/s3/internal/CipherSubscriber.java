@@ -48,11 +48,14 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         if (amountToReadFromByteBuffer > 0) {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
             try {
-                boolean shouldPrint = materials.opMode() == Cipher.ENCRYPT_MODE &&
-                        (byteBuffer.remaining() % materials.algorithmSuite().cipherBlockSizeBytes() != 0 ||
+                boolean shouldPrint = (byteBuffer.remaining() % materials.algorithmSuite().cipherBlockSizeBytes() != 0 ||
                         amountToReadFromByteBuffer % materials.algorithmSuite().cipherBlockSizeBytes() != 0);
                 if (shouldPrint) {
-                    System.out.println(String.format("encrypting %d bytes", amountToReadFromByteBuffer));
+                    if (materials.opMode() == Cipher.ENCRYPT_MODE) {
+                        System.out.println(String.format("encrypting %d bytes", amountToReadFromByteBuffer));
+                    } else {
+                        System.out.println(String.format("decrypting %d bytes", amountToReadFromByteBuffer));
+                    }
                 }
                 outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
             } catch (final IllegalStateException exception) {
@@ -82,8 +85,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             return byteBuffer.remaining();
         }
 
-        boolean shouldPrint = materials.opMode() == Cipher.ENCRYPT_MODE &&
-                byteBuffer.remaining() % materials.algorithmSuite().cipherBlockSizeBytes() != 0;
+        boolean shouldPrint = byteBuffer.remaining() % materials.algorithmSuite().cipherBlockSizeBytes() != 0;
 
         if (shouldPrint) {
             System.out.println(String.format("contentRead before update: %d ", contentRead.get()));
