@@ -315,17 +315,20 @@ public class S3EncryptionClientMultipartUploadTest {
             partsSent++;
         }
 
+        final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
         // Last Part
         UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .uploadId(initiateResult.uploadId())
                 .partNumber(partsSent)
+                .contentLength((long) partInputStream.available())
                 .sdkPartType(SdkPartType.LAST)
                 .build();
 
-        final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
         System.out.println(String.format("  TEST: upload (last) part no. %d with %d bytes", partsSent, uploadPartRequest.contentLength()));
+
         UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
                 RequestBody.fromInputStream(partInputStream, partInputStream.available()));
         partETags.add(CompletedPart.builder()
