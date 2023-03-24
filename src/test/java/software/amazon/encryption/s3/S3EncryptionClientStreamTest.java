@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.BoundedStreamBufferer;
+import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.MarkResetBoundedZerosInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
@@ -343,6 +344,9 @@ public class S3EncryptionClientStreamTest {
             // Not expected, but fail the test anyway
             fail(unexpected);
         }
-        
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
     }
 }

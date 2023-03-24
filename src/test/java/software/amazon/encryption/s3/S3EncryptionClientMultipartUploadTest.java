@@ -22,8 +22,6 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,17 +43,13 @@ import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalCon
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 public class S3EncryptionClientMultipartUploadTest {
-    private static SecretKey AES_KEY;
     private static Provider PROVIDER;
 
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(256);
-        AES_KEY = keyGen.generateKey();
-
         Security.addProvider(new BouncyCastleProvider());
         PROVIDER = Security.getProvider("BC");
     }
@@ -93,7 +87,7 @@ public class S3EncryptionClientMultipartUploadTest {
 
         assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
 
-        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+        deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 
@@ -226,8 +220,12 @@ public class S3EncryptionClientMultipartUploadTest {
 
     @Test
     public void singleObjectTest() throws IOException {
+        // Personal
         //final String objectKey = "multipart-put-object-async-230321-050328-1505";
         //final String objectKey = "multipart-put-object-async-230321-043632-33283";
+
+        // CI
+        final String objectKey = "";
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
@@ -355,7 +353,6 @@ public class S3EncryptionClientMultipartUploadTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();

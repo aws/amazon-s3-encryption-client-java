@@ -358,18 +358,21 @@ public class S3EncryptionClientTest {
     public void s3EncryptionClientWithWrappedS3ClientSucceeds() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-kms-key-id");
 
-        S3AsyncClient wrappedClient = S3AsyncClient.builder().build();
+        S3Client wrappedClient = S3Client.create();
+        S3AsyncClient wrappedAsyncClient = S3AsyncClient.create();
 
         S3Client wrappingClient = S3EncryptionClient.builder()
-            .wrappedAsyncClient(wrappedClient)
-            .kmsKeyId(KMS_KEY_ID)
-            .build();
+                .wrappedClient(wrappedClient)
+                .wrappedAsyncClient(wrappedAsyncClient)
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         simpleV3RoundTrip(wrappingClient, objectKey);
 
         // Cleanup
         deleteObject(BUCKET, objectKey, wrappingClient);
         wrappedClient.close();
+        wrappedAsyncClient.close();
         wrappingClient.close();
     }
 

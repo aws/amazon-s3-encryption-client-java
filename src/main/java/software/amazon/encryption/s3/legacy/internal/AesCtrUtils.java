@@ -76,7 +76,9 @@ public class AesCtrUtils {
         if (val > MAX_GCM_BLOCKS) {
             throw new IllegalStateException(); // overflow 2^32-2
         }
-        bb.rewind();
+        // This cast is necessary to ensure compatibility with Java 1.8/8
+        // when compiling with a newer Java version than 8
+        ((java.nio.Buffer) bb).rewind();
         // Get the incremented value (result) as an 8-byte array
         byte[] result = bb.putLong(val).array();
         // Copy the rightmost 32 bits from the resultant array to the input counter;
