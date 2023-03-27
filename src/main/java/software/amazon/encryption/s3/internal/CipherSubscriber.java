@@ -53,6 +53,12 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // This happens when the stream is reset and the cipher is reused with the
                 // same key/IV. It's actually fine here, because the data is the same, but any
                 // sane implementation will throw an exception.
+                // However, if the operation is uploadPart, this does not work as the cipher
+                // holds its state over multiple parts, so it cannot be reused.
+                if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT)) {
+                    wrappedSubscriber.onError(exception);
+                    throw exception;
+                }
                 // Request a new cipher using the same materials to avoid reinit issues
                 cipher = CipherProvider.createAndInitCipher(materials, iv);
             }
