@@ -34,6 +34,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         this.iv = iv;
         cipher = materials.getCipher(iv);
         this.isLastPart = isLastPart;
+        System.out.println("cipher subscriber constructed!");
     }
 
     CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
@@ -43,7 +44,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onSubscribe(Subscription s) {
-        System.out.print("onSubscribe called!");
+        System.out.println("onSubscribe called!");
         if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT) && subscribeCalled.compareAndSet(false, true)) {
             System.out.println(" for the first time");
             subscribedLatch.countDown();
