@@ -43,10 +43,13 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onSubscribe(Subscription s) {
+        System.out.print("onSubscribe called!");
         if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT) && subscribeCalled.compareAndSet(false, true)) {
+            System.out.println(" for the first time");
             subscribedLatch.countDown();
             wrappedSubscriber.onSubscribe(s);
         } else if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT)) {
+            System.out.println(" for NOT the first time!");
             wrappedSubscriber.onError(new S3EncryptionClientException("Retry is not supported for multipart uploads! Retry the entire operation."));
         } else {
             wrappedSubscriber.onSubscribe(s);
@@ -67,6 +70,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // sane implementation will throw an exception.
                 // However, if the operation is uploadPart, this does not work as the cipher
                 // holds its state over multiple parts, so it cannot be reused.
+                System.out.println("IllegalStateException!");
                 if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT)) {
                     final S3EncryptionClientException s3exception = new S3EncryptionClientException("Connection reset! " +
                             "Cipher cannot be reinitialized during multipart upload.", exception);
