@@ -10,6 +10,8 @@ import software.amazon.encryption.s3.materials.CryptographicMaterials;
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
@@ -20,6 +22,8 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final CryptographicMaterials materials;
     private byte[] iv;
     private boolean isLastPart;
+    private final CountDownLatch subscribedLatch = new CountDownLatch(1);
+    private final AtomicBoolean subscribeCalled = new AtomicBoolean(false);
 
     private byte[] outputBuffer;
 
@@ -39,7 +43,14 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onSubscribe(Subscription s) {
-        wrappedSubscriber.onSubscribe(s);
+        if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT) && subscribeCalled.compareAndSet(false, true)) {
+            subscribedLatch.countDown();
+            wrappedSubscriber.onSubscribe(s);
+        } else if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT)) {
+            wrappedSubscriber.onError(new S3EncryptionClientException("Retry is not supported for multipart uploads! Retry the entire operation."));
+        } else {
+            wrappedSubscriber.onSubscribe(s);
+        }
     }
 
     @Override
