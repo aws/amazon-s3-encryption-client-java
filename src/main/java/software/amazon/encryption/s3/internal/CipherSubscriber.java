@@ -3,6 +3,7 @@ package software.amazon.encryption.s3.internal;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.BinaryUtils;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
 import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
@@ -56,8 +57,10 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // However, if the operation is uploadPart, this does not work as the cipher
                 // holds its state over multiple parts, so it cannot be reused.
                 if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT)) {
-                    wrappedSubscriber.onError(exception);
-                    throw exception;
+                    final S3EncryptionClientException s3exception = new S3EncryptionClientException("Connection reset! " +
+                            "Cipher cannot be reinitialized during multipart upload.", exception);
+                    wrappedSubscriber.onError(s3exception);
+                    throw s3exception;
                 }
                 // Request a new cipher using the same materials to avoid reinit issues
                 cipher = CipherProvider.createAndInitCipher(materials, iv);
