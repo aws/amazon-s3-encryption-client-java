@@ -1,5 +1,12 @@
 package software.amazon.encryption.s3.materials;
 
+import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.internal.CryptoFactory;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource.PSpecified;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Key;
@@ -8,12 +15,6 @@ import java.security.spec.MGF1ParameterSpec;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import javax.crypto.Cipher;
-import javax.crypto.spec.OAEPParameterSpec;
-import javax.crypto.spec.PSource.PSpecified;
-import javax.crypto.spec.SecretKeySpec;
-import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.internal.CryptoFactory;
 
 /**
  * This keyring can wrap keys with the active keywrap algorithm and
@@ -22,6 +23,30 @@ import software.amazon.encryption.s3.internal.CryptoFactory;
 public class RsaKeyring extends S3Keyring {
 
     private final PartialRsaKeyPair _partialRsaKeyPair;
+
+    // Used exclusively by v1's EncryptionOnly mode
+    private final DecryptDataKeyStrategy _rsaStrategy = new DecryptDataKeyStrategy() {
+        private static final String KEY_PROVIDER_INFO = "RSA";
+        private static final String CIPHER_ALGORITHM = "RSA";
+
+        @Override
+        public boolean isLegacy() {
+            return true;
+        }
+
+        @Override
+        public String keyProviderInfo() {
+            return KEY_PROVIDER_INFO;
+        }
+
+        @Override
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+            cipher.init(Cipher.DECRYPT_MODE, _partialRsaKeyPair.getPrivateKey());
+
+            return cipher.doFinal(encryptedDataKey);
+        }
+    };
 
     private final DecryptDataKeyStrategy _rsaEcbStrategy = new DecryptDataKeyStrategy() {
         private static final String KEY_PROVIDER_INFO = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
@@ -133,6 +158,7 @@ public class RsaKeyring extends S3Keyring {
 
         _partialRsaKeyPair = builder._partialRsaKeyPair;
 
+        decryptStrategies.put(_rsaStrategy.keyProviderInfo(), _rsaStrategy);
         decryptStrategies.put(_rsaEcbStrategy.keyProviderInfo(), _rsaEcbStrategy);
         decryptStrategies.put(_rsaOaepStrategy.keyProviderInfo(), _rsaOaepStrategy);
     }
