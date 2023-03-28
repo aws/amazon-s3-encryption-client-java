@@ -2,6 +2,8 @@ package software.amazon.encryption.s3;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.kms.AWSKMS;
+import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3Encryption;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
@@ -295,6 +297,62 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
     @Test
+    public void RsaV1toV3() {
+        final String objectKey = appendTestSuffix("v1-rsa-to-v3");
+
+        EncryptionMaterialsProvider materialsProvider = new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .rsaKeyPair(RSA_KEY_PAIR)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+
+        final String input = "This is some content to encrypt using the v1 client";
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        v3Client.close();
+    }
+
+
+    @Test
+    public void RsaV1toV3AesFails() {
+        final String objectKey = appendTestSuffix("v1-rsa-to-v3-aes-fails");
+
+        EncryptionMaterialsProvider materialsProvider = new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+
+        final String input = "This is some content to encrypt using the v1 client";
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build()));
+
+        v3Client.close();
+    }
+
+    @Test
     public void RsaEcbV1toV3() {
         final String objectKey = appendTestSuffix("rsa-ecb-v1-to-v3");
 
@@ -449,6 +507,42 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void KmsCBCV1ToV3() {
+        String objectKey = appendTestSuffix("v1-kms-cbc-to-v3");
+
+        AWSKMS kmsClient = AWSKMSClientBuilder.standard()
+                .withRegion(KMS_REGION.toString())
+                .build();
+        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_KEY_ID);
+
+        // v1 Client in default mode
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withEncryptionMaterials(materialsProvider)
+                .withKmsClient(kmsClient)
+                .build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyWrappingAlgorithms(true)
+                .build();
+
+        String input = "This is some content to encrypt using v1 client";
+
+        v1Client.putObject(BUCKET, objectKey, input);
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+
+        assertEquals(input, output);
+
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }

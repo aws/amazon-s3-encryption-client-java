@@ -116,11 +116,45 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         switch (algorithmSuite) {
             case ALG_AES_256_CBC_IV16_NO_KDF:
                 // Extract encrypted data key ciphertext
-                edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1));
+                if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)) {
+                    edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1));
+                } else if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)) {
+                    // when using v1 to encrypt in its default mode, it may use the v2 EDK key
+                    // despite also using CBC as the content encryption algorithm, presumably due
+                    // to how the v2 changes were backported to v1
+                    edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2));
+                } else {
+                    // this shouldn't happen under normal circumstances- only if out-of-band modification
+                    // to the metadata is performed. it is most likely that the data is unrecoverable in this case
+                    throw new S3EncryptionClientException("Malformed object metadata! Could not find the encrypted data key.");
+                }
 
-                // Hardcode the key provider id to match what V1 does
-                keyProviderInfo = "AES";
+                if (!metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM)) {
+                    /*
+                    For legacy v1 EncryptionOnly objects,
+                    there is no EDK algorithm given, it is either plain AES or RSA
+                    In v3, we infer AES vs. RSA based on the length of the ciphertext.
 
+                    In v1, whichever key material is provided in its EncryptionMaterials
+                    is used to decrypt the EDK.
+
+                    In v3, this is not possible as the keyring code is factored such that
+                    the keyProviderInfo is known before the keyring is known.
+                    Ciphertext size is expected to be reliable as no AES data key should
+                    exceed 256 bits (32 bytes) + 16 padding bytes.
+
+                    In the unlikely event that this assumption is false, the fix would be
+                    to refactor the keyring to always use the material given instead of
+                    inferring it this way.
+                    */
+                    if (edkCiphertext.length > 48) {
+                        keyProviderInfo = "RSA";
+                    } else {
+                        keyProviderInfo = "AES";
+                    }
+                } else {
+                    keyProviderInfo = metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM);
+                }
                 break;
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
             case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:

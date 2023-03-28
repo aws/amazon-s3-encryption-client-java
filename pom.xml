@@ -11,7 +11,7 @@
 
   <name>Amazon S3 Encryption Client</name>
   <description>The Amazon S3 Encryption Client provides client-side encryption for S3</description>
-  <url>https://github.com/aws/aws-s3-encryption-client-java</url>
+  <url>https://github.com/aws/amazon-s3-encryption-client-java</url>
 
   <licenses>
     <license>
