@@ -146,7 +146,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _wrappedClient.close();
     }
 
-    // TODO: The async / non-async clients can probably share a builder - revisit after implementing async
+    // This is very similar to the S3EncryptionClient builder
+    // Make sure to keep both clients in mind when adding new builder options
     public static class Builder {
         private S3AsyncClient _wrappedClient = S3AsyncClient.builder().build();
         private CryptographicMaterialsManager _cryptoMaterialsManager;
