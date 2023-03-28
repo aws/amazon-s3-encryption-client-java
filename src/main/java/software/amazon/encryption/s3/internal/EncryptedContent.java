@@ -10,19 +10,19 @@ public class EncryptedContent {
     private InputStream _ciphertext;
     private AsyncRequestBody _encryptedRequestBody;
     private long _ciphertextLength = -1;
-    private byte[] _nonce;
+    private byte[] _iv;
 
     // TODO: Look for Better ways to handle Cipher for Multipart Uploads.
     private Cipher _cipher;
 
-    public EncryptedContent(final byte[] nonce, final AsyncRequestBody encryptedRequestBody, final long ciphertextLength) {
-        _nonce = nonce;
+    public EncryptedContent(final byte[] iv, final AsyncRequestBody encryptedRequestBody, final long ciphertextLength) {
+        _iv = iv;
         _encryptedRequestBody = encryptedRequestBody;
         _ciphertextLength = ciphertextLength;
     }
 
-    public EncryptedContent(final byte[] nonce, Cipher cipher) {
-        this._nonce = nonce;
+    public EncryptedContent(final byte[] iv, Cipher cipher) {
+        this._iv = iv;
         this._cipher = cipher;
     }
 
@@ -30,8 +30,8 @@ public class EncryptedContent {
         return _cipher;
     }
 
-    public byte[] getNonce() {
-        return _nonce;
+    public byte[] getIv() {
+        return _iv;
     }
 
     public InputStream getCiphertext() {

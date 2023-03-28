@@ -17,7 +17,7 @@ Parameters:
   SourceLocation:
     Type: String
     Description: The https GitHub URL for the project
-    Default: "https://github.com/aws/aws-s3-encryption-client-java.git"
+    Default: "https://github.com/aws/amazon-s3-encryption-client-java.git"
   NumberOfBuildsInBatch:
     Type: Number
     MaxValue: 100

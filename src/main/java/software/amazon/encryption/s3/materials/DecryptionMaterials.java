@@ -1,16 +1,16 @@
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.CipherProvider;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Provider;
 import java.util.Collections;
 import java.util.Map;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 final public class DecryptionMaterials implements CryptographicMaterials {
 
@@ -68,7 +68,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
     }
 
     public SecretKey dataKey() {
-        return new SecretKeySpec(_plaintextDataKey, "AES");
+        return new SecretKeySpec(_plaintextDataKey, algorithmSuite().dataKeyAlgorithm());
     }
 
     public Provider cryptoProvider() {
@@ -77,6 +77,16 @@ final public class DecryptionMaterials implements CryptographicMaterials {
 
     public long ciphertextLength() {
         return _ciphertextLength;
+    }
+
+    @Override
+    public int opMode() {
+        return Cipher.DECRYPT_MODE;
+    }
+
+    @Override
+    public Cipher getCipher(byte[] iv) {
+        return CipherProvider.createAndInitCipher(this, iv);
     }
 
     public Builder toBuilder() {

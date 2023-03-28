@@ -19,19 +19,19 @@ public class ContentMetadataTest {
     private ContentMetadata actualContentMetadata;
     private String encryptedDataKeyAlgorithm;
     private final Map<String, String> encryptedDataKeyContext = new HashMap<>();
-    private byte[] contentNonce;
+    private byte[] contentIv;
 
     @BeforeEach
     public void setUp() {
         encryptedDataKey = mock(EncryptedDataKey.class);
-        contentNonce = "Test String".getBytes();
+        contentIv = "Test String".getBytes();
         encryptedDataKeyAlgorithm =   "Test Algorithm";
         encryptedDataKeyContext.put("testKey", "testValue");
 
         actualContentMetadata = ContentMetadata.builder()
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .encryptedDataKey(encryptedDataKey)
-                .contentNonce(contentNonce)
+                .contentIv(contentIv)
                 .encryptedDataKeyAlgorithm(encryptedDataKeyAlgorithm)
                 .encryptedDataKeyContext(encryptedDataKeyContext)
                 .build();
@@ -59,8 +59,8 @@ public class ContentMetadataTest {
     }
 
     @Test
-    public void testContentNonce() {
-        assertEquals(Arrays.toString(contentNonce),Arrays.toString(actualContentMetadata.contentNonce()));
+    public void testContentIv() {
+        assertEquals(Arrays.toString(contentIv),Arrays.toString(actualContentMetadata.contentIv()));
     }
 }
 

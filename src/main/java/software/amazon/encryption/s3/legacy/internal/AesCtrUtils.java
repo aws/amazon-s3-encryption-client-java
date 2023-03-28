@@ -39,10 +39,10 @@ public class AesCtrUtils {
      * "https://github.com/bcgit/bc-java/blob/master/core/src/main/java/org/bouncycastle/crypto/modes/GCMBlockCipher.java"
      * >GCMBlockCipher.java</a>
      */
-    private static byte[] computeJ0(byte[] nonce) {
+    private static byte[] computeJ0(byte[] iv) {
         final int blockSizeBytes = CIPHER_BLOCK_SIZE;
         byte[] J0 = new byte[blockSizeBytes];
-        System.arraycopy(nonce, 0, J0, 0, nonce.length);
+        System.arraycopy(iv, 0, J0, 0, iv.length);
         J0[blockSizeBytes - 1] = 0x01;
         return incrementBlocks(J0, 1);
     }
@@ -76,7 +76,9 @@ public class AesCtrUtils {
         if (val > MAX_GCM_BLOCKS) {
             throw new IllegalStateException(); // overflow 2^32-2
         }
-        bb.rewind();
+        // This cast is necessary to ensure compatibility with Java 1.8/8
+        // when compiling with a newer Java version than 8
+        ((java.nio.Buffer) bb).rewind();
         // Get the incremented value (result) as an 8-byte array
         byte[] result = bb.putLong(val).array();
         // Copy the rightmost 32 bits from the resultant array to the input counter;
