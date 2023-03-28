@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.6.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.5.0...v2.6.0) (2023-03-28)
+
+
+### Features
+
+* add missing legacy v1 RSA key wrap mode ([#127](https://github.com/aws/aws-s3-encryption-client-java/issues/127)) ([0173678](https://github.com/aws/aws-s3-encryption-client-java/commit/017367825be0f3874a6b445887bb493704acd8f6))
+
+
+### Fixes
+
+* handle v1 CBC with kms wrapping mode ([#126](https://github.com/aws/aws-s3-encryption-client-java/issues/126)) ([7ec170d](https://github.com/aws/aws-s3-encryption-client-java/commit/7ec170dea0cc027f4f8e93dccc0a0a82251eec72))
+* update uploadPart request to use correct contentLength ([#124](https://github.com/aws/aws-s3-encryption-client-java/issues/124)) ([b2dbf22](https://github.com/aws/aws-s3-encryption-client-java/commit/b2dbf2289afc92fd2551b7bfcb06afb9d011733d))
+
+
+### Maintenance
+
+* change repo name in remaining locations ([#128](https://github.com/aws/aws-s3-encryption-client-java/issues/128)) ([74ed42e](https://github.com/aws/aws-s3-encryption-client-java/commit/74ed42ed2a3226532b6d6a3c89cd1009343c0e5b))
+
 ## [2.5.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.4.1...v2.5.0) (2023-03-23)
 
 
