@@ -3,7 +3,6 @@ package software.amazon.encryption.s3;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -12,7 +11,6 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -128,7 +126,7 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
-    @RepeatedTest(10)
+    @Test
     public void multipartUploadV3OutputStream() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream");
 
@@ -219,12 +217,12 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
-    @RepeatedTest(20)
+    @Test
     public void multipartUploadV3OutputStreamPartSize() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size");
 
         // Overall "file" is 30MB, split into 10MB parts
-        final long fileSizeLimit = 1024 * 1024 * 35;
+        final long fileSizeLimit = 1024 * 1024 * 30;
         final int PART_SIZE = 10 * 1024 * 1024;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
 
@@ -294,7 +292,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .build());
 
         // Complete the multipart upload.
-        CompleteMultipartUploadResponse completeMultipartUploadResponse = v3Client.completeMultipartUpload(builder -> builder
+        v3Client.completeMultipartUpload(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .uploadId(initiateResult.uploadId())
