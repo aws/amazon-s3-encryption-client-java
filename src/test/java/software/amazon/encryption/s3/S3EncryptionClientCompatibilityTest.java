@@ -322,6 +322,7 @@ public class S3EncryptionClientCompatibilityTest {
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
+        deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 
@@ -349,6 +350,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .key(objectKey)
                 .build()));
 
+        deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 
