@@ -92,7 +92,7 @@ Resources:
                     "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
                   },
                   "StringLike": {
-                    "token.actions.githubusercontent.com:sub": "repo:aws/aws-s3-encryption-client-java:*"
+                    "token.actions.githubusercontent.com:sub": "repo:aws/amazon-s3-encryption-client-java:*"
                   }
                }
             }

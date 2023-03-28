@@ -297,6 +297,62 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
     @Test
+    public void RsaV1toV3() {
+        final String objectKey = appendTestSuffix("v1-rsa-to-v3");
+
+        EncryptionMaterialsProvider materialsProvider = new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .rsaKeyPair(RSA_KEY_PAIR)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+
+        final String input = "This is some content to encrypt using the v1 client";
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        v3Client.close();
+    }
+
+
+    @Test
+    public void RsaV1toV3AesFails() {
+        final String objectKey = appendTestSuffix("v1-rsa-to-v3-aes-fails");
+
+        EncryptionMaterialsProvider materialsProvider = new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
+                .build();
+
+        final String input = "This is some content to encrypt using the v1 client";
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build()));
+
+        v3Client.close();
+    }
+
+    @Test
     public void RsaEcbV1toV3() {
         final String objectKey = appendTestSuffix("rsa-ecb-v1-to-v3");
 
