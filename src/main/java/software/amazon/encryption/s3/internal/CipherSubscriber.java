@@ -3,15 +3,12 @@ package software.amazon.encryption.s3.internal;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.BinaryUtils;
-import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
 import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
@@ -22,8 +19,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final CryptographicMaterials materials;
     private byte[] iv;
     private boolean isLastPart;
-    private final CountDownLatch subscribedLatch = new CountDownLatch(1);
-    private final AtomicBoolean subscribeCalled = new AtomicBoolean(false);
 
     private byte[] outputBuffer;
 
@@ -34,7 +29,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         this.iv = iv;
         cipher = materials.getCipher(iv);
         this.isLastPart = isLastPart;
-        System.out.println("cipher subscriber constructed!");
     }
 
     CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
@@ -44,17 +38,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onSubscribe(Subscription s) {
-        System.out.println("onSubscribe called!");
-        if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT) && subscribeCalled.compareAndSet(false, true)) {
-            System.out.println(" for the first time");
-            subscribedLatch.countDown();
-            wrappedSubscriber.onSubscribe(s);
-        } else if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT)) {
-            System.out.println(" for NOT the first time!");
-            wrappedSubscriber.onError(new S3EncryptionClientException("Retry is not supported for multipart uploads! Retry the entire operation."));
-        } else {
-            wrappedSubscriber.onSubscribe(s);
-        }
+        wrappedSubscriber.onSubscribe(s);
     }
 
     @Override
@@ -69,16 +53,8 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // This happens when the stream is reset and the cipher is reused with the
                 // same key/IV. It's actually fine here, because the data is the same, but any
                 // sane implementation will throw an exception.
-                // However, if the operation is uploadPart, this does not work as the cipher
-                // holds its state over multiple parts, so it cannot be reused.
-                System.out.println("IllegalStateException!");
-                if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT)) {
-                    final S3EncryptionClientException s3exception = new S3EncryptionClientException("Connection reset! " +
-                            "Cipher cannot be reinitialized during multipart upload.", exception);
-                    wrappedSubscriber.onError(s3exception);
-                    throw s3exception;
-                }
                 // Request a new cipher using the same materials to avoid reinit issues
+                // TODO: This can probably be moved into CipherAsyncRequestBody
                 cipher = CipherProvider.createAndInitCipher(materials, iv);
             }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {

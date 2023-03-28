@@ -225,7 +225,6 @@ public class S3EncryptionClientMultipartUploadTest {
 
         // Overall "file" is 30MB, split into 10MB parts
         final long fileSizeLimit = 1024 * 1024 * 35;
-        System.out.println(String.format("  TEST: Upload obj with %d total bytes", fileSizeLimit));
         final int PART_SIZE = 10 * 1024 * 1024;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
 
@@ -264,8 +263,6 @@ public class S3EncryptionClientMultipartUploadTest {
                     .contentLength((long) partInputStream.available())
                     .build();
 
-            System.out.println(String.format("  TEST: available bytes: %d", (long) partInputStream.available()));
-            System.out.println(String.format("  TEST: Upload part no. %d with %d bytes", partsSent, uploadPartRequest.contentLength()));
             UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
                     RequestBody.fromInputStream(partInputStream, partInputStream.available()));
             partETags.add(CompletedPart.builder()
@@ -289,8 +286,6 @@ public class S3EncryptionClientMultipartUploadTest {
                 .sdkPartType(SdkPartType.LAST)
                 .build();
 
-        System.out.println(String.format("  TEST: upload (last) part no. %d with %d bytes", partsSent,
-                uploadPartRequest.contentLength()));
         UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
                 RequestBody.fromInputStream(partInputStream, partInputStream.available()));
         partETags.add(CompletedPart.builder()
@@ -305,7 +300,6 @@ public class S3EncryptionClientMultipartUploadTest {
                 .uploadId(initiateResult.uploadId())
                 .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
-        System.out.println("complete: " + completeMultipartUploadResponse.eTag());
         // Asserts
         ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
