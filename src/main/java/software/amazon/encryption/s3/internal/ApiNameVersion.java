@@ -12,7 +12,7 @@ import java.util.Properties;
 public class ApiNameVersion {
     public static final String API_NAME = "AmazonS3Encrypt";
 
-    public static final String API_VERSION_UNKNOWN = "unknown";
+    public static final String API_VERSION_UNKNOWN = "3-unknown";
 
     public static ApiName apiNameWithVersion() {
         return ApiName.builder()
