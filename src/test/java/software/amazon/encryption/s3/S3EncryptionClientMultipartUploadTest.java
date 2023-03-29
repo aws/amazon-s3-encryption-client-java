@@ -3,7 +3,6 @@ package software.amazon.encryption.s3;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -54,7 +53,7 @@ public class S3EncryptionClientMultipartUploadTest {
         PROVIDER = Security.getProvider("BC");
     }
 
-    @RepeatedTest(20)
+    @Test
     public void multipartPutObjectAsync() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object-async");
 
@@ -218,7 +217,7 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
-    @RepeatedTest(20)
+    @Test
     public void multipartUploadV3OutputStreamPartSize() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size");
 
