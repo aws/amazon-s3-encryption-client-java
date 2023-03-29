@@ -139,7 +139,9 @@ public class MultipartUploadObjectPipeline {
                             "upload should be marked as the last part.");
                 }
             }
-            response =  _s3AsyncClient.uploadPart(actualRequest, cipherAsyncRequestBody).join();
+            // Ensures parts are not retried to avoid corrupting ciphertext
+            AsyncRequestBody noRetryBody = new NoRetriesAsyncRequestBody(cipherAsyncRequestBody);
+            response =  _s3AsyncClient.uploadPart(actualRequest, noRetryBody).join();
         } finally {
             materials.endPartUpload();
         }

@@ -2,12 +2,10 @@ package software.amazon.encryption.s3.internal;
 
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
-import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * An AsyncRequestBody which encrypts and decrypts data as it passes through
@@ -19,7 +17,6 @@ public class CipherAsyncRequestBody implements AsyncRequestBody {
     private final Long ciphertextLength;
     private final CryptographicMaterials materials;
     private final byte[] iv;
-    private final AtomicBoolean subscribeCalled = new AtomicBoolean(false);
 
     public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv, final boolean isLastPart) {
         this.wrappedAsyncRequestBody = wrappedAsyncRequestBody;
@@ -35,15 +32,7 @@ public class CipherAsyncRequestBody implements AsyncRequestBody {
 
     @Override
     public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
-        // When used in uploadPart, retry is impossible, since the cipher holds its state
-        // across multiple parts.
-        if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT) && subscribeCalled.compareAndSet(false, true)) {
-            wrappedAsyncRequestBody.subscribe(new CipherSubscriber(subscriber, contentLength().orElse(-1L), materials, iv));
-        } else if (materials.cipherMode().equals(CipherMode.MULTIPART_ENCRYPT)) {
-            throw new S3EncryptionClientException("Re-subscription is not supported for MPU! Retry the entire multipart upload.");
-        } else {
-            wrappedAsyncRequestBody.subscribe(new CipherSubscriber(subscriber, contentLength().orElse(-1L), materials, iv));
-        }
+        wrappedAsyncRequestBody.subscribe(new CipherSubscriber(subscriber, contentLength().orElse(-1L), materials, iv));
     }
 
     @Override
