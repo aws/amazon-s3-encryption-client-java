@@ -119,7 +119,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         if (_enableMultipartPutObject) {
             try {
-                // TODO: Confirm best way to wrap CompleteMultipartUploadResponse with PutObjectResponse
                 CompleteMultipartUploadResponse completeResponse = multipartPutObject(putObjectRequest, requestBody);
                 PutObjectResponse response = PutObjectResponse.builder()
                         .eTag(completeResponse.eTag())
@@ -287,6 +286,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
         _wrappedAsyncClient.close();
     }
 
+    // This is very similar to the S3EncryptionClient builder
+    // Make sure to keep both clients in mind when adding new builder options
     public static class Builder {
         // The non-encrypted APIs will use a default client.
         private S3Client _wrappedClient = S3Client.create();

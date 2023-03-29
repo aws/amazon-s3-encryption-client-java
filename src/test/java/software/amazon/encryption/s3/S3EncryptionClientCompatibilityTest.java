@@ -322,6 +322,7 @@ public class S3EncryptionClientCompatibilityTest {
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
+        deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 
@@ -349,6 +350,7 @@ public class S3EncryptionClientCompatibilityTest {
                 .key(objectKey)
                 .build()));
 
+        deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 
@@ -722,7 +724,6 @@ public class S3EncryptionClientCompatibilityTest {
                         .overrideConfiguration(withAdditionalConfiguration(encryptionContext)),
                 RequestBody.fromString(input));
 
-        // TODO: Negative testing around encryption context
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -734,6 +735,41 @@ public class S3EncryptionClientCompatibilityTest {
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
+
+    @Test
+    public void KmsContextV3toV3MismatchFails() {
+        final String objectKey = appendTestSuffix("kms-context-v3-to-v3");
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        // Asserts
+        final String input = "KmsContextV3toV3";
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+        v3Client.putObject(builder -> builder
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .overrideConfiguration(withAdditionalConfiguration(encryptionContext)),
+                RequestBody.fromString(input));
+
+        // Use the wrong EC
+        Map<String, String> otherEncryptionContext = new HashMap<>();
+        otherEncryptionContext.put("user-metadata-key", "!user-metadata-value-v3-to-v3");
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .overrideConfiguration(withAdditionalConfiguration(otherEncryptionContext))));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
 
     @Test
     public void AesCbcV1toV3FailsWhenLegacyModeDisabled() {
