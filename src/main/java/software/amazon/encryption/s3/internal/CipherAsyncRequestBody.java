@@ -26,7 +26,8 @@ public class CipherAsyncRequestBody implements AsyncRequestBody {
     }
 
     public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv) {
-        // When no partType is specified, it's not multipart, so there's one part, which must be the last
+        // When no partType is specified, it's not multipart,
+        // so there's one part, which must be the last
         this(wrappedAsyncRequestBody, ciphertextLength, materials, iv, true);
     }
 

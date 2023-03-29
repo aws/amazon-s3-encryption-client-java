@@ -54,6 +54,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // same key/IV. It's actually fine here, because the data is the same, but any
                 // sane implementation will throw an exception.
                 // Request a new cipher using the same materials to avoid reinit issues
+                // TODO: This can probably be moved into CipherAsyncRequestBody
                 cipher = CipherProvider.createAndInitCipher(materials, iv);
             }
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {

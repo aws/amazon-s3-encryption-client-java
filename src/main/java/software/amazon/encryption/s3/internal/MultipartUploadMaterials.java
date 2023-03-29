@@ -156,8 +156,8 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
     }
 
     @Override
-    public int opMode() {
-        return Cipher.ENCRYPT_MODE;
+    public CipherMode cipherMode() {
+        return CipherMode.MULTIPART_ENCRYPT;
     }
 
     static public class Builder {

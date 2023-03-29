@@ -39,14 +39,14 @@ public class CipherProvider {
             Cipher cipher = CryptoFactory.createCipher(materials.algorithmSuite().cipherName(), materials.cryptoProvider());
             switch (materials.algorithmSuite()) {
                 case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
-                    cipher.init(materials.opMode(), materials.dataKey(), new GCMParameterSpec(materials.algorithmSuite().cipherTagLengthBits(), iv));
+                    cipher.init(materials.cipherMode().opMode(), materials.dataKey(), new GCMParameterSpec(materials.algorithmSuite().cipherTagLengthBits(), iv));
                     break;
                 case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
                 case ALG_AES_256_CBC_IV16_NO_KDF:
-                    if (materials.opMode() == Cipher.ENCRYPT_MODE) {
+                    if (materials.cipherMode().opMode() == Cipher.ENCRYPT_MODE) {
                         throw new S3EncryptionClientException("Encryption is not supported for algorithm: " + materials.algorithmSuite().cipherName());
                     }
-                    cipher.init(materials.opMode(), materials.dataKey(), new IvParameterSpec(iv));
+                    cipher.init(materials.cipherMode().opMode(), materials.dataKey(), new IvParameterSpec(iv));
                     break;
                 default:
                     throw new S3EncryptionClientException("Unknown algorithm: " + materials.algorithmSuite().cipherName());
