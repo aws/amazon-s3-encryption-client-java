@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
+
 public class MultipartUploadObjectPipeline {
     final private S3AsyncClient _s3AsyncClient;
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -63,7 +65,9 @@ public class MultipartUploadObjectPipeline {
 
         Map<String, String> metadata = new HashMap<>(request.metadata());
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), metadata);
-        request = request.toBuilder().metadata(metadata).build();
+        request = request.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .metadata(metadata).build();
 
         CreateMultipartUploadResponse response = _s3AsyncClient.createMultipartUpload(request).join();
 
@@ -114,6 +118,7 @@ public class MultipartUploadObjectPipeline {
 
         // Once we have (a valid) ciphertext length, set the request contentLength
         UploadPartRequest actualRequest = request.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .contentLength(ciphertextLength)
                 .build();
 
@@ -161,7 +166,12 @@ public class MultipartUploadObjectPipeline {
                     "Unable to complete an encrypted multipart upload without being told which part was the last.  "
                             + "Without knowing which part was the last, the encrypted data in Amazon S3 is incomplete and corrupt.");
         }
-        CompleteMultipartUploadResponse response = _s3AsyncClient.completeMultipartUpload(request).join();
+
+        CompleteMultipartUploadRequest actualRequest = request.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .build();
+
+        CompleteMultipartUploadResponse response = _s3AsyncClient.completeMultipartUpload(actualRequest).join();
 
         _multipartUploadMaterials.remove(uploadId);
         return response;
@@ -169,7 +179,10 @@ public class MultipartUploadObjectPipeline {
 
     public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request) {
         _multipartUploadMaterials.remove(request.uploadId());
-        return _s3AsyncClient.abortMultipartUpload(request).join();
+        AbortMultipartUploadRequest actualRequest = request.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .build();
+        return _s3AsyncClient.abortMultipartUpload(actualRequest).join();
     }
 
     public void putLocalObject(RequestBody requestBody, String uploadId, OutputStream os) throws IOException {

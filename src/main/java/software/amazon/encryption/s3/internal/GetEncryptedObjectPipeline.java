@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
+
 /**
  * This class will determine the necessary mechanisms to decrypt objects returned from S3.
  * Due to supporting various legacy modes, this is not a predefined pipeline like
@@ -51,7 +53,10 @@ public class GetEncryptedObjectPipeline {
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest, AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
         // In async, decryption is done within a response transformation
         String cryptoRange = RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range());
-        GetObjectRequest adjustedRangeRequest = getObjectRequest.toBuilder().range(cryptoRange).build();
+        GetObjectRequest adjustedRangeRequest = getObjectRequest.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .range(cryptoRange)
+                .build();
         if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
             throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use Ranged Get.");
         }
