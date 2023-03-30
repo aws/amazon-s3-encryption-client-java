@@ -9,8 +9,6 @@ import java.util.stream.Collectors;
 /**
  * This class contains that which can be shared between the default S3 Encryption
  * Client and its Async counterpart.
- * TODO: move encryption context handling here
- * TODO: move the builder here
  */
 public class S3EncryptionClientUtilities {
 
