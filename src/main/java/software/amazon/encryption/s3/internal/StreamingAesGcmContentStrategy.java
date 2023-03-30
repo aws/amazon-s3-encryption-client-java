@@ -22,7 +22,7 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
     }
 
     @Override
-    public EncryptedContent initMultipartEncryption(EncryptionMaterials materials) {
+    public MultipartEncryptedContent initMultipartEncryption(EncryptionMaterials materials) {
         if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
             throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
                     "the maximum length allowed for GCM encryption.");
@@ -32,7 +32,7 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
         _secureRandom.nextBytes(iv);
 
         final Cipher cipher = CipherProvider.createAndInitCipher(materials, iv);
-        return new EncryptedContent(iv, cipher);
+        return new MultipartEncryptedContent(iv, cipher, materials.getCiphertextLength());
     }
 
     @Override
