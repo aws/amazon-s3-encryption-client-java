@@ -39,6 +39,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
+
 public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
     private final S3AsyncClient _wrappedClient;
@@ -119,10 +121,13 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
     @Override
     public CompletableFuture<DeleteObjectResponse> deleteObject(DeleteObjectRequest deleteObjectRequest) {
-        // TODO: Pass-through requests MUST set the user agent
-        final CompletableFuture<DeleteObjectResponse> response =  _wrappedClient.deleteObject(deleteObjectRequest);
+        final DeleteObjectRequest actualRequest = deleteObjectRequest.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .build();
+        final CompletableFuture<DeleteObjectResponse> response =  _wrappedClient.deleteObject(actualRequest);
         final String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
         final CompletableFuture<DeleteObjectResponse> instructionResponse =  _wrappedClient.deleteObject(builder -> builder
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .bucket(deleteObjectRequest.bucket())
                 .key(instructionObjectKey));
         // Delete the instruction file, then delete the object
@@ -134,12 +139,12 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     @Override
     public CompletableFuture<DeleteObjectsResponse> deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
-        // TODO: Pass-through requests MUST set the user agent
         // Add the instruction file keys to the list of objects to delete
         final List<ObjectIdentifier> objectsToDelete = S3EncryptionClientUtilities.instructionFileKeysToDelete(deleteObjectsRequest);
         // Add the original objects
         objectsToDelete.addAll(deleteObjectsRequest.delete().objects());
         return _wrappedClient.deleteObjects(deleteObjectsRequest.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .delete(builder -> builder.objects(objectsToDelete))
                 .build());
     }

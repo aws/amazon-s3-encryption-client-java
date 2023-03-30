@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
+
 public class PutEncryptedObjectPipeline {
 
     final private S3AsyncClient _s3AsyncClient;
@@ -63,6 +65,7 @@ public class PutEncryptedObjectPipeline {
         Map<String, String> metadata = new HashMap<>(request.metadata());
         metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), metadata);
         PutObjectRequest encryptedPutRequest = request.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .contentLength(encryptedContent.getCiphertextLength())
                 .metadata(metadata)
                 .build();

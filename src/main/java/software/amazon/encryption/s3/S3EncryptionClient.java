@@ -64,6 +64,7 @@ import java.util.function.Consumer;
 
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.instructionFileKeysToDelete;
+import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
 
 /**
  * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
@@ -105,6 +106,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
     }
+
+
 
     // Helper function to attach encryption contexts to a request
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalConfiguration(Map<String, String> encryptionContext, MultipartConfiguration multipartConfiguration) {
@@ -225,11 +228,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
     @Override
     public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) throws AwsServiceException,
             SdkClientException {
+        DeleteObjectRequest actualRequest = deleteObjectRequest.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .build();
         // Delete the object
-        DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(deleteObjectRequest).join();
+        DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(actualRequest).join();
         // If Instruction file exists, delete the instruction file as well.
         String instructionObjectKey = deleteObjectRequest.key() + INSTRUCTION_FILE_SUFFIX;
         _wrappedAsyncClient.deleteObject(builder -> builder
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .bucket(deleteObjectRequest.bucket())
                 .key(instructionObjectKey)).join();
         return deleteObjectResponse;
@@ -238,11 +245,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
     @Override
     public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
+        DeleteObjectsRequest actualRequest = deleteObjectsRequest.toBuilder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .build();
         // Delete the objects
-        DeleteObjectsResponse deleteObjectsResponse = _wrappedAsyncClient.deleteObjects(deleteObjectsRequest).join();
+        DeleteObjectsResponse deleteObjectsResponse = _wrappedAsyncClient.deleteObjects(actualRequest).join();
         // If Instruction files exists, delete the instruction files as well.
         List<ObjectIdentifier> deleteObjects = instructionFileKeysToDelete(deleteObjectsRequest);
         _wrappedAsyncClient.deleteObjects(DeleteObjectsRequest.builder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .bucket(deleteObjectsRequest.bucket())
                 .delete(builder -> builder.objects(deleteObjects))
                 .build()).join();
