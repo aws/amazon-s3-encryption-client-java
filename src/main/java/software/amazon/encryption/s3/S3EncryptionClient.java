@@ -32,6 +32,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.MultiFileOutputStream;
 import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
@@ -164,6 +165,29 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     private CompleteMultipartUploadResponse multipartPutObject(PutObjectRequest request, RequestBody requestBody) throws Throwable {
+        // Similar logic exists in the MultipartUploadObjectPipeline,
+        // but the request types do not match so refactoring is not possible
+        final long contentLength;
+        if (request.contentLength() != null) {
+            if (requestBody.optionalContentLength().isPresent() && !request.contentLength().equals(requestBody.optionalContentLength().get())) {
+                // if the contentLength values do not match, throw an exception, since we don't know which is correct
+                throw new S3EncryptionClientException("The contentLength provided in the request object MUST match the " +
+                        "contentLength in the request body");
+            } else if (!requestBody.optionalContentLength().isPresent()) {
+                // no contentLength in request body, use the one in request
+                contentLength = request.contentLength();
+            } else {
+                // only remaining case is when the values match, so either works here
+                contentLength = request.contentLength();
+            }
+        } else {
+            contentLength = requestBody.optionalContentLength().orElse(-1L);
+        }
+
+        if (contentLength > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
+                    "the maximum length allowed for GCM encryption.");
+        }
 
         AwsRequestOverrideConfiguration overrideConfig = request.overrideConfiguration().get();
         // If MultipartConfiguration is null, Initialize MultipartConfiguration
