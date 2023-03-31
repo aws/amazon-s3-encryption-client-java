@@ -114,7 +114,7 @@ public class S3EncryptionClientMultipartUploadTest {
                 .kmsKeyId(KMS_KEY_ID)
                 .enableMultipartPutObject(true)
                 .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
+                //.cryptoProvider(PROVIDER)
                 .build();
 
         Map<String, String> encryptionContext = new HashMap<>();
