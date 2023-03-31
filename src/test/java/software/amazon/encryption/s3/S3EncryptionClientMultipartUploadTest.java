@@ -90,6 +90,31 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
+    @Test
+    public void multipartPutObjectAsyncLargeObjectFails() {
+        final String objectKey = appendTestSuffix("multipart-put-object-async-large-object-fails");
+
+        // Tight bound on the max GCM limit
+        final long fileSizeLimit = ((1L << 39) - 256 / 8) + 1;
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+
+        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .enableMultipartPutObject(true)
+                .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(PROVIDER)
+                .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, Executors.newSingleThreadExecutor())));
+
+        v3Client.close();
+    }
 
     @Test
     public void multipartPutObject() throws IOException {
@@ -125,6 +150,33 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
     }
+
+    @Test
+    public void multipartPutObjectLargeObjectFails() {
+        final String objectKey = appendTestSuffix("multipart-put-object-large-fails");
+
+        // Tight bound on the max GCM limit
+        final long fileSizeLimit = ((1L << 39) - 256 / 8) + 1;
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .enableMultipartPutObject(true)
+                .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(PROVIDER)
+                .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+        assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit)));
+
+        v3Client.close();
+    }
+
 
     @Test
     public void multipartUploadV3OutputStream() throws IOException {
