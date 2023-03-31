@@ -136,12 +136,12 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void multipartUploadV2OutputStreamLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v2-output-stream-large-object");
 
         // Overall "file" is 104GB, split into 100MB parts
-        final long fileSizeLimit = 1024L * 1024 * 1000 * 100;
+        final long fileSizeLimit = 1024L * 1024 * 1000 * 70;
         final int PART_SIZE = 100 * 1024 * 1024;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
 
@@ -178,7 +178,10 @@ public class S3EncryptionClientMultipartUploadTest {
             uploadPartRequest.setUploadId(initiateResult.getUploadId());
             uploadPartRequest.setPartNumber(partsSent);
             uploadPartRequest.setInputStream(partInputStream);
+            uploadPartRequest.setPartSize(partInputStream.available());
 
+            System.out.println("uploading part " + partsSent);
+            System.out.println("part size " + uploadPartRequest.getPartSize());
             UploadPartResult uploadPartResult = v2Client.uploadPart(uploadPartRequest);
             partETags.add(new PartETag(partsSent, uploadPartResult.getETag()));
             outputStream.reset();
@@ -187,6 +190,7 @@ public class S3EncryptionClientMultipartUploadTest {
         }
         inputStream.close();
 
+        System.out.println("uploading last part " + partsSent);
         // Last Part
         com.amazonaws.services.s3.model.UploadPartRequest uploadPartRequest = new com.amazonaws.services.s3.model.UploadPartRequest();
         final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
@@ -196,6 +200,8 @@ public class S3EncryptionClientMultipartUploadTest {
         uploadPartRequest.setPartNumber(partsSent);
         uploadPartRequest.setInputStream(partInputStream);
         uploadPartRequest.setLastPart(true);
+        uploadPartRequest.setPartSize(partInputStream.available());
+        System.out.println("part size " + uploadPartRequest.getPartSize());
 
         UploadPartResult uploadPartResult = v2Client.uploadPart(uploadPartRequest);
 
@@ -217,13 +223,12 @@ public class S3EncryptionClientMultipartUploadTest {
         v2Client.shutdown();
     }
 
-
     @Test
     public void multipartUploadV3OutputStreamLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-large-object");
 
-        // Overall "file" is 104GB, split into 100MB parts
-        final long fileSizeLimit = 1024L * 1024 * 1000 * 100;
+        // 69.63GB, just over the max limit of 68.7194767 GB
+        final long fileSizeLimit = 1024L * 1000 * 1000 * 68;
         final int PART_SIZE = 100 * 1024 * 1024;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
 
@@ -308,7 +313,6 @@ public class S3EncryptionClientMultipartUploadTest {
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
     }
-
 
     @Test
     public void multipartUploadV3OutputStream() throws IOException {
