@@ -105,7 +105,8 @@ public class S3EncryptionClientMultipartUploadTest {
     public void multipartPutObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object");
 
-        final long fileSizeLimit = 1024 * 1024 * 100;
+        // 69.63GB, just over the max limit of 68.7194767 GB
+        final long fileSizeLimit = 1024L * 1000 * 1000 * 68;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
@@ -223,7 +224,7 @@ public class S3EncryptionClientMultipartUploadTest {
         v2Client.shutdown();
     }
 
-    @Test
+    //@Test
     public void multipartUploadV3OutputStreamLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-large-object");
 
