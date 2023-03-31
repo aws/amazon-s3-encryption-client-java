@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.NoRetriesAsyncRequestBody;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
@@ -60,16 +61,47 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _enableMultipartPutObject = builder._enableMultipartPutObject;
     }
 
+    /**
+     * Create a builder that can be used to configure and create a {@link S3AsyncEncryptionClient}.
+     */
     public static Builder builder() {
         return new Builder();
     }
 
-    // Helper function to attach encryption contexts to a request
+
+    /**
+     * Attaches encryption contexts to a request. Must be used as a parameter to
+     * {@link S3Request#overrideConfiguration()} in the request.
+     * Encryption context can be used to enforce authentication of ciphertext.
+     * The same encryption context used to encrypt MUST be provided on decrypt.
+     * Encryption context is only supported with KMS keys.
+     * @param encryptionContext the encryption context to use for the request.
+     * @return Consumer for use in overrideConfiguration()
+     */
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalEncryptionContext(Map<String, String> encryptionContext) {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
     }
 
+    /**
+     * @inheritDoc
+     *
+     * In the S3AsyncEncryptionClient, putObject encrypts the data in the requestBody as it is
+     * written to S3.
+     * @param putObjectRequest
+     * @param requestBody
+     *        Functional interface that can be implemented to produce the request content in a non-blocking manner. The
+     *        size of the content is expected to be known up front. See {@link AsyncRequestBody} for specific details on
+     *        implementing this interface as well as links to precanned implementations for common scenarios like
+     *        uploading from a file. The service documentation for the request content is as follows '
+     *        <p>
+     *        Object data.
+     *        </p>
+     *        '
+     * @return
+     * @throws AwsServiceException
+     * @throws SdkClientException
+     */
     @Override
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody)
             throws AwsServiceException, SdkClientException {
