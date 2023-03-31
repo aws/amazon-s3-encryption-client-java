@@ -29,7 +29,7 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
 
     private final byte[] _plaintextDataKey;
     private final Provider _cryptoProvider;
-    private final long _plaintextLength;
+    private long _plaintextLength;
     private boolean hasFinalPartBeenSeen;
     private final Cipher _cipher;
 
@@ -93,7 +93,7 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
      * @throws S3EncryptionClientException if parallel part upload is detected
      * @see #endPartUpload()
      */
-    protected void beginPartUpload(final int nextPartNumber) {
+    protected void beginPartUpload(final int nextPartNumber, final long partContentLength) {
         if (nextPartNumber < 1)
             throw new IllegalArgumentException("part number must be at least 1");
         if (partUploadInProgress) {
@@ -104,6 +104,7 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
             if (nextPartNumber - partNumber <= 1) {
                 partNumber = nextPartNumber;
                 partUploadInProgress = true;
+                incrementPlaintextSize(partContentLength);
             } else {
                 throw new S3EncryptionClientException(
                         "Parts are required to be uploaded in series (partNumber="
@@ -114,11 +115,26 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
     }
 
     /**
+     * Increments the plaintextSize as parts come in, checking to
+     * ensure that the max GCM size limit is not exceeded.
+     * @param lengthOfPartToAdd the length of the incoming part
+     * @return the new _plaintextLength value
+     */
+    private synchronized long incrementPlaintextSize(final long lengthOfPartToAdd) {
+        if (_plaintextLength + lengthOfPartToAdd > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
+                    "the maximum length allowed for GCM encryption.");
+        }
+        _plaintextLength += lengthOfPartToAdd;
+        return _plaintextLength;
+    }
+
+    /**
      * Used to mark the completion of a part upload before the next. Should be
      * invoked in finally block, and must be preceded previously by a call to
-     * {@link #beginPartUpload(int)}.
+     * {@link #beginPartUpload(int, long)}.
      *
-     * @see #beginPartUpload(int)
+     * @see #beginPartUpload(int, long)
      */
     protected void endPartUpload() {
         partUploadInProgress = false;
