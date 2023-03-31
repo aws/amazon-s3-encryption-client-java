@@ -6,6 +6,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
@@ -51,6 +52,11 @@ public class PutEncryptedObjectPipeline {
             }
         } else {
             contentLength = requestBody.contentLength().orElse(-1L);
+        }
+
+        if (contentLength > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
+                    "the maximum length allowed for GCM encryption.");
         }
 
         EncryptionMaterialsRequest encryptionMaterialsRequest = EncryptionMaterialsRequest.builder()
