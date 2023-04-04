@@ -280,7 +280,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         * Specifies the {@link CryptographicMaterialsManager}to use for managing key wrapping keys.
+         * Specifies the {@link CryptographicMaterialsManager} to use for managing key wrapping keys.
          * @param cryptoMaterialsManager the CMM to use
          * @return Returns a reference to this object so that method calls can be chained together.
          */
