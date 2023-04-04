@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
@@ -98,19 +99,50 @@ public class S3EncryptionClient extends DelegatingS3Client {
         _multipartPipeline = builder._multipartPipeline;
     }
 
+    /**
+     * Creates a builder that can be used to configure and create a {@link S3EncryptionClient}.
+     */
     public static Builder builder() {
         return new Builder();
     }
 
-    // Helper function to attach encryption contexts to a request
+    /**
+     * Attaches encryption context to a request. Must be used as a parameter to
+     * {@link S3Request#overrideConfiguration()} in the request.
+     * Encryption context can be used to enforce authentication of ciphertext.
+     * The same encryption context used to encrypt MUST be provided on decrypt.
+     * Encryption context is only supported with KMS keys.
+     * @param encryptionContext the encryption context to use for the request.
+     * @return Consumer for use in overrideConfiguration()
+     */
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalConfiguration(Map<String, String> encryptionContext) {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
     }
 
+    /**
+     * Attaches multipart configuration to a request. Must be used as a parameter to
+     * {@link S3Request#overrideConfiguration()} in the request.
+     * @param multipartConfiguration the {@link MultipartConfiguration} instance to use
+     * @return Consumer for use in overrideConfiguration()
+     */
+    public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalConfiguration(MultipartConfiguration multipartConfiguration) {
+        return builder ->
+                builder.putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
+    }
 
 
-    // Helper function to attach encryption contexts to a request
+    /**
+     * Attaches encryption context and multipart configuration to a request.
+     * * Must be used as a parameter to
+     * {@link S3Request#overrideConfiguration()} in the request.
+     * Encryption context can be used to enforce authentication of ciphertext.
+     * The same encryption context used to encrypt MUST be provided on decrypt.
+     * Encryption context is only supported with KMS keys.
+     * @param encryptionContext the encryption context to use for the request.
+     * @param multipartConfiguration the {@link MultipartConfiguration} instance to use
+     * @return Consumer for use in overrideConfiguration()
+     */
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalConfiguration(Map<String, String> encryptionContext, MultipartConfiguration multipartConfiguration) {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext)
@@ -118,16 +150,19 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     /**
-     * {@inheritDoc}
-     *
+     * See {@link S3EncryptionClient#putObject(PutObjectRequest, RequestBody)}.
+     * <p>
      * In the S3EncryptionClient, putObject encrypts the data in the requestBody as it is
      * written to S3.
-     * *
-     * @param putObjectRequest
+     * </p>
+     * @param putObjectRequest the request instance
      * @param requestBody
-     * @return
-     * @throws AwsServiceException
-     * @throws SdkClientException
+     *        The content to send to the service. A {@link RequestBody} can be created using one of several factory
+     *        methods for various sources of data. For example, to create a request body from a file you can do the
+     *        following.
+     * @return Result of the PutObject operation returned by the service.
+     * @throws SdkClientException If any client side error occurs such as an IO related failure, failure to get credentials, etc.
+     * @throws S3EncryptionClientException Base class for all encryption client exceptions.
      */
     @Override
     public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody)
@@ -154,6 +189,22 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return futurePut.join();
     }
 
+    /**
+     * See {@link S3EncryptionClient#getObject(GetObjectRequest, ResponseTransformer)}
+     * <p>
+     * In the S3EncryptionClient, getObject decrypts the data as it is read from S3.
+     * </p>
+     * @param getObjectRequest the request instance
+     * @param responseTransformer
+     *        Functional interface for processing the streamed response content. The unmarshalled GetObjectResponse and
+     *        an InputStream to the response content are provided as parameters to the callback. The callback may return
+     *        a transformed type which will be the return value of this method. See
+     *        {@link software.amazon.awssdk.core.sync.ResponseTransformer} for details on implementing this interface
+     *        and for links to pre-canned implementations for common scenarios like downloading to a file.
+     * @return The transformed result of the ResponseTransformer.
+     * @throws SdkClientException If any client side error occurs such as an IO related failure, failure to get credentials, etc.
+     * @throws S3EncryptionClientException Base class for all encryption client exceptions.
+     */
     @Override
     public <T> T getObject(GetObjectRequest getObjectRequest,
                            ResponseTransformer<GetObjectResponse, T> responseTransformer)
@@ -261,6 +312,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return t;
     }
 
+    /**
+     * See {@link S3Client#deleteObject(DeleteObjectRequest)}.
+     * <p>
+     * In the S3 Encryption Client, deleteObject also deletes the instruction file,
+     * if present.
+     * </p>
+     * @param deleteObjectRequest the request instance
+     * @return Result of the DeleteObject operation returned by the service.
+     */
     @Override
     public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) throws AwsServiceException,
             SdkClientException {
@@ -278,6 +338,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return deleteObjectResponse;
     }
 
+    /**
+     * See {@link S3Client#deleteObjects(DeleteObjectsRequest)}.
+     * <p>
+     * In the S3 Encryption Client, deleteObjects also deletes the instruction file(s),
+     * if present.
+     * </p>
+     * @param deleteObjectsRequest the request instance
+     * @return Result of the DeleteObjects operation returned by the service.
+     */
     @Override
     public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
@@ -296,19 +365,31 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return deleteObjectsResponse;
     }
 
+    /**
+     * See {@link S3Client#createMultipartUpload(CreateMultipartUploadRequest)}
+     * <p>
+     * In the S3EncryptionClient, createMultipartUpload creates an encrypted
+     * multipart upload. Parts MUST be uploaded sequentially.
+     * See {@link S3EncryptionClient#uploadPart(UploadPartRequest, RequestBody)} for details.
+     * </p>
+     * @param request the request instance
+     * @return Result of the CreateMultipartUpload operation returned by the service.
+     */
     @Override
     public CreateMultipartUploadResponse createMultipartUpload(CreateMultipartUploadRequest request) {
         return _multipartPipeline.createMultipartUpload(request);
     }
 
     /**
-     * {@inheritDoc}
+     * See {@link S3Client#uploadPart(UploadPartRequest, RequestBody)}
      *
      * <b>NOTE:</b> Because the encryption process requires context from block
      * N-1 in order to encrypt block N, parts uploaded with the
      * S3EncryptionClient (as opposed to the normal S3Client) must
      * be uploaded serially, and in order. Otherwise, the previous encryption
      * context isn't available to use when encrypting the current part.
+     * @param request the request instance
+     * @return Result of the UploadPart operation returned by the service.
      */
     @Override
     public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody)
@@ -316,18 +397,31 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return _multipartPipeline.uploadPart(request, requestBody);
     }
 
+    /**
+     * See {@link S3Client#completeMultipartUpload(CompleteMultipartUploadRequest)}
+     * @param request the request instance
+     * @return Result of the CompleteMultipartUpload operation returned by the service.
+     */
     @Override
     public CompleteMultipartUploadResponse completeMultipartUpload(CompleteMultipartUploadRequest request)
             throws AwsServiceException, SdkClientException {
         return _multipartPipeline.completeMultipartUpload(request);
     }
 
+    /**
+     * See {@link S3Client#abortMultipartUpload(AbortMultipartUploadRequest)}
+     * @param request the request instance
+     * @return Result of the AbortMultipartUpload operation returned by the service.
+     */
     @Override
     public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request)
             throws AwsServiceException, SdkClientException {
         return _multipartPipeline.abortMultipartUpload(request);
     }
 
+    /**
+     * Closes the wrapped clients.
+     */
     @Override
     public void close() {
         _wrappedClient.close();
@@ -390,6 +484,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        /**
+         * Specifies the {@link CryptographicMaterialsManager}to use for managing key wrapping keys.
+         * @param cryptoMaterialsManager the CMM to use
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
             this._cryptoMaterialsManager = cryptoMaterialsManager;
             checkKeyOptions();
@@ -397,6 +496,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        /**
+         * Specifies the {@link Keyring} to use for key wrapping and unwrapping.
+         * @param keyring the Keyring instance to use
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder keyring(Keyring keyring) {
             this._keyring = keyring;
             checkKeyOptions();
@@ -404,6 +508,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        /**
+         * Specifies a "raw" AES key to use for key wrapping/unwrapping.
+         * @param aesKey the AES key as a {@link SecretKey} instance
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder aesKey(SecretKey aesKey) {
             this._aesKey = aesKey;
             checkKeyOptions();
@@ -411,6 +520,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        /**
+         * Specifies a "raw" RSA key pair to use for key wrapping/unwrapping.
+         * @param rsaKeyPair the RSA key pair as a {@link KeyPair} instance
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder rsaKeyPair(KeyPair rsaKeyPair) {
             this._rsaKeyPair = new PartialRsaKeyPair(rsaKeyPair);
             checkKeyOptions();
@@ -418,6 +532,14 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        /**
+         * Specifies a "raw" RSA key pair to use for key wrapping/unwrapping.
+         * This option takes a {@link PartialRsaKeyPair} instance, which allows
+         * either a public key (decryption only) or private key (encryption only)
+         * rather than requiring both parts.
+         * @param partialRsaKeyPair the RSA key pair as a {@link PartialRsaKeyPair} instance
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder rsaKeyPair(PartialRsaKeyPair partialRsaKeyPair) {
             this._rsaKeyPair = partialRsaKeyPair;
             checkKeyOptions();
@@ -425,6 +547,14 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        /**
+         * Specifies a KMS key to use for key wrapping/unwrapping. Any valid KMS key
+         * identifier (including the full ARN or an alias ARN) is permitted. When
+         * decrypting objects, the key referred to by this KMS key identifier is
+         * always used.
+         * @param kmsKeyId the KMS key identifier as a {@link String} instance
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder kmsKeyId(String kmsKeyId) {
             this._kmsKeyId = kmsKeyId;
             checkKeyOptions();
@@ -456,31 +586,79 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return haveOneNonNull;
         }
 
+        /**
+         * When set to true, decryption of objects using legacy key wrapping
+         * modes is enabled.
+         * @param shouldEnableLegacyWrappingAlgorithms true to enable legacy wrapping algorithms
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder enableLegacyWrappingAlgorithms(boolean shouldEnableLegacyWrappingAlgorithms) {
             this._enableLegacyWrappingAlgorithms = shouldEnableLegacyWrappingAlgorithms;
             return this;
         }
 
+        /**
+         * When set to true, decryption of content using legacy encryption algorithms
+         * is enabled. This includes use of GetObject requests with a range, as this
+         * mode is not authenticated.
+         * @param shouldEnableLegacyUnauthenticatedModes true to enable legacy content algorithms
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
             this._enableLegacyUnauthenticatedModes = shouldEnableLegacyUnauthenticatedModes;
             return this;
         }
 
+        /**
+         * When set to true, authentication of streamed objects is delayed until the
+         * entire object is read from the stream. When this mode is enabled, the consuming
+         * application must support a way to invalidate any data read from the stream as
+         * the tag will not be validated until the stream is read to completion, as the
+         * integrity of the data cannot be ensured. See the AWS Documentation for more
+         * information.
+         * @param shouldEnableDelayedAuthenticationMode true to enable delayed authentication
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder enableDelayedAuthenticationMode(boolean shouldEnableDelayedAuthenticationMode) {
             this._enableDelayedAuthenticationMode = shouldEnableDelayedAuthenticationMode;
             return this;
         }
 
+        /**
+         * When set to true, the putObject method will use multipart upload to perform
+         * the upload. Disabled by default.
+         * @param _enableMultipartPutObject true enables the multipart upload implementation of putObject
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder enableMultipartPutObject(boolean _enableMultipartPutObject) {
             this._enableMultipartPutObject = _enableMultipartPutObject;
             return this;
         }
 
+        /**
+         * Allows the user to pass an instance of {@link Provider} to be used
+         * for cryptographic operations. By default, the S3 Encryption Client
+         * will use the first compatible {@link Provider} in the chain. When this option
+         * is used, the given provider will be used for all cryptographic operations.
+         * If the provider is missing a required algorithm suite, e.g. AES-GCM, then
+         * operations may fail.
+         * Advanced option. Users who configure a {@link Provider} are responsible
+         * for the security and correctness of the provider.
+         * @param cryptoProvider the {@link Provider to always use}
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder cryptoProvider(Provider cryptoProvider) {
             this._cryptoProvider = cryptoProvider;
             return this;
         }
 
+        /**
+         * Allows the user to pass an instance of {@link SecureRandom} to be used
+         * for generating keys and IVs. Advanced option. Users who provide a {@link SecureRandom}
+         * are responsible for the security and correctness of the {@link SecureRandom} implementation.
+         * @param secureRandom the {@link SecureRandom} instance to use
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder secureRandom(SecureRandom secureRandom) {
             if (secureRandom == null) {
                 throw new S3EncryptionClientException("SecureRandom provided to S3EncryptionClient cannot be null");
@@ -489,6 +667,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        /**
+         * Validates and builds the S3EncryptionClient according
+         * to the configuration options passed to the Builder object.
+         * @return an instance of the S3EncryptionClient
+         */
         public S3EncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");

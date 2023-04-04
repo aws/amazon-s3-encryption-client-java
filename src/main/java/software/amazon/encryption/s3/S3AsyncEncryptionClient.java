@@ -66,7 +66,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     }
 
     /**
-     * Create a builder that can be used to configure and create a {@link S3AsyncEncryptionClient}.
+     * Creates a builder that can be used to configure and create a {@link S3AsyncEncryptionClient}.
      */
     public static Builder builder() {
         return new Builder();
@@ -74,7 +74,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
 
     /**
-     * Attaches encryption contexts to a request. Must be used as a parameter to
+     * Attaches encryption context to a request. Must be used as a parameter to
      * {@link S3Request#overrideConfiguration()} in the request.
      * Encryption context can be used to enforce authentication of ciphertext.
      * The same encryption context used to encrypt MUST be provided on decrypt.
@@ -88,23 +88,27 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     }
 
     /**
-     * {@inheritDoc}
-     *
+     * See {@link S3AsyncClient#putObject(PutObjectRequest, AsyncRequestBody)}.
+     * <p>
      * In the S3AsyncEncryptionClient, putObject encrypts the data in the requestBody as it is
      * written to S3.
-     * @param putObjectRequest
+     * </p>
+     * @param putObjectRequest the request instance
      * @param requestBody
      *        Functional interface that can be implemented to produce the request content in a non-blocking manner. The
      *        size of the content is expected to be known up front. See {@link AsyncRequestBody} for specific details on
      *        implementing this interface as well as links to precanned implementations for common scenarios like
-     *        uploading from a file. The service documentation for the request content is as follows '
-     *        <p>
-     *        Object data.
-     *        </p>
-     *        '
-     * @return
-     * @throws AwsServiceException
-     * @throws SdkClientException
+     *        uploading from a file.
+     * @return A Java Future containing the result of the PutObject operation returned by the service.<br/>
+     *         The CompletableFuture returned by this method can be completed exceptionally with the following
+     *         exceptions.
+     *         <ul>
+     *         <li>SdkException Base class for all exceptions that can be thrown by the SDK (both service and client).
+     *         Can be used for catch all scenarios.</li>
+     *         <li>SdkClientException If any client side error occurs such as an IO related failure, failure to get
+     *         credentials, etc.</li>
+     *         <li>S3EncryptionClientException Base class for all encryption client specific exceptions.</li>
+     *         </ul>
      */
     @Override
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody)
@@ -142,6 +146,29 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         return pipeline.putObject(putObjectRequest, noRetryBody);
     }
 
+    /**
+     * See {@link S3AsyncClient#getObject(GetObjectRequest, AsyncResponseTransformer)}
+     * <p>
+     * In the S3AsyncEncryptionClient, getObject decrypts the data as it is read from S3.
+     * </p>
+     * @param getObjectRequest the request instance.
+     * @param asyncResponseTransformer
+     *        The response transformer for processing the streaming response in a non-blocking manner. See
+     *        {@link AsyncResponseTransformer} for details on how this callback should be implemented and for links to
+     *        precanned implementations for common scenarios like downloading to a file.
+     * @return A future to the transformed result of the AsyncResponseTransformer.<br/>
+     *         The CompletableFuture returned by this method can be completed exceptionally with the following
+     *         exceptions.
+     *         <ul>
+     *         <li>NoSuchKeyException The specified key does not exist.</li>
+     *         <li>InvalidObjectStateException Object is archived and inaccessible until restored.</li>
+     *         <li>SdkException Base class for all exceptions that can be thrown by the SDK (both service and client).
+     *         Can be used for catch all scenarios.</li>
+     *         <li>SdkClientException If any client side error occurs such as an IO related failure, failure to get
+     *         credentials, etc.</li>
+     *         <li>S3EncryptionClientException Base class for all encryption client exceptions.</li>
+     *         </ul>
+     */
     @Override
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
                                                            AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
@@ -155,6 +182,15 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         return pipeline.getObject(getObjectRequest, asyncResponseTransformer);
     }
 
+    /**
+     * See {@link S3AsyncClient#deleteObject(DeleteObjectRequest)}.
+     * <p>
+     * In the S3 Encryption Client, deleteObject also deletes the instruction file,
+     * if present.
+     * </p>
+     * @param deleteObjectRequest the request instance
+     * @return A Java Future containing the result of the DeleteObject operation returned by the service.
+     */
     @Override
     public CompletableFuture<DeleteObjectResponse> deleteObject(DeleteObjectRequest deleteObjectRequest) {
         final DeleteObjectRequest actualRequest = deleteObjectRequest.toBuilder()
@@ -172,6 +208,15 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         return instructionResponse.thenApplyAsync(deletion);
     }
 
+    /**
+     * See {@link S3AsyncClient#deleteObjects(DeleteObjectsRequest)}.
+     * <p>
+     * In the S3 Encryption Client, deleteObjects also deletes the instruction file(s),
+     * if present.
+     * </p>
+     * @param deleteObjectsRequest the request instance
+     * @return A Java Future containing the result of the DeleteObjects operation returned by the service.
+     */
     @Override
     public CompletableFuture<DeleteObjectsResponse> deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
@@ -185,6 +230,9 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .build());
     }
 
+    /**
+     * Closes the wrapped {@link S3AsyncClient} instance.
+     */
     @Override
     public void close() {
         _wrappedClient.close();
@@ -232,8 +280,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         * Specifies the CryptoMaterialsManager to use for managing key wrapping keys.
-         * @param cryptoMaterialsManager
+         * Specifies the {@link CryptographicMaterialsManager}to use for managing key wrapping keys.
+         * @param cryptoMaterialsManager the CMM to use
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
@@ -244,8 +292,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         * *
-         * @param keyring
+         * Specifies the {@link Keyring} to use for key wrapping and unwrapping.
+         * @param keyring the Keyring instance to use
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder keyring(Keyring keyring) {
@@ -256,8 +304,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         *
-         * @param aesKey
+         * Specifies a "raw" AES key to use for key wrapping/unwrapping.
+         * @param aesKey the AES key as a {@link SecretKey} instance
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder aesKey(SecretKey aesKey) {
@@ -268,8 +316,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         *
-         * @param rsaKeyPair
+         * Specifies a "raw" RSA key pair to use for key wrapping/unwrapping.
+         * @param rsaKeyPair the RSA key pair as a {@link KeyPair} instance
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder rsaKeyPair(KeyPair rsaKeyPair) {
@@ -280,8 +328,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         * *
-         * @param partialRsaKeyPair
+         * Specifies a "raw" RSA key pair to use for key wrapping/unwrapping.
+         * This option takes a {@link PartialRsaKeyPair} instance, which allows
+         * either a public key (decryption only) or private key (encryption only)
+         * rather than requiring both parts.
+         * @param partialRsaKeyPair the RSA key pair as a {@link PartialRsaKeyPair} instance
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder rsaKeyPair(PartialRsaKeyPair partialRsaKeyPair) {
@@ -292,8 +343,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         * *
-         * @param kmsKeyId
+         * Specifies a KMS key to use for key wrapping/unwrapping. Any valid KMS key
+         * identifier (including the full ARN or an alias ARN) is permitted. When
+         * decrypting objects, the key referred to by this KMS key identifier is
+         * always used.
+         * @param kmsKeyId the KMS key identifier as a {@link String} instance
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder kmsKeyId(String kmsKeyId) {
@@ -328,8 +382,9 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         * *
-         * @param shouldEnableLegacyWrappingAlgorithms
+         * When set to true, decryption of objects using legacy key wrapping
+         * modes is enabled.
+         * @param shouldEnableLegacyWrappingAlgorithms true to enable legacy wrapping algorithms
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder enableLegacyWrappingAlgorithms(boolean shouldEnableLegacyWrappingAlgorithms) {
@@ -338,8 +393,10 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         * *
-         * @param shouldEnableLegacyUnauthenticatedModes
+         * When set to true, decryption of content using legacy encryption algorithms
+         * is enabled. This includes use of GetObject requests with a range, as this
+         * mode is not authenticated.
+         * @param shouldEnableLegacyUnauthenticatedModes true to enable legacy content algorithms
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
@@ -348,8 +405,13 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         * *
-         * @param shouldEnableDelayedAuthenticationMode
+         * When set to true, authentication of streamed objects is delayed until the
+         * entire object is read from the stream. When this mode is enabled, the consuming
+         * application must support a way to invalidate any data read from the stream as
+         * the tag will not be validated until the stream is read to completion, as the
+         * integrity of the data cannot be ensured. See the AWS Documentation for more
+         * information.
+         * @param shouldEnableDelayedAuthenticationMode true to enable delayed authentication
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder enableDelayedAuthenticationMode(boolean shouldEnableDelayedAuthenticationMode) {
