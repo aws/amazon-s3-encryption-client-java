@@ -129,7 +129,7 @@ public class MultipartUploadObjectPipeline {
         }
         final UploadPartResponse response;
         // Checks the parts are uploaded in series
-        materials.beginPartUpload(actualRequest.partNumber());
+        materials.beginPartUpload(actualRequest.partNumber(), partContentLength);
         Cipher cipher = materials.getCipher(materials.getIv());
         try {
             final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(),
