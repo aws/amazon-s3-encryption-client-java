@@ -87,7 +87,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         return pipeline.putObject(putObjectRequest, requestBody);
     }
 
-    public CompletableFuture<PutObjectResponse> multipartPutObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody) {
+    private CompletableFuture<PutObjectResponse> multipartPutObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody) {
         S3AsyncClient crtClient;
         if (_wrappedClient instanceof S3CrtAsyncClient) {
             // if the wrappedClient is a CRT, use it
