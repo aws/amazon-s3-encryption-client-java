@@ -42,6 +42,10 @@ import java.util.function.Function;
 
 import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
 
+/**
+ * This client is a drop-in replacement for the S3 Async client. It will automatically encrypt objects
+ * on putObject and decrypt objects on getObject using the provided encryption key(s).
+ */
 public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
     private final S3AsyncClient _wrappedClient;
@@ -84,7 +88,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * In the S3AsyncEncryptionClient, putObject encrypts the data in the requestBody as it is
      * written to S3.

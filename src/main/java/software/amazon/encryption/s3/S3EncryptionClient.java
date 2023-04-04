@@ -117,6 +117,18 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * In the S3EncryptionClient, putObject encrypts the data in the requestBody as it is
+     * written to S3.
+     * *
+     * @param putObjectRequest
+     * @param requestBody
+     * @return
+     * @throws AwsServiceException
+     * @throws SdkClientException
+     */
     @Override
     public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody)
             throws AwsServiceException, SdkClientException {
@@ -290,7 +302,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     /**
-     * <p>
+     * {@inheritDoc}
+     *
      * <b>NOTE:</b> Because the encryption process requires context from block
      * N-1 in order to encrypt block N, parts uploaded with the
      * S3EncryptionClient (as opposed to the normal S3Client) must
