@@ -66,7 +66,8 @@ public class UploadObjectObserver {
                 // Upload the ciphertext directly via the non-encrypting
                 // s3 client
                 try {
-                    return uploadPart(reqUploadPart, AsyncRequestBody.fromFile(part));
+                    AsyncRequestBody noRetriesBody = new NoRetriesAsyncRequestBody(AsyncRequestBody.fromFile(part));
+                    return uploadPart(reqUploadPart, noRetriesBody);
                 } finally {
                     // clean up part already uploaded
                     if (!part.delete()) {
