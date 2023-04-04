@@ -210,6 +210,14 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
+         * Specifies the wrapped client to use for the actual S3 request.
+         * This client will be used for all async operations.
+         * You can pass any S3AsyncClient implementation (e.g. the CRT
+         * client), but you cannot pass an S3AsyncEncryptionClient.
+         * @param wrappedClient the client to use for S3 operations.
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
+        /*
          * Note that this does NOT create a defensive clone of S3Client. Any modifications made to the wrapped
          * S3Client will be reflected in this Builder.
          */
@@ -223,6 +231,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        /**
+         * Specifies the CryptoMaterialsManager to use for managing key wrapping keys.
+         * @param cryptoMaterialsManager
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder cryptoMaterialsManager(CryptographicMaterialsManager cryptoMaterialsManager) {
             this._cryptoMaterialsManager = cryptoMaterialsManager;
             checkKeyOptions();
@@ -230,6 +243,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        /**
+         * *
+         * @param keyring
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder keyring(Keyring keyring) {
             this._keyring = keyring;
             checkKeyOptions();
@@ -237,6 +255,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        /**
+         *
+         * @param aesKey
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder aesKey(SecretKey aesKey) {
             this._aesKey = aesKey;
             checkKeyOptions();
@@ -244,6 +267,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        /**
+         *
+         * @param rsaKeyPair
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder rsaKeyPair(KeyPair rsaKeyPair) {
             this._rsaKeyPair = new PartialRsaKeyPair(rsaKeyPair);
             checkKeyOptions();
@@ -251,6 +279,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        /**
+         * *
+         * @param partialRsaKeyPair
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder rsaKeyPair(PartialRsaKeyPair partialRsaKeyPair) {
             this._rsaKeyPair = partialRsaKeyPair;
             checkKeyOptions();
@@ -258,6 +291,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        /**
+         * *
+         * @param kmsKeyId
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder kmsKeyId(String kmsKeyId) {
             this._kmsKeyId = kmsKeyId;
             checkKeyOptions();
@@ -289,31 +327,71 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return haveOneNonNull;
         }
 
+        /**
+         * *
+         * @param shouldEnableLegacyWrappingAlgorithms
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder enableLegacyWrappingAlgorithms(boolean shouldEnableLegacyWrappingAlgorithms) {
             this._enableLegacyWrappingAlgorithms = shouldEnableLegacyWrappingAlgorithms;
             return this;
         }
 
+        /**
+         * *
+         * @param shouldEnableLegacyUnauthenticatedModes
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder enableLegacyUnauthenticatedModes(boolean shouldEnableLegacyUnauthenticatedModes) {
             this._enableLegacyUnauthenticatedModes = shouldEnableLegacyUnauthenticatedModes;
             return this;
         }
 
+        /**
+         * *
+         * @param shouldEnableDelayedAuthenticationMode
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder enableDelayedAuthenticationMode(boolean shouldEnableDelayedAuthenticationMode) {
             this._enableDelayedAuthenticationMode = shouldEnableDelayedAuthenticationMode;
             return this;
         }
 
+        /**
+         * When set to true, the putObject method will use multipart upload to perform
+         * the upload. Disabled by default.
+         * @param _enableMultipartPutObject true enables the multipart upload implementation of putObject
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder enableMultipartPutObject(boolean _enableMultipartPutObject) {
             this._enableMultipartPutObject = _enableMultipartPutObject;
             return this;
         }
 
+        /**
+         * Allows the user to pass an instance of {@link Provider} to be used
+         * for cryptographic operations. By default, the S3 Encryption Client
+         * will use the first compatible {@link Provider} in the chain. When this option
+         * is used, the given provider will be used for all cryptographic operations.
+         * If the provider is missing a required algorithm suite, e.g. AES-GCM, then
+         * operations may fail.
+         * Advanced option. Users who configure a {@link Provider} are responsible
+         * for the security and correctness of the provider.
+         * @param cryptoProvider the {@link Provider to always use}
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder cryptoProvider(Provider cryptoProvider) {
             this._cryptoProvider = cryptoProvider;
             return this;
         }
 
+        /**
+         * Allows the user to pass an instance of {@link SecureRandom} to be used
+         * for generating keys and IVs. Advanced option. Users who provide a {@link SecureRandom}
+         * are responsible for the security and correctness of the {@link SecureRandom} implementation.
+         * @param secureRandom the {@link SecureRandom} instance to use
+         * @return Returns a reference to this object so that method calls can be chained together.
+         */
         public Builder secureRandom(SecureRandom secureRandom) {
             if (secureRandom == null) {
                 throw new S3EncryptionClientException("SecureRandom provided to S3EncryptionClient cannot be null");
@@ -322,6 +400,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        /**
+         * Validates and builds the S3AsyncEncryptionClient according
+         * to the configuration options passed to the Builder object.
+         * @return an instance of the S3AsyncEncryptionClient
+         */
         public S3AsyncEncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
