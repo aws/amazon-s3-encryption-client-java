@@ -101,7 +101,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
      *        size of the content is expected to be known up front. See {@link AsyncRequestBody} for specific details on
      *        implementing this interface as well as links to precanned implementations for common scenarios like
      *        uploading from a file.
-     * @return A Java Future containing the result of the PutObject operation returned by the service.<br/>
+     * @return A Java Future containing the result of the PutObject operation returned by the service.
+     *         <p>
      *         The CompletableFuture returned by this method can be completed exceptionally with the following
      *         exceptions.
      *         <ul>
@@ -111,6 +112,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
      *         credentials, etc.</li>
      *         <li>S3EncryptionClientException Base class for all encryption client specific exceptions.</li>
      *         </ul>
+     *         </p>
      */
     @Override
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody)
@@ -158,7 +160,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
      *        The response transformer for processing the streaming response in a non-blocking manner. See
      *        {@link AsyncResponseTransformer} for details on how this callback should be implemented and for links to
      *        precanned implementations for common scenarios like downloading to a file.
-     * @return A future to the transformed result of the AsyncResponseTransformer.<br/>
+     * @return A future to the transformed result of the AsyncResponseTransformer.
+     *         <p>
      *         The CompletableFuture returned by this method can be completed exceptionally with the following
      *         exceptions.
      *         <ul>
@@ -170,6 +173,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
      *         credentials, etc.</li>
      *         <li>S3EncryptionClientException Base class for all encryption client exceptions.</li>
      *         </ul>
+     *         </p>
      */
     @Override
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
