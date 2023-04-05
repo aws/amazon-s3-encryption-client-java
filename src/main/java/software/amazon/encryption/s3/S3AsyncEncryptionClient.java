@@ -112,7 +112,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
      *         credentials, etc.</li>
      *         <li>S3EncryptionClientException Base class for all encryption client specific exceptions.</li>
      *         </ul>
-     *         </p>
      */
     @Override
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody)
@@ -173,7 +172,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
      *         credentials, etc.</li>
      *         <li>S3EncryptionClientException Base class for all encryption client exceptions.</li>
      *         </ul>
-     *         </p>
      */
     @Override
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
