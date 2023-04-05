@@ -111,6 +111,7 @@ class Example {
 * AES
 * AESWrap
 * RSA-OAEP w/MGF-1 and SHA-256
+* RSA
 * KMS (without context)
 #### Encryption Metadata Storage
 * Instruction File
