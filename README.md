@@ -1,6 +1,8 @@
 ## Amazon S3 Encryption Client
 
-This library provides an S3 client that supports client-side encryption.
+This library provides an S3 client that supports client-side encryption. For more information and detailed instructions
+for how to use this library, refer to the 
+[Amazon S3 Encryption Client Developer Guide](https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/what-is-s3-encryption-client.html).
 
 ## Testing
 Integration tests are included. To test them, certain environment variables need to be set:
