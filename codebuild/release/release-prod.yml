@@ -19,6 +19,11 @@ phases:
       java: corretto11
   pre_build:
     commands:
+      # Test execution environment variables
+      - export AWS_S3EC_TEST_BUCKET=s3ec-release-test-bucket
+      - export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:us-west-2:${ACCOUNT}:key/af4ce40a-05ab-4f7c-b3fa-97bd0c9b7fb1
+      - export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:us-west-2:${ACCOUNT}:alias/S3EC-Release-Testing-KMS-Key
+      - export AWS_REGION=us-west-2
       - git checkout $BRANCH
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys-Release --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
@@ -28,6 +33,7 @@ phases:
       - |
         mvn deploy \
           -Ppublishing \
+          -DskipTests \
           -DperformRelease \
           -Dgpg.homedir="$HOME/mvn_gpg" \
           -DautoReleaseAfterClose=true \
