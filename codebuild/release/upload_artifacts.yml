@@ -35,13 +35,13 @@ phases:
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
           -DrepoUrl=https://aws.oss.sonatype.org \
-          -Dartifact=software.amazon.encryption:amazon-s3-encryption-client-java:${VERSION}:jar
+          -Dartifact=software.amazon.encryption.s3:amazon-s3-encryption-client-java:${VERSION}:jar
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
           -DrepoUrl=https://aws.oss.sonatype.org \
-          -Dartifact=software.amazon.encryption:amazon-s3-encryption-client-java:${VERSION}:jar:sources
+          -Dartifact=software.amazon.encryption.s3:amazon-s3-encryption-client-java:${VERSION}:jar:sources
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
           -DrepoUrl=https://aws.oss.sonatype.org \
-          -Dartifact=software.amazon.encryption:amazon-s3-encryption-client-java:${VERSION}:jar:javadoc
-      - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/amazon-s3-encryption-client-java/${VERSION}/*.jar -d -F CHANGELOG.md -t "Amazon S3 Encryption Client ${VERSION} Release -- $(date +%Y-%m-%d)"
+          -Dartifact=software.amazon.encryption.s3:amazon-s3-encryption-client-java:${VERSION}:jar:javadoc
+      - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/s3/amazon-s3-encryption-client-java/${VERSION}/*.jar -d -F CHANGELOG.md -t "Amazon S3 Encryption Client ${VERSION} Release -- $(date +%Y-%m-%d)"
