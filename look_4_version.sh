@@ -3,6 +3,8 @@
 
 #!bin/bash
 
+set -x
+
 VERSION=$1
 COUNTER=0
 STATUS=1
@@ -11,7 +13,7 @@ echo "Looking for version $VERSION"
 
 while [  $STATUS -ne 0 ]; do
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.0.1:get \
-        -Dartifact=software.amazon.encryption.s3:amazon-s3-encryption-client-java:$VERSION:jar -U
+        -Dartifact=software.amazon.encryption.s3:amazon-s3-encryption-client-java:$VERSION -U
 
     STATUS=$?
     if [ $STATUS -eq 0 ]; then
