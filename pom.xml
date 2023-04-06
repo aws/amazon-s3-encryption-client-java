@@ -32,6 +32,10 @@
     </developer>
   </developers>
 
+  <scm>
+    <url>https://github.com/aws/amazon-s3-encryption-client.git</url>
+  </scm>
+
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
