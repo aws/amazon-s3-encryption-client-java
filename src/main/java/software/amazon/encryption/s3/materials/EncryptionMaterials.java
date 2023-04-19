@@ -1,22 +1,25 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.s3.model.S3Request;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.CipherMode;
+import software.amazon.encryption.s3.internal.CipherProvider;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Provider;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-
 final public class EncryptionMaterials implements CryptographicMaterials {
 
     // Original request
-    private final PutObjectRequest _s3Request;
+    private final S3Request _s3Request;
 
     // Identifies what sort of crypto algorithms we want to use
     private final AlgorithmSuite _algorithmSuite;
@@ -46,7 +49,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         return new Builder();
     }
 
-    public PutObjectRequest s3Request() {
+    public S3Request s3Request() {
         return _s3Request;
     }
 
@@ -58,6 +61,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
      * Note that the underlying implementation uses a Collections.unmodifiableMap which is
      * immutable.
      */
+    @Override
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
         + " implementation is immutable")
     public Map<String, String> encryptionContext() {
@@ -90,11 +94,21 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     }
 
     public SecretKey dataKey() {
-        return new SecretKeySpec(_plaintextDataKey, "AES");
+        return new SecretKeySpec(_plaintextDataKey, algorithmSuite().dataKeyAlgorithm());
     }
 
     public Provider cryptoProvider() {
         return _cryptoProvider;
+    }
+
+    @Override
+    public CipherMode cipherMode() {
+        return CipherMode.ENCRYPT;
+    }
+
+    @Override
+    public Cipher getCipher(byte[] iv) {
+        return CipherProvider.createAndInitCipher(this, iv);
     }
 
     public Builder toBuilder() {
@@ -110,19 +124,19 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
     static public class Builder {
 
-        private PutObjectRequest _s3Request = null;
+        private S3Request _s3Request = null;
 
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private byte[] _plaintextDataKey = null;
-        private Provider _cryptoProvider = null;
         private long _plaintextLength = -1;
+        private Provider _cryptoProvider = null;
 
         private Builder() {
         }
 
-        public Builder s3Request(PutObjectRequest s3Request) {
+        public Builder s3Request(S3Request s3Request) {
             _s3Request = s3Request;
             return this;
         }

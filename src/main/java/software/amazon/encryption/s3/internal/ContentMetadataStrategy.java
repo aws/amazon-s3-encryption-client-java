@@ -1,3 +1,5 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -8,7 +10,7 @@ import software.amazon.awssdk.protocols.jsoncore.JsonWriter.JsonGenerationExcept
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
@@ -21,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+
 public abstract class ContentMetadataStrategy implements ContentMetadataEncodingStrategy, ContentMetadataDecodingStrategy {
 
     private static final Base64.Encoder ENCODER = Base64.getEncoder();
@@ -28,16 +32,23 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
 
     public static final ContentMetadataDecodingStrategy INSTRUCTION_FILE = new ContentMetadataDecodingStrategy() {
 
-        private static final String FILE_SUFFIX = ".instruction";
-
         @Override
-        public ContentMetadata decodeMetadata(S3Client client, GetObjectRequest getObjectRequest, GetObjectResponse response) {
+        public ContentMetadata decodeMetadata(GetObjectRequest getObjectRequest, GetObjectResponse response) {
             GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
                     .bucket(getObjectRequest.bucket())
-                    .key(getObjectRequest.key() + FILE_SUFFIX)
+                    .key(getObjectRequest.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
-            ResponseInputStream<GetObjectResponse> instruction = client.getObject(
-                    instructionGetObjectRequest);
+
+            S3Client s3Client = S3Client.create();
+            ResponseInputStream<GetObjectResponse> instruction;
+            try {
+                instruction = s3Client.getObject(instructionGetObjectRequest);
+            } catch (NoSuchKeyException exception) {
+                // Most likely, the customer is attempting to decrypt an object
+                // which is not encrypted with the S3 EC.
+                throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
+                        " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
+            }
 
             Map<String, String> metadata = new HashMap<>();
             JsonNodeParser parser = JsonNodeParser.create();
@@ -52,12 +63,11 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
     public static final ContentMetadataStrategy OBJECT_METADATA = new ContentMetadataStrategy() {
 
         @Override
-        public PutObjectRequest encodeMetadata(EncryptionMaterials materials,
-                                               EncryptedContent encryptedContent, PutObjectRequest request) {
-            Map<String, String> metadata = new HashMap<>(request.metadata());
+        public Map<String, String> encodeMetadata(EncryptionMaterials materials, byte[] iv,
+                                                   Map<String, String> metadata) {
             EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
-            metadata.put(MetadataKeyConstants.CONTENT_NONCE, ENCODER.encodeToString(encryptedContent.getNonce()));
+            metadata.put(MetadataKeyConstants.CONTENT_IV, ENCODER.encodeToString(iv));
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, new String(edk.keyProviderInfo(), StandardCharsets.UTF_8));
@@ -74,12 +84,11 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             } catch (JsonGenerationException e) {
                 throw new S3EncryptionClientException("Cannot serialize encryption context to JSON.", e);
             }
-
-            return request.toBuilder().metadata(metadata).build();
+            return metadata;
         }
 
         @Override
-        public ContentMetadata decodeMetadata(S3Client client, GetObjectRequest request, GetObjectResponse response) {
+        public ContentMetadata decodeMetadata(GetObjectRequest request, GetObjectResponse response) {
             return ContentMetadataStrategy.readFromMap(response.metadata(), response);
         }
     };
@@ -109,11 +118,45 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         switch (algorithmSuite) {
             case ALG_AES_256_CBC_IV16_NO_KDF:
                 // Extract encrypted data key ciphertext
-                edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1));
+                if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)) {
+                    edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1));
+                } else if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)) {
+                    // when using v1 to encrypt in its default mode, it may use the v2 EDK key
+                    // despite also using CBC as the content encryption algorithm, presumably due
+                    // to how the v2 changes were backported to v1
+                    edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2));
+                } else {
+                    // this shouldn't happen under normal circumstances- only if out-of-band modification
+                    // to the metadata is performed. it is most likely that the data is unrecoverable in this case
+                    throw new S3EncryptionClientException("Malformed object metadata! Could not find the encrypted data key.");
+                }
 
-                // Hardcode the key provider id to match what V1 does
-                keyProviderInfo = "AES";
+                if (!metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM)) {
+                    /*
+                    For legacy v1 EncryptionOnly objects,
+                    there is no EDK algorithm given, it is either plain AES or RSA
+                    In v3, we infer AES vs. RSA based on the length of the ciphertext.
 
+                    In v1, whichever key material is provided in its EncryptionMaterials
+                    is used to decrypt the EDK.
+
+                    In v3, this is not possible as the keyring code is factored such that
+                    the keyProviderInfo is known before the keyring is known.
+                    Ciphertext size is expected to be reliable as no AES data key should
+                    exceed 256 bits (32 bytes) + 16 padding bytes.
+
+                    In the unlikely event that this assumption is false, the fix would be
+                    to refactor the keyring to always use the material given instead of
+                    inferring it this way.
+                    */
+                    if (edkCiphertext.length > 48) {
+                        keyProviderInfo = "RSA";
+                    } else {
+                        keyProviderInfo = "AES";
+                    }
+                } else {
+                    keyProviderInfo = metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM);
+                }
                 break;
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
             case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
@@ -156,23 +199,23 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             throw new RuntimeException(e);
         }
 
-        // Get content nonce
-        byte[] nonce = DECODER.decode(metadata.get(MetadataKeyConstants.CONTENT_NONCE));
+        // Get content iv
+        byte[] iv = DECODER.decode(metadata.get(MetadataKeyConstants.CONTENT_IV));
 
         return ContentMetadata.builder()
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKey(edk)
                 .encryptedDataKeyContext(encryptionContext)
-                .contentNonce(nonce)
+                .contentIv(iv)
                 .contentRange(contentRange)
                 .build();
     }
 
-    public static ContentMetadata decode(S3Client client, GetObjectRequest request, GetObjectResponse response) {
+    public static ContentMetadata decode(GetObjectRequest request, GetObjectResponse response) {
         Map<String, String> metadata = response.metadata();
         ContentMetadataDecodingStrategy strategy;
         if (metadata != null
-                && metadata.containsKey(MetadataKeyConstants.CONTENT_NONCE)
+                && metadata.containsKey(MetadataKeyConstants.CONTENT_IV)
                 && (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
                 || metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2))) {
             strategy = OBJECT_METADATA;
@@ -180,6 +223,6 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             strategy = INSTRUCTION_FILE;
         }
 
-        return strategy.decodeMetadata(client, request, response);
+        return strategy.decodeMetadata(request, response);
     }
 }

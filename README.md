@@ -1,6 +1,8 @@
 ## Amazon S3 Encryption Client
 
-This library provides an S3 client that supports client-side encryption.
+This library provides an S3 client that supports client-side encryption. For more information and detailed instructions
+for how to use this library, refer to the 
+[Amazon S3 Encryption Client Developer Guide](https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/what-is-s3-encryption-client.html).
 
 ## Testing
 Integration tests are included. To test them, certain environment variables need to be set:
@@ -97,7 +99,8 @@ class Example {
         // V3
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(aesKey)
-                .enableLegacyModes(true)
+                .enableLegacyUnauthenticatedModes(true) // for enabling legacy content decryption modes
+                .enableLegacyWrappingAlgorithms(true) // for enabling legacy key wrapping modes 
                 .build();
     }
 }
@@ -110,6 +113,7 @@ class Example {
 * AES
 * AESWrap
 * RSA-OAEP w/MGF-1 and SHA-256
+* RSA
 * KMS (without context)
 #### Encryption Metadata Storage
 * Instruction File

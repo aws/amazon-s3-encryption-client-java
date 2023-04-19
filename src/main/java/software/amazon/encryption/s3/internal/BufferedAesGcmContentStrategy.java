@@ -1,3 +1,5 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
 import software.amazon.awssdk.utils.IoUtils;
@@ -55,7 +57,7 @@ public class BufferedAesGcmContentStrategy implements ContentDecryptionStrategy 
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
         final int tagLength = algorithmSuite.cipherTagLengthBits();
-        byte[] iv = contentMetadata.contentNonce();
+        byte[] iv = contentMetadata.contentIv();
         final Cipher cipher;
         byte[] plaintext;
         try {

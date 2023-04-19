@@ -1,3 +1,5 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -16,7 +18,7 @@ import software.amazon.awssdk.services.kms.model.DecryptResponse;
 import software.amazon.awssdk.services.kms.model.EncryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.internal.ApiNameVersion;
@@ -78,7 +80,7 @@ public class KmsKeyring extends S3Keyring {
 
         @Override
         public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
-            PutObjectRequest s3Request = materials.s3Request();
+            S3Request s3Request = materials.s3Request();
 
             Map<String, String> encryptionContext = new HashMap<>(materials.encryptionContext());
             if (s3Request.overrideConfiguration().isPresent()) {

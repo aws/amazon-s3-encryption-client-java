@@ -1,20 +1,17 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.InputStream;
-import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
-public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy, ContentDecryptionStrategy {
+public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStrategy, MultipartContentEncryptionStrategy {
 
     final private SecureRandom _secureRandom;
 
@@ -27,47 +24,31 @@ public class StreamingAesGcmContentStrategy implements ContentEncryptionStrategy
     }
 
     @Override
-    public EncryptedContent encryptContent(EncryptionMaterials materials, InputStream content) {
+    public MultipartEncryptedContent initMultipartEncryption(EncryptionMaterials materials) {
         if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
             throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
                     "the maximum length allowed for GCM encryption.");
         }
 
-        final AlgorithmSuite algorithmSuite = materials.algorithmSuite();
+        final byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
+        _secureRandom.nextBytes(iv);
 
-        final byte[] nonce = new byte[algorithmSuite.nonceLengthBytes()];
-        _secureRandom.nextBytes(nonce);
-
-        final String cipherName = algorithmSuite.cipherName();
-        try {
-            final Cipher cipher = CryptoFactory.createCipher(cipherName, materials.cryptoProvider());
-
-            cipher.init(Cipher.ENCRYPT_MODE, materials.dataKey(),
-                    new GCMParameterSpec(algorithmSuite.cipherTagLengthBits(), nonce));
-
-            final InputStream ciphertext = new AuthenticatedCipherInputStream(content, cipher);
-            final long ciphertextLength = materials.getCiphertextLength();
-            return new EncryptedContent(nonce, ciphertext, ciphertextLength);
-        } catch (GeneralSecurityException e) {
-            throw new S3EncryptionClientException("Unable to " + cipherName + " content encrypt.", e);
-        }
+        final Cipher cipher = CipherProvider.createAndInitCipher(materials, iv);
+        return new MultipartEncryptedContent(iv, cipher, materials.getCiphertextLength());
     }
 
     @Override
-    public InputStream decryptContent(ContentMetadata contentMetadata, DecryptionMaterials materials,
-                                      InputStream ciphertextStream) {
-
-        AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
-        SecretKey contentKey = new SecretKeySpec(materials.plaintextDataKey(), algorithmSuite.dataKeyAlgorithm());
-        final int tagLength = algorithmSuite.cipherTagLengthBits();
-        byte[] iv = contentMetadata.contentNonce();
-        try {
-            final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
-            cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
-            return new AuthenticatedCipherInputStream(ciphertextStream, cipher);
-        } catch (GeneralSecurityException e) {
-            throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
+    public EncryptedContent encryptContent(EncryptionMaterials materials, AsyncRequestBody content) {
+        if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+            throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
+                    "the maximum length allowed for GCM encryption.");
         }
+
+        final byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
+        _secureRandom.nextBytes(iv);
+
+        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(content, materials.getCiphertextLength(), materials, iv);
+        return new EncryptedContent(iv, encryptedAsyncRequestBody, materials.getCiphertextLength());
     }
 
     public static class Builder {

@@ -1,0 +1,316 @@
+# Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Template to build a CodeBuild Project, assumes that GitHub credentials are
+  already set up.
+Parameters:
+  ProjectName:
+    Type: String
+    Description: The name of the CodeBuild Project
+    Default: AWS-S3EC-Java
+  ProjectDescription:
+    Type: String
+    Description: The description for the CodeBuild Project
+    Default: CFN stack for managing CodeBuild projects for the Amazon S3EC Java
+  SourceLocation:
+    Type: String
+    Description: The https GitHub URL for the project
+    Default: "https://github.com/aws/amazon-s3-encryption-client-java.git"
+  NumberOfBuildsInBatch:
+    Type: Number
+    MaxValue: 100
+    MinValue: 1
+    Default: 16
+    Description: The number of builds you expect to run in a batch
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: Crypto Tools CodeBuild Project Template
+        Parameters:
+          - ProjectName
+          - ProjectDescription
+          - SourceLocation
+Resources:
+  CodeBuildProjectRelease:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub "${ProjectName}-Release"
+      Description: !Sub "CodeBuild project for releasing ${ProjectName}"
+      Source:
+        Location: !Ref SourceLocation
+        BuildSpec: codebuild/release/release.yml
+        GitCloneDepth: 1
+        GitSubmodulesConfig:
+          FetchSubmodules: false
+        InsecureSsl: false
+        ReportBuildStatus: false
+        Type: GITHUB
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Cache:
+        Type: NO_CACHE
+      Environment:
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: "aws/codebuild/standard:5.0"
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: false
+        Type: LINUX_CONTAINER
+      ServiceRole: !GetAtt CodeBuildServiceRoleRelease.Arn
+      ConcurrentBuildLimit: 1 # TODO: Allow multiple builds to run in parallel
+      TimeoutInMinutes: 60
+      QueuedTimeoutInMinutes: 480
+      EncryptionKey: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3"
+      BadgeEnabled: false
+      BuildBatchConfig:
+        ServiceRole: !GetAtt CodeBuildServiceRoleRelease.Arn
+        Restrictions:
+          MaximumBuildsAllowed: !Ref NumberOfBuildsInBatch
+          ComputeTypesAllowed:
+            - BUILD_GENERAL1_SMALL
+            - BUILD_GENERAL1_MEDIUM
+            - BUILD_GENERAL1_LARGE
+        TimeoutInMins: 480
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+        S3Logs:
+          Status: DISABLED
+          EncryptionDisabled: false
+
+  CodeBuildServiceRoleRelease:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /service-role/
+      RoleName: !Sub "codebuild-${ProjectName}-service-role-release"
+      AssumeRolePolicyDocument: >-
+        {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"codebuild.amazonaws.com"},"Action":"sts:AssumeRole"}]}
+      MaxSessionDuration: 3600
+      ManagedPolicyArns:
+        - !Ref CryptoToolsKMS
+        - !Ref CodeBuildBatchPolicy
+        - !Ref CodeBuildBasePolicy
+        - !Ref SecretsManagerPolicyRelease
+        - !Ref ParameterStorePolicy
+        - !Ref S3ECReleaseTestKMSKeyPolicy
+        - !Ref S3ECReleaseS3BucketPolicy
+        - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
+        - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
+
+  CodeBuildBatchPolicy:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: !Sub >-
+        CodeBuildBuildBatchPolicy-${ProjectName}-${AWS::Region}-codebuild-${ProjectName}-service-role
+      Path: /service-role/
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-Release"
+              ],
+              "Action": [
+                "codebuild:StartBuild",
+                "codebuild:StopBuild",
+                "codebuild:RetryBuild"
+              ]
+            }
+          ]
+        }
+
+  CodeBuildBasePolicy:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: !Sub "CodeBuildBasePolicy-${ProjectName}-${AWS::Region}"
+      Path: /service-role/
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-Release",
+                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-Release:*"
+              ],
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:s3:::codepipeline-${AWS::Region}-*"
+              ],
+              "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:GetObjectVersion",
+                "s3:GetBucketAcl",
+                "s3:GetBucketLocation"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "codebuild:CreateReportGroup",
+                "codebuild:CreateReport",
+                "codebuild:UpdateReport",
+                "codebuild:BatchPutTestCases",
+                "codebuild:BatchPutCodeCoverages"
+              ],
+              "Resource": [
+                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${ProjectName}-Release"
+              ]
+            }
+          ]
+        }
+
+  SecretsManagerPolicyRelease:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: !Sub "CryptoTools-SecretsManager-${ProjectName}-Release"
+      Path: "/service-role/"
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI-xjAvTM",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI-Credentials-eBrSNB",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Github/aws-crypto-tools-ci-bot-AGUB3U",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-haLIjZ",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-Credentials-WgJanS"
+              ],
+              "Action": "secretsmanager:GetSecretValue"
+            }
+          ]
+        }
+
+  CryptoToolsKMS:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: !Sub >-
+        CrypotToolsKMSPolicy-${ProjectName}-${AWS::Region}-codebuild-${ProjectName}-service-role
+      Path: /service-role/
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:kms:*:658956600833:key/*",
+                "arn:aws:kms:*:658956600833:alias/*"
+              ],
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey"
+              ]
+            }
+          ]
+        }
+
+  ParameterStorePolicy:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: !Sub "CryptoTools-ParameterStore-${ProjectName}"
+      Path: /service-role/
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/CodeBuild/*"
+              ],
+              "Action": "ssm:GetParameters"
+            }
+          ]
+        }
+
+  S3ECReleaseTestingKMSKeyID:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: KMS Key for integration tests in release validation
+      Enabled: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+  S3ECReleaseKMSKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: alias/S3EC-Release-Testing-KMS-Key
+      TargetKeyId: !Ref S3ECReleaseTestingKMSKeyID
+
+  S3ECReleaseTestS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: s3ec-release-test-bucket
+      LifecycleConfiguration:
+        Rules:
+          - Id: Expire in 14 days
+            Status: Enabled
+            ExpirationInDays: 14
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  S3ECReleaseS3BucketPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: S3EC-Release-S3-Bucket-Policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:DeleteObject'
+            Resource:
+              - !Join [ "", [ !GetAtt S3ECReleaseTestS3Bucket.Arn, '/*' ] ]
+
+  S3ECReleaseTestKMSKeyPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseTestingKMSKeyID}",
+                "arn:aws:kms:*:${AWS::AccountId}:${S3ECReleaseKMSKeyAlias}"
+              ],
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:GenerateDataKeyPair"
+              ]
+            }
+          ]
+        }
+      ManagedPolicyName: S3EC-Release-Test-KMS-Key-Policy
