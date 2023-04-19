@@ -45,20 +45,20 @@ public class ParameterMalleabilityTest {
         ResponseInputStream<GetObjectResponse> response = defaultClient.getObject(builder -> builder.bucket(BUCKET).key(objectKey));
         final Map<String, String> objectMetadata = response.response().metadata();
         final Map<String, String> tamperedMetadata = new HashMap<>(objectMetadata);
-        // TODO: Move from EDK v1 to EDK v2
         tamperedMetadata.remove("x-amz-cek-alg");
 
         // Replace the object with the content encryption algorithm removed
         defaultClient.putObject(builder -> builder.bucket(BUCKET).key(objectKey).metadata(tamperedMetadata),
                 RequestBody.fromInputStream(response, response.response().contentLength()));
 
-        v3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey));
         // getObject fails
         assertThrows(Exception.class, () -> v3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
-        // Enabling unauthenticated mode also fails
+        // Enabling unauthenticated modes also fail
         S3Client v3ClientUnauthenticated = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyWrappingAlgorithms(true)
                 .build();
         assertThrows(Exception.class, () -> v3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
@@ -83,9 +83,7 @@ public class ParameterMalleabilityTest {
         ResponseInputStream<GetObjectResponse> response = defaultClient.getObject(builder -> builder.bucket(BUCKET).key(objectKey));
         final Map<String, String> objectMetadata = response.response().metadata();
         final Map<String, String> tamperedMetadata = new HashMap<>(objectMetadata);
-        //tamperedMetadata.remove("x-amz-cek-alg");
         tamperedMetadata.remove("x-amz-wrap-alg");
-        //tamperedMetadata.put("x-amz-wrap-alg", "");
 
         // Replace the object
         defaultClient.putObject(builder -> builder.bucket(BUCKET).key(objectKey).metadata(tamperedMetadata),
@@ -94,9 +92,11 @@ public class ParameterMalleabilityTest {
         // getObject fails
         assertThrows(Exception.class, () -> v3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
-        // Enabling unauthenticated mode also fails
+        // Enabling unauthenticated modes also fail
         S3Client v3ClientUnauthenticated = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyWrappingAlgorithms(true)
                 .build();
         assertThrows(Exception.class, () -> v3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
@@ -131,8 +131,10 @@ public class ParameterMalleabilityTest {
         // getObject fails
         assertThrows(Exception.class, () -> v3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
-        // Enabling unauthenticated mode also fails
+        // Enabling unauthenticated modes also fail
         S3Client v3ClientUnauthenticated = S3EncryptionClient.builder()
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .aesKey(AES_KEY)
                 .build();
         assertThrows(Exception.class, () -> v3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
@@ -168,9 +170,11 @@ public class ParameterMalleabilityTest {
         // getObject fails
         assertThrows(Exception.class, () -> v3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
-        // Enabling unauthenticated mode also fails
+        // Enabling unauthenticated modes also fail
         S3Client v3ClientUnauthenticated = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .build();
         assertThrows(Exception.class, () -> v3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
