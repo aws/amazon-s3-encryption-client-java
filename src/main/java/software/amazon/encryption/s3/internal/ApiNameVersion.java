@@ -36,8 +36,8 @@ public class ApiNameVersion {
             final ClassLoader loader = ApiNameVersion.class.getClassLoader();
 
             final InputStream inputStream = loader.getResourceAsStream("project.properties");
-            // In some cases, e.g. native images, there is no way to load files
-            // and the inputStream returned is null
+            // In some cases, e.g. native images, there is no way to load files,
+            // and the inputStream returned is null.
             if (inputStream == null) {
                 return API_VERSION_UNKNOWN;
             }
