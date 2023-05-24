@@ -21,9 +21,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.CI_AWS_ACCOUNT_ID }}:role/service-role/{{ env.CI_AWS_ROLE }}
+          role-to-assume: arn:aws:iam::${{ secrets.CI_AWS_ACCOUNT_ID }}:role/service-role/${{ env.CI_AWS_ROLE }}
           role-session-name: S3EC-Github-CI-Tests
-          aws-region: {{ env.CI_AWS_REGION }}
+          aws-region: ${{ env.CI_AWS_REGION }}
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -46,10 +46,10 @@ jobs:
 
       - name: Test
         run: |
-          export AWS_S3EC_TEST_BUCKET={{ env.CI_S3_BUCKET }}
-          export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:{{ env.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/{{ env.CI_KMS_KEY_ID }}
-          export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:{{ env.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:alias/{{ env.CI_KMS_KEY_ALIAS }}
-          export AWS_REGION={{ env.CI_AWS_REGION }}
+          export AWS_S3EC_TEST_BUCKET=${{ env.CI_S3_BUCKET }}
+          export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:${{ env.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/${{ env.CI_KMS_KEY_ID }}
+          export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:${{ env.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:alias/${{ env.CI_KMS_KEY_ALIAS }}
+          export AWS_REGION=${{ env.CI_AWS_REGION }}
           mvn -B -ntp test -DskipCompile
         shell: bash
 
