@@ -17,13 +17,17 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.utils.BoundedInputStream;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -41,6 +45,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -203,6 +208,62 @@ public class S3EncryptionClientTest {
                 .aesKey(AES_KEY)
                 .build();
         assertDoesNotThrow(() -> v3Client.deleteObject(builder -> builder.bucket(BUCKET).key("InvalidKey")));
+
+        // Cleanup
+        v3Client.close();
+    }
+
+    @Test
+    public void deleteObjectWithWrongBucketFailure() {
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+        try {
+            v3Client.deleteObject(builder -> builder.bucket("NotMyBukkit").key("InvalidKey"));
+        } catch (S3EncryptionClientException exception) {
+            // Verify inner exception
+            assertTrue(exception.getCause() instanceof NoSuchBucketException);
+        }
+
+        v3Client.close();
+    }
+
+    @Test
+    public void deleteObjectsWithWrongBucketFailure() {
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+        List<ObjectIdentifier> objects = new ArrayList<>();
+        objects.add(ObjectIdentifier.builder().key("InvalidKey").build());
+        try {
+            v3Client.deleteObjects(builder -> builder.bucket("NotMyBukkit").delete(builder1 -> builder1.objects(objects)));
+        } catch (S3EncryptionClientException exception) {
+            // Verify inner exception
+            assertTrue(exception.getCause() instanceof NoSuchBucketException);
+        }
+        v3Client.close();
+    }
+
+    @Test
+    public void getNonExistentObject() {
+        final String objectKey = appendTestSuffix("this-is-not-an-object-key");
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ALIAS)
+                .build();
+
+        // Ensure the object does not exist
+        deleteObject(BUCKET, objectKey, v3Client);
+
+        try {
+            v3Client.getObjectAsBytes(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build());
+        } catch (S3EncryptionClientException expected) {
+            assertTrue(expected.getCause() instanceof NoSuchKeyException);
+        }
 
         // Cleanup
         v3Client.close();
@@ -541,6 +602,65 @@ public class S3EncryptionClientTest {
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void createMultipartUploadFailure() {
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+        try {
+            v3Client.createMultipartUpload(builder -> builder.bucket("NotMyBukkit").key("InvalidKey").build());
+        } catch (S3EncryptionClientException exception) {
+            // Verify inner exception
+            assertTrue(exception.getCause() instanceof NoSuchBucketException);
+        }
+
+        v3Client.close();
+    }
+
+    @Test
+    public void uploadPartFailure() {
+        final String objectKey = appendTestSuffix("upload-part-failure");
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        // To get a server-side failure from uploadPart,
+        // a valid MPU request must be created
+        CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
+                builder.bucket(BUCKET).key(objectKey));
+
+        try {
+            v3Client.uploadPart(builder -> builder.partNumber(1).bucket("NotMyBukkit").key("InvalidKey").uploadId(initiateResult.uploadId()).build(),
+                    RequestBody.fromInputStream(new BoundedInputStream(16), 16));
+        } catch (S3EncryptionClientException exception) {
+            // Verify inner exception
+            assertTrue(exception.getCause() instanceof NoSuchBucketException);
+        }
+
+        // MPU was not completed, but delete to be safe
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+
+    @Test
+    public void completeMultipartUploadFailure() {
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+        try {
+            v3Client.completeMultipartUpload(builder -> builder.bucket("NotMyBukkit").key("InvalidKey").uploadId("Invalid").build());
+        } catch (S3EncryptionClientException exception) {
+            // Verify inner exception
+            assertTrue(exception.getCause() instanceof NoSuchBucketException);
+        }
+
         v3Client.close();
     }
 

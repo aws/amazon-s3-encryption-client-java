@@ -187,8 +187,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .secureRandom(_secureRandom)
                 .build();
 
-        CompletableFuture<PutObjectResponse> futurePut = pipeline.putObject(putObjectRequest, AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(), requestBody.optionalContentLength().orElse(-1L), Executors.newSingleThreadExecutor()));
-        return futurePut.join();
+        try {
+            CompletableFuture<PutObjectResponse> futurePut = pipeline.putObject(putObjectRequest, AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(), requestBody.optionalContentLength().orElse(-1L), Executors.newSingleThreadExecutor()));
+            return futurePut.join();
+        } catch (CompletionException completionException) {
+            throw new S3EncryptionClientException(completionException.getMessage(), completionException.getCause());
+        } catch (Exception exception) {
+            throw new S3EncryptionClientException(exception.getMessage(), exception);
+        }
+
     }
 
     /**
@@ -311,7 +318,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
     private <T extends Throwable> T onAbort(UploadObjectObserver observer, T t) {
         observer.onAbort();
-        return t;
+        throw new S3EncryptionClientException(t.getMessage(), t);
     }
 
     /**
@@ -329,15 +336,23 @@ public class S3EncryptionClient extends DelegatingS3Client {
         DeleteObjectRequest actualRequest = deleteObjectRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
-        // Delete the object
-        DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(actualRequest).join();
-        // If Instruction file exists, delete the instruction file as well.
-        String instructionObjectKey = deleteObjectRequest.key() + INSTRUCTION_FILE_SUFFIX;
-        _wrappedAsyncClient.deleteObject(builder -> builder
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
-                .bucket(deleteObjectRequest.bucket())
-                .key(instructionObjectKey)).join();
-        return deleteObjectResponse;
+
+        try {
+            // Delete the object
+            DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(actualRequest).join();
+            // If Instruction file exists, delete the instruction file as well.
+            String instructionObjectKey = deleteObjectRequest.key() + INSTRUCTION_FILE_SUFFIX;
+            _wrappedAsyncClient.deleteObject(builder -> builder
+                    .overrideConfiguration(API_NAME_INTERCEPTOR)
+                    .bucket(deleteObjectRequest.bucket())
+                    .key(instructionObjectKey)).join();
+            // Return original deletion
+            return deleteObjectResponse;
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
+        } catch (Exception e) {
+            throw new S3EncryptionClientException("Unable to delete object.", e);
+        }
     }
 
     /**
@@ -355,16 +370,22 @@ public class S3EncryptionClient extends DelegatingS3Client {
         DeleteObjectsRequest actualRequest = deleteObjectsRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
-        // Delete the objects
-        DeleteObjectsResponse deleteObjectsResponse = _wrappedAsyncClient.deleteObjects(actualRequest).join();
-        // If Instruction files exists, delete the instruction files as well.
-        List<ObjectIdentifier> deleteObjects = instructionFileKeysToDelete(deleteObjectsRequest);
-        _wrappedAsyncClient.deleteObjects(DeleteObjectsRequest.builder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
-                .bucket(deleteObjectsRequest.bucket())
-                .delete(builder -> builder.objects(deleteObjects))
-                .build()).join();
-        return deleteObjectsResponse;
+        try {
+            // Delete the objects
+            DeleteObjectsResponse deleteObjectsResponse = _wrappedAsyncClient.deleteObjects(actualRequest).join();
+            // If Instruction files exists, delete the instruction files as well.
+            List<ObjectIdentifier> deleteObjects = instructionFileKeysToDelete(deleteObjectsRequest);
+            _wrappedAsyncClient.deleteObjects(DeleteObjectsRequest.builder()
+                    .overrideConfiguration(API_NAME_INTERCEPTOR)
+                    .bucket(deleteObjectsRequest.bucket())
+                    .delete(builder -> builder.objects(deleteObjects))
+                    .build()).join();
+            return deleteObjectsResponse;
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
+        } catch (Exception e) {
+            throw new S3EncryptionClientException("Unable to delete objects.", e);
+        }
     }
 
     /**
@@ -379,7 +400,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
      */
     @Override
     public CreateMultipartUploadResponse createMultipartUpload(CreateMultipartUploadRequest request) {
-        return _multipartPipeline.createMultipartUpload(request);
+        try {
+            return _multipartPipeline.createMultipartUpload(request);
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
+        } catch (Exception e) {
+            throw new S3EncryptionClientException("Unable to delete objects.", e);
+        }
     }
 
     /**
@@ -396,7 +423,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
     @Override
     public UploadPartResponse uploadPart(UploadPartRequest request, RequestBody requestBody)
             throws AwsServiceException, SdkClientException {
-        return _multipartPipeline.uploadPart(request, requestBody);
+        try {
+            return _multipartPipeline.uploadPart(request, requestBody);
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
+        } catch (Exception e) {
+            throw new S3EncryptionClientException("Unable to delete objects.", e);
+        }
     }
 
     /**
@@ -407,7 +440,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
     @Override
     public CompleteMultipartUploadResponse completeMultipartUpload(CompleteMultipartUploadRequest request)
             throws AwsServiceException, SdkClientException {
-        return _multipartPipeline.completeMultipartUpload(request);
+        try {
+            return _multipartPipeline.completeMultipartUpload(request);
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
+        } catch (Exception e) {
+            throw new S3EncryptionClientException("Unable to delete objects.", e);
+        }
     }
 
     /**
