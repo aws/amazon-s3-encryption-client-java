@@ -262,10 +262,11 @@ public class S3EncryptionClientTest {
                     .bucket(BUCKET)
                     .key(objectKey)
                     .build());
-        } catch (S3EncryptionClientException expected) {
-            if (!(expected.getCause() instanceof NoSuchKeyException)) {
-                fail("Expected NoSuchKeyException, but was: ", expected.getCause());
-            }
+        } catch (S3EncryptionClientException exception) {
+            // Depending on the permissions of the calling principal,
+            // this could be NoSuchKeyException
+            // or S3Exception (access denied)
+            assertTrue(exception.getCause() instanceof S3Exception);
         }
 
         // Cleanup
