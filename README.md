@@ -12,7 +12,13 @@ Integration tests are included. To test them, certain environment variables need
 * `AWS_S3EC_TEST_KMS_KEY_ALIAS` - An alias for the KMS key used for KMS tests. The alias must reference the key ID above. 
 * `AWS_REGION` - The region the AWS resources (KMS key, S3 bucket) resides e.g. "us-east-1"
 
-If you have forked this repo, you need to configure Github Actions with valid AWS resources to be able to run CI. 
+To create these resources, refer to the included CloudFormation template (cfn/S3EC-GitHub-CF-Template).
+Make sure that the repo in the trust policy of the IAM role refers to your fork instead of the `aws` organization.
+Note that your account may incur charges based on the usage of any resources beyond the AWS Free Tier. 
+
+If you have forked this repo, there are additional steps required. 
+You will need to configure your fork's Github Actions settings to be able to run CI:
+
 Under Settings -> Actions -> General -> Workflow permissions, ensure Read and write permissions is selected.
 Under Settings -> Security -> Secrets and variables -> Actions -> Repository secrets, add new secret:
 
