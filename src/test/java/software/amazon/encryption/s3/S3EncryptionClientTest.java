@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -262,7 +263,9 @@ public class S3EncryptionClientTest {
                     .key(objectKey)
                     .build());
         } catch (S3EncryptionClientException expected) {
-            assertTrue(expected.getCause() instanceof NoSuchKeyException);
+            if (!(expected.getCause() instanceof NoSuchKeyException)) {
+                fail("Expected NoSuchKeyException, but was: ", expected.getCause());
+            }
         }
 
         // Cleanup
