@@ -405,7 +405,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         } catch (CompletionException e) {
             throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
         } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to delete objects.", e);
+            throw new S3EncryptionClientException("Unable to create Multipart upload.", e);
         }
     }
 
@@ -428,7 +428,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         } catch (CompletionException e) {
             throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
         } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to delete objects.", e);
+            throw new S3EncryptionClientException("Unable to upload part.", e);
         }
     }
 
@@ -445,7 +445,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         } catch (CompletionException e) {
             throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
         } catch (Exception e) {
-            throw new S3EncryptionClientException("Unable to delete objects.", e);
+            throw new S3EncryptionClientException("Unable to complete Multipart upload.", e);
         }
     }
 
