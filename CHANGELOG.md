@@ -1,5 +1,19 @@
 # Changelog
 
+### [3.0.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.0.0...v3.0.1) (2023-06-01)
+
+
+### Maintenance
+
+* add metadata downgrade tests([#55](https://github.com/aws/aws-s3-encryption-client-java/issues/55)) ([0fed900](https://github.com/aws/aws-s3-encryption-client-java/commit/0fed9007b6370552421bd1b3bcbba7f3789be47f))
+* fix some issues with release ([#156](https://github.com/aws/aws-s3-encryption-client-java/issues/156)) ([c6b4e64](https://github.com/aws/aws-s3-encryption-client-java/commit/c6b4e644b29c36adfedf3190cf2a139d8a130cda))
+
+
+### Fixes
+
+* null check for InputStream in ApiNameVersion ([#161](https://github.com/aws/aws-s3-encryption-client-java/issues/161)) ([c23aeb2](https://github.com/aws/aws-s3-encryption-client-java/commit/c23aeb2dc7d33e54b7f285dba9691412675d0a02))
+* unwrap CompletionException in default client, rethrow as S3Encry… ([#162](https://github.com/aws/aws-s3-encryption-client-java/issues/162)) ([1a00d3e](https://github.com/aws/aws-s3-encryption-client-java/commit/1a00d3e9046cb0902d0f19249ec79a6a85b85cf5))
+
 ## [3.0.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v2.0.0...v3.0.0) (2023-04-06)
 
 
