@@ -7,6 +7,7 @@ import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.core.ApiName;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 import java.util.function.Consumer;
 
@@ -33,7 +34,15 @@ public class ApiNameVersion {
         try {
             final Properties properties = new Properties();
             final ClassLoader loader = ApiNameVersion.class.getClassLoader();
-            properties.load(loader.getResourceAsStream("project.properties"));
+
+            final InputStream inputStream = loader.getResourceAsStream("project.properties");
+            // In some cases, e.g. native images, there is no way to load files,
+            // and the inputStream returned is null.
+            if (inputStream == null) {
+                return API_VERSION_UNKNOWN;
+            }
+
+            properties.load(inputStream);
             return properties.getProperty("version");
         } catch (final IOException ex) {
             return API_VERSION_UNKNOWN;
