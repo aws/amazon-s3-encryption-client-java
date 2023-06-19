@@ -473,8 +473,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
     // Make sure to keep both clients in mind when adding new builder options
     public static class Builder {
         // The non-encrypted APIs will use a default client.
-        private S3Client _wrappedClient = S3Client.create();
-        private S3AsyncClient _wrappedAsyncClient = S3AsyncClient.create();
+        private S3Client _wrappedClient;
+        private S3AsyncClient _wrappedAsyncClient;
 
         private MultipartUploadObjectPipeline _multipartPipeline;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
@@ -716,6 +716,14 @@ public class S3EncryptionClient extends DelegatingS3Client {
         public S3EncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
+            }
+
+            if (_wrappedClient == null) {
+                _wrappedClient = S3Client.create();
+            }
+
+            if (_wrappedAsyncClient == null) {
+                _wrappedAsyncClient = S3AsyncClient.create();
             }
 
             if (_keyring == null) {
