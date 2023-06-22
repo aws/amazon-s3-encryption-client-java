@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.NoSuchUploadException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -44,6 +45,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -619,7 +621,7 @@ public class S3EncryptionClientTest {
             v3Client.createMultipartUpload(builder -> builder.bucket("NotMyBukkit").key("InvalidKey").build());
         } catch (S3EncryptionClientException exception) {
             // Verify inner exception
-            assertTrue(exception.getCause() instanceof NoSuchBucketException);
+            assertInstanceOf(NoSuchBucketException.class, exception.getCause());
         }
 
         v3Client.close();
@@ -643,14 +645,13 @@ public class S3EncryptionClientTest {
                     RequestBody.fromInputStream(new BoundedInputStream(16), 16));
         } catch (S3EncryptionClientException exception) {
             // Verify inner exception
-            assertTrue(exception.getCause() instanceof NoSuchBucketException);
+            assertInstanceOf(NoSuchBucketException.class, exception.getCause());
         }
 
         // MPU was not completed, but delete to be safe
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
-
 
     @Test
     public void completeMultipartUploadFailure() {
@@ -662,9 +663,30 @@ public class S3EncryptionClientTest {
             v3Client.completeMultipartUpload(builder -> builder.bucket("NotMyBukkit").key("InvalidKey").uploadId("Invalid").build());
         } catch (S3EncryptionClientException exception) {
             // Verify inner exception
-            assertTrue(exception.getCause() instanceof NoSuchBucketException);
+            assertInstanceOf(NoSuchBucketException.class, exception.getCause());
         }
 
+        v3Client.close();
+    }
+
+    @Test
+    public void abortMultipartUploadFailure() {
+        final String objectKey = appendTestSuffix("abort-multipart-failure");
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        try {
+            v3Client.abortMultipartUpload(builder -> builder.bucket(BUCKET).key(objectKey).uploadId("invalid upload id").build());
+        } catch (S3EncryptionClientException exception) {
+            // Verify inner exception
+            assertInstanceOf(NoSuchUploadException.class, exception.getCause());
+        }
+
+        // MPU was not completed, but delete to be safe
+        deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 

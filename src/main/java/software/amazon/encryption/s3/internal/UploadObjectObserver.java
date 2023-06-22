@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.model.SdkPartType;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.S3EncryptionClient;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -70,6 +72,9 @@ public class UploadObjectObserver {
                 try {
                     AsyncRequestBody noRetriesBody = new NoRetriesAsyncRequestBody(AsyncRequestBody.fromFile(part));
                     return uploadPart(reqUploadPart, noRetriesBody);
+                } catch (CompletionException e) {
+                    // Unwrap completion exception
+                    throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
                 } finally {
                     // clean up part already uploaded
                     if (!part.delete()) {
