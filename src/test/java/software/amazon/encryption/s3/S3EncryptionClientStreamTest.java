@@ -40,8 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.*;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 
 /**
  * Test the streaming functionality using various stream implementations.
@@ -201,6 +201,69 @@ public class S3EncryptionClientStreamTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+    }
+
+    @Test
+    public void invalidBufferSize() {
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .maxBufferSize(16)
+                .build());
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .maxBufferSize(4096)
+                .build());
+    }
+
+    @Test
+    public void customMaxBufferSizeWithLargeObject() throws IOException {
+        final String objectKey = appendTestSuffix("large-object-test");
+
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
+
+        // V3 Client with custom max buffer size 32 MiB.
+        S3Client v3ClientWithBuffer32MiB = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .cryptoProvider(provider)
+                .maxBufferSize(32)
+                .build();
+
+        // V3 Client with default buffer size (i.e. 64MiB)
+        S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .cryptoProvider(provider)
+                .maxBufferSize(32)
+                .enableDelayedAuthenticationMode(true)
+                .build();
+
+        // Tight bound on the custom buffer size limit of 32MiB
+        final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
+        final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
+        v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
+                                   .bucket(BUCKET)
+                                   .key(objectKey)
+                                   .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
+
+        largeObjectStream.close();
+
+        // Object is larger than Buffer, so getObject fails
+        assertThrows(S3EncryptionClientException.class, () -> v3ClientWithBuffer32MiB.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
+
+        // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
+        ResponseInputStream<GetObjectResponse> response = v3ClientWithDelayedAuth.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+
+
+        assertTrue(IOUtils.contentEquals(new BoundedInputStream(fileSizeExceedingDefaultLimit), response));
+        response.close();
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
+        v3ClientWithBuffer32MiB.close();
     }
 
     @Test

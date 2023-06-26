@@ -25,10 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
 
-    // 64MiB ought to be enough for most usecases
-    private static final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
-    private static final long BUFFERED_MAX_CONTENT_LENGTH_BYTES = 1024 * 1024 * BUFFERED_MAX_CONTENT_LENGTH_MiB;
-
     private final AtomicInteger contentRead = new AtomicInteger(0);
     private final AtomicBoolean doneFinal = new AtomicBoolean(false);
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
@@ -40,21 +36,22 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     private byte[] outputBuffer;
     private final Queue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
 
-    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
+    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, long bufferSize) {
         this.wrappedSubscriber = wrappedSubscriber;
         if (contentLength == null) {
             throw new S3EncryptionClientException("contentLength cannot be null in buffered mode. To enable unbounded " +
                     "streaming, reconfigure the S3 Encryption Client with Delayed Authentication mode enabled.");
         }
-        if (contentLength > BUFFERED_MAX_CONTENT_LENGTH_BYTES) {
+        long bufferSizeInBytes = 1024 * 1024 * bufferSize;
+        if (contentLength > bufferSizeInBytes) {
             throw new S3EncryptionClientException(String.format("The object you are attempting to decrypt exceeds the maximum content " +
                     "length allowed in default mode. Please enable Delayed Authentication mode to decrypt objects larger" +
-                    "than %d", BUFFERED_MAX_CONTENT_LENGTH_MiB));
+                    "than %d", bufferSize));
         }
         this.contentLength = Math.toIntExact(contentLength);
         this.materials = materials;
         this.iv = iv;
-        cipher = materials.getCipher(iv);
+        this.cipher = materials.getCipher(iv);
     }
 
     @Override

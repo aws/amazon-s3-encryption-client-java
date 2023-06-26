@@ -88,6 +88,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     private final boolean _enableDelayedAuthenticationMode;
     private final boolean _enableMultipartPutObject;
     private final MultipartUploadObjectPipeline _multipartPipeline;
+    private final long _bufferSize;
 
     private S3EncryptionClient(Builder builder) {
         super(builder._wrappedClient);
@@ -99,6 +100,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
         _enableMultipartPutObject = builder._enableMultipartPutObject;
         _multipartPipeline = builder._multipartPipeline;
+        _bufferSize = builder._bufferSize;
     }
 
     /**
@@ -224,6 +226,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
+                .bufferSize(_bufferSize)
                 .build();
 
         try {
@@ -472,6 +475,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
     // This is very similar to the S3EncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options
     public static class Builder {
+        private static final int MIN_ALLOWED_BUFFER_SIZE_MiB = 32;
+        private static final int MAX_ALLOWED_BUFFER_SIZE_MiB = 2048;
+        // 64MiB ought to be enough for most usecases
+        private static final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
+
         // The non-encrypted APIs will use a default client.
         private S3Client _wrappedClient;
         private S3AsyncClient _wrappedAsyncClient;
@@ -488,6 +496,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
         private boolean _enableLegacyUnauthenticatedModes = false;
+        private long _bufferSize = BUFFERED_MAX_CONTENT_LENGTH_MiB;
 
         private Builder() {
         }
@@ -673,6 +682,23 @@ public class S3EncryptionClient extends DelegatingS3Client {
          */
         public Builder enableMultipartPutObject(boolean _enableMultipartPutObject) {
             this._enableMultipartPutObject = _enableMultipartPutObject;
+            return this;
+        }
+
+        /**
+         * Sets the buffer size for safe authentication.
+         * If buffer size is not given during client configuration, default buffer size is set to 64MiB.
+         *
+         * @param bufferSize the desired buffer size in MB.
+         * @return Returns a reference to this object so that method calls can be chained together.
+         * @throws S3EncryptionClientException if the specified buffer size is outside the allowed bounds
+         */
+        public Builder maxBufferSize(int bufferSize) throws IllegalArgumentException {
+            if (bufferSize < MIN_ALLOWED_BUFFER_SIZE_MiB || bufferSize > MAX_ALLOWED_BUFFER_SIZE_MiB) {
+                throw new S3EncryptionClientException("Buffer size must be between " + MIN_ALLOWED_BUFFER_SIZE_MiB + " and " + MAX_ALLOWED_BUFFER_SIZE_MiB + " MiB.");
+            }
+
+            this._bufferSize = bufferSize;
             return this;
         }
 
