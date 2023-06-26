@@ -4,7 +4,6 @@ package software.amazon.encryption.s3.internal;
 
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.core.async.SdkPublisher;
-import software.amazon.encryption.s3.legacy.internal.RangedGetUtils;
 import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
 import java.nio.ByteBuffer;
