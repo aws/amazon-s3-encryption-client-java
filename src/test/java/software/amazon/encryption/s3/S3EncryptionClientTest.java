@@ -648,7 +648,8 @@ public class S3EncryptionClientTest {
             assertInstanceOf(NoSuchBucketException.class, exception.getCause());
         }
 
-        // MPU was not completed, but delete to be safe
+        // MPU was not completed, but abort and delete to be safe
+        v3Client.abortMultipartUpload(builder -> builder.bucket(BUCKET).key(objectKey).uploadId(initiateResult.uploadId()).build());
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
@@ -685,8 +686,6 @@ public class S3EncryptionClientTest {
             assertInstanceOf(NoSuchUploadException.class, exception.getCause());
         }
 
-        // MPU was not completed, but delete to be safe
-        deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 
