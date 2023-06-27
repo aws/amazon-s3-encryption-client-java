@@ -1,17 +1,17 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import javax.crypto.SecretKey;
-
-import software.amazon.encryption.s3.S3EncryptionClientException;
 
 /**
  * This serves as the base class for all the keyrings in the S3 encryption client.
@@ -85,7 +85,7 @@ abstract public class S3Keyring implements Keyring {
 
         DecryptDataKeyStrategy decryptStrategy = decryptStrategies().get(keyProviderInfo);
         if (decryptStrategy == null) {
-            throw new S3EncryptionClientException("Unknown key wrap: " + keyProviderInfo);
+            throw new S3EncryptionClientException("The keyring does not support the object's key wrapping algorithm: " + keyProviderInfo);
         }
 
         if (decryptStrategy.isLegacy() && !_enableLegacyWrappingAlgorithms) {

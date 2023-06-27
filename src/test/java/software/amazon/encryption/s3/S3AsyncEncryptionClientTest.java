@@ -1,3 +1,5 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3;
 
 import com.amazonaws.services.s3.AmazonS3Encryption;
@@ -20,6 +22,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -38,7 +41,6 @@ import java.util.concurrent.CompletionException;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -117,6 +119,36 @@ public class S3AsyncEncryptionClientTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+        v3AsyncClient.close();
+    }
+
+    @Test
+    public void putAsyncGetAsync() {
+        final String objectKey = appendTestSuffix("put-async-get-async");
+
+        S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        final String input = "PutAsyncGetAsync";
+
+        CompletableFuture<PutObjectResponse> futurePut = v3AsyncClient.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncRequestBody.fromString(input));
+        // Block on completion of the futurePut
+        futurePut.join();
+
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureGet = v3AsyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncResponseTransformer.toBytes());
+        // Just wait for the future to complete
+        ResponseBytes<GetObjectResponse> getResponse = futureGet.join();
+        assertEquals(input, getResponse.asUtf8String());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3AsyncClient);
         v3AsyncClient.close();
     }
 
@@ -333,4 +365,46 @@ public class S3AsyncEncryptionClientTest {
         // Cleanup
         v3Client.close();
     }
+
+    @Test
+    public void copyObjectTransparentlyAsync() {
+        final String objectKey = appendTestSuffix("copy-object-from-here-async");
+        final String newObjectKey = appendTestSuffix("copy-object-to-here-async");
+
+        S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .build();
+
+        final String input = "CopyObjectAsync";
+
+        CompletableFuture<PutObjectResponse> futurePut = v3AsyncClient.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncRequestBody.fromString(input));
+        // Block on completion of the futurePut
+        futurePut.join();
+
+        CompletableFuture<CopyObjectResponse> futureCopy = v3AsyncClient.copyObject(builder -> builder
+                .sourceBucket(BUCKET)
+                .destinationBucket(BUCKET)
+                .sourceKey(objectKey)
+                .destinationKey(newObjectKey)
+                .build());
+        // Block on copy future
+        futureCopy.join();
+
+        // Decrypt new object
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureGet = v3AsyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(newObjectKey)
+                .build(), AsyncResponseTransformer.toBytes());
+        ResponseBytes<GetObjectResponse> getResponse = futureGet.join();
+        assertEquals(input, getResponse.asUtf8String());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3AsyncClient);
+        deleteObject(BUCKET, newObjectKey, v3AsyncClient);
+        v3AsyncClient.close();
+    }
+
 }

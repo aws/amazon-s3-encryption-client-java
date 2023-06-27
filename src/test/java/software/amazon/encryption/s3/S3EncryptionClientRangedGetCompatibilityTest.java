@@ -1,3 +1,5 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3;
 
 import com.amazonaws.services.s3.AmazonS3Encryption;
@@ -127,14 +129,10 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 .key(objectKey)
                 .build(), AsyncRequestBody.fromString(input)).join();
 
-        try {
-            asyncClient.getObject(builder -> builder
-                    .bucket(BUCKET)
-                    .range("bytes=10-20")
-                    .key(objectKey), AsyncResponseTransformer.toBytes()).join();
-        } catch (CompletionException e) {
-            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
-        }
+        assertThrows(S3EncryptionClientException.class, () -> asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=10-20")
+                .key(objectKey), AsyncResponseTransformer.toBytes()).join());
 
         // Cleanup
         deleteObject(BUCKET, objectKey, asyncClient);

@@ -6,11 +6,6 @@ version: 0.2
 env:
   variables:
     BRANCH: "main"
-    # TODO for prod release: Remove variables below; these are used in CodeArtifact, which won't be
-    #   used as part of Prod release. These are used to test GH release signing.
-    REGION: us-east-1
-    DOMAIN: crypto-tools-internal
-    REPOSITORY: java-s3ec-staging
   git-credential-helper: yes
   parameter-store:
     ACCOUNT: /CodeBuild/AccountId
@@ -20,10 +15,6 @@ env:
 phases:
   pre_build:
     commands:
-      # TODO for prod release: remove codeartifact authoriztion
-      # get codeartifact authorization
-      - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
-      - export CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
       # get new project version
       - git checkout $BRANCH
       - export VERSION=$(grep version pom.xml | head -n 2 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
@@ -41,31 +32,16 @@ phases:
       - gh version
       - gh auth login --with-token < token.txt
       - gh auth status
-      # TODO for prod release: remove -Dcodeartifact*
-      # TODO for prod release: Change -DremoteRepositories to sonatype repo
-      # TODO for prod release: remove "-$CODEBUILD_RESOLVED_SOURCE_VERSION". CodeArtifact seems to need this to find
-      #   the artifact, but sonatype doesn't. I don't think it's worth finding a way to get artifact without version
-      #   hash given prod release doesn't need this.
-      # TODO for prod release: remove -s $SETTINGS_FILE
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
-          -Dcodeartifact.token=$CODEARTIFACT_AUTH_TOKEN \
-          -Dcodeartifact.url=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
-          -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
-          -Dartifact=software.amazon.encryption:s3:${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION:jar \
-          -s $SETTINGS_FILE
+          -DrepoUrl=https://aws.oss.sonatype.org \
+          -Dartifact=software.amazon.encryption.s3:amazon-s3-encryption-client-java:${VERSION}:jar
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
-          -Dcodeartifact.token=$CODEARTIFACT_AUTH_TOKEN \
-          -Dcodeartifact.url=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
-          -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
-          -Dartifact=software.amazon.encryption:s3:${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION:jar:sources \
-          -s $SETTINGS_FILE
+          -DrepoUrl=https://aws.oss.sonatype.org \
+          -Dartifact=software.amazon.encryption.s3:amazon-s3-encryption-client-java:${VERSION}:jar:sources
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
-          -Dcodeartifact.token=$CODEARTIFACT_AUTH_TOKEN \
-          -Dcodeartifact.url=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
-          -DremoteRepositories=central::default::https://repo.maven.apache.org/maven2,codeartifact::::https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY} \
-          -Dartifact=software.amazon.encryption:s3:${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION:jar:javadoc \
-          -s $SETTINGS_FILE
-      - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/s3/${VERSION}-$CODEBUILD_RESOLVED_SOURCE_VERSION/*.jar -d -F CHANGELOG.md -t "Amazon S3 Encryption Client ${VERSION} Release -- $(date +%Y-%m-%d)"
+          -DrepoUrl=https://aws.oss.sonatype.org \
+          -Dartifact=software.amazon.encryption.s3:amazon-s3-encryption-client-java:${VERSION}:jar:javadoc
+      - gh release create v${VERSION} ~/.m2/repository/software/amazon/encryption/s3/amazon-s3-encryption-client-java/${VERSION}/*.jar -d -F CHANGELOG.md -t "Amazon S3 Encryption Client ${VERSION} Release -- $(date +%Y-%m-%d)"

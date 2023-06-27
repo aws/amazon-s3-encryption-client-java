@@ -17,7 +17,7 @@ Parameters:
   SourceLocation:
     Type: String
     Description: The https GitHub URL for the project
-    Default: "https://github.com/aws/aws-s3-encryption-client-java.git"
+    Default: "https://github.com/aws/amazon-s3-encryption-client-java.git"
   NumberOfBuildsInBatch:
     Type: Number
     MaxValue: 100
@@ -178,7 +178,6 @@ Resources:
     Properties:
       ManagedPolicyName: !Sub "CryptoTools-SecretsManager-${ProjectName}-Release"
       Path: "/service-role/"
-      # TODO for prod release: Change to Maven-GPG-Keys-Release
       PolicyDocument: !Sub |
         {
           "Version": "2012-10-17",
@@ -188,8 +187,10 @@ Resources:
               "Resource": [
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI-xjAvTM",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI-Credentials-eBrSNB",
-                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Github/aws-crypto-tools-ci-bot-AGUB3U"
-                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm"
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Github/aws-crypto-tools-ci-bot-AGUB3U",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-haLIjZ",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-Credentials-WgJanS"
               ],
               "Action": "secretsmanager:GetSecretValue"
             }

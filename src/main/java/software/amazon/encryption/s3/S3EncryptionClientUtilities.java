@@ -1,3 +1,5 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3;
 
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
@@ -9,8 +11,6 @@ import java.util.stream.Collectors;
 /**
  * This class contains that which can be shared between the default S3 Encryption
  * Client and its Async counterpart.
- * TODO: move encryption context handling here
- * TODO: move the builder here
  */
 public class S3EncryptionClientUtilities {
 

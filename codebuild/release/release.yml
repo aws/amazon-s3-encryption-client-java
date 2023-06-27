@@ -69,21 +69,30 @@ batch:
       - validate_staging_release_corretto17
     buildspec: codebuild/release/version.yml
     env:
-      image: aws/codebuild/standard:5.0
+      image: aws/codebuild/standard:6.0
 
-  # TODO for prod release: Release to Maven
+  # Publish to Maven Central
+  - identifier: publish
+    depend-on:
+      - version
+    buildspec: codebuild/release/release-prod.yml
 
-  # TODO for prod release: Validate Maven release
+  # TODO: Validate Maven artifact using a sample project
+
+  # Search for published Artifact
+  - identifier: artifact_hunt
+    depend-on:
+      - publish
+    buildspec: codebuild/release/artifact-hunt.yml
 
   # Upload Artifacts
   - identifier: upload_artifacts
     depend-on:
-      # TODO for prod release: depend-on Maven release validations, not 'version' step
-      - version
+      - artifact_hunt
     buildspec: codebuild/release/upload_artifacts.yml
     env:
-      # standard:5.0 (Ubuntu) supports GH CLI; AL2 does not
-      image: aws/codebuild/standard:5.0
+      # standard:6.0 (Ubuntu) supports GH CLI; AL2 does not
+      image: aws/codebuild/standard:6.0
 
   # Generate and update new javadocs
   - identifier: update_javadoc

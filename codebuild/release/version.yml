@@ -14,13 +14,14 @@ env:
 phases:
   install:
     commands:
+      - n 18 # semantic-release wants 18, the image only goes up to 16
       - npm install --save-dev semantic-release
       - npm install @semantic-release/changelog -d
       - npm install @semantic-release/exec -d
       - npm install @semantic-release/git -d
       - npm install --save conventional-changelog
     runtime-versions:
-      nodejs: 18
+      nodejs: 16
   pre_build:
     commands:
       - git config --global user.name "aws-crypto-tools-ci-bot"

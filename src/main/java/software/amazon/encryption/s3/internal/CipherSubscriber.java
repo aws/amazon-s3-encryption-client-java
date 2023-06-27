@@ -1,9 +1,12 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.BinaryUtils;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
+import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
@@ -13,15 +16,26 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final AtomicLong contentRead = new AtomicLong(0);
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
-    private final Cipher cipher;
+    private Cipher cipher;
     private final Long contentLength;
+    private final CryptographicMaterials materials;
+    private byte[] iv;
+    private boolean isLastPart;
 
     private byte[] outputBuffer;
 
-    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Cipher cipher, Long contentLength) {
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, boolean isLastPart) {
         this.wrappedSubscriber = wrappedSubscriber;
-        this.cipher = cipher;
         this.contentLength = contentLength;
+        this.materials = materials;
+        this.iv = iv;
+        cipher = materials.getCipher(iv);
+        this.isLastPart = isLastPart;
+    }
+
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
+        // When no partType is specified, it's not multipart, so there's one part, which must be the last
+        this(wrappedSubscriber, contentLength, materials, iv, true);
     }
 
     @Override
@@ -73,13 +87,21 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onComplete() {
+        if (!isLastPart) {
+            // If this isn't the last part, skip doFinal, we aren't done
+            wrappedSubscriber.onComplete();
+            return;
+        }
         try {
             outputBuffer = cipher.doFinal();
             // Send the final bytes to the wrapped subscriber
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
         } catch (final GeneralSecurityException exception) {
+            // Forward error, else the wrapped subscriber waits indefinitely
+            wrappedSubscriber.onError(exception);
             throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
         }
         wrappedSubscriber.onComplete();
     }
+
 }

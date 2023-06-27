@@ -1,3 +1,5 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -47,13 +49,13 @@ public class ContentMetadataStrategyTest {
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .encryptedDataKeyAlgorithm(null)
                 .encryptedDataKeyContext(new HashMap())
-                .contentNonce(bytes)
+                .contentIv(bytes)
                 .build();
 
         ContentMetadata contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, getObjectResponse);
         assertEquals(expectedContentMetadata.algorithmSuite(), contentMetadata.algorithmSuite());
-        String actualContentNonce = Arrays.toString(contentMetadata.contentNonce());
-        String expectedContentNonce = Arrays.toString(expectedContentMetadata.contentNonce());
-        assertEquals(expectedContentNonce, actualContentNonce);
+        String actualContentIv = Arrays.toString(contentMetadata.contentIv());
+        String expectedContentIv = Arrays.toString(expectedContentMetadata.contentIv());
+        assertEquals(expectedContentIv, actualContentIv);
     }
 }
