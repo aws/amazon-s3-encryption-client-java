@@ -66,7 +66,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_BUFFER_SIZE_MiB;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MAX_ALLOWED_BUFFER_SIZE_MiB;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MIN_ALLOWED_BUFFER_SIZE_MiB;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.instructionFileKeysToDelete;
 import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
 
@@ -475,11 +478,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
     // This is very similar to the S3EncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options
     public static class Builder {
-        private static final int MIN_ALLOWED_BUFFER_SIZE_MiB = 32;
-        private static final int MAX_ALLOWED_BUFFER_SIZE_MiB = 2048;
-        // 64MiB ought to be enough for most usecases
-        private static final long BUFFERED_MAX_CONTENT_LENGTH_MiB = 64;
-
         // The non-encrypted APIs will use a default client.
         private S3Client _wrappedClient;
         private S3AsyncClient _wrappedAsyncClient;
@@ -496,7 +494,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
         private boolean _enableLegacyUnauthenticatedModes = false;
-        private long _bufferSize = BUFFERED_MAX_CONTENT_LENGTH_MiB;
+        private long _bufferSize = DEFAULT_BUFFER_SIZE_MiB;
 
         private Builder() {
         }
@@ -686,7 +684,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         /**
-         * Sets the buffer size for safe authentication.
+         * Sets the buffer size for safe authentication used when delayed authentication mode is disabled.
          * If buffer size is not given during client configuration, default buffer size is set to 64MiB.
          *
          * @param bufferSize the desired buffer size in MB.
@@ -695,7 +693,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
          */
         public Builder maxBufferSize(int bufferSize) throws IllegalArgumentException {
             if (bufferSize < MIN_ALLOWED_BUFFER_SIZE_MiB || bufferSize > MAX_ALLOWED_BUFFER_SIZE_MiB) {
-                throw new S3EncryptionClientException("Buffer size must be between " + MIN_ALLOWED_BUFFER_SIZE_MiB + " and " + MAX_ALLOWED_BUFFER_SIZE_MiB + " MiB.");
+                throw new S3EncryptionClientException("Invalid buffer size: " + bufferSize + " MiB. Buffer size must be between " + MIN_ALLOWED_BUFFER_SIZE_MiB + " and " + MAX_ALLOWED_BUFFER_SIZE_MiB + " MiB.");
             }
 
             this._bufferSize = bufferSize;

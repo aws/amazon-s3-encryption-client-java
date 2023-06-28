@@ -15,6 +15,13 @@ import java.util.stream.Collectors;
 public class S3EncryptionClientUtilities {
 
     public static final String INSTRUCTION_FILE_SUFFIX = ".instruction";
+    public static final int MIN_ALLOWED_BUFFER_SIZE_MiB = 32;
+    public static final int MAX_ALLOWED_BUFFER_SIZE_MiB = 2048;
+
+    /**
+     * The Default Buffer Size for Safe authentication is set to 64MiB.
+     */
+    public static final long DEFAULT_BUFFER_SIZE_MiB = 64;
 
     /**
      * For a given DeleteObjectsRequest, return a list of ObjectIdentifiers

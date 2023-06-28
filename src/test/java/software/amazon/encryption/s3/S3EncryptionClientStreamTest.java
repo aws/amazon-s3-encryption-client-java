@@ -40,8 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.*;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
  * Test the streaming functionality using various stream implementations.
@@ -230,10 +231,10 @@ public class S3EncryptionClientStreamTest {
                 .build();
 
         // V3 Client with default buffer size (i.e. 64MiB)
+        // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
         S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
-                .maxBufferSize(32)
                 .enableDelayedAuthenticationMode(true)
                 .build();
 

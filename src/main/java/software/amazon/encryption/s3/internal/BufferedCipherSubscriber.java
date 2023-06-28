@@ -44,9 +44,10 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
         }
         long bufferSizeInBytes = 1024 * 1024 * bufferSize;
         if (contentLength > bufferSizeInBytes) {
-            throw new S3EncryptionClientException(String.format("The object you are attempting to decrypt exceeds the maximum content " +
-                    "length allowed in default mode. Please enable Delayed Authentication mode to decrypt objects larger" +
-                    "than %d", bufferSize));
+            throw new S3EncryptionClientException(String.format("The object you are attempting to decrypt exceeds the maximum buffer size: " + bufferSize +
+                    " for the default (buffered) mode. Either increase your buffer size when configuring your client, " +
+                    "or enable Delayed Authentication mode to disable buffered decryption."));
+
         }
         this.contentLength = Math.toIntExact(contentLength);
         this.materials = materials;
