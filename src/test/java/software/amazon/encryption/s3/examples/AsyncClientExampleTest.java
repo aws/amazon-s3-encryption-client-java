@@ -8,9 +8,6 @@ public class AsyncClientExampleTest {
     @Test
     public void testAsyncClientExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
-        // Installs ACCP as default provider
-        com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider.install();
-
         AsyncClientExample.main(new String[]{bucket});
     }
 }
