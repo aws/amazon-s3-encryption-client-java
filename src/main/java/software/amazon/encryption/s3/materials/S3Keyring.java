@@ -3,6 +3,7 @@
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 import javax.crypto.SecretKey;
@@ -12,6 +13,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This serves as the base class for all the keyrings in the S3 encryption client.
@@ -33,23 +35,37 @@ abstract public class S3Keyring implements Keyring {
 
     @Override
     public EncryptionMaterials onEncrypt(EncryptionMaterials materials) {
-        if (materials.plaintextDataKey() == null) {
-            SecretKey dataKey = _dataKeyGenerator.generateDataKey(materials.algorithmSuite(), materials.cryptoProvider());
-            materials = materials.toBuilder()
-                    .plaintextDataKey(dataKey.getEncoded())
-                    .build();
-        }
-
         EncryptDataKeyStrategy encryptStrategy = encryptStrategy();
         try {
+            if (materials.plaintextDataKey() == null && !encryptStrategy.isKms()) {
+                SecretKey dataKey = _dataKeyGenerator.generateDataKey(materials.algorithmSuite(), materials.cryptoProvider());
+                materials = materials.toBuilder()
+                        .plaintextDataKey(dataKey.getEncoded())
+                        .build();
+            }
+
             // Allow encrypt strategy to modify the materials if necessary
             materials = encryptStrategy.modifyMaterials(materials);
 
-            byte[] encryptedDataKeyCiphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
+            byte[] encryptedDataKeyCiphertext;
+
+            if (encryptStrategy.isKms()) {
+                // Since generateDataKey already performs the Encrypt operation and
+                // returns both plaintext and ciphertext data keys,
+                // calling encryptDataKey separately is not required.
+                GenerateDataKeyResponse response = encryptStrategy.generateDataKey(materials);
+                materials = materials.toBuilder()
+                        .plaintextDataKey(response.plaintext().asByteArray())
+                        .build();
+                encryptedDataKeyCiphertext = response.ciphertextBlob().asByteArray();
+            } else {
+                encryptedDataKeyCiphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
+            }
+
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
                     .keyProviderInfo(encryptStrategy.keyProviderInfo().getBytes(StandardCharsets.UTF_8))
-                    .encryptedDataKey(encryptedDataKeyCiphertext)
+                    .encryptedDataKey(Objects.requireNonNull(encryptedDataKeyCiphertext))
                     .build();
 
             List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
