@@ -4,8 +4,11 @@ package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -17,6 +20,8 @@ import software.amazon.awssdk.services.kms.model.DecryptRequest;
 import software.amazon.awssdk.services.kms.model.DecryptResponse;
 import software.amazon.awssdk.services.kms.model.EncryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptResponse;
+import software.amazon.awssdk.services.kms.model.GenerateDataKeyRequest;
+import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.S3EncryptionClient;
@@ -79,6 +84,11 @@ public class KmsKeyring extends S3Keyring {
         }
 
         @Override
+        public boolean isKms() {
+            return true;
+        }
+
+        @Override
         public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
             S3Request s3Request = materials.s3Request();
 
@@ -97,8 +107,27 @@ public class KmsKeyring extends S3Keyring {
 
             encryptionContext.put(ENCRYPTION_CONTEXT_ALGORITHM_KEY, materials.algorithmSuite().cipherName());
 
+            GenerateDataKeyRequest request = GenerateDataKeyRequest.builder()
+                    .keyId(_wrappingKeyId)
+                    .keySpec(materials.algorithmSuite().dataKeyAlgorithm() + "_" + materials.algorithmSuite().dataKeyLengthBits())
+                    .encryptionContext(encryptionContext)
+                    .overrideConfiguration(builder -> builder.addApiName(API_NAME))
+                    .build();
+            GenerateDataKeyResponse response = _kmsClient.generateDataKey(request);
+
+            EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
+                    .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
+                    .keyProviderInfo(keyProviderInfo().getBytes(StandardCharsets.UTF_8))
+                    .encryptedDataKey(response.ciphertextBlob().asByteArray())
+                    .build();
+
+            List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
+            encryptedDataKeys.add(encryptedDataKey);
+
             return materials.toBuilder()
                     .encryptionContext(encryptionContext)
+                    .plaintextDataKey(response.plaintext().asByteArray())
+                    .encryptedDataKeys(encryptedDataKeys)
                     .build();
         }
 

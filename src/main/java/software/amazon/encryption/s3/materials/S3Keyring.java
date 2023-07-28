@@ -33,17 +33,21 @@ abstract public class S3Keyring implements Keyring {
 
     @Override
     public EncryptionMaterials onEncrypt(EncryptionMaterials materials) {
-        if (materials.plaintextDataKey() == null) {
-            SecretKey dataKey = _dataKeyGenerator.generateDataKey(materials.algorithmSuite(), materials.cryptoProvider());
-            materials = materials.toBuilder()
-                    .plaintextDataKey(dataKey.getEncoded())
-                    .build();
-        }
-
         EncryptDataKeyStrategy encryptStrategy = encryptStrategy();
         try {
             // Allow encrypt strategy to modify the materials if necessary
             materials = encryptStrategy.modifyMaterials(materials);
+
+            if (encryptStrategy.isKms()) {
+                return materials;
+            }
+
+            if (materials.plaintextDataKey() == null) {
+                SecretKey dataKey = _dataKeyGenerator.generateDataKey(materials.algorithmSuite(), materials.cryptoProvider());
+                materials = materials.toBuilder()
+                        .plaintextDataKey(dataKey.getEncoded())
+                        .build();
+            }
 
             byte[] encryptedDataKeyCiphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()

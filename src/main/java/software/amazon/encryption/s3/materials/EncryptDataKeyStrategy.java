@@ -8,6 +8,10 @@ import java.security.SecureRandom;
 public interface EncryptDataKeyStrategy {
     String keyProviderInfo();
 
+    default boolean isKms(){
+        return false;
+    }
+
     default EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
         return materials;
     }
