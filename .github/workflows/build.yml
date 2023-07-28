@@ -47,8 +47,8 @@ jobs:
       - name: Test
         run: |
           export AWS_S3EC_TEST_BUCKET=${{ vars.CI_S3_BUCKET }}
-          export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/${{ vars.CI_KMS_KEY_ID }}
-          export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:alias/${{ vars.CI_KMS_KEY_ALIAS }}
+          export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:us-west-2:452750982249:key/086db65a-4b1d-4801-8c7b-f2fda0c33309
+          export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:us-west-2:452750982249:alias/S3EC-Github-KMS-Key
           export AWS_REGION=${{ vars.CI_AWS_REGION }}
           mvn -B -ntp test -DskipCompile
         shell: bash
