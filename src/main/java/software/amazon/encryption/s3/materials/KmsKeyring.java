@@ -4,11 +4,8 @@ package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -18,8 +15,6 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.model.DecryptRequest;
 import software.amazon.awssdk.services.kms.model.DecryptResponse;
-import software.amazon.awssdk.services.kms.model.EncryptRequest;
-import software.amazon.awssdk.services.kms.model.EncryptResponse;
 import software.amazon.awssdk.services.kms.model.GenerateDataKeyRequest;
 import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -107,42 +102,25 @@ public class KmsKeyring extends S3Keyring {
 
             encryptionContext.put(ENCRYPTION_CONTEXT_ALGORITHM_KEY, materials.algorithmSuite().cipherName());
 
-            GenerateDataKeyRequest request = GenerateDataKeyRequest.builder()
-                    .keyId(_wrappingKeyId)
-                    .keySpec(materials.algorithmSuite().dataKeyAlgorithm() + "_" + materials.algorithmSuite().dataKeyLengthBits())
-                    .encryptionContext(encryptionContext)
-                    .overrideConfiguration(builder -> builder.addApiName(API_NAME))
-                    .build();
-            GenerateDataKeyResponse response = _kmsClient.generateDataKey(request);
-
-            EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
-                    .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
-                    .keyProviderInfo(keyProviderInfo().getBytes(StandardCharsets.UTF_8))
-                    .encryptedDataKey(response.ciphertextBlob().asByteArray())
-                    .build();
-
-            List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
-            encryptedDataKeys.add(encryptedDataKey);
-
             return materials.toBuilder()
                     .encryptionContext(encryptionContext)
-                    .plaintextDataKey(response.plaintext().asByteArray())
-                    .encryptedDataKeys(encryptedDataKeys)
                     .build();
         }
 
         @Override
-        public byte[] encryptDataKey(SecureRandom secureRandom, EncryptionMaterials materials) {
-            HashMap<String, String> encryptionContext = new HashMap<>(materials.encryptionContext());
-            EncryptRequest request = EncryptRequest.builder()
+        public GenerateDataKeyResponse generateDataKey(EncryptionMaterials materials) {
+            GenerateDataKeyRequest request = GenerateDataKeyRequest.builder()
                     .keyId(_wrappingKeyId)
-                    .encryptionContext(encryptionContext)
-                    .plaintext(SdkBytes.fromByteArray(materials.plaintextDataKey()))
+                    .keySpec(materials.algorithmSuite().dataKeyAlgorithm() + "_" + materials.algorithmSuite().dataKeyLengthBits())
+                    .encryptionContext(materials.encryptionContext())
                     .overrideConfiguration(builder -> builder.addApiName(API_NAME))
                     .build();
+            return _kmsClient.generateDataKey(request);
+        }
 
-            EncryptResponse response = _kmsClient.encrypt(request);
-            return response.ciphertextBlob().asByteArray();
+        @Override
+        public byte[] encryptDataKey(SecureRandom secureRandom, EncryptionMaterials materials) {
+            throw new S3EncryptionClientException("Since generateDataKey also encrypts the data key, the encryptDataKey action is not supported for KmsKeyring.");
         }
 
         @Override
