@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::${{ secrets.CI_AWS_ACCOUNT_ID }}:role/service-role/${{ vars.CI_AWS_ROLE }}
           role-session-name: S3EC-Github-CI-Tests
