@@ -3,6 +3,9 @@ name: Continuous Integration Workflow
 on:
   pull_request:
   push:
+  # Run once a day
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   Static_Analysis:
@@ -10,7 +13,7 @@ jobs:
 
   Build:
     strategy:
-      max-parallel: 1 # TODO: Fix jobs failing when running in parallel
+      fail-fast: true
       matrix:
         version: [ 8, 11, 17 ]
         distribution: [ corretto, temurin ] # TODO: Add OpenJDK

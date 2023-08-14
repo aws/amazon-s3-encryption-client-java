@@ -40,8 +40,8 @@ jobs:
 
       - name: Compile
         run: |
-          mvn clean compile
-          mvn test-compile
+          mvn -B -ntp clean compile
+          mvn -B -ntp test-compile
         shell: bash
 
       - name: Test
@@ -55,5 +55,5 @@ jobs:
 
       - name: Package JAR
         run: |
-          mvn install -DskipTests
+          mvn -B -ntp install -DskipTests
         shell: bash
