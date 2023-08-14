@@ -98,6 +98,11 @@ public class RsaKeyring extends S3Keyring {
         }
 
         @Override
+        public EncryptionMaterials generateDataKey(EncryptionMaterials materials) {
+            return defaultGenerateDataKey(materials);
+        }
+
+        @Override
         public byte[] encryptDataKey(SecureRandom secureRandom,
                                      EncryptionMaterials materials) throws GeneralSecurityException {
             final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
@@ -167,6 +172,11 @@ public class RsaKeyring extends S3Keyring {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    protected GenerateDataKeyStrategy generateStrategy() {
+        return _rsaOaepStrategy;
     }
 
     @Override

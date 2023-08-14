@@ -3,17 +3,15 @@
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import javax.crypto.SecretKey;
 
 /**
  * This serves as the base class for all the keyrings in the S3 encryption client.
@@ -22,50 +20,46 @@ import java.util.Objects;
 abstract public class S3Keyring implements Keyring {
 
     public static final String KEY_PROVIDER_ID = "S3Keyring";
-
+    protected final DataKeyGenerator _dataKeyGenerator;
     private final boolean _enableLegacyWrappingAlgorithms;
     private final SecureRandom _secureRandom;
-    private final DataKeyGenerator _dataKeyGenerator;
 
-    protected S3Keyring(Builder<?,?> builder) {
+    protected S3Keyring(Builder<?, ?> builder) {
         _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
         _secureRandom = builder._secureRandom;
         _dataKeyGenerator = builder._dataKeyGenerator;
     }
 
+    public EncryptionMaterials defaultGenerateDataKey(EncryptionMaterials materials) {
+        SecretKey dataKey = _dataKeyGenerator.generateDataKey(materials.algorithmSuite(), materials.cryptoProvider());
+        return materials.toBuilder()
+                .plaintextDataKey(dataKey.getEncoded())
+                .build();
+    }
+
+
     @Override
     public EncryptionMaterials onEncrypt(EncryptionMaterials materials) {
         EncryptDataKeyStrategy encryptStrategy = encryptStrategy();
+
+        // Allow encrypt strategy to modify the materials if necessary
+        materials = encryptStrategy.modifyMaterials(materials);
+
+        if (materials.plaintextDataKey() == null) {
+            materials = generateStrategy().generateDataKey(materials);
+        }
+
+        // Return materials if they already have an encrypted data key.
+        if (!materials.encryptedDataKeys().isEmpty()) {
+            return materials;
+        }
+
         try {
-            if (materials.plaintextDataKey() == null && !encryptStrategy.isKms()) {
-                SecretKey dataKey = _dataKeyGenerator.generateDataKey(materials.algorithmSuite(), materials.cryptoProvider());
-                materials = materials.toBuilder()
-                        .plaintextDataKey(dataKey.getEncoded())
-                        .build();
-            }
-
-            // Allow encrypt strategy to modify the materials if necessary
-            materials = encryptStrategy.modifyMaterials(materials);
-
-            byte[] encryptedDataKeyCiphertext;
-
-            if (encryptStrategy.isKms()) {
-                // Since generateDataKey already performs the Encrypt operation and
-                // returns both plaintext and ciphertext data keys,
-                // calling encryptDataKey separately is not required.
-                GenerateDataKeyResponse response = encryptStrategy.generateDataKey(materials);
-                materials = materials.toBuilder()
-                        .plaintextDataKey(response.plaintext().asByteArray())
-                        .build();
-                encryptedDataKeyCiphertext = response.ciphertextBlob().asByteArray();
-            } else {
-                encryptedDataKeyCiphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
-            }
-
+            byte[] encryptedDataKeyCiphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
                     .keyProviderInfo(encryptStrategy.keyProviderInfo().getBytes(StandardCharsets.UTF_8))
-                    .encryptedDataKey(Objects.requireNonNull(encryptedDataKeyCiphertext))
+                    .encryptedDataKey(encryptedDataKeyCiphertext)
                     .build();
 
             List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
@@ -78,6 +72,8 @@ abstract public class S3Keyring implements Keyring {
             throw new S3EncryptionClientException("Unable to " + encryptStrategy.keyProviderInfo() + " wrap", e);
         }
     }
+
+    abstract protected GenerateDataKeyStrategy generateStrategy();
 
     abstract protected EncryptDataKeyStrategy encryptStrategy();
 
@@ -116,7 +112,7 @@ abstract public class S3Keyring implements Keyring {
         }
     }
 
-    abstract protected Map<String,DecryptDataKeyStrategy> decryptStrategies();
+    abstract protected Map<String, DecryptDataKeyStrategy> decryptStrategies();
 
     abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
         private boolean _enableLegacyWrappingAlgorithms = false;

@@ -94,6 +94,11 @@ public class AesKeyring extends S3Keyring {
         }
 
         @Override
+        public EncryptionMaterials generateDataKey(EncryptionMaterials materials) {
+            return defaultGenerateDataKey(materials);
+        }
+
+        @Override
         public byte[] encryptDataKey(SecureRandom secureRandom,
                 EncryptionMaterials materials)
                 throws GeneralSecurityException {
@@ -118,12 +123,11 @@ public class AesKeyring extends S3Keyring {
 
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-            byte[] encodedBytes = encryptedDataKey;
             byte[] iv = new byte[IV_LENGTH_BYTES];
-            byte[] ciphertext = new byte[encodedBytes.length - iv.length];
+            byte[] ciphertext = new byte[encryptedDataKey.length - iv.length];
 
-            System.arraycopy(encodedBytes, 0, iv, 0, iv.length);
-            System.arraycopy(encodedBytes, iv.length, ciphertext, 0, ciphertext.length);
+            System.arraycopy(encryptedDataKey, 0, iv, 0, iv.length);
+            System.arraycopy(encryptedDataKey, iv.length, ciphertext, 0, ciphertext.length);
 
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, iv);
             final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
@@ -149,6 +153,11 @@ public class AesKeyring extends S3Keyring {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    protected GenerateDataKeyStrategy generateStrategy() {
+        return _aesGcmStrategy;
     }
 
     @Override
