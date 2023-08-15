@@ -21,9 +21,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.CI_AWS_ACCOUNT_ID || '370957321024' }}:role/service-role/${{ vars.CI_AWS_ROLE || 'S3EC-GitHub-test-role' }}
+          role-to-assume: arn:aws:iam::${{ secrets.CI_AWS_ACCOUNT_ID }}:role/service-role/${{ vars.CI_AWS_ROLE }}
           role-session-name: S3EC-Github-CI-Tests
-          aws-region: ${{ vars.CI_AWS_REGION || 'us-west-2' }}
+          aws-region: ${{ vars.CI_AWS_REGION }}
 
       - name: Checkout Code
         uses: actions/checkout@v3
