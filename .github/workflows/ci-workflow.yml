@@ -3,9 +3,9 @@ name: Continuous Integration Workflow
 on:
   pull_request:
   push:
-  # Run once a day
+  # This workflow runs every weekday at 15:00 UTC (8AM PDT)
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '00 15 * * 1-5'
 
 jobs:
   Static_Analysis:

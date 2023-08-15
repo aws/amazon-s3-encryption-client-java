@@ -40,13 +40,13 @@ abstract public class S3Keyring implements Keyring {
 
     @Override
     public EncryptionMaterials onEncrypt(EncryptionMaterials materials) {
-        EncryptDataKeyStrategy encryptStrategy = encryptStrategy();
+        EncryptDataKeyStrategy encryptStrategy = encryptDataKeyStrategy();
 
         // Allow encrypt strategy to modify the materials if necessary
         materials = encryptStrategy.modifyMaterials(materials);
 
         if (materials.plaintextDataKey() == null) {
-            materials = generateStrategy().generateDataKey(materials);
+            materials = generateDataKeyStrategy().generateDataKey(materials);
         }
 
         // Return materials if they already have an encrypted data key.
@@ -73,9 +73,9 @@ abstract public class S3Keyring implements Keyring {
         }
     }
 
-    abstract protected GenerateDataKeyStrategy generateStrategy();
+    abstract protected GenerateDataKeyStrategy generateDataKeyStrategy();
 
-    abstract protected EncryptDataKeyStrategy encryptStrategy();
+    abstract protected EncryptDataKeyStrategy encryptDataKeyStrategy();
 
     @Override
     public DecryptionMaterials onDecrypt(final DecryptionMaterials materials, List<EncryptedDataKey> encryptedDataKeys) {
@@ -95,7 +95,7 @@ abstract public class S3Keyring implements Keyring {
 
         String keyProviderInfo = new String(encryptedDataKey.keyProviderInfo(), StandardCharsets.UTF_8);
 
-        DecryptDataKeyStrategy decryptStrategy = decryptStrategies().get(keyProviderInfo);
+        DecryptDataKeyStrategy decryptStrategy = decryptDataKeyStrategies().get(keyProviderInfo);
         if (decryptStrategy == null) {
             throw new S3EncryptionClientException("The keyring does not support the object's key wrapping algorithm: " + keyProviderInfo);
         }
@@ -112,7 +112,7 @@ abstract public class S3Keyring implements Keyring {
         }
     }
 
-    abstract protected Map<String, DecryptDataKeyStrategy> decryptStrategies();
+    abstract protected Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies();
 
     abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
         private boolean _enableLegacyWrappingAlgorithms = false;

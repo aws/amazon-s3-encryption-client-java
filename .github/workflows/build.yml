@@ -40,8 +40,8 @@ jobs:
 
       - name: Compile
         run: |
-          mvn -B -ntp clean compile
-          mvn -B -ntp test-compile
+          mvn --batch-mode -no-transfer-progress clean compile
+          mvn --batch-mode -no-transfer-progress test-compile
         shell: bash
 
       - name: Test

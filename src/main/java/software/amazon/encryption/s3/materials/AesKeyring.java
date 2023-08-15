@@ -139,16 +139,16 @@ public class AesKeyring extends S3Keyring {
         }
     };
 
-    private final Map<String, DecryptDataKeyStrategy> decryptStrategies = new HashMap<>();
+    private final Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies = new HashMap<>();
 
     private AesKeyring(Builder builder) {
         super(builder);
 
         _wrappingKey = builder._wrappingKey;
 
-        decryptStrategies.put(_aesStrategy.keyProviderInfo(), _aesStrategy);
-        decryptStrategies.put(_aesWrapStrategy.keyProviderInfo(), _aesWrapStrategy);
-        decryptStrategies.put(_aesGcmStrategy.keyProviderInfo(), _aesGcmStrategy);
+        decryptDataKeyStrategies.put(_aesStrategy.keyProviderInfo(), _aesStrategy);
+        decryptDataKeyStrategies.put(_aesWrapStrategy.keyProviderInfo(), _aesWrapStrategy);
+        decryptDataKeyStrategies.put(_aesGcmStrategy.keyProviderInfo(), _aesGcmStrategy);
     }
 
     public static Builder builder() {
@@ -156,18 +156,18 @@ public class AesKeyring extends S3Keyring {
     }
 
     @Override
-    protected GenerateDataKeyStrategy generateStrategy() {
+    protected GenerateDataKeyStrategy generateDataKeyStrategy() {
         return _aesGcmStrategy;
     }
 
     @Override
-    protected EncryptDataKeyStrategy encryptStrategy() {
+    protected EncryptDataKeyStrategy encryptDataKeyStrategy() {
         return _aesGcmStrategy;
     }
 
     @Override
-    protected Map<String, DecryptDataKeyStrategy> decryptStrategies() {
-        return decryptStrategies;
+    protected Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies() {
+        return decryptDataKeyStrategies;
     }
 
     public static class Builder extends S3Keyring.Builder<AesKeyring, Builder> {
