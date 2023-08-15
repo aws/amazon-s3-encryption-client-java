@@ -30,13 +30,23 @@ abstract public class S3Keyring implements Keyring {
         _dataKeyGenerator = builder._dataKeyGenerator;
     }
 
+    /**
+     * Generates a data key using the provided EncryptionMaterials and the configured DataKeyGenerator.
+     * <p>
+     * This method is intended for extension by customers who need to customize key generation within their Keyring
+     * implementation. It generates a data key for encryption using the algorithm suite and cryptographic provider
+     * configured in the provided EncryptionMaterials object.
+     *
+     * @param materials The EncryptionMaterials containing information about the algorithm suite and cryptographic
+     *                  provider to be used for data key generation.
+     * @return An updated EncryptionMaterials object with the generated plaintext data key.
+     */
     public EncryptionMaterials defaultGenerateDataKey(EncryptionMaterials materials) {
         SecretKey dataKey = _dataKeyGenerator.generateDataKey(materials.algorithmSuite(), materials.cryptoProvider());
         return materials.toBuilder()
                 .plaintextDataKey(dataKey.getEncoded())
                 .build();
     }
-
 
     @Override
     public EncryptionMaterials onEncrypt(EncryptionMaterials materials) {

@@ -127,7 +127,7 @@ public class KmsKeyring extends S3Keyring {
 
             GenerateDataKeyRequest request = GenerateDataKeyRequest.builder()
                     .keyId(_wrappingKeyId)
-                    .keySpec(dataKeySpec.toString())
+                    .keySpec(dataKeySpec)
                     .encryptionContext(materials.encryptionContext())
                     .overrideConfiguration(builder -> builder.addApiName(API_NAME))
                     .build();
