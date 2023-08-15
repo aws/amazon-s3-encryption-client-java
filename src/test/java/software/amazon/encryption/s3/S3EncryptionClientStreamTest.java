@@ -227,7 +227,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void customMaxBufferSizeWithLargeObject() throws IOException {
-        final String objectKey = appendTestSuffix("large-object-test");
+        final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size");
 
         Security.addProvider(new BouncyCastleProvider());
         Provider provider = Security.getProvider("BC");
