@@ -3,25 +3,31 @@
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.core.ApiName;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DataKeySpec;
 import software.amazon.awssdk.services.kms.model.DecryptRequest;
 import software.amazon.awssdk.services.kms.model.DecryptResponse;
 import software.amazon.awssdk.services.kms.model.EncryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptResponse;
+import software.amazon.awssdk.services.kms.model.GenerateDataKeyRequest;
+import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.internal.ApiNameVersion;
+
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * This keyring can wrap keys with the active keywrap algorithm and
@@ -103,6 +109,47 @@ public class KmsKeyring extends S3Keyring {
         }
 
         @Override
+        public EncryptionMaterials generateDataKey(EncryptionMaterials materials) {
+            DataKeySpec dataKeySpec;
+            if (!materials.algorithmSuite().dataKeyAlgorithm().equals("AES")) {
+                throw new S3EncryptionClientException(String.format("The data key algorithm %s is not supported by AWS " + "KMS", materials.algorithmSuite().dataKeyAlgorithm()));
+            }
+            switch (materials.algorithmSuite().dataKeyLengthBits()) {
+                case 128:
+                    dataKeySpec = DataKeySpec.AES_128;
+                    break;
+                case 256:
+                    dataKeySpec = DataKeySpec.AES_256;
+                    break;
+                default:
+                    throw new S3EncryptionClientException(String.format("The data key length %d is not supported by " + "AWS KMS", materials.algorithmSuite().dataKeyLengthBits()));
+            }
+
+            GenerateDataKeyRequest request = GenerateDataKeyRequest.builder()
+                    .keyId(_wrappingKeyId)
+                    .keySpec(dataKeySpec)
+                    .encryptionContext(materials.encryptionContext())
+                    .overrideConfiguration(builder -> builder.addApiName(API_NAME))
+                    .build();
+            GenerateDataKeyResponse response = _kmsClient.generateDataKey(request);
+
+            byte[] encryptedDataKeyCiphertext = response.ciphertextBlob().asByteArray();
+            EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
+                    .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
+                    .keyProviderInfo(keyProviderInfo().getBytes(StandardCharsets.UTF_8))
+                    .encryptedDataKey(Objects.requireNonNull(encryptedDataKeyCiphertext))
+                    .build();
+
+            List<EncryptedDataKey> encryptedDataKeys = new ArrayList<>(materials.encryptedDataKeys());
+            encryptedDataKeys.add(encryptedDataKey);
+
+            return materials.toBuilder()
+                    .encryptedDataKeys(encryptedDataKeys)
+                    .plaintextDataKey(response.plaintext().asByteArray())
+                    .build();
+        }
+
+        @Override
         public byte[] encryptDataKey(SecureRandom secureRandom, EncryptionMaterials materials) {
             HashMap<String, String> encryptionContext = new HashMap<>(materials.encryptionContext());
             EncryptRequest request = EncryptRequest.builder()
@@ -117,7 +164,7 @@ public class KmsKeyring extends S3Keyring {
         }
 
         @Override
-        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey){
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) {
             Map<String, String> requestEncryptionContext = new HashMap<>();
             GetObjectRequest s3Request = materials.s3Request();
             if (s3Request.overrideConfiguration().isPresent()) {
@@ -151,7 +198,7 @@ public class KmsKeyring extends S3Keyring {
 
     };
 
-    private final Map<String, DecryptDataKeyStrategy> decryptStrategies = new HashMap<>();
+    private final Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies = new HashMap<>();
 
     public KmsKeyring(Builder builder) {
         super(builder);
@@ -159,8 +206,8 @@ public class KmsKeyring extends S3Keyring {
         _kmsClient = builder._kmsClient;
         _wrappingKeyId = builder._wrappingKeyId;
 
-        decryptStrategies.put(_kmsStrategy.keyProviderInfo(), _kmsStrategy);
-        decryptStrategies.put(_kmsContextStrategy.keyProviderInfo(), _kmsContextStrategy);
+        decryptDataKeyStrategies.put(_kmsStrategy.keyProviderInfo(), _kmsStrategy);
+        decryptDataKeyStrategies.put(_kmsContextStrategy.keyProviderInfo(), _kmsContextStrategy);
     }
 
     public static Builder builder() {
@@ -168,20 +215,27 @@ public class KmsKeyring extends S3Keyring {
     }
 
     @Override
-    protected EncryptDataKeyStrategy encryptStrategy() {
+    protected GenerateDataKeyStrategy generateDataKeyStrategy() {
         return _kmsContextStrategy;
     }
 
     @Override
-    protected Map<String, DecryptDataKeyStrategy> decryptStrategies() {
-        return decryptStrategies;
+    protected EncryptDataKeyStrategy encryptDataKeyStrategy() {
+        return _kmsContextStrategy;
+    }
+
+    @Override
+    protected Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies() {
+        return decryptDataKeyStrategies;
     }
 
     public static class Builder extends S3Keyring.Builder<KmsKeyring, Builder> {
         private KmsClient _kmsClient = KmsClient.builder().build();
         private String _wrappingKeyId;
 
-        private Builder() { super(); }
+        private Builder() {
+            super();
+        }
 
         @Override
         protected Builder builder() {
