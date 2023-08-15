@@ -221,6 +221,7 @@ public class S3EncryptionClientStreamTest {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .maxBufferSize(16)
+                .enableDelayedAuthenticationMode(true)
                 .build());
     }
 
