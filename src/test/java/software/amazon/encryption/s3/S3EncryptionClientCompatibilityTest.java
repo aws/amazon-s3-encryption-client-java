@@ -806,7 +806,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesCbcV1toV3FailsWhenUnauthencticateModeDisabled() {
-        final String objectKey = "fails-aes-cbc-v1-to-v3-when-unauthencticate-mode-disabled";
+        final String objectKey = appendTestSuffix("fails-aes-cbc-v1-to-v3-when-unauthencticate-mode-disabled");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
@@ -840,7 +840,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void AesCbcV1toV3FailsWhenLegacyKeyringDisabled() {
-        final String objectKey = "fails-aes-cbc-v1-to-v3-when-legacy-keyring-disabled";
+        final String objectKey = appendTestSuffix("fails-aes-cbc-v1-to-v3-when-legacy-keyring-disabled");
 
         // V1 Client
         EncryptionMaterialsProvider materialsProvider =
