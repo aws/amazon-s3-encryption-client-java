@@ -214,7 +214,6 @@ Resources:
                 "arn:aws:kms:*:658956600833:alias/*"
               ],
               "Action": [
-                "kms:Encrypt",
                 "kms:Decrypt",
                 "kms:GenerateDataKey"
               ]

@@ -15,6 +15,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 public class ParameterMalleabilityTest {
@@ -30,7 +31,7 @@ public class ParameterMalleabilityTest {
 
     @Test
     public void contentEncryptionDowngradeAttackFails() {
-        final String objectKey = "content-downgrade-attack-fails";
+        final String objectKey = appendTestSuffix("content-downgrade-attack-fails");
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .build();
@@ -69,7 +70,7 @@ public class ParameterMalleabilityTest {
 
     @Test
     public void keyWrapRemovalAttackFails() {
-        final String objectKey = "keywrap-removal-attack-fails";
+        final String objectKey = appendTestSuffix("keywrap-removal-attack-fails");
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .build();
@@ -107,7 +108,7 @@ public class ParameterMalleabilityTest {
 
     @Test
     public void keyWrapDowngradeAesWrapAttackFails() {
-        final String objectKey = "keywrap-downgrade-aeswrap-attack-fails";
+        final String objectKey = appendTestSuffix("keywrap-downgrade-aeswrap-attack-fails");
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .build();
@@ -146,7 +147,7 @@ public class ParameterMalleabilityTest {
 
     @Test
     public void keyWrapDowngradeAesAttackFails() {
-        final String objectKey = "keywrap-downgrade-aes-attack-fails";
+        final String objectKey = appendTestSuffix("keywrap-downgrade-aes-attack-fails");
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .build();

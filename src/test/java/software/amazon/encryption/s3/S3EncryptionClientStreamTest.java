@@ -275,7 +275,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void AesGcmV3toV3StreamWithTamperedTag() {
-        final String objectKey = "aes-gcm-v3-to-v3-stream-tamper-tag";
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-stream-tamper-tag");
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()

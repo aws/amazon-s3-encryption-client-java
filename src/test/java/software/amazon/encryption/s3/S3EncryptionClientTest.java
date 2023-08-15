@@ -586,7 +586,7 @@ public class S3EncryptionClientTest {
 
     @Test
     public void attemptToDecryptPlaintext() {
-        final String objectKey = "plaintext-object";
+        final String objectKey = appendTestSuffix("plaintext-object");
 
         final S3Client plaintextS3Client = S3Client.builder().build();
 
