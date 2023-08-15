@@ -36,15 +36,14 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     private byte[] outputBuffer;
     private final Queue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
 
-    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, long bufferSize) {
+    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, long bufferSizeInBytes) {
         this.wrappedSubscriber = wrappedSubscriber;
         if (contentLength == null) {
             throw new S3EncryptionClientException("contentLength cannot be null in buffered mode. To enable unbounded " +
                     "streaming, reconfigure the S3 Encryption Client with Delayed Authentication mode enabled.");
         }
-        long bufferSizeInBytes = 1024 * 1024 * bufferSize;
         if (contentLength > bufferSizeInBytes) {
-            throw new S3EncryptionClientException(String.format("The object you are attempting to decrypt exceeds the maximum buffer size: " + bufferSize +
+            throw new S3EncryptionClientException(String.format("The object you are attempting to decrypt exceeds the maximum buffer size: " + bufferSizeInBytes +
                     " for the default (buffered) mode. Either increase your buffer size when configuring your client, " +
                     "or enable Delayed Authentication mode to disable buffered decryption."));
 
@@ -52,7 +51,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
         this.contentLength = Math.toIntExact(contentLength);
         this.materials = materials;
         this.iv = iv;
-        this.cipher = materials.getCipher(iv);
+        cipher = materials.getCipher(iv);
     }
 
     @Override

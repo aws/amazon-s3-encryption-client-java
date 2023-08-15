@@ -4,6 +4,7 @@ package software.amazon.encryption.s3;
 
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,13 +16,13 @@ import java.util.stream.Collectors;
 public class S3EncryptionClientUtilities {
 
     public static final String INSTRUCTION_FILE_SUFFIX = ".instruction";
-    public static final int MIN_ALLOWED_BUFFER_SIZE_MiB = 32;
-    public static final int MAX_ALLOWED_BUFFER_SIZE_MiB = 2048;
+    public static final long MIN_ALLOWED_BUFFER_SIZE_BYTES = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherBlockSizeBytes();
+    public static final long MAX_ALLOWED_BUFFER_SIZE_BYTES = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes();
 
     /**
      * The Default Buffer Size for Safe authentication is set to 64MiB.
      */
-    public static final long DEFAULT_BUFFER_SIZE_MiB = 64;
+    public static final long DEFAULT_BUFFER_SIZE_BYTES = 64 * 1024 * 1024;
 
     /**
      * For a given DeleteObjectsRequest, return a list of ObjectIdentifiers

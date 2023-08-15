@@ -42,9 +42,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_BUFFER_SIZE_MiB;
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MAX_ALLOWED_BUFFER_SIZE_MiB;
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MIN_ALLOWED_BUFFER_SIZE_MiB;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_BUFFER_SIZE_BYTES;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MAX_ALLOWED_BUFFER_SIZE_BYTES;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MIN_ALLOWED_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
 
 /**
@@ -206,9 +206,9 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         final DeleteObjectRequest actualRequest = deleteObjectRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
-        final CompletableFuture<DeleteObjectResponse> response =  _wrappedClient.deleteObject(actualRequest);
+        final CompletableFuture<DeleteObjectResponse> response = _wrappedClient.deleteObject(actualRequest);
         final String instructionObjectKey = deleteObjectRequest.key() + ".instruction";
-        final CompletableFuture<DeleteObjectResponse> instructionResponse =  _wrappedClient.deleteObject(builder -> builder
+        final CompletableFuture<DeleteObjectResponse> instructionResponse = _wrappedClient.deleteObject(builder -> builder
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .bucket(deleteObjectRequest.bucket())
                 .key(instructionObjectKey));
@@ -263,7 +263,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private boolean _enableMultipartPutObject = false;
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
-        private long _bufferSize = DEFAULT_BUFFER_SIZE_MiB;
+        private long _bufferSize = 0;
 
         private Builder() {
         }
@@ -444,14 +444,13 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         /**
          * Sets the buffer size for safe authentication used when delayed authentication mode is disabled.
          * If buffer size is not given during client configuration, default buffer size is set to 64MiB.
-         *
-         * @param bufferSize the desired buffer size in MB.
+         * @param bufferSize the desired buffer size in Bytes.
          * @return Returns a reference to this object so that method calls can be chained together.
          * @throws S3EncryptionClientException if the specified buffer size is outside the allowed bounds
          */
-        public Builder maxBufferSize(int bufferSize) throws IllegalArgumentException {
-            if (bufferSize < MIN_ALLOWED_BUFFER_SIZE_MiB || bufferSize > MAX_ALLOWED_BUFFER_SIZE_MiB) {
-                throw new S3EncryptionClientException("Invalid buffer size: " + bufferSize + " MiB. Buffer size must be between " + MIN_ALLOWED_BUFFER_SIZE_MiB + " and " + MAX_ALLOWED_BUFFER_SIZE_MiB + " MiB.");
+        public Builder maxBufferSize(long bufferSize) throws IllegalArgumentException {
+            if (bufferSize < MIN_ALLOWED_BUFFER_SIZE_BYTES || bufferSize > MAX_ALLOWED_BUFFER_SIZE_BYTES) {
+                throw new S3EncryptionClientException("Invalid buffer size: " + bufferSize + " Bytes. Buffer size must be between " + MIN_ALLOWED_BUFFER_SIZE_BYTES + " and " + MAX_ALLOWED_BUFFER_SIZE_BYTES + " Bytes.");
             }
 
             this._bufferSize = bufferSize;
@@ -498,6 +497,14 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         public S3AsyncEncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
+            }
+
+            if (_bufferSize != 0) {
+                if (_enableDelayedAuthenticationMode) {
+                    throw new S3EncryptionClientException("Buffer size cannot be set when delayed authentication mode is enabled");
+                }
+            } else {
+                _bufferSize = DEFAULT_BUFFER_SIZE_BYTES;
             }
 
             if (_keyring == null) {

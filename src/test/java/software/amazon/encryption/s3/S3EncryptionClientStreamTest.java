@@ -208,11 +208,19 @@ public class S3EncryptionClientStreamTest {
     public void invalidBufferSize() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .maxBufferSize(16)
+                .maxBufferSize(15L)
                 .build());
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .maxBufferSize(4096)
+                .maxBufferSize(68719476705L)
+                .build());
+    }
+
+    @Test
+    public void failsWhenBothBufferSizeAndDelayedAuthModeEnabled() {
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .maxBufferSize(16)
                 .build());
     }
 
@@ -227,7 +235,7 @@ public class S3EncryptionClientStreamTest {
         S3Client v3ClientWithBuffer32MiB = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
-                .maxBufferSize(32)
+                .maxBufferSize(32 * 1024 * 1024)
                 .build();
 
         // V3 Client with default buffer size (i.e. 64MiB)
