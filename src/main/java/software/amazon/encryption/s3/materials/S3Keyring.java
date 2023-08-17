@@ -3,6 +3,7 @@
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 import java.nio.charset.StandardCharsets;
@@ -12,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.crypto.SecretKey;
+
+import org.apache.commons.logging.LogFactory;
 
 /**
  * This serves as the base class for all the keyrings in the S3 encryption client.
@@ -123,6 +126,15 @@ abstract public class S3Keyring implements Keyring {
     }
 
     abstract protected Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies();
+
+    public void warnIfEncryptionContextIsPresent(EncryptionMaterials materials) {
+        materials.s3Request().overrideConfiguration()
+                .flatMap(overrideConfiguration ->
+                                 overrideConfiguration.executionAttributes()
+                                         .getOptionalAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT))
+                .ifPresent(ctx -> LogFactory.getLog(getClass()).warn("Usage of Encryption Context provides no security benefit in " + getClass().getSimpleName()));
+
+    }
 
     abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
         private boolean _enableLegacyWrappingAlgorithms = false;

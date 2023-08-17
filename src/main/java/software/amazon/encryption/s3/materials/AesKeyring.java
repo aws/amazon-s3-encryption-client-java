@@ -99,6 +99,13 @@ public class AesKeyring extends S3Keyring {
         }
 
         @Override
+        public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
+            warnIfEncryptionContextIsPresent(materials);
+
+            return materials;
+        }
+
+        @Override
         public byte[] encryptDataKey(SecureRandom secureRandom,
                 EncryptionMaterials materials)
                 throws GeneralSecurityException {
