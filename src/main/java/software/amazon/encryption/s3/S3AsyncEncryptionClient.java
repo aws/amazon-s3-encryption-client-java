@@ -499,7 +499,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
             }
 
-            if (_bufferSize != 0) {
+            if (_bufferSize >= 0) {
                 if (_enableDelayedAuthenticationMode) {
                     throw new S3EncryptionClientException("Buffer size cannot be set when delayed authentication mode is enabled");
                 }
