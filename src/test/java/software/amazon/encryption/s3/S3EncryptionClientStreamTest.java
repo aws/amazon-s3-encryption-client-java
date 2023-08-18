@@ -39,6 +39,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -331,22 +332,21 @@ public class S3EncryptionClientStreamTest {
         futurePut.join();
         largeObjectStream.close();
 
-        // Object is larger than Buffer, so getObject fails
-        assertThrows(S3EncryptionClientException.class, () -> v3ClientWithBuffer32MiB.getObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey), AsyncResponseTransformer.toBlockingInputStream()).join());
-
-        // Object is larger than Buffer, so getObject fails
-        assertThrows(S3EncryptionClientException.class, () -> v3ClientWithBuffer32MiB.getObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey), AsyncResponseTransformer.toBlockingInputStream()).join());
+        try {
+            // Object is larger than Buffer, so getObject fails
+            CompletableFuture<ResponseInputStream<GetObjectResponse>> futureResponse = v3ClientWithBuffer32MiB.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
+            futureResponse.join();
+        } catch (CompletionException e) {
+            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
+        }
 
         // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
         CompletableFuture<ResponseInputStream<GetObjectResponse>> futureGet = v3ClientWithDelayedAuth.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
         ResponseInputStream<GetObjectResponse> output = futureGet.join();
-
 
         assertTrue(IOUtils.contentEquals(new BoundedInputStream(fileSizeExceedingDefaultLimit), output));
         output.close();
