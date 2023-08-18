@@ -263,7 +263,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private boolean _enableMultipartPutObject = false;
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
-        private long _bufferSize = 0;
+        private long _bufferSize = -1L;
 
         private Builder() {
         }
@@ -448,7 +448,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * @return Returns a reference to this object so that method calls can be chained together.
          * @throws S3EncryptionClientException if the specified buffer size is outside the allowed bounds
          */
-        public Builder maxBufferSize(long bufferSize) throws IllegalArgumentException {
+        public Builder setBufferSize(long bufferSize) {
             if (bufferSize < MIN_ALLOWED_BUFFER_SIZE_BYTES || bufferSize > MAX_ALLOWED_BUFFER_SIZE_BYTES) {
                 throw new S3EncryptionClientException("Invalid buffer size: " + bufferSize + " Bytes. Buffer size must be between " + MIN_ALLOWED_BUFFER_SIZE_BYTES + " and " + MAX_ALLOWED_BUFFER_SIZE_BYTES + " Bytes.");
             }
