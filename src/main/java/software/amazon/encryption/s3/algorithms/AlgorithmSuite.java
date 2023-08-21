@@ -31,15 +31,15 @@ public enum AlgorithmSuite {
             0,
             AlgorithmConstants.CBC_MAX_CONTENT_LENGTH_BYTES);
 
-    private int _id;
-    private boolean _isLegacy;
-    private String _dataKeyAlgorithm;
-    private int _dataKeyLengthBits;
-    private String _cipherName;
-    private int _cipherBlockSizeBits;
-    private int _cipherIvLengthBits;
-    private int _cipherTagLengthBits;
-    private long _cipherMaxContentLengthBits;
+    private final int _id;
+    private final boolean _isLegacy;
+    private final String _dataKeyAlgorithm;
+    private final int _dataKeyLengthBits;
+    private final String _cipherName;
+    private final int _cipherBlockSizeBits;
+    private final int _cipherIvLengthBits;
+    private final int _cipherTagLengthBits;
+    private final long _cipherMaxContentLengthBits;
 
     AlgorithmSuite(int id,
                    boolean isLegacy,

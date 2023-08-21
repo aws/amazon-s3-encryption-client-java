@@ -64,7 +64,6 @@ Resources:
                 "arn:aws:kms:*:${AWS::AccountId}:${S3ECGitHubKMSKeyAlias}"
               ],
               "Action": [
-                "kms:Encrypt",
                 "kms:Decrypt",
                 "kms:GenerateDataKey",
                 "kms:GenerateDataKeyPair"

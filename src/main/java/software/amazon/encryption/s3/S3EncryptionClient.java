@@ -267,12 +267,16 @@ public class S3EncryptionClient extends DelegatingS3Client {
                     "the maximum length allowed for GCM encryption.");
         }
 
-        AwsRequestOverrideConfiguration overrideConfig = request.overrideConfiguration().get();
+        MultipartConfiguration multipartConfiguration;
         // If MultipartConfiguration is null, Initialize MultipartConfiguration
-        MultipartConfiguration multipartConfiguration = overrideConfig
-                .executionAttributes()
-                .getOptionalAttribute(S3EncryptionClient.CONFIGURATION)
-                .orElse(MultipartConfiguration.builder().build());
+        if (request.overrideConfiguration().isPresent()) {
+            multipartConfiguration = request.overrideConfiguration().get()
+                    .executionAttributes()
+                    .getOptionalAttribute(S3EncryptionClient.CONFIGURATION)
+                    .orElse(MultipartConfiguration.builder().build());
+        } else {
+            multipartConfiguration = MultipartConfiguration.builder().build();
+        }
 
         ExecutorService es = multipartConfiguration.executorService();
         final boolean defaultExecutorService = es == null;
@@ -463,7 +467,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
     @Override
     public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request)
             throws AwsServiceException, SdkClientException {
-        return _multipartPipeline.abortMultipartUpload(request);
+        try {
+            return _multipartPipeline.abortMultipartUpload(request);
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
+        } catch (Exception e) {
+            throw new S3EncryptionClientException("Unable to abort Multipart upload.", e);
+        }
     }
 
     /**
