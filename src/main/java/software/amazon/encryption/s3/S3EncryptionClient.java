@@ -461,7 +461,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
     @Override
     public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request)
             throws AwsServiceException, SdkClientException {
-        return _multipartPipeline.abortMultipartUpload(request);
+        try {
+            return _multipartPipeline.abortMultipartUpload(request);
+        } catch (CompletionException e) {
+            throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
+        } catch (Exception e) {
+            throw new S3EncryptionClientException("Unable to abort Multipart upload.", e);
+        }
     }
 
     /**
