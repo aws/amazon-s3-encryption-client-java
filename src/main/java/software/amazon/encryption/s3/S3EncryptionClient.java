@@ -261,12 +261,16 @@ public class S3EncryptionClient extends DelegatingS3Client {
                     "the maximum length allowed for GCM encryption.");
         }
 
-        AwsRequestOverrideConfiguration overrideConfig = request.overrideConfiguration().get();
+        MultipartConfiguration multipartConfiguration;
         // If MultipartConfiguration is null, Initialize MultipartConfiguration
-        MultipartConfiguration multipartConfiguration = overrideConfig
-                .executionAttributes()
-                .getOptionalAttribute(S3EncryptionClient.CONFIGURATION)
-                .orElse(MultipartConfiguration.builder().build());
+        if (request.overrideConfiguration().isPresent()) {
+            multipartConfiguration = request.overrideConfiguration().get()
+                    .executionAttributes()
+                    .getOptionalAttribute(S3EncryptionClient.CONFIGURATION)
+                    .orElse(MultipartConfiguration.builder().build());
+        } else {
+            multipartConfiguration = MultipartConfiguration.builder().build();
+        }
 
         ExecutorService es = multipartConfiguration.executorService();
         final boolean defaultExecutorService = es == null;
