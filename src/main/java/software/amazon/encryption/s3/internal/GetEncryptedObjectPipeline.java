@@ -40,6 +40,7 @@ public class GetEncryptedObjectPipeline {
     private final CryptographicMaterialsManager _cryptoMaterialsManager;
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthentication;
+    private final long _bufferSize;
 
     public static Builder builder() {
         return new Builder();
@@ -50,6 +51,7 @@ public class GetEncryptedObjectPipeline {
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         this._enableDelayedAuthentication = builder._enableDelayedAuthentication;
+        this._bufferSize = builder._bufferSize;
     }
 
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest, AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
@@ -160,8 +162,7 @@ public class GetEncryptedObjectPipeline {
                 } else {
                     // Use buffered publisher for GCM when delayed auth is not enabled
                     BufferedCipherPublisher plaintextPublisher = new BufferedCipherPublisher(ciphertextPublisher,
-                            getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits(),
-                            materials, iv);
+                            getObjectResponse.contentLength(), materials, iv, _bufferSize);
                     wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
                 }
 
@@ -176,6 +177,7 @@ public class GetEncryptedObjectPipeline {
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private boolean _enableLegacyUnauthenticatedModes;
         private boolean _enableDelayedAuthentication;
+        private long _bufferSize;
 
         private Builder() {
         }
@@ -197,6 +199,11 @@ public class GetEncryptedObjectPipeline {
 
         public Builder enableLegacyUnauthenticatedModes(boolean enableLegacyUnauthenticatedModes) {
             this._enableLegacyUnauthenticatedModes = enableLegacyUnauthenticatedModes;
+            return this;
+        }
+
+        public Builder bufferSize(long bufferSize) {
+            this._bufferSize = bufferSize;
             return this;
         }
 

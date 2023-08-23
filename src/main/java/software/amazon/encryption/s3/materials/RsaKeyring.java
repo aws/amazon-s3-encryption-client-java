@@ -98,6 +98,18 @@ public class RsaKeyring extends S3Keyring {
         }
 
         @Override
+        public EncryptionMaterials generateDataKey(EncryptionMaterials materials) {
+            return defaultGenerateDataKey(materials);
+        }
+
+        @Override
+        public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
+            warnIfEncryptionContextIsPresent(materials);
+
+            return materials;
+        }
+
+        @Override
         public byte[] encryptDataKey(SecureRandom secureRandom,
                                      EncryptionMaterials materials) throws GeneralSecurityException {
             final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
@@ -153,16 +165,16 @@ public class RsaKeyring extends S3Keyring {
         }
     };
 
-    private final Map<String, DecryptDataKeyStrategy> decryptStrategies = new HashMap<>();
+    private final Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies = new HashMap<>();
 
     private RsaKeyring(Builder builder) {
         super(builder);
 
         _partialRsaKeyPair = builder._partialRsaKeyPair;
 
-        decryptStrategies.put(_rsaStrategy.keyProviderInfo(), _rsaStrategy);
-        decryptStrategies.put(_rsaEcbStrategy.keyProviderInfo(), _rsaEcbStrategy);
-        decryptStrategies.put(_rsaOaepStrategy.keyProviderInfo(), _rsaOaepStrategy);
+        decryptDataKeyStrategies.put(_rsaStrategy.keyProviderInfo(), _rsaStrategy);
+        decryptDataKeyStrategies.put(_rsaEcbStrategy.keyProviderInfo(), _rsaEcbStrategy);
+        decryptDataKeyStrategies.put(_rsaOaepStrategy.keyProviderInfo(), _rsaOaepStrategy);
     }
 
     public static Builder builder() {
@@ -170,13 +182,18 @@ public class RsaKeyring extends S3Keyring {
     }
 
     @Override
-    protected EncryptDataKeyStrategy encryptStrategy() {
+    protected GenerateDataKeyStrategy generateDataKeyStrategy() {
         return _rsaOaepStrategy;
     }
 
     @Override
-    protected Map<String, DecryptDataKeyStrategy> decryptStrategies() {
-        return decryptStrategies;
+    protected EncryptDataKeyStrategy encryptDataKeyStrategy() {
+        return _rsaOaepStrategy;
+    }
+
+    @Override
+    protected Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies() {
+        return decryptDataKeyStrategies;
     }
 
     public static class Builder extends S3Keyring.Builder<S3Keyring, Builder> {
