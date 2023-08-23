@@ -66,7 +66,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MAX_ALLOWED_BUFFER_SIZE_BYTES;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MIN_ALLOWED_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.instructionFileKeysToDelete;
 import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
 
@@ -88,6 +91,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     private final boolean _enableDelayedAuthenticationMode;
     private final boolean _enableMultipartPutObject;
     private final MultipartUploadObjectPipeline _multipartPipeline;
+    private final long _bufferSize;
 
     private S3EncryptionClient(Builder builder) {
         super(builder._wrappedClient);
@@ -99,6 +103,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
         _enableMultipartPutObject = builder._enableMultipartPutObject;
         _multipartPipeline = builder._multipartPipeline;
+        _bufferSize = builder._bufferSize;
     }
 
     /**
@@ -224,6 +229,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
+                .bufferSize(_bufferSize)
                 .build();
 
         try {
@@ -498,6 +504,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
         private boolean _enableLegacyUnauthenticatedModes = false;
+        private long _bufferSize = -1L;
 
         private Builder() {
         }
@@ -687,6 +694,22 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         /**
+         * Sets the buffer size for safe authentication used when delayed authentication mode is disabled.
+         * If buffer size is not given during client configuration, default buffer size is set to 64MiB.
+         * @param bufferSize the desired buffer size in Bytes.
+         * @return Returns a reference to this object so that method calls can be chained together.
+         * @throws S3EncryptionClientException if the specified buffer size is outside the allowed bounds
+         */
+        public Builder setBufferSize(long bufferSize) {
+            if (bufferSize < MIN_ALLOWED_BUFFER_SIZE_BYTES || bufferSize > MAX_ALLOWED_BUFFER_SIZE_BYTES) {
+                throw new S3EncryptionClientException("Invalid buffer size: " + bufferSize + " Bytes. Buffer size must be between " + MIN_ALLOWED_BUFFER_SIZE_BYTES + " and " + MAX_ALLOWED_BUFFER_SIZE_BYTES + " Bytes.");
+            }
+
+            this._bufferSize = bufferSize;
+            return this;
+        }
+
+        /**
          * Allows the user to pass an instance of {@link Provider} to be used
          * for cryptographic operations. By default, the S3 Encryption Client
          * will use the first compatible {@link Provider} in the chain. When this option
@@ -726,6 +749,14 @@ public class S3EncryptionClient extends DelegatingS3Client {
         public S3EncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
+            }
+
+            if (_bufferSize >= 0) {
+                if (_enableDelayedAuthenticationMode) {
+                    throw new S3EncryptionClientException("Buffer size cannot be set when delayed authentication mode is enabled");
+                }
+            } else {
+                _bufferSize = DEFAULT_BUFFER_SIZE_BYTES;
             }
 
             if (_wrappedClient == null) {
