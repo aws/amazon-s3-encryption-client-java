@@ -1,15 +1,15 @@
 package software.amazon.encryption.s3.examples;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.S3EncryptionClient;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 
 public class RangedGetExample {
 
@@ -27,11 +27,16 @@ public class RangedGetExample {
         aesGcmV3RangedGetOperations(bucket);
     }
 
+    /**
+     * This example demonstrates handling of simple ranged GET to retrieve a part of the encrypted objects.
+     *
+     * @param bucket The name of the Amazon S3 bucket to perform operations on.
+     */
     public static void simpleAesGcmV3RangedGet(String bucket) {
         final String objectKey = appendTestSuffix("simple-v3-ranged-get-example");
 
-        // Instantiate the S3 Encryption Client by specifying an AES Key with the aesKey builder parameter.
-        // You must also specify the enableLegacyUnauthenticatedModes parameter to enable ranged GET requests.
+        // Instantiate the S3 Encryption Client by specifying an KMS Key with the kmsKeyId builder parameter.
+        // You must also specify the `enableLegacyUnauthenticatedModes` parameter to enable ranged GET requests.
         //
         // This means that the S3 Encryption Client can perform both encrypt and decrypt operations,
         // and can perform ranged GET requests when a range is provided.
@@ -62,6 +67,11 @@ public class RangedGetExample {
         v3Client.close();
     }
 
+    /**
+     * This example demonstrates handling of various unusual ranged GET scenarios when retrieving encrypted objects.
+     *
+     * @param bucket The name of the Amazon S3 bucket to perform operations on.
+     */
     public static void aesGcmV3RangedGetOperations(String bucket) {
         final String objectKey = appendTestSuffix("aes-gcm-v3-ranged-get-examples");
 

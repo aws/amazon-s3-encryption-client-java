@@ -1,5 +1,9 @@
 package software.amazon.encryption.s3.examples;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -10,12 +14,8 @@ import software.amazon.encryption.s3.S3AsyncEncryptionClient;
 
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
-
 public class AsyncClientExample {
-    public static final String OBJECT_KEY = "async-client-example";
+    public static final String OBJECT_KEY = appendTestSuffix("async-client-example");
 
     public static void main(final String[] args) {
         String bucket = args[0];
@@ -23,8 +23,14 @@ public class AsyncClientExample {
         cleanup(bucket);
     }
 
+    /**
+     * This example demonstrates handling of an Asynchronous S3 Encryption Client for interacting with an Amazon S3 bucket, performing
+     * both encryption and decryption using the AWS KMS Key Arn for secure object storage.
+     *
+     * @param bucket The name of the Amazon S3 bucket to perform operations on.
+     */
     public static void AsyncClient(String bucket) {
-        final String input = appendTestSuffix("PutAsyncGetAsync");
+        final String input = "PutAsyncGetAsync";
 
         // Instantiate the S3 Async Encryption Client to encrypt and decrypt
         // by specifying an AES Key with the aesKey builder parameter.
@@ -53,6 +59,9 @@ public class AsyncClientExample {
 
         // Assert
         assertEquals(input, getResponse.asUtf8String());
+
+        // Close the client
+        v3AsyncClient.close();
     }
 
     private static void cleanup(String bucket) {
