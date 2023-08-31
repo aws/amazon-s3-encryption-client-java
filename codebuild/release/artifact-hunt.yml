@@ -14,7 +14,7 @@ phases:
   pre_build:
     commands:
       - git checkout $BRANCH
-      - export VERSION=$(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
+      - export VERSION=$(grep version pom.xml | head -n 2 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
   build:
     commands:
       - ./look_4_version.sh $VERSION
