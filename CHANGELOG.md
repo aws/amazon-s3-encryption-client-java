@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.1.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.0.1...v3.1.0) (2023-08-31)
+
+
+### Features
+
+* add configuration option to set max buffer size ([#166](https://github.com/aws/aws-s3-encryption-client-java/issues/166)) ([ecf6e6c](https://github.com/aws/aws-s3-encryption-client-java/commit/ecf6e6c0f9e03ce0e4c4333d60118651e495aea2))
+* multipart & ranged get examples ([#168](https://github.com/aws/aws-s3-encryption-client-java/issues/168)) ([203e5dc](https://github.com/aws/aws-s3-encryption-client-java/commit/203e5dc89f4ed5f264def37521755395f9b25990))
+* Refactor `KmsKeyring` to use `GenerateDataKey` instead of `Encrypt` ([#171](https://github.com/aws/aws-s3-encryption-client-java/issues/171)) ([a1a22a4](https://github.com/aws/aws-s3-encryption-client-java/commit/a1a22a49a912565642b6c561a05b97390c326e1a))
+
+
+### Fixes
+
+* Create default wrapped clients only if necessary. ([#163](https://github.com/aws/aws-s3-encryption-client-java/issues/163)) ([285eab6](https://github.com/aws/aws-s3-encryption-client-java/commit/285eab68fdc2468e678d3b745d6502a9584752e4))
+* unwrap completion exception in AbortMultipartUpload and inside multipart putObject ([#174](https://github.com/aws/aws-s3-encryption-client-java/issues/174)) ([84baad8](https://github.com/aws/aws-s3-encryption-client-java/commit/84baad81bafb23b6690a1000447e1433da79ae6d))
+
+
+### Maintenance
+
+* allow CI to run in forks ([#164](https://github.com/aws/aws-s3-encryption-client-java/issues/164)) ([66a5ca4](https://github.com/aws/aws-s3-encryption-client-java/commit/66a5ca4ceb670bf5d598baa92a96668694bee3b6))
+* **deps-dev:** bump bcprov-jdk18on from 1.72 to 1.74 ([#169](https://github.com/aws/aws-s3-encryption-client-java/issues/169)) ([5502eab](https://github.com/aws/aws-s3-encryption-client-java/commit/5502eab44d272dbc94ce7aa94ecb9a050f699c3a))
+* fix bugs and nit ([#175](https://github.com/aws/aws-s3-encryption-client-java/issues/175)) ([926818b](https://github.com/aws/aws-s3-encryption-client-java/commit/926818b0febbf823839a5053b6d9d5a25352faab))
+* install dependabot ([#172](https://github.com/aws/aws-s3-encryption-client-java/issues/172)) ([1c63fdb](https://github.com/aws/aws-s3-encryption-client-java/commit/1c63fdb87d3cb95caf0b496e148c145a26ea08f9))
+* warn against use of Encryption Context for non-kms keyrings. ([#173](https://github.com/aws/aws-s3-encryption-client-java/issues/173)) ([54557a9](https://github.com/aws/aws-s3-encryption-client-java/commit/54557a9660ce16e80dc58cd4f842a26b59c133b7))
+
 ### [3.0.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.0.0...v3.0.1) (2023-06-01)
 
 
