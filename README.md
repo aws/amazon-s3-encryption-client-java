@@ -13,7 +13,9 @@ Integration tests are included. To test them, certain environment variables need
 * `AWS_REGION` - The region the AWS resources (KMS key, S3 bucket) resides e.g. "us-east-1"
 
 To create these resources, refer to the included CloudFormation template (cfn/S3EC-GitHub-CF-Template).
+The IAM Role `S3ECGithubTestRole` SHOULD BE manually customized by you.
 Make sure that the repo in the trust policy of the IAM role refers to your fork instead of the `aws` organization.
+Also, remove the `ToolsDevelopment` clause of the `S3ECGithubTestRole`'s `AssumeRolePolicyDocument`.
 **NOTE**: Your account may incur charges based on the usage of any resources beyond the AWS Free Tier.
 
 If you have forked this repo, there are additional steps required.
