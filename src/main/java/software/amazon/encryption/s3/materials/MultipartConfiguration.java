@@ -14,6 +14,7 @@ public class MultipartConfiguration {
     private final long _diskLimit;
     private final UploadObjectObserver _observer;
     private final ExecutorService _es;
+    private final boolean _usingDefaultExecutorService;
     private final MultiFileOutputStream _outputStream;
 
     public MultipartConfiguration(Builder builder) {
@@ -22,6 +23,7 @@ public class MultipartConfiguration {
         this._diskLimit = builder._diskLimit;
         this._observer = builder._observer;
         this._es = builder._es;
+        this._usingDefaultExecutorService = builder._usingDefaultExecutorService;
         this._outputStream = builder._outputStream;
     }
 
@@ -53,6 +55,10 @@ public class MultipartConfiguration {
         return _es;
     }
 
+    public boolean usingDefaultExecutorService() {
+        return _usingDefaultExecutorService;
+    }
+
     static public class Builder {
         private final long MIN_PART_SIZE = 5 << 20;
         private MultiFileOutputStream _outputStream = new MultiFileOutputStream();
@@ -64,6 +70,7 @@ public class MultipartConfiguration {
         private UploadObjectObserver _observer = new UploadObjectObserver();
         // If null, ExecutorService will be initialized in build() based on maxConnections.
         private ExecutorService _es = null;
+        private boolean _usingDefaultExecutorService;
 
         private Builder() {
         }
@@ -104,6 +111,9 @@ public class MultipartConfiguration {
         public MultipartConfiguration build() {
             if (_es == null) {
                 _es = Executors.newFixedThreadPool(_maxConnections);
+                _usingDefaultExecutorService = true;
+            } else {
+                _usingDefaultExecutorService = false;
             }
 
             return new MultipartConfiguration(this);

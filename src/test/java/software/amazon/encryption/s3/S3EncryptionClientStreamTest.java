@@ -40,6 +40,7 @@ import java.security.Provider;
 import java.security.Security;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -324,13 +325,15 @@ public class S3EncryptionClientStreamTest {
         // Tight bound on the custom buffer size limit of 32MiB
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
         final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
         CompletableFuture<PutObjectResponse> futurePut = v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
                                                                                            .bucket(BUCKET)
                                                                                            .key(objectKey)
-                                                                                           .build(), AsyncRequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit, Executors.newSingleThreadExecutor()));
+                                                                                           .build(), AsyncRequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit, singleThreadExecutor));
 
         futurePut.join();
         largeObjectStream.close();
+        singleThreadExecutor.shutdown();
 
         try {
             // Object is larger than Buffer, so getObject fails

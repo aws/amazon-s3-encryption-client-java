@@ -32,6 +32,7 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
@@ -134,10 +135,18 @@ public class MultipartUploadObjectPipeline {
         // Checks the parts are uploaded in series
         materials.beginPartUpload(actualRequest.partNumber(), partContentLength);
         Cipher cipher = materials.getCipher(materials.getIv());
+
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+
         try {
-            final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(),
+            final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(
+                AsyncRequestBody.fromInputStream(
+                    requestBody.contentStreamProvider().newStream(),
                     partContentLength, // this MUST be the original contentLength; it refers to the plaintext stream
-                    Executors.newSingleThreadExecutor()), ciphertextLength, materials, cipher.getIV(), isLastPart);
+                    singleThreadExecutor
+                ),
+                ciphertextLength, materials, cipher.getIV(), isLastPart
+            );
 
             // Ensure we haven't already seen the last part
             if (isLastPart) {
@@ -156,6 +165,9 @@ public class MultipartUploadObjectPipeline {
         if (isLastPart) {
             materials.setHasFinalPartBeenSeen(true);
         }
+
+        singleThreadExecutor.shutdown();
+
         return response;
     }
 

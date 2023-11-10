@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,11 +74,14 @@ public class S3EncryptionClientMultipartUploadTest {
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+        
         CompletableFuture<PutObjectResponse> futurePut = v3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
-                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, Executors.newSingleThreadExecutor()));
+                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor));
         futurePut.join();
+        singleThreadExecutor.shutdown();
 
         // Asserts
         CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = v3Client.getObject(builder -> builder
@@ -110,12 +114,15 @@ public class S3EncryptionClientMultipartUploadTest {
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+
         assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
-                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, Executors.newSingleThreadExecutor())));
+                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor)));
 
         v3Client.close();
+        singleThreadExecutor.shutdown();
     }
 
     @Test

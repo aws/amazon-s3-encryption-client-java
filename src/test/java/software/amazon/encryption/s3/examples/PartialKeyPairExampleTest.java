@@ -8,7 +8,7 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 public class PartialKeyPairExampleTest {
 
     @Test
-    public void testPartialKeyPairExamples() {
+    public void testPartialKeyPairExamples() throws InterruptedException {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
 
         PartialKeyPairExample.main(new String[]{bucket});
