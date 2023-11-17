@@ -192,12 +192,28 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .secureRandom(_secureRandom)
                 .build();
 
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+
         try {
-            CompletableFuture<PutObjectResponse> futurePut = pipeline.putObject(putObjectRequest, AsyncRequestBody.fromInputStream(requestBody.contentStreamProvider().newStream(), requestBody.optionalContentLength().orElse(-1L), Executors.newSingleThreadExecutor()));
-            return futurePut.join();
+            CompletableFuture<PutObjectResponse> futurePut = pipeline.putObject(putObjectRequest,
+                AsyncRequestBody.fromInputStream(
+                    requestBody.contentStreamProvider().newStream(),
+                    requestBody.optionalContentLength().orElse(-1L),
+                    singleThreadExecutor
+                )
+            );
+
+            PutObjectResponse response = futurePut.join();
+
+            singleThreadExecutor.shutdown();
+
+            return response;
+
         } catch (CompletionException completionException) {
+            singleThreadExecutor.shutdownNow();
             throw new S3EncryptionClientException(completionException.getMessage(), completionException.getCause());
         } catch (Exception exception) {
+            singleThreadExecutor.shutdownNow();
             throw new S3EncryptionClientException(exception.getMessage(), exception);
         }
 
@@ -279,7 +295,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         ExecutorService es = multipartConfiguration.executorService();
-        final boolean defaultExecutorService = es == null;
         if (es == null) {
             throw new S3EncryptionClientException("ExecutorService should not be null, Please initialize during MultipartConfiguration");
         }
@@ -315,8 +330,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
         } catch (IOException | InterruptedException | ExecutionException | RuntimeException | Error ex) {
             throw onAbort(observer, ex);
         } finally {
-            if (defaultExecutorService) {
-                // shut down the locally created thread pool
+            if (multipartConfiguration.usingDefaultExecutorService()) {
+                // shut down the thread pool if it was created by the encryption client
                 es.shutdownNow();
             }
             // delete left-over temp files
