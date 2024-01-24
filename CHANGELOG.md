@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.1.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.1.0...v3.1.1) (2024-01-24)
+
+
+### Fixes
+
+* Close threads when calling PutObject ([#180](https://github.com/aws/aws-s3-encryption-client-java/issues/180)) ([45b69fb](https://github.com/aws/aws-s3-encryption-client-java/commit/45b69fb1f2716f6cf2d114e1b6383670607580a1))
+
+
+### Maintenance
+
+* allow ToolsDevelopment to Assume CI Role ([#179](https://github.com/aws/aws-s3-encryption-client-java/issues/179)) ([a9fdaa3](https://github.com/aws/aws-s3-encryption-client-java/commit/a9fdaa38ee826902e360fa6db1415e7e44705f99))
+* fix release script ([#177](https://github.com/aws/aws-s3-encryption-client-java/issues/177)) ([60c377b](https://github.com/aws/aws-s3-encryption-client-java/commit/60c377b88adf27dda2803f6dfe7c4b493d0f80d8))
+* update artifact-hunt.yml to pick the version from pom.xml ([#176](https://github.com/aws/aws-s3-encryption-client-java/issues/176)) ([9f6b90f](https://github.com/aws/aws-s3-encryption-client-java/commit/9f6b90fd8b486ffae0109c32b5308563808d6531))
+* update node version in version step ([#181](https://github.com/aws/aws-s3-encryption-client-java/issues/181)) ([49c2069](https://github.com/aws/aws-s3-encryption-client-java/commit/49c2069cd2a190035604d4450ea9d863175e713f))
+
 ## [3.1.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.0.1...v3.1.0) (2023-08-31)
 
 
