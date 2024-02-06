@@ -18,13 +18,13 @@ public class RangedGetUtils {
         if (range == null) {
             return null;
         }
-        if (!range.matches("bytes=[0-9]+-[0-9]+")) {
+        if (!range.matches("^bytes=(\\d+-\\d+|\\d+-)$")) {
             return null;
         }
-        String[] rangeSplit = range.split("[-=]");
+        String[] rangeSplit = range.substring(6).split("-");
         long[] adjustedRange = new long[2];
-        adjustedRange[0] = Integer.parseInt(rangeSplit[1]);
-        adjustedRange[1] = Integer.parseInt(rangeSplit[2]);
+        adjustedRange[0] = Integer.parseInt(rangeSplit[0]);
+        adjustedRange[1] = (rangeSplit.length < 2 || rangeSplit[1].isEmpty()) ? Integer.MAX_VALUE : Integer.parseInt(rangeSplit[1]);
         return adjustedRange;
     }
 
