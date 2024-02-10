@@ -23,8 +23,8 @@ public class RangedGetUtils {
         }
         String[] rangeSplit = range.substring(6).split("-");
         long[] adjustedRange = new long[2];
-        adjustedRange[0] = Integer.parseInt(rangeSplit[0]);
-        adjustedRange[1] = (rangeSplit.length < 2 || rangeSplit[1].isEmpty()) ? Integer.MAX_VALUE : Integer.parseInt(rangeSplit[1]);
+        adjustedRange[0] = Long.parseLong(rangeSplit[0]);
+        adjustedRange[1] = (rangeSplit.length < 2 || rangeSplit[1].isEmpty()) ? Long.MAX_VALUE : Long.parseLong(rangeSplit[1]);
         return adjustedRange;
     }
 
