@@ -251,7 +251,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     // This is very similar to the S3EncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options
     public static class Builder {
-        private S3AsyncClient _wrappedClient = S3AsyncClient.builder().build();
+        private S3AsyncClient _wrappedClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
         private SecretKey _aesKey;
@@ -505,6 +505,10 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 }
             } else {
                 _bufferSize = DEFAULT_BUFFER_SIZE_BYTES;
+            }
+
+            if (_wrappedClient == null) {
+                _wrappedClient = S3AsyncClient.create();
             }
 
             if (_keyring == null) {

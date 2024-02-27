@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.kms.model.EncryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptResponse;
 import software.amazon.awssdk.services.kms.model.GenerateDataKeyRequest;
 import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.S3EncryptionClient;
@@ -230,7 +231,7 @@ public class KmsKeyring extends S3Keyring {
     }
 
     public static class Builder extends S3Keyring.Builder<KmsKeyring, Builder> {
-        private KmsClient _kmsClient = KmsClient.builder().build();
+        private KmsClient _kmsClient;
         private String _wrappingKeyId;
 
         private Builder() {
@@ -258,6 +259,10 @@ public class KmsKeyring extends S3Keyring {
         }
 
         public KmsKeyring build() {
+            if (_kmsClient == null) {
+                _kmsClient = KmsClient.create();
+            }
+
             return new KmsKeyring(this);
         }
     }
