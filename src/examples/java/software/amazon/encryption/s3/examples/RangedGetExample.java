@@ -134,6 +134,18 @@ public class RangedGetExample {
         // but still within the same cipher block, the Amazon S3 Encryption Client returns an empty object.
         assertEquals("", output);
 
+        // 5. Call getObject to retrieve a range starting from byte 40 to the end of the object,
+        // where the start index is within the object range, and the end index is unspecified.
+        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(bucket)
+                .range("bytes=40-")
+                .key(objectKey));
+        output = objectResponse.asUtf8String();
+
+        // Verify that when the start index is specified without an end index,
+        // the S3 Encryption Client returns the object from the start index to the end of the original plaintext object.
+        assertEquals(OBJECT_CONTENT.substring(40), output);
+
         // Cleanup
         v3Client.deleteObject(builder -> builder.bucket(bucket).key(objectKey));
         v3Client.close();
