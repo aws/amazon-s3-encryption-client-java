@@ -38,7 +38,11 @@ The other values are added as variables (by clicking the "New repository variabl
 
 This version of the library supports reading encrypted objects from previous versions.
 It also supports writing objects with non-legacy algorithms.
-The list of legacy modes and operations will be provided below.
+The list of legacy modes and operations is provided below.
+
+However, this version does not support V2's Unencrypted Object Passthrough.
+This library can only read encrypted objects from S3,
+unencrypted objects MUST be read with the base S3 Client.
 
 ### Examples
 #### V2 KMS Materials Provider to V3
