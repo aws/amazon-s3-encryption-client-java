@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
-import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
@@ -18,6 +18,7 @@ import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.S3Keyring;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -40,38 +41,22 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                     .key(getObjectRequest.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
 
-          try (ResponseInputStream<GetObjectResponse> instruction = s3AsyncClient.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join()){
-              Map<String, String> metadata = new HashMap<>();
-              JsonNodeParser parser = JsonNodeParser.create();
-              JsonNode objectNode = parser.parse(instruction);
-              for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
-                  metadata.put(entry.getKey(), entry.getValue().asString());
-              }
-              return ContentMetadataStrategy.readFromMap(metadata, response);
-          } catch (IOException ioException) {
-              throw new S3EncryptionClientException("IOException while reading instruction file!", ioException);
-          } catch (NoSuchKeyException exception) {
-              // Most likely, the customer is attempting to decrypt an object
-              // which is not encrypted with the S3 EC.
-              throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
-                      " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
-          }
-            try {
-                instruction = s3AsyncClient.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBytes()).join();
+            try (ResponseInputStream<GetObjectResponse> instruction = s3AsyncClient.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join()){
+                Map<String, String> metadata = new HashMap<>();
+                JsonNodeParser parser = JsonNodeParser.create();
+                JsonNode objectNode = parser.parse(instruction);
+                for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
+                    metadata.put(entry.getKey(), entry.getValue().asString());
+                }
+                return ContentMetadataStrategy.readFromMap(metadata, response);
+            } catch (IOException ioException) {
+                throw new S3EncryptionClientException("IOException while reading instruction file!", ioException);
             } catch (NoSuchKeyException exception) {
                 // Most likely, the customer is attempting to decrypt an object
                 // which is not encrypted with the S3 EC.
                 throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
-                        " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
+                                                              " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
             }
-
-            Map<String, String> metadata = new HashMap<>();
-            JsonNodeParser parser = JsonNodeParser.create();
-            JsonNode objectNode = parser.parse(instruction.asByteArray());
-            for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
-                metadata.put(entry.getKey(), entry.getValue().asString());
-            }
-            return ContentMetadataStrategy.readFromMap(metadata, response);
         }
     };
 
