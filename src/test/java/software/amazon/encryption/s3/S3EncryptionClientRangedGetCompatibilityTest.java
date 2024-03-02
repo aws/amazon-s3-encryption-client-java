@@ -81,6 +81,22 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         output = objectResponse.asUtf8String();
         assertEquals("KLMNOPQRST", output);
 
+        // Valid start index within input and without specifying end index of range, returns object from start index to End of Stream
+        objectResponse = asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=40-")
+                .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        output = objectResponse.asUtf8String();
+        assertEquals(input.substring(40), output);
+
+        // Invalid range with only specifying the end index, returns entire object
+        objectResponse = asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=-40")
+                .key(objectKey), AsyncResponseTransformer.toBytes()).join();
+        output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
         // Invalid range start index range greater than ending index, returns entire object
         objectResponse = asyncClient.getObject(builder -> builder
                 .bucket(BUCKET)
@@ -283,6 +299,22 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         output = objectResponse.asUtf8String();
         assertEquals("KLMNOPQRST", output);
 
+        // Valid start index within input and without specifying end index of range, returns object from start index to End of Stream
+        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=40-")
+                .key(objectKey));
+        output = objectResponse.asUtf8String();
+        assertEquals(input.substring(40), output);
+
+        // Invalid range with only specifying the end index, returns entire object
+        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=-40")
+                .key(objectKey));
+        output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
         // Invalid range start index range greater than ending index, returns entire object
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
@@ -428,6 +460,22 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=100-50")
+                .key(objectKey));
+        output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Valid start index within input and without specifying end index of range, returns object from start index to End of Stream
+        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=40-")
+                .key(objectKey));
+        output = objectResponse.asUtf8String();
+        assertEquals(input.substring(40), output);
+
+        // Invalid range with only specifying the end index, returns entire object
+        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .range("bytes=-40")
                 .key(objectKey));
         output = objectResponse.asUtf8String();
         assertEquals(input, output);
