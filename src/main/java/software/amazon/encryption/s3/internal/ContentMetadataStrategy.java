@@ -40,7 +40,22 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                     .key(getObjectRequest.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
 
-            ResponseBytes<GetObjectResponse> instruction;
+          try (ResponseInputStream<GetObjectResponse> instruction = s3AsyncClient.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join()){
+              Map<String, String> metadata = new HashMap<>();
+              JsonNodeParser parser = JsonNodeParser.create();
+              JsonNode objectNode = parser.parse(instruction);
+              for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
+                  metadata.put(entry.getKey(), entry.getValue().asString());
+              }
+              return ContentMetadataStrategy.readFromMap(metadata, response);
+          } catch (IOException ioException) {
+              throw new S3EncryptionClientException("IOException while reading instruction file!", ioException);
+          } catch (NoSuchKeyException exception) {
+              // Most likely, the customer is attempting to decrypt an object
+              // which is not encrypted with the S3 EC.
+              throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
+                      " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
+          }
             try {
                 instruction = s3AsyncClient.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBytes()).join();
             } catch (NoSuchKeyException exception) {
