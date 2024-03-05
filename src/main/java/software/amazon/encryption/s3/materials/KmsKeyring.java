@@ -230,7 +230,7 @@ public class KmsKeyring extends S3Keyring {
     }
 
     public static class Builder extends S3Keyring.Builder<KmsKeyring, Builder> {
-        private KmsClient _kmsClient = KmsClient.builder().build();
+        private KmsClient _kmsClient;
         private String _wrappingKeyId;
 
         private Builder() {
@@ -258,6 +258,10 @@ public class KmsKeyring extends S3Keyring {
         }
 
         public KmsKeyring build() {
+            if (_kmsClient == null) {
+                _kmsClient = KmsClient.create();
+            }
+
             return new KmsKeyring(this);
         }
     }
