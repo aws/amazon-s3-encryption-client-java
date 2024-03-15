@@ -39,16 +39,22 @@ public class AdjustedRangeSubscriber implements Subscriber<ByteBuffer> {
         this.virtualAvailable = (rangeEnd - rangeBeginning) + 1;
     }
 
-
     @Override
     public void onSubscribe(Subscription s) {
+        // In edge cases where the beginning index exceeds the offset,
+        // there is never valid data to read, so signal completion immediately.
+        // Otherwise, the CipherSubscriber tries and fails to read the last block.
+        // This probably should be an exception, but previous implementations
+        // return an empty string; signalling onComplete accomplishes this result
+        // and thus maintains compatibility.
+        if (virtualAvailable <= 0) {
+            wrappedSubscriber.onComplete();
+        }
         wrappedSubscriber.onSubscribe(s);
     }
 
     @Override
     public void onNext(ByteBuffer byteBuffer) {
-        // In edge cases where the beginning index exceeds the offset,
-        // there is never valid data to read, so signal completion immediately.
         if (virtualAvailable <= 0) {
             wrappedSubscriber.onComplete();
         }
