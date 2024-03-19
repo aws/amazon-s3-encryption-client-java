@@ -13,6 +13,8 @@ import com.amazonaws.services.s3.model.CryptoStorageMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+import org.apache.commons.io.IOUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -29,18 +31,27 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.utils.BoundedInputStream;
+import software.amazon.encryption.s3.utils.TinyBufferAsyncRequestBody;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -405,6 +416,52 @@ public class S3AsyncEncryptionClientTest {
         deleteObject(BUCKET, objectKey, v3AsyncClient);
         deleteObject(BUCKET, newObjectKey, v3AsyncClient);
         v3AsyncClient.close();
+    }
+
+    /**
+     * Test which artificially limits the size of buffers using {@link TinyBufferAsyncRequestBody}.
+     * This tests edge cases where network conditions result in buffers with length shorter than
+     * the cipher's block size.
+     * @throws IOException
+     */
+    @Test
+    public void tinyBufferTest() throws IOException {
+        // BouncyCastle actually returns null buffers, unlike ACCP and SunJCE, which return empty buffers
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
+        final String objectKey = appendTestSuffix("tiny-buffer-async");
+
+        S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .cryptoProvider(provider)
+                .build();
+
+        // need enough data to split up
+        final long inputLength = 1024;
+        final InputStream input = new BoundedInputStream(inputLength);
+        final InputStream inputClean = new BoundedInputStream(inputLength);
+
+        final ExecutorService exec = Executors.newSingleThreadExecutor();
+
+        // Use this request body to limit the buffer size
+        TinyBufferAsyncRequestBody tinyBufferAsyncRequestBody = new TinyBufferAsyncRequestBody(AsyncRequestBody.fromInputStream(input, inputLength, exec));
+        CompletableFuture<PutObjectResponse> futurePut = v3AsyncClient.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), tinyBufferAsyncRequestBody);
+        futurePut.join();
+
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureGet = v3AsyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncResponseTransformer.toBytes());
+        ResponseBytes<GetObjectResponse> getResponse = futureGet.join();
+        assertTrue(IOUtils.contentEquals(inputClean, getResponse.asInputStream()));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3AsyncClient);
+        v3AsyncClient.close();
+        exec.shutdown();
     }
 
 }

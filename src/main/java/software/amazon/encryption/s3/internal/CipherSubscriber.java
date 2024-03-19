@@ -50,13 +50,21 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         if (amountToReadFromByteBuffer > 0) {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
             outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
-            if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {
-                // The underlying data is too short to fill in the block cipher
-                // This is true at the end of the file, so complete to get the final
-                // bytes
-                this.onComplete();
+            if (outputBuffer == null || outputBuffer.length == 0) {
+                // The underlying data is too short to fill in the block cipher.
+                // Note that while the JCE Javadoc specifies that the outputBuffer is null in this case,
+                // in practice SunJCE and ACCP return an empty buffer instead, hence checks for
+                // null OR length == 0.
+                if (contentRead.get() == contentLength) {
+                    // All content has been read, so complete to get the final bytes
+                    this.onComplete();
+                }
+                // Otherwise, wait for more bytes. To avoid blocking,
+                // send an empty buffer to the wrapped subscriber.
+                wrappedSubscriber.onNext(ByteBuffer.allocate(0));
+            } else {
+                wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
             }
-            wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
         } else {
             // Do nothing
             wrappedSubscriber.onNext(byteBuffer);
