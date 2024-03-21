@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.1.2](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.1.1...v3.1.2) (2024-03-21)
+
+
+### Fixes
+
+* create clients only if necessary ([#187](https://github.com/aws/aws-s3-encryption-client-java/issues/187)) ([ea0c0c7](https://github.com/aws/aws-s3-encryption-client-java/commit/ea0c0c762c6fd23204b0e59ae2a63b174880d48c))
+* do not signal onComplete when the incoming buffer length is less than the cipher block ([#209](https://github.com/aws/aws-s3-encryption-client-java/issues/209)) ([8b1a686](https://github.com/aws/aws-s3-encryption-client-java/commit/8b1a686e8ed5aae867dfc96b1b7a4b5e2ddeb095))
+
+
+### Maintenance
+
+* fix dependabot.yml ([#190](https://github.com/aws/aws-s3-encryption-client-java/issues/190)) ([5ee8b08](https://github.com/aws/aws-s3-encryption-client-java/commit/5ee8b08fea7efaa25e8f6b0914134a0bb8bc5c9b))
+* modify range to allow queries specifying only the start index ([#184](https://github.com/aws/aws-s3-encryption-client-java/issues/184)) ([765b9c6](https://github.com/aws/aws-s3-encryption-client-java/commit/765b9c6a8ee61800fb98db30d64e5832f4cc6e39))
+* **README:** detail no unencrypted pass through ([#189](https://github.com/aws/aws-s3-encryption-client-java/issues/189)) ([576ea66](https://github.com/aws/aws-s3-encryption-client-java/commit/576ea661f5e6b098fad41999022b80c2a30f72dc)), closes [#186](https://github.com/aws/aws-s3-encryption-client-java/issues/186) [/github.com/aws/amazon-s3-encryption-client-java/issues/186#issuecomment-1973016669](https://github.com/aws//github.com/aws/amazon-s3-encryption-client-java/issues/186/issues/issuecomment-1973016669)
+
 ## [3.1.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.1.0...v3.1.1) (2024-01-24)
 
 
