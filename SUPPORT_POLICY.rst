@@ -2,7 +2,7 @@ Overview
 ========
 This page describes the support policy for the Amazon S3 Encryption Client. We regularly provide the Amazon S3 Encryption Client with updates that may contain support for new or updated APIs, new features, enhancements, bug fixes, security patches, or documentation updates. Updates may also address changes with dependencies, language runtimes, and operating systems.
 
-We recommend users to stay up-to-date with Encryption SDK releases to keep up with the latest features, security updates, and underlying dependencies. Continued use of an unsupported SDK version is not recommended and is done at the user’s discretion
+We recommend users to stay up-to-date with Amazon S3 Encryption Client releases to keep up with the latest features, security updates, and underlying dependencies. Continued use of an unsupported client version is not recommended and is done at the user’s discretion
 
 
 Major Version Lifecycle
