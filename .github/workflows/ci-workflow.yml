@@ -5,7 +5,8 @@ on:
   push:
   # This workflow runs every weekday at 15:00 UTC (8AM PDT)
   schedule:
-    - cron: '00 15 * * 1-5'
+    - cron: 
+   + '00 15 * * 1-5'
 
 jobs:
   Static_Analysis:
