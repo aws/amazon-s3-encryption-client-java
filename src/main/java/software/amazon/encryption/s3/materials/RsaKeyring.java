@@ -156,11 +156,6 @@ public class RsaKeyring extends S3Keyring {
             System.arraycopy(pseudoDataKey, 1, dataKey, 0, dataKeyLengthBytes);
             System.arraycopy(pseudoDataKey, 1 + dataKeyLengthBytes, dataCipherName, 0, dataCipherNameLength);
 
-            byte[] expectedDataCipherName = materials.algorithmSuite().cipherName().getBytes(StandardCharsets.UTF_8);
-            if (!Arrays.equals(expectedDataCipherName, dataCipherName)) {
-                throw new S3EncryptionClientException("The data cipher does not match the data cipher used for encryption. The object may be altered or corrupted");
-            }
-
             return dataKey;
         }
     };
