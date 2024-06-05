@@ -3,6 +3,7 @@
 package software.amazon.encryption.s3.materials;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.CryptoFactory;
 
 import javax.crypto.Cipher;
@@ -14,6 +15,7 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.security.spec.MGF1ParameterSpec;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -116,8 +118,7 @@ public class RsaKeyring extends S3Keyring {
 
             // Create a pseudo-data key with the content encryption appended to the data key
             byte[] dataKey = materials.plaintextDataKey();
-            byte[] dataCipherName = materials.algorithmSuite().cipherName().getBytes(
-                    StandardCharsets.UTF_8);
+            byte[] dataCipherName = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
             byte[] pseudoDataKey = new byte[1 + dataKey.length + dataCipherName.length];
 
             pseudoDataKey[0] = (byte)dataKey.length;
@@ -145,7 +146,8 @@ public class RsaKeyring extends S3Keyring {
                 throw new S3EncryptionClientException("Invalid key length (" + dataKeyLengthBytes + ") in encrypted data key");
             }
 
-            int dataCipherNameLength = pseudoDataKey.length - dataKeyLengthBytes - 1;
+//            int dataCipherNameLength = pseudoDataKey.length - dataKeyLengthBytes - 1;
+            int dataCipherNameLength = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8).length;
             if (dataCipherNameLength <= 0) {
                 throw new S3EncryptionClientException("Invalid data cipher name length (" + dataCipherNameLength + ") in encrypted data key");
             }
@@ -154,6 +156,11 @@ public class RsaKeyring extends S3Keyring {
             byte[] dataCipherName = new byte[dataCipherNameLength];
             System.arraycopy(pseudoDataKey, 1, dataKey, 0, dataKeyLengthBytes);
             System.arraycopy(pseudoDataKey, 1 + dataKeyLengthBytes, dataCipherName, 0, dataCipherNameLength);
+
+            byte[] expectedDataCipherName = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+            if (!Arrays.equals(expectedDataCipherName, dataCipherName)) {
+                throw new S3EncryptionClientException("The data cipher does not match the data cipher used for encryption. The object may be altered or corrupted");
+            }
 
             return dataKey;
         }
