@@ -36,14 +36,16 @@ import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.*;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
  * This class is an integration test for Unauthenticated Ranged Get for AES/CBC and AES/GCM modes
  */
 public class S3EncryptionClientRangedGetCompatibilityTest {
 
-    private static final Region KMS_REGION = Region.getRegion(Regions.fromName("us-west-2"));
+    private static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
     private static SecretKey AES_KEY;
     private static KeyPair RSA_KEY_PAIR;
 
