@@ -102,7 +102,12 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                 || contentEncryptionAlgorithm.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF.cipherName())) {
             algorithmSuite = AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF;
         } else if (contentEncryptionAlgorithm.equals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName())) {
-            algorithmSuite = (contentRange == null ) ? AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF : AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF;
+            // If contentRange is provided, this is a ranged get.
+            // ranged gets require legacy unauthenticated modes.
+            // Change AES-GCM to AES-CTR to disable authentication when reading this message.
+            algorithmSuite = (contentRange == null)
+                    ? AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF
+                    : AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF;
         } else {
             throw new S3EncryptionClientException(
                     "Unknown content encryption algorithm: " + contentEncryptionAlgorithm);

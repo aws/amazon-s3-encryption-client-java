@@ -2,14 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3;
 
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.kms.AWSKMS;
+import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3Encryption;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
+import com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder;
 import com.amazonaws.services.s3.model.CryptoConfiguration;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -22,12 +29,15 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
@@ -36,17 +46,76 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
  */
 public class S3EncryptionClientRangedGetCompatibilityTest {
 
+    private static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
     private static SecretKey AES_KEY;
+    private static KeyPair RSA_KEY_PAIR;
 
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
+
+        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
+        keyPairGen.initialize(2048);
+        RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
-    public void AsyncAesGcmV3toV3RangedGet() {
+    static Object[] keyMaterialProvider() {
+        return new Object[] {
+                AES_KEY,
+                RSA_KEY_PAIR,
+                KMS_KEY_ID,
+        };
+    }
+
+    private static S3EncryptionClient.Builder addKeyMaterialToV3Client(S3EncryptionClient.Builder builder, Object keyMaterial) {
+        if (keyMaterial instanceof SecretKey) {
+            builder.aesKey((SecretKey) keyMaterial);
+        } else if (keyMaterial instanceof KeyPair) {
+            builder.rsaKeyPair((KeyPair) keyMaterial);
+        } else if (keyMaterial instanceof String) {
+            builder.kmsKeyId((String) keyMaterial);
+        }
+        return builder;
+    }
+
+    private static S3AsyncEncryptionClient.Builder addKeyMaterialToV3Client(S3AsyncEncryptionClient.Builder builder, Object keyMaterial) {
+        if (keyMaterial instanceof SecretKey) {
+            builder.aesKey((SecretKey) keyMaterial);
+        } else if (keyMaterial instanceof KeyPair) {
+            builder.rsaKeyPair((KeyPair) keyMaterial);
+        } else if (keyMaterial instanceof String) {
+            builder.kmsKeyId((String) keyMaterial);
+        }
+        return builder;
+    }
+
+    private static AmazonS3EncryptionClientBuilder addKeyMaterialToV1Client(AmazonS3EncryptionClientBuilder builder, Object keyMaterial) {
+        EncryptionMaterials materials;
+        if (keyMaterial instanceof SecretKey) {
+            materials = new EncryptionMaterials((SecretKey) keyMaterial);
+            builder.withEncryptionMaterials(new StaticEncryptionMaterialsProvider(materials));
+        } else if (keyMaterial instanceof KeyPair) {
+            materials = new EncryptionMaterials((KeyPair) keyMaterial);
+            builder.withEncryptionMaterials(new StaticEncryptionMaterialsProvider(materials));
+        }
+
+        if (keyMaterial instanceof String) {
+            AWSKMS kmsClient = AWSKMSClientBuilder.standard()
+                    .withRegion(KMS_REGION.toString())
+                    .build();
+            builder.withKmsClient(kmsClient);
+
+            EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider((String) keyMaterial);
+            builder.withEncryptionMaterials(materialsProvider);
+        }
+        return builder;
+    }
+
+    @ParameterizedTest
+    @MethodSource("keyMaterialProvider")
+    public void AsyncAesGcmV3toV3RangedGet(Object keyMaterial) {
         final String objectKey = appendTestSuffix("async-aes-gcm-v3-to-v3-ranged-get");
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
@@ -56,10 +125,11 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // Async Client
-        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(true)
-                .build();
+        S3AsyncEncryptionClient.Builder clientBuilder = S3AsyncEncryptionClient.builder()
+                .enableLegacyUnauthenticatedModes(true);
+        addKeyMaterialToV3Client(clientBuilder, keyMaterial);
+        S3AsyncClient asyncClient = clientBuilder.build();
+
         asyncClient.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -126,8 +196,9 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    @Test
-    public void AsyncFailsOnRangeWhenLegacyModeDisabled() {
+    @ParameterizedTest
+    @MethodSource("keyMaterialProvider")
+    public void AsyncFailsOnRangeWhenLegacyModeDisabled(Object keyMaterial) {
         final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -136,9 +207,9 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // V3 Client
-        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .build();
+        S3AsyncEncryptionClient.Builder clientBuilder = S3AsyncEncryptionClient.builder();
+        addKeyMaterialToV3Client(clientBuilder, keyMaterial);
+        S3AsyncClient asyncClient = clientBuilder.build();
 
         asyncClient.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -155,19 +226,18 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    @Test
-    public void AsyncAesCbcV1toV3RangedGet() {
+    @ParameterizedTest
+    @MethodSource("keyMaterialProvider")
+    public void AsyncAesCbcV1toV3RangedGet(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get-async");
 
         // V1 Client
-        EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
         CryptoConfiguration v1CryptoConfig =
                 new CryptoConfiguration();
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-                .withCryptoConfiguration(v1CryptoConfig)
-                .withEncryptionMaterials(materialsProvider)
-                .build();
+        AmazonS3EncryptionClientBuilder v1ClientBuilder = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig);
+        addKeyMaterialToV1Client(v1ClientBuilder, keyMaterial);
+        AmazonS3Encryption v1Client = v1ClientBuilder.build();
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -178,11 +248,11 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v1Client.putObject(BUCKET, objectKey, input);
 
         // V3 Client
-        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
-                .aesKey(AES_KEY)
+        S3AsyncEncryptionClient.Builder clientBuilder = S3AsyncEncryptionClient.builder()
                 .enableLegacyWrappingAlgorithms(true)
-                .enableLegacyUnauthenticatedModes(true)
-                .build();
+                .enableLegacyUnauthenticatedModes(true);
+        addKeyMaterialToV3Client(clientBuilder, keyMaterial);
+        S3AsyncClient v3Client = clientBuilder.build();
 
         // Valid Range
         ResponseBytes<GetObjectResponse> objectResponse;
@@ -233,8 +303,9 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
     }
 
 
-    @Test
-    public void failsOnRangeWhenLegacyModeDisabled() {
+    @ParameterizedTest
+    @MethodSource("keyMaterialProvider")
+    public void failsOnRangeWhenLegacyModeDisabled(Object keyMaterial) {
         final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -243,9 +314,9 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .build();
+        S3EncryptionClient.Builder clientBuilder = S3EncryptionClient.builder();
+        addKeyMaterialToV3Client(clientBuilder, keyMaterial);
+        S3Client v3Client = clientBuilder.build();
 
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -263,8 +334,9 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
-    public void AesGcmV3toV3RangedGet() {
+    @ParameterizedTest
+    @MethodSource("keyMaterialProvider")
+    public void AesGcmV3toV3RangedGet(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get");
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
@@ -274,10 +346,11 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(true)
-                .build();
+        S3EncryptionClient.Builder clientBuilder = S3EncryptionClient.builder()
+                .enableLegacyUnauthenticatedModes(true);
+        addKeyMaterialToV3Client(clientBuilder, keyMaterial);
+        S3Client v3Client = clientBuilder.build();
+
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -344,8 +417,9 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
-    public void AesGcmV3toV3FailsRangeExceededObjectLength() {
+    @ParameterizedTest
+    @MethodSource("keyMaterialProvider")
+    public void AesGcmV3toV3FailsRangeExceededObjectLength(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
@@ -355,10 +429,10 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(true)
-                .build();
+        S3EncryptionClient.Builder clientBuilder = S3EncryptionClient.builder()
+                .enableLegacyUnauthenticatedModes(true);
+        addKeyMaterialToV3Client(clientBuilder, keyMaterial);
+        S3Client v3Client = clientBuilder.build();
 
         v3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -376,8 +450,9 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
-    public void AsyncAesGcmV3toV3FailsRangeExceededObjectLength() {
+    @ParameterizedTest
+    @MethodSource("keyMaterialProvider")
+    public void AsyncAesGcmV3toV3FailsRangeExceededObjectLength(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
@@ -387,10 +462,10 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // Async Client
-        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .enableLegacyUnauthenticatedModes(true)
-                .build();
+        S3AsyncEncryptionClient.Builder clientBuilder = S3AsyncEncryptionClient.builder()
+                .enableLegacyUnauthenticatedModes(true);
+        addKeyMaterialToV3Client(clientBuilder, keyMaterial);
+        S3AsyncClient asyncClient = clientBuilder.build();
         asyncClient.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -409,19 +484,18 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    @Test
-    public void AesCbcV1toV3RangedGet() {
+    @ParameterizedTest
+    @MethodSource("keyMaterialProvider")
+    public void AesCbcV1toV3RangedGet(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get");
 
         // V1 Client
-        EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
         CryptoConfiguration v1CryptoConfig =
                 new CryptoConfiguration();
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-                .withCryptoConfiguration(v1CryptoConfig)
-                .withEncryptionMaterials(materialsProvider)
-                .build();
+        AmazonS3EncryptionClientBuilder v1ClientBuilder = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig);
+        addKeyMaterialToV1Client(v1ClientBuilder, keyMaterial);
+        AmazonS3Encryption v1Client = v1ClientBuilder.build();
 
         // This string is 200 characters/bytes long
         // Due to padding, its ciphertext will be 208 bytes
@@ -434,11 +508,11 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v1Client.putObject(BUCKET, objectKey, input);
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
+        S3EncryptionClient.Builder clientBuilder = S3EncryptionClient.builder()
                 .enableLegacyWrappingAlgorithms(true)
-                .enableLegacyUnauthenticatedModes(true)
-                .build();
+                .enableLegacyUnauthenticatedModes(true);
+        addKeyMaterialToV3Client(clientBuilder, keyMaterial);
+        S3Client v3Client = clientBuilder.build();
 
         // Valid Range
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
@@ -512,19 +586,18 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
-    public void AesCbcV1toV3FailsRangeExceededObjectLength() {
+    @ParameterizedTest
+    @MethodSource("keyMaterialProvider")
+    public void AesCbcV1toV3FailsRangeExceededObjectLength(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get-out-of-range");
 
         // V1 Client
-        EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
         CryptoConfiguration v1CryptoConfig =
                 new CryptoConfiguration();
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-                .withCryptoConfiguration(v1CryptoConfig)
-                .withEncryptionMaterials(materialsProvider)
-                .build();
+        AmazonS3EncryptionClientBuilder v1ClientBuilder = AmazonS3EncryptionClient.encryptionBuilder()
+                .withCryptoConfiguration(v1CryptoConfig);
+        addKeyMaterialToV1Client(v1ClientBuilder, keyMaterial);
+        AmazonS3Encryption v1Client = v1ClientBuilder.build();
 
         final String input = "0bcdefghijklmnopqrst0BCDEFGHIJKLMNOPQRST" +
                 "1bcdefghijklmnopqrst1BCDEFGHIJKLMNOPQRST" +
@@ -535,11 +608,11 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v1Client.putObject(BUCKET, objectKey, input);
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
+        S3EncryptionClient.Builder clientBuilder = S3EncryptionClient.builder()
                 .enableLegacyWrappingAlgorithms(true)
-                .enableLegacyUnauthenticatedModes(true)
-                .build();
+                .enableLegacyUnauthenticatedModes(true);
+        addKeyMaterialToV3Client(clientBuilder, keyMaterial);
+        S3Client v3Client = clientBuilder.build();
 
         // Invalid range exceed object length, Throws S3EncryptionClientException wrapped with S3Exception
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
