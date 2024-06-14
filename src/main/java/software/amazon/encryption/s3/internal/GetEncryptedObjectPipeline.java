@@ -117,7 +117,7 @@ public class GetEncryptedObjectPipeline {
         @Override
         public void onResponse(GetObjectResponse response) {
             getObjectResponse = response;
-            contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, response);
+            contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, response, _s3AsyncClient);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
             wrappedAsyncResponseTransformer.onResponse(response);
         }

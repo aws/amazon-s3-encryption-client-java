@@ -52,7 +52,7 @@ public class ContentMetadataStrategyTest {
                 .contentIv(bytes)
                 .build();
 
-        ContentMetadata contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, getObjectResponse);
+        ContentMetadata contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, getObjectResponse, null);
         assertEquals(expectedContentMetadata.algorithmSuite(), contentMetadata.algorithmSuite());
         String actualContentIv = Arrays.toString(contentMetadata.contentIv());
         String expectedContentIv = Arrays.toString(expectedContentMetadata.contentIv());
