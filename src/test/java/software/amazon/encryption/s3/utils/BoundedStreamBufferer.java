@@ -12,6 +12,11 @@ import java.io.InputStream;
 public class BoundedStreamBufferer {
 
     public static byte[] toByteArray(InputStream is, int bufferSize) throws IOException {
+        if (bufferSize <= 0) {
+            // buffer size cannot be zero,
+            // set it to 1 instead.
+            bufferSize = 1;
+        }
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] b = new byte[bufferSize];
             int n;
@@ -23,6 +28,11 @@ public class BoundedStreamBufferer {
     }
 
     public static byte[] toByteArrayWithMarkReset(InputStream is, int bufferSize) throws IOException {
+        if (bufferSize <= 0) {
+            // buffer size cannot be zero,
+            // set it to 1 instead.
+            bufferSize = 1;
+        }
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] b = new byte[bufferSize];
             // burn some bytes to force mark/reset

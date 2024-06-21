@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.1.3](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.1.2...v3.1.3) (2024-06-18)
+
+### Fixes
+
+* Ranged gets with RSA keys ([#288](https://github.com/aws/aws-s3-encryption-client-java/issues/288)) ([5d7fc31](https://github.com/aws/aws-s3-encryption-client-java/commit/5d7fc316ea84226b14dc4ae84cf5571d4bc88f6a))
+* set bufferSize to 1 when bufferSize is less than or equal to 0 in BoundedStreamBufferer ([#283](https://github.com/aws/aws-s3-encryption-client-java/issues/283)) ([adb6d3b](https://github.com/aws/aws-s3-encryption-client-java/commit/adb6d3b7e6548c6ced848c7732e439cabaac1afc))
+
+### Maintenance
+
+* add support policy ([#236](https://github.com/aws/aws-s3-encryption-client-java/issues/236)) ([264168d](https://github.com/aws/aws-s3-encryption-client-java/commit/264168d9016a904ccbe1a3110f67feeec732af0b))
+
 ## [3.1.2](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.1.1...v3.1.2) (2024-03-21)
 
 
