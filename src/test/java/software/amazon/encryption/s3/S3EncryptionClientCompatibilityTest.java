@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -37,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,29 +47,28 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 
 /**
  * This class is an integration test for verifying compatibility of ciphertexts
  * between V1, V2, and V3 clients under various conditions.
  */
 public class S3EncryptionClientCompatibilityTest {
-
-    private static final String BUCKET = System.getenv("AWS_S3EC_TEST_BUCKET");
-    private static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
-    private static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
+    // SDK V1 Region
+    private static final Region KMS_REGION = Region.getRegion(
+        Regions.fromName(S3EncryptionClientTestResources.KMS_REGION.toString()));
 
     private static SecretKey AES_KEY;
     private static KeyPair RSA_KEY_PAIR;
 
     @BeforeAll
-    public static void setUp() throws NoSuchAlgorithmException {
+    public static void setUp() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
 
-        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
-        keyPairGen.initialize(2048);
-        RSA_KEY_PAIR = keyPairGen.generateKeyPair();
+        RSA_KEY_PAIR = S3EncryptionClientTestResources.getRSAKeyPair();
     }
 
     @Test
