@@ -63,14 +63,12 @@ public class S3EncryptionClientCompatibilityTest {
     private static KeyPair RSA_KEY_PAIR;
 
     @BeforeAll
-    public static void setUp() throws NoSuchAlgorithmException {
+    public static void setUp() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
 
-        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
-        keyPairGen.initialize(2048);
-        RSA_KEY_PAIR = keyPairGen.generateKeyPair();
+        RSA_KEY_PAIR = S3EncryptionClientTestResources.getRSAKeyPair();
     }
 
     @Test
