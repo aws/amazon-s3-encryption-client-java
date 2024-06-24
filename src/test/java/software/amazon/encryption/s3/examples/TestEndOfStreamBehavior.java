@@ -85,24 +85,15 @@ public class TestEndOfStreamBehavior {
         while (byteRead != END_OF_STREAM) {
             int lenToRead = capacity - startPosition;
             System.out.println("Start position: " + startPosition + " Length to read: " + lenToRead);
-            // @NathanEckert , about https://github.com/aws/amazon-s3-encryption-client-java/issues/300
-            // Crypto Tools SOMETIMES got an Assertion Error from
-            // https://github.com/aws/aws-sdk-java-v2/blob/2.20.38/utils/src/main/java/software/amazon/awssdk/utils/async/InputStreamSubscriber.java#L110
-            // when using the Encryption Client.
-            // If we bump our Java SDK dependencies to the latest, which today is 2.26.7,
-            // than we never get the Assertion Error.
-            // Here is the PR that changes InputStreamSubscriber b/w 2.20.38 and 2.26.7:
-            // https://github.com/aws/aws-sdk-java-v2/pull/5201
-            // This makes us suspect that something else is going wrong.
-            // Otherwise, we cannot detect a difference in behavior between
-            // the S3EC V3 Client and the S3 V2 Client with respect to this code.
             byteRead = stream.read(underlyingBuffer, startPosition, lenToRead);
             System.out.println("Read " + byteRead + " bytes");
             startPosition += byteRead;
             if (byteRead == 0) {
-                // Crypto Tools cannot get this case to ever occur.
-                System.out.println("Looping indefinitely with an encryption client, as startPosition is not increasing");
-                break;
+                // Now we always get this error; we probably were always getting this error, but the log was not writing.
+                throw new AssertionError(
+                    String.format("Looping indefinitely with an encryption client, as startPosition is not increasing." +
+                            "\n lenToRead: %s \t byteRead: %s \t startPosition: %s",
+                        lenToRead, byteRead, startPosition));
             }
         }
     }
