@@ -96,7 +96,7 @@
     <dependency>
       <groupId>com.github.spotbugs</groupId>
       <artifactId>spotbugs-annotations</artifactId>
-      <version>4.7.3</version>
+      <version>4.8.6</version>
       <optional>true</optional>
     </dependency>
 
