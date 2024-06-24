@@ -41,6 +41,7 @@
     <maven.compiler.target>8</maven.compiler.target>
     <maven.compiler.release>8</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <aws.java.sdk.version>2.26.7</aws.java.sdk.version>
   </properties>
 
   <dependencyManagement>
@@ -56,7 +57,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.26.7</version>
+        <version>${aws.java.sdk.version}</version>
         <optional>true</optional>
         <type>pom</type>
         <scope>import</scope>
@@ -68,21 +69,20 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
-      <version>2.26.7</version>
+      <version>${aws.java.sdk.version}</version>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>kms</artifactId>
-      <version>2.26.7</version>
+      <version>${aws.java.sdk.version}</version>
       <optional>true</optional>
     </dependency>
 
-    <!-- Used when enableMultipartPutObject is configured -->
     <dependency>
-      <groupId>software.amazon.awssdk.crt</groupId>
-      <artifactId>aws-crt</artifactId>
-      <version>0.29.25</version>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-crt-client</artifactId>
+      <version>${aws.java.sdk.version}</version>
       <optional>true</optional>
     </dependency>
 
