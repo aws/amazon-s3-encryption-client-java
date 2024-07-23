@@ -21,11 +21,15 @@ public class KmsDiscoveryKeyring extends S3Keyring {
   private static final String KEY_ID_CONTEXT_KEY = "kms_cmk_id";
 
   private final KmsClient _kmsClient;
+  private final DiscoveryFilter _discoveryFilter;
+
+  private final Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies = new HashMap<>();
 
   public KmsDiscoveryKeyring(Builder builder) {
     super(builder);
 
     _kmsClient = builder._kmsClient;
+    _discoveryFilter = builder._discoveryFilter;
     decryptDataKeyStrategies.put(_kmsDiscoveryStrategy.keyProviderInfo(), _kmsDiscoveryStrategy);
     decryptDataKeyStrategies.put(_kmsContextDiscoveryStrategy.keyProviderInfo(), _kmsContextDiscoveryStrategy);
   }
@@ -105,7 +109,21 @@ public class KmsDiscoveryKeyring extends S3Keyring {
     }
   };
 
-  private final Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies = new HashMap<>();
+  /**
+   * Checks the given materials to see if the KMS key passes through the keyring's
+   * discovery filter.
+   * @param materials
+   * @return
+   */
+  private boolean checkDiscoveryFilter(final DecryptionMaterials materials) {
+    // this is not trivial,
+    // i THINK that in v1, there was NO key id in the metadata.
+    // in v2 (kms+context), there is either in metadata and/or EC
+    // so always fail v1, and pull v2 key out of EC?
+    // related: ciphertext library
+    // todo implement
+    return true;
+  }
 
   public static Builder builder() {
     return new Builder();
@@ -128,7 +146,7 @@ public class KmsDiscoveryKeyring extends S3Keyring {
 
   public static class Builder extends S3Keyring.Builder<KmsDiscoveryKeyring, Builder> {
     private KmsClient _kmsClient;
-    private String _wrappingKeyId;
+    private DiscoveryFilter _discoveryFilter;
 
     private Builder() {
       super();
@@ -146,6 +164,11 @@ public class KmsDiscoveryKeyring extends S3Keyring {
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Pass mutability into wrapping client")
     public Builder kmsClient(KmsClient kmsClient) {
       _kmsClient = kmsClient;
+      return this;
+    }
+
+    public Builder discoveryFilter(DiscoveryFilter discoveryFilter) {
+      _discoveryFilter = discoveryFilter;
       return this;
     }
 
