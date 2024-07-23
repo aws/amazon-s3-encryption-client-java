@@ -206,4 +206,32 @@ public class KmsDiscoveryKeyringTest {
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
+
+    @Test
+    public void testKmsContextV3DiscoveryEncryptFails() {
+        final String objectKey = appendTestSuffix("kms-v3-to-v3-discovery-context-encrypt-fails");
+
+        // V3 Client - KmsDiscoveryKeyring
+        KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
+          .builder().enableLegacyWrappingAlgorithms(true).build();
+        S3Client v3ClientDiscovery = S3EncryptionClient.builder()
+          .keyring(kmsDiscoveryKeyring)
+          .build();
+
+        final String input = "KmsContextV3toV3Discovery";
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3-context");
+
+        try {
+            v3ClientDiscovery.putObject(builder -> builder
+              .bucket(BUCKET)
+              .key(objectKey)
+              .overrideConfiguration(withAdditionalConfiguration(encryptionContext)), RequestBody.fromString(input));
+            fail("expected exception");
+        } catch (S3EncryptionClientException exception) {
+            // expected
+            assertTrue(exception.getMessage().contains("KmsDiscoveryKeyring does not support EncryptDataKey"));
+        }
+    }
+
 }
