@@ -13,14 +13,17 @@ import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.NoSuchUploadException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -29,6 +32,7 @@ import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
+import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -48,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -57,6 +62,7 @@ import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalCon
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_REGION;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
@@ -688,6 +694,46 @@ public class S3EncryptionClientTest {
         v3Client.close();
     }
 
+    @Test
+    public void s3EncryptionClientWithCustomCredentials() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-custom-credentials");
+
+        // use the default creds, but through an explicit credentials provider
+        AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
+
+        S3Client wrappedClient = S3Client
+          .builder()
+          .credentialsProvider(creds)
+          .build();
+        S3AsyncClient wrappedAsyncClient = S3AsyncClient
+          .builder()
+          .credentialsProvider(creds)
+          .build();
+        KmsClient kmsClient = KmsClient
+          .builder()
+          .credentialsProvider(creds)
+          .build();
+
+        KmsKeyring keyring = KmsKeyring
+          .builder()
+          .kmsClient(kmsClient)
+          .wrappingKeyId(KMS_KEY_ID)
+          .build();
+        S3Client s3Client = S3EncryptionClient.builder()
+          .wrappedClient(wrappedClient)
+          .wrappedAsyncClient(wrappedAsyncClient)
+          .keyring(keyring)
+          .build();
+
+        simpleV3RoundTrip(s3Client, objectKey);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3Client);
+        wrappedClient.close();
+        wrappedAsyncClient.close();
+        s3Client.close();
+    }
+
     /**
      * A simple, reusable round-trip (encryption + decryption) using a given
      * S3Client. Useful for testing client configuration.
@@ -711,4 +757,72 @@ public class S3EncryptionClientTest {
         assertEquals(input, output);
     }
 
+    @Test
+    public void s3EncryptionClientTopLevelCredentials() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials");
+
+        // use the default creds, but through an explicit credentials provider
+        AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
+
+        S3Client s3Client = S3EncryptionClient.builder()
+          .credentialsProvider(creds)
+          .region(Region.of(KMS_REGION.toString()))
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
+
+        simpleV3RoundTrip(s3Client, objectKey);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
+    }
+
+    @Test
+    public void s3EncryptionClientTopLevelCredentialsWrongRegion() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials");
+
+        // use the default creds, but through an explicit credentials provider
+        AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
+
+        S3Client s3Client = S3EncryptionClient.builder()
+          .credentialsProvider(creds)
+          .region(Region.of("eu-west-1"))
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
+
+        try {
+            simpleV3RoundTrip(s3Client, objectKey);
+            fail("expected exception");
+        } catch (S3EncryptionClientException exception) {
+            // expected
+            assertTrue(exception.getMessage().contains("Invalid arn"));
+        } finally {
+            // Cleanup
+            s3Client.close();
+        }
+    }
+
+    @Test
+    public void s3EncryptionClientTopLevelCredentialsNullCreds() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-null-credentials");
+
+        AwsCredentialsProvider creds = new S3EncryptionClientTestResources.NullCredentialsProvider();
+
+        S3Client s3Client = S3EncryptionClient.builder()
+          .credentialsProvider(creds)
+          .region(Region.of("eu-west-1"))
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
+
+        try {
+            simpleV3RoundTrip(s3Client, objectKey);
+            fail("expected exception");
+        } catch (S3EncryptionClientException exception) {
+            // expected
+            assertTrue(exception.getMessage().contains("Access key ID cannot be blank"));
+        } finally {
+            // Cleanup
+            s3Client.close();
+        }
+    }
 }

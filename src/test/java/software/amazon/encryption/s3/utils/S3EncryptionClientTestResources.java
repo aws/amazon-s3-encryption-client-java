@@ -2,8 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.utils;
 
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
@@ -19,6 +24,20 @@ public class S3EncryptionClientTestResources {
     public static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
     // This alias must point to the same key as KMS_KEY_ID
     public static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
+    public static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
+
+    public static class NullCredentialsProvider implements AwsCredentialsProvider {
+
+        public NullCredentialsProvider() {
+            super();
+        }
+
+        @Override
+        public AwsCredentials resolveCredentials() {
+            return AwsBasicCredentials
+              .create(null, null);
+        }
+    }
 
     /**
      * For a given string, append a suffix to distinguish it from

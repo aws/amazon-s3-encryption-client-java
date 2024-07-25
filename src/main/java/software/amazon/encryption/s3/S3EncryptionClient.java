@@ -3,16 +3,22 @@
 package software.amazon.encryption.s3;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.endpoints.EndpointProvider;
 import software.amazon.awssdk.http.AbortableInputStream;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.s3.DelegatingS3Client;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -52,6 +58,7 @@ import software.amazon.encryption.s3.materials.RsaKeyring;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.net.URI;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
@@ -502,7 +509,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
     // This is very similar to the S3EncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options
-    public static class Builder {
+    public static class Builder implements AwsClientBuilder {
         // The non-encrypted APIs will use a default client.
         private S3Client _wrappedClient;
         private S3AsyncClient _wrappedAsyncClient;
@@ -520,6 +527,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private SecureRandom _secureRandom = new SecureRandom();
         private boolean _enableLegacyUnauthenticatedModes = false;
         private long _bufferSize = -1L;
+
+        // generic AwsClient configuration to be shared by default clients
+        private AwsCredentialsProvider _awsCredentialsProvider = null;
+        private Region _region = null;
+        private boolean _dualStackEnabled = false;
+        private boolean _fipsEnabled = false;
+        private ClientOverrideConfiguration _overrideConfiguration = null;
+        // this should only be applied to S3 clients
+        private URI _endpointOverride = null;
 
         private Builder() {
         }
@@ -757,6 +773,76 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         /**
+         * The credentials provider to use for all inner clients, including KMS, if a KMS key ID is provided.
+         * @param awsCredentialsProvider
+         * @return
+         */
+        @Override
+        public Builder credentialsProvider(AwsCredentialsProvider awsCredentialsProvider) {
+            _awsCredentialsProvider = awsCredentialsProvider;
+            return this;
+        }
+
+        /**
+         * The AWS region to use for all inner clients, including KMS, if a KMS key ID is provided.
+         * @param region
+         * @return
+         */
+        @Override
+        public Builder region(Region region) {
+            _region = region;
+            return this;
+        }
+
+        @Override
+        public Builder dualstackEnabled(Boolean isDualStackEnabled) {
+            _dualStackEnabled = isDualStackEnabled;
+            return this;
+        }
+
+        @Override
+        public Builder fipsEnabled(Boolean isFipsEnabled) {
+            _fipsEnabled = isFipsEnabled;
+            return this;
+        }
+
+        @Override
+        public Builder overrideConfiguration(ClientOverrideConfiguration overrideConfiguration) {
+            _overrideConfiguration = overrideConfiguration;
+            return this;
+        }
+
+        /**
+         * Retrieve the current override configuration. This allows further overrides across calls. Can be modified by first
+         * converting to a builder with {@link ClientOverrideConfiguration#toBuilder()}.
+         *
+         * @return The existing override configuration for the builder.
+         */
+        @Override
+        public ClientOverrideConfiguration overrideConfiguration() {
+            return _overrideConfiguration;
+        }
+
+        /**
+         * Configure the endpoint with which the SDK should communicate.
+         * NOTE: For the S3EncryptionClient, this ONLY overrides the endpoint for S3 clients.
+         * To set the endpointOverride for a KMS client, explicitly configure it and create a
+         * KmsKeyring instance for the encryption client to use.
+         * <p>
+         * It is important to know that {@link EndpointProvider}s and the endpoint override on the client are not mutually
+         * exclusive. In all existing cases, the endpoint override is passed as a parameter to the provider and the provider *may*
+         * modify it. For example, the S3 provider may add the bucket name as a prefix to the endpoint override for virtual bucket
+         * addressing.
+         *
+         * @param endpointOverride
+         */
+        @Override
+        public Builder endpointOverride(URI endpointOverride) {
+            _endpointOverride = endpointOverride;
+            return this;
+        }
+
+        /**
          * Validates and builds the S3EncryptionClient according
          * to the configuration options passed to the Builder object.
          * @return an instance of the S3EncryptionClient
@@ -775,11 +861,25 @@ public class S3EncryptionClient extends DelegatingS3Client {
             }
 
             if (_wrappedClient == null) {
-                _wrappedClient = S3Client.create();
+                _wrappedClient = S3Client.builder()
+                  .credentialsProvider(_awsCredentialsProvider)
+                  .region(_region)
+                  .dualstackEnabled(_dualStackEnabled)
+                  .fipsEnabled(_fipsEnabled)
+                  .overrideConfiguration(_overrideConfiguration)
+                  .endpointOverride(_endpointOverride)
+                  .build();
             }
 
             if (_wrappedAsyncClient == null) {
-                _wrappedAsyncClient = S3AsyncClient.create();
+                _wrappedAsyncClient = S3AsyncClient.builder()
+                  .credentialsProvider(_awsCredentialsProvider)
+                  .region(_region)
+                  .dualstackEnabled(_dualStackEnabled)
+                  .fipsEnabled(_fipsEnabled)
+                  .overrideConfiguration(_overrideConfiguration)
+                  .endpointOverride(_endpointOverride)
+                  .build();
             }
 
             if (_keyring == null) {
@@ -796,7 +896,16 @@ public class S3EncryptionClient extends DelegatingS3Client {
                             .secureRandom(_secureRandom)
                             .build();
                 } else if (_kmsKeyId != null) {
+                    KmsClient kmsClient = KmsClient.builder()
+                      .credentialsProvider(_awsCredentialsProvider)
+                      .region(_region)
+                      .dualstackEnabled(_dualStackEnabled)
+                      .fipsEnabled(_fipsEnabled)
+                      .overrideConfiguration(_overrideConfiguration)
+                      .build();
+
                     _keyring = KmsKeyring.builder()
+                            .kmsClient(kmsClient)
                             .wrappingKeyId(_kmsKeyId)
                             .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                             .secureRandom(_secureRandom)
@@ -819,5 +928,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
             return new S3EncryptionClient(this);
         }
+
     }
 }
