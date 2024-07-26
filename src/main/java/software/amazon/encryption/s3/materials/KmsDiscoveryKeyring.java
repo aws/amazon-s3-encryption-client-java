@@ -39,6 +39,10 @@ public class KmsDiscoveryKeyring extends S3Keyring {
     decryptDataKeyStrategies.put(_kmsContextDiscoveryStrategy.keyProviderInfo(), _kmsContextDiscoveryStrategy);
   }
 
+  /**
+   * This DecryptDataKeyStrategy decrypts objects encrypted using the legacy kms v1 mode
+   * using whichever key the object was encrypted with.
+   */
   private final DecryptDataKeyStrategy _kmsDiscoveryStrategy = new DecryptDataKeyStrategy() {
 
     private static final String KEY_PROVIDER_INFO = "kms";
@@ -66,6 +70,10 @@ public class KmsDiscoveryKeyring extends S3Keyring {
     }
   };
 
+  /**
+   * This DecryptDataKeyStrategy decrypts objects encrypted using the kms+context v2 mode
+   * using whichever key the object was encrypted with.
+   */
   private final DecryptDataKeyStrategy _kmsContextDiscoveryStrategy = new DecryptDataKeyStrategy() {
 
     private static final String KEY_PROVIDER_INFO = "kms+context";
