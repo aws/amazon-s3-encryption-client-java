@@ -17,11 +17,14 @@ import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
@@ -31,6 +34,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.TinyBufferAsyncRequestBody;
 
@@ -53,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
@@ -65,6 +70,85 @@ public class S3AsyncEncryptionClientTest {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
+    }
+
+    @Test
+    public void asyncCustomConfiguration() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-custom-credentials-async");
+
+        // use the default creds, but through an explicit credentials provider
+        AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
+
+        S3AsyncClient wrappedAsyncClient = S3AsyncClient
+          .builder()
+          .credentialsProvider(creds)
+          .build();
+        KmsClient kmsClient = KmsClient
+          .builder()
+          .credentialsProvider(creds)
+          .build();
+
+        KmsKeyring keyring = KmsKeyring
+          .builder()
+          .kmsClient(kmsClient)
+          .wrappingKeyId(KMS_KEY_ID)
+          .build();
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
+          .wrappedClient(wrappedAsyncClient)
+          .keyring(keyring)
+          .build();
+
+        final String input = "SimpleTestOfV3EncryptionClientAsync";
+
+        s3Client.putObject(builder -> builder
+            .bucket(BUCKET)
+            .key(objectKey)
+            .build(),
+          AsyncRequestBody.fromString(input));
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), AsyncResponseTransformer.toBytes()).join();
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3Client);
+        wrappedAsyncClient.close();
+        s3Client.close();
+    }
+
+    @Test
+    public void asyncTopLevelConfiguration() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials-async");
+
+        // use the default creds, but through an explicit credentials provider
+        AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
+
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
+          .credentialsProvider(creds)
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
+
+        final String input = "SimpleTestOfV3EncryptionClientAsync";
+
+        s3Client.putObject(builder -> builder
+            .bucket(BUCKET)
+            .key(objectKey)
+            .build(),
+          AsyncRequestBody.fromString(input));
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), AsyncResponseTransformer.toBytes()).join();
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test

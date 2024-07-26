@@ -3,11 +3,17 @@
 package software.amazon.encryption.s3;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
+import software.amazon.awssdk.awscore.client.builder.AwsAsyncClientBuilder;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.DelegatingS3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient;
@@ -33,6 +39,7 @@ import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
 import javax.crypto.SecretKey;
+import java.net.URI;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
@@ -250,7 +257,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
     // This is very similar to the S3EncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options
-    public static class Builder {
+    public static class Builder implements AwsAsyncClientBuilder<Builder, S3AsyncEncryptionClient> {
         private S3AsyncClient _wrappedClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
@@ -264,6 +271,15 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
         private long _bufferSize = -1L;
+
+        // generic AwsClient configuration to be shared by default clients
+        private AwsCredentialsProvider _awsCredentialsProvider = null;
+        private Region _region = null;
+        private boolean _dualStackEnabled = false;
+        private boolean _fipsEnabled = false;
+        private ClientOverrideConfiguration _overrideConfiguration = null;
+        // this should only be applied to S3 clients
+        private URI _endpointOverride = null;
 
         private Builder() {
         }
@@ -487,6 +503,99 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             }
             _secureRandom = secureRandom;
             return this;
+        }
+
+        /**
+         * The credentials provider to use for all inner clients, including KMS, if a KMS key ID is provided.
+         * @param awsCredentialsProvider
+         * @return
+         */
+        public Builder credentialsProvider(AwsCredentialsProvider awsCredentialsProvider) {
+            _awsCredentialsProvider = awsCredentialsProvider;
+            return this;
+        }
+
+        /**
+         * The AWS region to use for all inner clients, including KMS, if a KMS key ID is provided.
+         * @param region
+         * @return
+         */
+        public Builder region(Region region) {
+            _region = region;
+            return this;
+        }
+
+        public Builder dualstackEnabled(Boolean isDualStackEnabled) {
+            _dualStackEnabled = isDualStackEnabled;
+            return this;
+        }
+
+        public Builder fipsEnabled(Boolean isFipsEnabled) {
+            _fipsEnabled = isFipsEnabled;
+            return this;
+        }
+
+        public Builder overrideConfiguration(ClientOverrideConfiguration overrideConfiguration) {
+            _overrideConfiguration = overrideConfiguration;
+            return this;
+        }
+
+        /**
+         * Retrieve the current override configuration. This allows further overrides across calls. Can be modified by first
+         * converting to a builder with {@link ClientOverrideConfiguration#toBuilder()}.
+         *
+         * @return The existing override configuration for the builder.
+         */
+        public ClientOverrideConfiguration overrideConfiguration() {
+            return _overrideConfiguration;
+        }
+
+        /**
+         * Specify overrides to the default SDK async configuration that should be used for clients created by this builder.
+         *
+         * @param clientAsyncConfiguration
+         */
+        @Override
+        public Builder asyncConfiguration(ClientAsyncConfiguration clientAsyncConfiguration) {
+            return null;
+        }
+
+        /**
+         * Sets the {@link SdkAsyncHttpClient} that the SDK service client will use to make HTTP calls. This HTTP client may be
+         * shared between multiple SDK service clients to share a common connection pool. To create a client you must use an
+         * implementation specific builder. Note that this method is only recommended when you wish to share an HTTP client across
+         * multiple SDK service clients. If you do not wish to share HTTP clients, it is recommended to use
+         * {@link #httpClientBuilder(SdkAsyncHttpClient.Builder)} so that service specific default configuration may be applied.
+         *
+         * <p>
+         * <b>This client must be closed by the caller when it is ready to be disposed. The SDK will not close the HTTP client
+         * when the service client is closed.</b>
+         * </p>
+         *
+         * @param httpClient
+         * @return This builder for method chaining.
+         */
+        @Override
+        public Builder httpClient(SdkAsyncHttpClient httpClient) {
+            return null;
+        }
+
+        /**
+         * Sets a custom HTTP client builder that will be used to obtain a configured instance of {@link SdkAsyncHttpClient}. Any
+         * service specific HTTP configuration will be merged with the builder's configuration prior to creating the client. When
+         * there is no desire to share HTTP clients across multiple service clients, the client builder is the preferred way to
+         * customize the HTTP client as it benefits from service specific defaults.
+         *
+         * <p>
+         * <b>Clients created by the builder are managed by the SDK and will be closed when the service client is closed.</b>
+         * </p>
+         *
+         * @param httpClientBuilder
+         * @return This builder for method chaining.
+         */
+        @Override
+        public Builder httpClientBuilder(SdkAsyncHttpClient.Builder httpClientBuilder) {
+            return null;
         }
 
         /**
