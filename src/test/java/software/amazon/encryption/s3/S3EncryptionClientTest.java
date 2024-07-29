@@ -867,4 +867,31 @@ public class S3EncryptionClientTest {
         s3ClientAltCreds.close();
     }
 
+    @Test
+    public void s3EncryptionClientMixedCredentials() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials");
+
+        // use alternate creds for KMS,
+        // default for S3
+        AwsCredentialsProvider creds = new S3EncryptionClientTestResources.AlternateRoleCredentialsProvider();
+        KmsClient kmsClient = KmsClient.builder()
+          .credentialsProvider(creds)
+          .region(Region.of(KMS_REGION.toString()))
+          .build();
+        KmsKeyring kmsKeyring = KmsKeyring.builder()
+          .kmsClient(kmsClient)
+          .wrappingKeyId(ALTERNATE_KMS_KEY)
+          .build();
+
+        S3Client s3Client = S3EncryptionClient.builder()
+          .keyring(kmsKeyring)
+          .build();
+
+        simpleV3RoundTrip(s3Client, objectKey);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
+        kmsClient.close();
+    }
 }
