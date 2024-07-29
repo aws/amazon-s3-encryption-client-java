@@ -109,6 +109,67 @@ Resources:
         }
       ManagedPolicyName: S3EC-GitHub-KMS-Key-Policy-Alternate
 
+  S3ECGithubTestRoleAlternate:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Path: /service-role/
+      RoleName: S3EC-GitHub-test-role-alternate
+      AssumeRolePolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",   
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Federated": "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com" },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                  "StringEquals": {
+                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                  },
+                  "StringLike": {
+                    "token.actions.githubusercontent.com:sub": "repo:aws/amazon-s3-encryption-client-java:*"
+                  }
+               }
+            },
+            {
+              "Effect": "Allow",
+              "Principal": { "AWS": "arn:aws:iam::${AWS::AccountId}:role/ToolsDevelopment" },
+              "Action": "sts:AssumeRole"
+            },
+            {
+              "Effect": "Allow",
+              "Principal": { "AWS": "arn:aws:iam::${AWS::AccountId}:role/service-role/S3EC-GitHub-test-role" },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      Description: >-
+        Grant GitHub S3 put and get and KMS (alt key) encrypt, decrypt, and generate access
+        for testing
+      ManagedPolicyArns:
+        - !Ref S3ECGitHubKMSKeyPolicyAlternate
+        - !Ref S3ECGitHubS3BucketPolicy
+
+  S3ECGitHubAssumeAlternatePolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:iam::${AWS::AccountId}:role/service-role/${S3ECGithubTestRoleAlternate}"
+              ],
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        }
+      ManagedPolicyName: S3EC-GitHub-Assume-Alternate-Policy
+
   S3ECGithubTestRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -144,39 +205,6 @@ Resources:
       ManagedPolicyArns:
         - !Ref S3ECGitHubKMSKeyPolicy
         - !Ref S3ECGitHubS3BucketPolicy
+        - !Ref S3ECGitHubAssumeAlternatePolicy
 
-  S3ECGithubTestRoleAlternate:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      Path: /service-role/
-      RoleName: S3EC-GitHub-test-role-alternate
-      AssumeRolePolicyDocument: !Sub |
-        {
-          "Version": "2012-10-17",   
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": { "Federated": "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com" },
-              "Action": "sts:AssumeRoleWithWebIdentity",
-              "Condition": {
-                  "StringEquals": {
-                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-                  },
-                  "StringLike": {
-                    "token.actions.githubusercontent.com:sub": "repo:aws/amazon-s3-encryption-client-java:*"
-                  }
-               }
-            },
-            {
-              "Effect": "Allow",
-              "Principal": { "AWS": "arn:aws:iam::${AWS::AccountId}:role/ToolsDevelopment" },
-              "Action": "sts:AssumeRole"
-            }
-          ]
-        }
-      Description: >-
-        Grant GitHub S3 put and get and KMS (alt key) encrypt, decrypt, and generate access
-        for testing
-      ManagedPolicyArns:
-        - !Ref S3ECGitHubKMSKeyPolicyAlternate
-        - !Ref S3ECGitHubS3BucketPolicy
+
