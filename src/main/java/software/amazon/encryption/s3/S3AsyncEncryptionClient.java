@@ -14,6 +14,7 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.s3.DelegatingS3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient;
@@ -617,7 +618,14 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             }
 
             if (_wrappedClient == null) {
-                _wrappedClient = S3AsyncClient.create();
+                _wrappedClient = S3AsyncClient.builder()
+                  .credentialsProvider(_awsCredentialsProvider)
+                  .region(_region)
+                  .dualstackEnabled(_dualStackEnabled)
+                  .fipsEnabled(_fipsEnabled)
+                  .overrideConfiguration(_overrideConfiguration)
+                  .endpointOverride(_endpointOverride)
+                  .build();
             }
 
             if (_keyring == null) {
@@ -634,11 +642,20 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                             .secureRandom(_secureRandom)
                             .build();
                 } else if (_kmsKeyId != null) {
+                    KmsClient kmsClient = KmsClient.builder()
+                      .credentialsProvider(_awsCredentialsProvider)
+                      .region(_region)
+                      .dualstackEnabled(_dualStackEnabled)
+                      .fipsEnabled(_fipsEnabled)
+                      .overrideConfiguration(_overrideConfiguration)
+                      .build();
+
                     _keyring = KmsKeyring.builder()
-                            .wrappingKeyId(_kmsKeyId)
-                            .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
-                            .secureRandom(_secureRandom)
-                            .build();
+                      .kmsClient(kmsClient)
+                      .wrappingKeyId(_kmsKeyId)
+                      .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
+                      .secureRandom(_secureRandom)
+                      .build();
                 }
             }
 
