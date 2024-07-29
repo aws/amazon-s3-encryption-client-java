@@ -9,9 +9,12 @@ import org.joda.time.format.DateTimeFormat;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.model.Credentials;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -25,6 +28,35 @@ public class S3EncryptionClientTestResources {
     // This alias must point to the same key as KMS_KEY_ID
     public static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
     public static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
+    // Alternate role to test credential configuration and access denied behavior
+    public static final String ALTERNATE_ROLE_ARN = System.getenv("AWS_S3EC_TEST_ALT_ROLE_ARN");
+    // Alternate KMS key, which only the alternate role has access to
+    public static final String ALTERNATE_KMS_KEY = System.getenv("AWS_S3EC_TEST_ALT_KMS_KEY_ARN");
+
+
+    /**
+     * Creds provider for the "alternate" role which is useful for testing cred configuration
+     * and access denied behavior.
+     */
+    public static class AlternateRoleCredentialsProvider implements AwsCredentialsProvider {
+
+        StsClient stsClient_;
+
+        public AlternateRoleCredentialsProvider() {
+            super();
+            stsClient_ = StsClient.create();
+        }
+
+        @Override
+        public AwsCredentials resolveCredentials() {
+            String sessionName = "s3ec-test" + DateTimeFormat.forPattern("-yyMMdd-hhmmss").print(new DateTime());
+            Credentials assumeRoleCreds = stsClient_.assumeRole(builder -> builder
+              .roleArn(ALTERNATE_ROLE_ARN).roleSessionName(sessionName).build()).credentials();
+            return AwsSessionCredentials.create(assumeRoleCreds.accessKeyId(),
+              assumeRoleCreds.secretAccessKey(),
+              assumeRoleCreds.sessionToken());
+        }
+    }
 
     public static class NullCredentialsProvider implements AwsCredentialsProvider {
 

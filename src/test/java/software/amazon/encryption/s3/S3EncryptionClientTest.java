@@ -19,6 +19,7 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.KmsException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
@@ -59,6 +60,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.ALTERNATE_KMS_KEY;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
@@ -825,4 +827,44 @@ public class S3EncryptionClientTest {
             s3Client.close();
         }
     }
+
+    @Test
+    public void s3EncryptionClientTopLevelAlternateCredentials() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials");
+
+        // use alternate creds
+        AwsCredentialsProvider creds = new S3EncryptionClientTestResources.AlternateRoleCredentialsProvider();
+
+        S3Client s3Client = S3EncryptionClient.builder()
+          .credentialsProvider(creds)
+          .region(Region.of(KMS_REGION.toString()))
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
+
+        // using the original key fails
+        try {
+            simpleV3RoundTrip(s3Client, objectKey);
+            fail("expected exception");
+        } catch (S3EncryptionClientException exception) {
+            // expected
+            assertTrue(exception.getMessage().contains("is not authorized to perform"));
+            assertInstanceOf(KmsException.class, exception.getCause());
+        } finally {
+            s3Client.close();
+        }
+
+        // using the alternate key succeeds
+        S3Client s3ClientAltCreds = S3EncryptionClient.builder()
+          .credentialsProvider(creds)
+          .region(Region.of(KMS_REGION.toString()))
+          .kmsKeyId(ALTERNATE_KMS_KEY)
+          .build();
+
+        simpleV3RoundTrip(s3ClientAltCreds, objectKey);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3ClientAltCreds);
+        s3ClientAltCreds.close();
+    }
+
 }
