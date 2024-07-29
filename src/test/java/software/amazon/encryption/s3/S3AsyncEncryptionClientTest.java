@@ -57,7 +57,6 @@ import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -183,28 +182,27 @@ public class S3AsyncEncryptionClientTest {
                 .build(),
               AsyncRequestBody.fromString(input)).join();
             fail("expected exception");
-        } catch (S3EncryptionClientException exception) {
+        } catch (KmsException exception) {
             // expected
             assertTrue(exception.getMessage().contains("is not authorized to perform"));
-            assertInstanceOf(KmsException.class, exception.getCause());
         } finally {
             s3Client.close();
         }
 
         // using the alternate key succeeds
-        S3Client s3ClientAltCreds = S3EncryptionClient.builder()
+        S3AsyncClient s3ClientAltCreds = S3AsyncEncryptionClient.builder()
           .credentialsProvider(creds)
           .region(Region.of(KMS_REGION.toString()))
           .kmsKeyId(ALTERNATE_KMS_KEY)
           .build();
 
-        s3Client.putObject(builder -> builder
+        s3ClientAltCreds.putObject(builder -> builder
             .bucket(BUCKET)
             .key(objectKey)
             .build(),
           AsyncRequestBody.fromString(input)).join();
 
-        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3ClientAltCreds.getObject(builder -> builder
           .bucket(BUCKET)
           .key(objectKey)
           .build(), AsyncResponseTransformer.toBytes()).join();
