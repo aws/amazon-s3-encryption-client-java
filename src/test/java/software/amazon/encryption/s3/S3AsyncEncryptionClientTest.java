@@ -113,7 +113,7 @@ public class S3AsyncEncryptionClientTest {
             .bucket(BUCKET)
             .key(objectKey)
             .build(),
-          AsyncRequestBody.fromString(input));
+          AsyncRequestBody.fromString(input)).join();
 
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
           .bucket(BUCKET)
@@ -147,7 +147,7 @@ public class S3AsyncEncryptionClientTest {
             .bucket(BUCKET)
             .key(objectKey)
             .build(),
-          AsyncRequestBody.fromString(input));
+          AsyncRequestBody.fromString(input)).join();
 
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
           .bucket(BUCKET)
@@ -181,7 +181,7 @@ public class S3AsyncEncryptionClientTest {
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(),
-              AsyncRequestBody.fromString(input));
+              AsyncRequestBody.fromString(input)).join();
             fail("expected exception");
         } catch (S3EncryptionClientException exception) {
             // expected
@@ -202,7 +202,7 @@ public class S3AsyncEncryptionClientTest {
             .bucket(BUCKET)
             .key(objectKey)
             .build(),
-          AsyncRequestBody.fromString(input));
+          AsyncRequestBody.fromString(input)).join();
 
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
           .bucket(BUCKET)
@@ -217,7 +217,7 @@ public class S3AsyncEncryptionClientTest {
     }
 
     @Test
-    public void s3EncryptionClientMixedCredentials() {
+    public void s3AsyncEncryptionClientMixedCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials");
         final String input = "S3EncryptionClientTopLevelAlternateCredsTest";
 
@@ -236,14 +236,14 @@ public class S3AsyncEncryptionClientTest {
         S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
           .credentialsProvider(creds)
           .region(Region.of(KMS_REGION.toString()))
-          .kmsKeyId(ALTERNATE_KMS_KEY)
+          .keyring(kmsKeyring)
           .build();
 
         s3Client.putObject(builder -> builder
             .bucket(BUCKET)
             .key(objectKey)
             .build(),
-          AsyncRequestBody.fromString(input));
+          AsyncRequestBody.fromString(input)).join();
 
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
           .bucket(BUCKET)
@@ -257,6 +257,7 @@ public class S3AsyncEncryptionClientTest {
         s3Client.close();
         kmsClient.close();
     }
+
     @Test
     public void putAsyncGetDefault() {
         final String objectKey = appendTestSuffix("put-async-get-default");
