@@ -399,8 +399,8 @@ public class S3EncryptionClientTest {
         KmsKeyring keyring = KmsKeyring.builder().wrappingKeyId(KMS_KEY_ID).build();
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .keyring(keyring)
-            .build();
+                .keyring(keyring)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
 
@@ -416,12 +416,12 @@ public class S3EncryptionClientTest {
         KmsKeyring keyring = KmsKeyring.builder().wrappingKeyId(KMS_KEY_ID).build();
 
         CryptographicMaterialsManager cmm = DefaultCryptoMaterialsManager.builder()
-            .keyring(keyring)
-            .build();
+                .keyring(keyring)
+                .build();
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .cryptoMaterialsManager(cmm)
-            .build();
+                .cryptoMaterialsManager(cmm)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
 
@@ -459,21 +459,21 @@ public class S3EncryptionClientTest {
     @Test
     public void s3EncryptionClientWithWrappedS3EncryptionClientFails() {
         S3AsyncClient wrappedAsyncClient = S3AsyncEncryptionClient.builder()
-            .kmsKeyId(KMS_KEY_ID)
-            .build();
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-            .wrappedAsyncClient(wrappedAsyncClient)
-            .kmsKeyId(KMS_KEY_ID)
-            .build());
+                .wrappedAsyncClient(wrappedAsyncClient)
+                .kmsKeyId(KMS_KEY_ID)
+                .build());
     }
 
     @Test
     public void s3EncryptionClientWithNullSecureRandomFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
-            .aesKey(AES_KEY)
-            .secureRandom(null)
-            .build());
+                .aesKey(AES_KEY)
+                .secureRandom(null)
+                .build());
     }
 
     @Test
@@ -483,8 +483,8 @@ public class S3EncryptionClientTest {
         final String objectKey = appendTestSuffix("no-secure-random-object-kms");
 
         S3Client v3Client = S3EncryptionClient.builder()
-            .kmsKeyId(KMS_KEY_ID)
-            .build();
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         simpleV3RoundTrip(v3Client, objectKey);
 
@@ -704,28 +704,28 @@ public class S3EncryptionClientTest {
         AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
 
         S3Client wrappedClient = S3Client
-          .builder()
-          .credentialsProvider(creds)
-          .build();
+                .builder()
+                .credentialsProvider(creds)
+                .build();
         S3AsyncClient wrappedAsyncClient = S3AsyncClient
-          .builder()
-          .credentialsProvider(creds)
-          .build();
+                .builder()
+                .credentialsProvider(creds)
+                .build();
         KmsClient kmsClient = KmsClient
-          .builder()
-          .credentialsProvider(creds)
-          .build();
+                .builder()
+                .credentialsProvider(creds)
+                .build();
 
         KmsKeyring keyring = KmsKeyring
-          .builder()
-          .kmsClient(kmsClient)
-          .wrappingKeyId(KMS_KEY_ID)
-          .build();
+                .builder()
+                .kmsClient(kmsClient)
+                .wrappingKeyId(KMS_KEY_ID)
+                .build();
         S3Client s3Client = S3EncryptionClient.builder()
-          .wrappedClient(wrappedClient)
-          .wrappedAsyncClient(wrappedAsyncClient)
-          .keyring(keyring)
-          .build();
+                .wrappedClient(wrappedClient)
+                .wrappedAsyncClient(wrappedAsyncClient)
+                .keyring(keyring)
+                .build();
 
         simpleV3RoundTrip(s3Client, objectKey);
 
@@ -744,10 +744,10 @@ public class S3EncryptionClientTest {
         AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
 
         S3Client s3Client = S3EncryptionClient.builder()
-          .credentialsProvider(creds)
-          .region(Region.of(KMS_REGION.toString()))
-          .kmsKeyId(KMS_KEY_ID)
-          .build();
+                .credentialsProvider(creds)
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         simpleV3RoundTrip(s3Client, objectKey);
 
@@ -764,10 +764,10 @@ public class S3EncryptionClientTest {
         AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
 
         S3Client s3Client = S3EncryptionClient.builder()
-          .credentialsProvider(creds)
-          .region(Region.of("eu-west-1"))
-          .kmsKeyId(KMS_KEY_ID)
-          .build();
+                .credentialsProvider(creds)
+                .region(Region.of("eu-west-1"))
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         try {
             simpleV3RoundTrip(s3Client, objectKey);
@@ -788,10 +788,10 @@ public class S3EncryptionClientTest {
         AwsCredentialsProvider creds = new S3EncryptionClientTestResources.NullCredentialsProvider();
 
         S3Client s3Client = S3EncryptionClient.builder()
-          .credentialsProvider(creds)
-          .region(Region.of(KMS_REGION.toString()))
-          .kmsKeyId(KMS_KEY_ID)
-          .build();
+                .credentialsProvider(creds)
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         try {
             simpleV3RoundTrip(s3Client, objectKey);
@@ -813,10 +813,10 @@ public class S3EncryptionClientTest {
         AwsCredentialsProvider creds = new S3EncryptionClientTestResources.AlternateRoleCredentialsProvider();
 
         S3Client s3Client = S3EncryptionClient.builder()
-          .credentialsProvider(creds)
-          .region(Region.of(KMS_REGION.toString()))
-          .kmsKeyId(KMS_KEY_ID)
-          .build();
+                .credentialsProvider(creds)
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
 
         // using the original key fails
         try {
@@ -832,10 +832,10 @@ public class S3EncryptionClientTest {
 
         // using the alternate key succeeds
         S3Client s3ClientAltCreds = S3EncryptionClient.builder()
-          .credentialsProvider(creds)
-          .region(Region.of(KMS_REGION.toString()))
-          .kmsKeyId(ALTERNATE_KMS_KEY)
-          .build();
+                .credentialsProvider(creds)
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(ALTERNATE_KMS_KEY)
+                .build();
 
         simpleV3RoundTrip(s3ClientAltCreds, objectKey);
 
@@ -852,17 +852,17 @@ public class S3EncryptionClientTest {
         // default for S3
         AwsCredentialsProvider creds = new S3EncryptionClientTestResources.AlternateRoleCredentialsProvider();
         KmsClient kmsClient = KmsClient.builder()
-          .credentialsProvider(creds)
-          .region(Region.of(KMS_REGION.toString()))
-          .build();
+                .credentialsProvider(creds)
+                .region(Region.of(KMS_REGION.toString()))
+                .build();
         KmsKeyring kmsKeyring = KmsKeyring.builder()
-          .kmsClient(kmsClient)
-          .wrappingKeyId(ALTERNATE_KMS_KEY)
-          .build();
+                .kmsClient(kmsClient)
+                .wrappingKeyId(ALTERNATE_KMS_KEY)
+                .build();
 
         S3Client s3Client = S3EncryptionClient.builder()
-          .keyring(kmsKeyring)
-          .build();
+                .keyring(kmsKeyring)
+                .build();
 
         simpleV3RoundTrip(s3Client, objectKey);
 
@@ -882,15 +882,15 @@ public class S3EncryptionClientTest {
         final String input = "SimpleTestOfV3EncryptionClient";
 
         v3Client.putObject(builder -> builder
-            .bucket(BUCKET)
-            .key(objectKey)
-            .build(),
-          RequestBody.fromString(input));
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .build(),
+                RequestBody.fromString(input));
 
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
-          .bucket(BUCKET)
-          .key(objectKey)
-          .build());
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
     }

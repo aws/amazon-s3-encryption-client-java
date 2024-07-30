@@ -43,49 +43,49 @@ public class ClientConfigurationExample {
     // Instantiate the wrapped S3 client with the default credentials
     // and the region to use with S3.
     final S3Client wrappedClient = S3Client.builder()
-      .credentialsProvider(defaultCreds)
-      .region(Region.of(S3_REGION.toString()))
-      .build();
+            .credentialsProvider(defaultCreds)
+            .region(Region.of(S3_REGION.toString()))
+            .build();
 
     // Instantiate the wrapped Async S3 client with the default credentials
     // and the region to use with S3.
     final S3AsyncClient wrappedAsyncClient = S3AsyncClient.builder()
-      .credentialsProvider(defaultCreds)
-      .region(Region.of(S3_REGION.toString()))
-      .build();
+            .credentialsProvider(defaultCreds)
+            .region(Region.of(S3_REGION.toString()))
+            .build();
 
     // Instantiate the KMS client with alternate credentials.
     // This client will be used for all KMS requests.
     final KmsClient kmsClient = KmsClient.builder()
-      .credentialsProvider(altCreds)
-      .region(Region.of(KMS_REGION.toString()))
-      .build();
+            .credentialsProvider(altCreds)
+            .region(Region.of(KMS_REGION.toString()))
+            .build();
 
     // Instantiate a KMS Keyring to use with the S3 Encryption Client.
     final KmsKeyring kmsKeyring = KmsKeyring.builder()
-      .wrappingKeyId(ALTERNATE_KMS_KEY)
-      .kmsClient(kmsClient)
-      .build();
+            .wrappingKeyId(ALTERNATE_KMS_KEY)
+            .kmsClient(kmsClient)
+            .build();
 
     // Instantiate the S3 Encryption Client using the configured clients and keyring.
     final S3Client s3Client = S3EncryptionClient.builder()
-      .wrappedClient(wrappedClient)
-      .wrappedAsyncClient(wrappedAsyncClient)
-      .keyring(kmsKeyring)
-      .build();
+            .wrappedClient(wrappedClient)
+            .wrappedAsyncClient(wrappedAsyncClient)
+            .keyring(kmsKeyring)
+            .build();
 
     // Use the client to call putObject.
     s3Client.putObject(builder -> builder
-        .bucket(BUCKET)
-        .key(objectKey)
-        .build(),
-      RequestBody.fromString(input));
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build(),
+            RequestBody.fromString(input));
 
     // Use the client to call getObject.
     ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
-      .bucket(BUCKET)
-      .key(objectKey)
-      .build());
+            .bucket(BUCKET)
+            .key(objectKey)
+            .build());
     String output = objectResponse.asUtf8String();
     // Check that the output matches the input.
     assertEquals(input, output);
@@ -110,23 +110,23 @@ public class ClientConfigurationExample {
     // By passing the creds into the credentialsProvider parameter,
     // the S3EC will use these creds for both S3 and KMS requests.
     final S3Client s3Client = S3EncryptionClient.builder()
-      .credentialsProvider(creds)
-      .region(Region.of(KMS_REGION.toString()))
-      .kmsKeyId(ALTERNATE_KMS_KEY)
-      .build();
+            .credentialsProvider(creds)
+            .region(Region.of(KMS_REGION.toString()))
+            .kmsKeyId(ALTERNATE_KMS_KEY)
+            .build();
 
     // Use the client to call putObject.
     s3Client.putObject(builder -> builder
-        .bucket(BUCKET)
-        .key(objectKey)
-        .build(),
-      RequestBody.fromString(input));
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build(),
+            RequestBody.fromString(input));
 
     // Use the client to call getObject.
     ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
-      .bucket(BUCKET)
-      .key(objectKey)
-      .build());
+            .bucket(BUCKET)
+            .key(objectKey)
+            .build());
     String output = objectResponse.asUtf8String();
     // Check that the output matches the input.
     assertEquals(input, output);

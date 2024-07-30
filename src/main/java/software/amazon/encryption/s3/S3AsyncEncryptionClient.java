@@ -189,7 +189,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
      */
     @Override
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
-                                                           AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
+                                              AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
@@ -646,16 +646,16 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
             if (_wrappedClient == null) {
                 _wrappedClient = S3AsyncClient.builder()
-                  .credentialsProvider(_awsCredentialsProvider)
-                  .region(_region)
-                  .dualstackEnabled(_dualStackEnabled)
-                  .fipsEnabled(_fipsEnabled)
-                  .overrideConfiguration(_overrideConfiguration)
-                  .endpointOverride(_endpointOverride)
-                  .asyncConfiguration(_clientAsyncConfiguration)
-                  .httpClient(_sdkAsyncHttpClient)
-                  .httpClientBuilder(_sdkAsyncHttpClientBuilder)
-                  .build();
+                        .credentialsProvider(_awsCredentialsProvider)
+                        .region(_region)
+                        .dualstackEnabled(_dualStackEnabled)
+                        .fipsEnabled(_fipsEnabled)
+                        .overrideConfiguration(_overrideConfiguration)
+                        .endpointOverride(_endpointOverride)
+                        .asyncConfiguration(_clientAsyncConfiguration)
+                        .httpClient(_sdkAsyncHttpClient)
+                        .httpClientBuilder(_sdkAsyncHttpClientBuilder)
+                        .build();
             }
 
             if (_keyring == null) {
@@ -673,19 +673,19 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                             .build();
                 } else if (_kmsKeyId != null) {
                     KmsClient kmsClient = KmsClient.builder()
-                      .credentialsProvider(_awsCredentialsProvider)
-                      .region(_region)
-                      .dualstackEnabled(_dualStackEnabled)
-                      .fipsEnabled(_fipsEnabled)
-                      .overrideConfiguration(_overrideConfiguration)
-                      .build();
+                            .credentialsProvider(_awsCredentialsProvider)
+                            .region(_region)
+                            .dualstackEnabled(_dualStackEnabled)
+                            .fipsEnabled(_fipsEnabled)
+                            .overrideConfiguration(_overrideConfiguration)
+                            .build();
 
                     _keyring = KmsKeyring.builder()
-                      .kmsClient(kmsClient)
-                      .wrappingKeyId(_kmsKeyId)
-                      .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
-                      .secureRandom(_secureRandom)
-                      .build();
+                            .kmsClient(kmsClient)
+                            .wrappingKeyId(_kmsKeyId)
+                            .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
+                            .secureRandom(_secureRandom)
+                            .build();
                 }
             }
 

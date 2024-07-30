@@ -203,11 +203,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         try {
             CompletableFuture<PutObjectResponse> futurePut = pipeline.putObject(putObjectRequest,
-                AsyncRequestBody.fromInputStream(
-                    requestBody.contentStreamProvider().newStream(),
-                    requestBody.optionalContentLength().orElse(-1L),
-                    singleThreadExecutor
-                )
+                    AsyncRequestBody.fromInputStream(
+                            requestBody.contentStreamProvider().newStream(),
+                            requestBody.optionalContentLength().orElse(-1L),
+                            singleThreadExecutor
+                    )
             );
 
             PutObjectResponse response = futurePut.join();
@@ -862,24 +862,24 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
             if (_wrappedClient == null) {
                 _wrappedClient = S3Client.builder()
-                  .credentialsProvider(_awsCredentialsProvider)
-                  .region(_region)
-                  .dualstackEnabled(_dualStackEnabled)
-                  .fipsEnabled(_fipsEnabled)
-                  .overrideConfiguration(_overrideConfiguration)
-                  .endpointOverride(_endpointOverride)
-                  .build();
+                        .credentialsProvider(_awsCredentialsProvider)
+                        .region(_region)
+                        .dualstackEnabled(_dualStackEnabled)
+                        .fipsEnabled(_fipsEnabled)
+                        .overrideConfiguration(_overrideConfiguration)
+                        .endpointOverride(_endpointOverride)
+                        .build();
             }
 
             if (_wrappedAsyncClient == null) {
                 _wrappedAsyncClient = S3AsyncClient.builder()
-                  .credentialsProvider(_awsCredentialsProvider)
-                  .region(_region)
-                  .dualstackEnabled(_dualStackEnabled)
-                  .fipsEnabled(_fipsEnabled)
-                  .overrideConfiguration(_overrideConfiguration)
-                  .endpointOverride(_endpointOverride)
-                  .build();
+                        .credentialsProvider(_awsCredentialsProvider)
+                        .region(_region)
+                        .dualstackEnabled(_dualStackEnabled)
+                        .fipsEnabled(_fipsEnabled)
+                        .overrideConfiguration(_overrideConfiguration)
+                        .endpointOverride(_endpointOverride)
+                        .build();
             }
 
             if (_keyring == null) {
@@ -897,12 +897,12 @@ public class S3EncryptionClient extends DelegatingS3Client {
                             .build();
                 } else if (_kmsKeyId != null) {
                     KmsClient kmsClient = KmsClient.builder()
-                      .credentialsProvider(_awsCredentialsProvider)
-                      .region(_region)
-                      .dualstackEnabled(_dualStackEnabled)
-                      .fipsEnabled(_fipsEnabled)
-                      .overrideConfiguration(_overrideConfiguration)
-                      .build();
+                            .credentialsProvider(_awsCredentialsProvider)
+                            .region(_region)
+                            .dualstackEnabled(_dualStackEnabled)
+                            .fipsEnabled(_fipsEnabled)
+                            .overrideConfiguration(_overrideConfiguration)
+                            .build();
 
                     _keyring = KmsKeyring.builder()
                             .kmsClient(kmsClient)

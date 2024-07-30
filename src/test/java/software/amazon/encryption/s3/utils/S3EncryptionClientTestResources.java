@@ -53,10 +53,10 @@ public class S3EncryptionClientTestResources {
         public AwsCredentials resolveCredentials() {
             String sessionName = "s3ec-test" + DateTimeFormat.forPattern("-yyMMdd-hhmmss").print(new DateTime());
             Credentials assumeRoleCreds = stsClient_.assumeRole(builder -> builder
-              .roleArn(ALTERNATE_ROLE_ARN).roleSessionName(sessionName).build()).credentials();
+                    .roleArn(ALTERNATE_ROLE_ARN).roleSessionName(sessionName).build()).credentials();
             return AwsSessionCredentials.create(assumeRoleCreds.accessKeyId(),
-              assumeRoleCreds.secretAccessKey(),
-              assumeRoleCreds.sessionToken());
+                    assumeRoleCreds.secretAccessKey(),
+                    assumeRoleCreds.sessionToken());
         }
     }
 
@@ -69,7 +69,7 @@ public class S3EncryptionClientTestResources {
         @Override
         public AwsCredentials resolveCredentials() {
             return AwsBasicCredentials
-              .create(null, null);
+                    .create(null, null);
         }
     }
 
