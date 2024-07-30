@@ -652,7 +652,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                         .fipsEnabled(_fipsEnabled)
                         .overrideConfiguration(_overrideConfiguration)
                         .endpointOverride(_endpointOverride)
-                        .asyncConfiguration(_clientAsyncConfiguration)
+                        .asyncConfiguration(_clientAsyncConfiguration != null ? _clientAsyncConfiguration : ClientAsyncConfiguration.builder().build())
                         .httpClient(_sdkAsyncHttpClient)
                         .httpClientBuilder(_sdkAsyncHttpClientBuilder)
                         .build();
