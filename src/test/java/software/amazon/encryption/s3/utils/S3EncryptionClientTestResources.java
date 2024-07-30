@@ -27,6 +27,8 @@ public class S3EncryptionClientTestResources {
     public static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
     // This alias must point to the same key as KMS_KEY_ID
     public static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
+    // For now, these are the same.
+    public static final Region S3_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
     public static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
     // Alternate role to test credential configuration and access denied behavior
     public static final String ALTERNATE_ROLE_ARN = System.getenv("AWS_S3EC_TEST_ALT_ROLE_ARN");

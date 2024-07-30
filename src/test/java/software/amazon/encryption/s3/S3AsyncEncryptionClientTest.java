@@ -27,6 +27,7 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.model.KmsException;
+import software.amazon.awssdk.services.kms.model.NotFoundException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
@@ -162,7 +163,7 @@ public class S3AsyncEncryptionClientTest {
 
     @Test
     public void s3AsyncEncryptionClientTopLevelAlternateCredentials() {
-        final String objectKey = appendTestSuffix("wrapped-s3-async-client-with-top-level-credentials");
+        final String objectKey = appendTestSuffix("wrapped-s3-async-client-with-top-level-alternate-credentials");
         final String input = "S3EncryptionClientTopLevelAlternateCredsTest";
 
         // use alternate creds
@@ -254,6 +255,62 @@ public class S3AsyncEncryptionClientTest {
         deleteObject(BUCKET, objectKey, s3Client);
         s3Client.close();
         kmsClient.close();
+    }
+
+    @Test
+    public void asyncTopLevelConfigurationWrongRegion() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-wrong-region-credentials-async");
+
+        AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
+
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
+          .credentialsProvider(creds)
+          .region(Region.of("eu-west-1"))
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
+
+        final String input = "SimpleTestOfV3EncryptionClientAsync";
+
+        try {
+            s3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(),
+              AsyncRequestBody.fromString(input)).join();
+            fail("expected exception");
+        } catch (NotFoundException e) {
+            assertTrue(e.getMessage().contains("Invalid arn"));
+        } finally {
+            s3Client.close();
+        }
+    }
+
+    @Test
+    public void asyncTopLevelConfigurationNullCreds() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-null-credentials-async");
+
+        AwsCredentialsProvider creds = new S3EncryptionClientTestResources.NullCredentialsProvider();
+
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
+          .credentialsProvider(creds)
+          .region(Region.of(KMS_REGION.toString()))
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
+
+        final String input = "SimpleTestOfV3EncryptionClientAsync";
+
+        try {
+            s3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(),
+              AsyncRequestBody.fromString(input)).join();
+            fail("expected exception");
+        } catch (NullPointerException npe) {
+            assertTrue(npe.getMessage().contains("Access key ID cannot be blank"));
+        } finally {
+            s3Client.close();
+        }
     }
 
     @Test
