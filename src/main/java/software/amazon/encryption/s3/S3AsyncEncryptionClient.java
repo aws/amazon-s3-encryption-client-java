@@ -12,6 +12,7 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.endpoints.EndpointProvider;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
@@ -281,6 +282,10 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private ClientOverrideConfiguration _overrideConfiguration = null;
         // this should only be applied to S3 clients
         private URI _endpointOverride = null;
+        // async specific configuration
+        private ClientAsyncConfiguration _clientAsyncConfiguration = null;
+        private SdkAsyncHttpClient _sdkAsyncHttpClient = null;
+        private SdkAsyncHttpClient.Builder _sdkAsyncHttpClientBuilder = null;
 
         private Builder() {
         }
@@ -552,13 +557,33 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
+         * Configure the endpoint with which the SDK should communicate.
+         * NOTE: For the S3EncryptionClient, this ONLY overrides the endpoint for S3 clients.
+         * To set the endpointOverride for a KMS client, explicitly configure it and create a
+         * KmsKeyring instance for the encryption client to use.
+         * <p>
+         * It is important to know that {@link EndpointProvider}s and the endpoint override on the client are not mutually
+         * exclusive. In all existing cases, the endpoint override is passed as a parameter to the provider and the provider *may*
+         * modify it. For example, the S3 provider may add the bucket name as a prefix to the endpoint override for virtual bucket
+         * addressing.
+         *
+         * @param endpointOverride
+         */
+        public Builder endpointOverride(URI endpointOverride) {
+            _endpointOverride = endpointOverride;
+            return this;
+        }
+
+
+        /**
          * Specify overrides to the default SDK async configuration that should be used for clients created by this builder.
          *
          * @param clientAsyncConfiguration
          */
         @Override
         public Builder asyncConfiguration(ClientAsyncConfiguration clientAsyncConfiguration) {
-            return null;
+            _clientAsyncConfiguration = clientAsyncConfiguration;
+            return this;
         }
 
         /**
@@ -578,7 +603,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          */
         @Override
         public Builder httpClient(SdkAsyncHttpClient httpClient) {
-            return null;
+            _sdkAsyncHttpClient = httpClient;
+            return this;
         }
 
         /**
@@ -596,7 +622,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          */
         @Override
         public Builder httpClientBuilder(SdkAsyncHttpClient.Builder httpClientBuilder) {
-            return null;
+            _sdkAsyncHttpClientBuilder = httpClientBuilder;
+            return this;
         }
 
         /**
@@ -625,6 +652,9 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                   .fipsEnabled(_fipsEnabled)
                   .overrideConfiguration(_overrideConfiguration)
                   .endpointOverride(_endpointOverride)
+                  .asyncConfiguration(_clientAsyncConfiguration)
+                  .httpClient(_sdkAsyncHttpClient)
+                  .httpClientBuilder(_sdkAsyncHttpClientBuilder)
                   .build();
             }
 
