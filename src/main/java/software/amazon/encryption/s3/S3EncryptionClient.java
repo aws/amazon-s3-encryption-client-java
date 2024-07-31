@@ -774,6 +774,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         /**
          * The credentials provider to use for all inner clients, including KMS, if a KMS key ID is provided.
+         * Note that if a wrapped client is configured, the wrapped client will take precedence over this option.
          * @param awsCredentialsProvider
          * @return
          */
@@ -794,18 +795,51 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        /**
+         * Configure whether the SDK should use the AWS dualstack endpoint.
+         *
+         * <p>If this is not specified, the SDK will attempt to determine whether the dualstack endpoint should be used
+         * automatically using the following logic:
+         * <ol>
+         *     <li>Check the 'aws.useDualstackEndpoint' system property for 'true' or 'false'.</li>
+         *     <li>Check the 'AWS_USE_DUALSTACK_ENDPOINT' environment variable for 'true' or 'false'.</li>
+         *     <li>Check the {user.home}/.aws/credentials and {user.home}/.aws/config files for the 'use_dualstack_endpoint'
+         *     property set to 'true' or 'false'.</li>
+         * </ol>
+         *
+         * <p>If the setting is not found in any of the locations above, 'false' will be used.
+         */
         @Override
         public Builder dualstackEnabled(Boolean isDualStackEnabled) {
             _dualStackEnabled = isDualStackEnabled;
             return this;
         }
 
+        /**
+         * Configure whether the wrapped SDK clients should use the AWS FIPS endpoints.
+         * Note that this option only enables FIPS for the service endpoints which the SDK clients use,
+         * it does not enable FIPS for the S3EC itself. Use a FIPS-enabled CryptoProvider for full FIPS support.
+         *
+         * <p>If this is not specified, the SDK will attempt to determine whether the FIPS endpoint should be used
+         * automatically using the following logic:
+         * <ol>
+         *     <li>Check the 'aws.useFipsEndpoint' system property for 'true' or 'false'.</li>
+         *     <li>Check the 'AWS_USE_FIPS_ENDPOINT' environment variable for 'true' or 'false'.</li>
+         *     <li>Check the {user.home}/.aws/credentials and {user.home}/.aws/config files for the 'use_fips_endpoint'
+         *     property set to 'true' or 'false'.</li>
+         * </ol>
+         *
+         * <p>If the setting is not found in any of the locations above, 'false' will be used.
+         */
         @Override
         public Builder fipsEnabled(Boolean isFipsEnabled) {
             _fipsEnabled = isFipsEnabled;
             return this;
         }
 
+        /**
+         * Specify overrides to the default SDK configuration that should be used for clients created by this builder.
+         */
         @Override
         public Builder overrideConfiguration(ClientOverrideConfiguration overrideConfiguration) {
             _overrideConfiguration = overrideConfiguration;
