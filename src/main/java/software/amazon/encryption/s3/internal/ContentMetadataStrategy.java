@@ -3,11 +3,12 @@
 package software.amazon.encryption.s3.internal;
 
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter.JsonGenerationException;
-import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -17,6 +18,7 @@ import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.S3Keyring;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -33,30 +35,28 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
     public static final ContentMetadataDecodingStrategy INSTRUCTION_FILE = new ContentMetadataDecodingStrategy() {
 
         @Override
-        public ContentMetadata decodeMetadata(GetObjectRequest getObjectRequest, GetObjectResponse response) {
+        public ContentMetadata decodeMetadata(GetObjectRequest getObjectRequest, GetObjectResponse response, S3AsyncClient s3AsyncClient) {
             GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
                     .bucket(getObjectRequest.bucket())
                     .key(getObjectRequest.key() + INSTRUCTION_FILE_SUFFIX)
                     .build();
 
-            S3Client s3Client = S3Client.create();
-            ResponseInputStream<GetObjectResponse> instruction;
-            try {
-                instruction = s3Client.getObject(instructionGetObjectRequest);
+            try (ResponseInputStream<GetObjectResponse> instruction = s3AsyncClient.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join()){
+                Map<String, String> metadata = new HashMap<>();
+                JsonNodeParser parser = JsonNodeParser.create();
+                JsonNode objectNode = parser.parse(instruction);
+                for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
+                    metadata.put(entry.getKey(), entry.getValue().asString());
+                }
+                return ContentMetadataStrategy.readFromMap(metadata, response);
+            } catch (IOException ioException) {
+                throw new S3EncryptionClientException("IOException while reading instruction file!", ioException);
             } catch (NoSuchKeyException exception) {
                 // Most likely, the customer is attempting to decrypt an object
                 // which is not encrypted with the S3 EC.
                 throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
-                        " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
+                                                              " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
             }
-
-            Map<String, String> metadata = new HashMap<>();
-            JsonNodeParser parser = JsonNodeParser.create();
-            JsonNode objectNode = parser.parse(instruction);
-            for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
-                metadata.put(entry.getKey(), entry.getValue().asString());
-            }
-            return ContentMetadataStrategy.readFromMap(metadata, response);
         }
     };
 
@@ -88,7 +88,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
         }
 
         @Override
-        public ContentMetadata decodeMetadata(GetObjectRequest request, GetObjectResponse response) {
+        public ContentMetadata decodeMetadata(GetObjectRequest request, GetObjectResponse response, S3AsyncClient s3AsyncClient) {
             return ContentMetadataStrategy.readFromMap(response.metadata(), response);
         }
     };
@@ -216,7 +216,7 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
                 .build();
     }
 
-    public static ContentMetadata decode(GetObjectRequest request, GetObjectResponse response) {
+    public static ContentMetadata decode(GetObjectRequest request, GetObjectResponse response, S3AsyncClient s3AsyncClient) {
         Map<String, String> metadata = response.metadata();
         ContentMetadataDecodingStrategy strategy;
         if (metadata != null
@@ -228,6 +228,6 @@ public abstract class ContentMetadataStrategy implements ContentMetadataEncoding
             strategy = INSTRUCTION_FILE;
         }
 
-        return strategy.decodeMetadata(request, response);
+        return strategy.decodeMetadata(request, response, s3AsyncClient);
     }
 }
