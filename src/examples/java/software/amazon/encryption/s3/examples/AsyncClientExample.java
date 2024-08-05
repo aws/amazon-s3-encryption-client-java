@@ -1,9 +1,5 @@
 package software.amazon.encryption.s3.examples;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
-
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -13,6 +9,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.S3AsyncEncryptionClient;
 
 import java.util.concurrent.CompletableFuture;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 
 public class AsyncClientExample {
     public static final String OBJECT_KEY = appendTestSuffix("async-client-example");
@@ -33,7 +33,7 @@ public class AsyncClientExample {
         final String input = "PutAsyncGetAsync";
 
         // Instantiate the S3 Async Encryption Client to encrypt and decrypt
-        // by specifying an AES Key with the aesKey builder parameter.
+        // by specifying a KMS key with the kmsKeyId parameter.
         //
         // This means that the S3 Async Encryption Client can perform both encrypt and decrypt operations
         // as part of the S3 putObject and getObject operations.

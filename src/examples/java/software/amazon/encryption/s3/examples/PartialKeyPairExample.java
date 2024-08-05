@@ -159,7 +159,7 @@ public class PartialKeyPairExample {
         s3ClientPrivateKeyOnly.close();
     }
 
-    public static void cleanup(final String bucket) {
+    private static void cleanup(final String bucket) {
         // The S3 Encryption client is not required when deleting encrypted
         // objects, use the S3 Client.
         final S3Client s3Client = S3Client.builder().build();

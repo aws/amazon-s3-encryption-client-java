@@ -33,6 +33,8 @@ The other values are added as variables (by clicking the "New repository variabl
 * `CI_S3_BUCKET` - the S3 bucket to use, e.g. s3ec-github-test-bucket.
 * `CI_KMS_KEY_ID` - the short KMS key ID to use, e.g. c3eafb5f-e87d-4584-9400-cf419ce5d782.
 * `CI_KMS_KEY_ALIAS` - the KMS key alias to use, e.g. S3EC-Github-KMS-Key. Note that the alias must reference the key ID above.
+* `CI_ALT_ROLE` - an alternate role to use that is different from the role defined above. It must have permission to use the KMS key below and the S3 bucket above.
+* `CI_ALT_KMS_KEY_ID`- the KMS key of an alternate KMS key to use. The alternate role must have access to use the key and the role for `CI_AWS_ROLE` must not have access to the key.
 
 ## Migration
 
@@ -43,6 +45,12 @@ The list of legacy modes and operations is provided below.
 However, this version does not support V2's Unencrypted Object Passthrough.
 This library can only read encrypted objects from S3,
 unencrypted objects MUST be read with the base S3 Client.
+
+## Client Configuration
+
+The S3 Encryption Client uses "wrapped" clients to make its requests to S3 and/or KMS.
+You can configure each client independently, or apply a "top-level" configuration which is applied to all wrapped clients.
+Refer to the Client Configuration Example in the [Examples directory](https://github.com/aws/amazon-s3-encryption-client-java/tree/main/src/examples/java/software/amazon/encryption/s3/examples) for examples of each configuration method.
 
 ### Examples
 #### V2 KMS Materials Provider to V3

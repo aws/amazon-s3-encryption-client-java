@@ -3,11 +3,19 @@
 package software.amazon.encryption.s3;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
+import software.amazon.awssdk.awscore.client.builder.AwsAsyncClientBuilder;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.endpoints.EndpointProvider;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.s3.DelegatingS3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient;
@@ -33,6 +41,7 @@ import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
 import javax.crypto.SecretKey;
+import java.net.URI;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
@@ -180,7 +189,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
      */
     @Override
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest,
-                                                           AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
+                                              AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
@@ -250,7 +259,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
     // This is very similar to the S3EncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options
-    public static class Builder {
+    public static class Builder implements AwsAsyncClientBuilder<Builder, S3AsyncEncryptionClient> {
         private S3AsyncClient _wrappedClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
@@ -264,6 +273,19 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
         private long _bufferSize = -1L;
+
+        // generic AwsClient configuration to be shared by default clients
+        private AwsCredentialsProvider _awsCredentialsProvider = null;
+        private Region _region = null;
+        private boolean _dualStackEnabled = false;
+        private boolean _fipsEnabled = false;
+        private ClientOverrideConfiguration _overrideConfiguration = null;
+        // this should only be applied to S3 clients
+        private URI _endpointOverride = null;
+        // async specific configuration
+        private ClientAsyncConfiguration _clientAsyncConfiguration = null;
+        private SdkAsyncHttpClient _sdkAsyncHttpClient = null;
+        private SdkAsyncHttpClient.Builder _sdkAsyncHttpClientBuilder = null;
 
         private Builder() {
         }
@@ -490,6 +512,156 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
+         * The credentials provider to use for all inner clients, including KMS, if a KMS key ID is provided.
+         * Note that if a wrapped client is configured, the wrapped client will take precedence over this option.
+         * @param awsCredentialsProvider
+         * @return
+         */
+        public Builder credentialsProvider(AwsCredentialsProvider awsCredentialsProvider) {
+            _awsCredentialsProvider = awsCredentialsProvider;
+            return this;
+        }
+
+        /**
+         * The AWS region to use for all inner clients, including KMS, if a KMS key ID is provided.
+         * Note that if a wrapped client is configured, the wrapped client will take precedence over this option.
+         * @param region
+         * @return
+         */
+        public Builder region(Region region) {
+            _region = region;
+            return this;
+        }
+
+        /**
+         * Configure whether the SDK should use the AWS dualstack endpoint.
+         *
+         * <p>If this is not specified, the SDK will attempt to determine whether the dualstack endpoint should be used
+         * automatically using the following logic:
+         * <ol>
+         *     <li>Check the 'aws.useDualstackEndpoint' system property for 'true' or 'false'.</li>
+         *     <li>Check the 'AWS_USE_DUALSTACK_ENDPOINT' environment variable for 'true' or 'false'.</li>
+         *     <li>Check the {user.home}/.aws/credentials and {user.home}/.aws/config files for the 'use_dualstack_endpoint'
+         *     property set to 'true' or 'false'.</li>
+         * </ol>
+         *
+         * <p>If the setting is not found in any of the locations above, 'false' will be used.
+         */
+        public Builder dualstackEnabled(Boolean isDualStackEnabled) {
+            _dualStackEnabled = isDualStackEnabled;
+            return this;
+        }
+
+        /**
+         * Configure whether the wrapped SDK clients should use the AWS FIPS endpoints.
+         * Note that this option only enables FIPS for the service endpoints which the SDK clients use,
+         * it does not enable FIPS for the S3EC itself. Use a FIPS-enabled CryptoProvider for full FIPS support.
+         *
+         * <p>If this is not specified, the SDK will attempt to determine whether the FIPS endpoint should be used
+         * automatically using the following logic:
+         * <ol>
+         *     <li>Check the 'aws.useFipsEndpoint' system property for 'true' or 'false'.</li>
+         *     <li>Check the 'AWS_USE_FIPS_ENDPOINT' environment variable for 'true' or 'false'.</li>
+         *     <li>Check the {user.home}/.aws/credentials and {user.home}/.aws/config files for the 'use_fips_endpoint'
+         *     property set to 'true' or 'false'.</li>
+         * </ol>
+         *
+         * <p>If the setting is not found in any of the locations above, 'false' will be used.
+         */
+        public Builder fipsEnabled(Boolean isFipsEnabled) {
+            _fipsEnabled = isFipsEnabled;
+            return this;
+        }
+
+        /**
+         * Specify overrides to the default SDK configuration that should be used for wrapped clients.
+         */
+        public Builder overrideConfiguration(ClientOverrideConfiguration overrideConfiguration) {
+            _overrideConfiguration = overrideConfiguration;
+            return this;
+        }
+
+        /**
+         * Retrieve the current override configuration. This allows further overrides across calls. Can be modified by first
+         * converting to a builder with {@link ClientOverrideConfiguration#toBuilder()}.
+         *
+         * @return The existing override configuration for the builder.
+         */
+        public ClientOverrideConfiguration overrideConfiguration() {
+            return _overrideConfiguration;
+        }
+
+        /**
+         * Configure the endpoint with which the SDK should communicate.
+         * NOTE: For the S3EncryptionClient, this ONLY overrides the endpoint for S3 clients.
+         * To set the endpointOverride for a KMS client, explicitly configure it and create a
+         * KmsKeyring instance for the encryption client to use.
+         * <p>
+         * It is important to know that {@link EndpointProvider}s and the endpoint override on the client are not mutually
+         * exclusive. In all existing cases, the endpoint override is passed as a parameter to the provider and the provider *may*
+         * modify it. For example, the S3 provider may add the bucket name as a prefix to the endpoint override for virtual bucket
+         * addressing.
+         *
+         * @param endpointOverride
+         */
+        public Builder endpointOverride(URI endpointOverride) {
+            _endpointOverride = endpointOverride;
+            return this;
+        }
+
+
+        /**
+         * Specify overrides to the default SDK async configuration that should be used for clients created by this builder.
+         *
+         * @param clientAsyncConfiguration
+         */
+        @Override
+        public Builder asyncConfiguration(ClientAsyncConfiguration clientAsyncConfiguration) {
+            _clientAsyncConfiguration = clientAsyncConfiguration;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SdkAsyncHttpClient} that the SDK service client will use to make HTTP calls. This HTTP client may be
+         * shared between multiple SDK service clients to share a common connection pool. To create a client you must use an
+         * implementation specific builder. Note that this method is only recommended when you wish to share an HTTP client across
+         * multiple SDK service clients. If you do not wish to share HTTP clients, it is recommended to use
+         * {@link #httpClientBuilder(SdkAsyncHttpClient.Builder)} so that service specific default configuration may be applied.
+         *
+         * <p>
+         * <b>This client must be closed by the caller when it is ready to be disposed. The SDK will not close the HTTP client
+         * when the service client is closed.</b>
+         * </p>
+         *
+         * @param httpClient
+         * @return This builder for method chaining.
+         */
+        @Override
+        public Builder httpClient(SdkAsyncHttpClient httpClient) {
+            _sdkAsyncHttpClient = httpClient;
+            return this;
+        }
+
+        /**
+         * Sets a custom HTTP client builder that will be used to obtain a configured instance of {@link SdkAsyncHttpClient}. Any
+         * service specific HTTP configuration will be merged with the builder's configuration prior to creating the client. When
+         * there is no desire to share HTTP clients across multiple service clients, the client builder is the preferred way to
+         * customize the HTTP client as it benefits from service specific defaults.
+         *
+         * <p>
+         * <b>Clients created by the builder are managed by the SDK and will be closed when the service client is closed.</b>
+         * </p>
+         *
+         * @param httpClientBuilder
+         * @return This builder for method chaining.
+         */
+        @Override
+        public Builder httpClientBuilder(SdkAsyncHttpClient.Builder httpClientBuilder) {
+            _sdkAsyncHttpClientBuilder = httpClientBuilder;
+            return this;
+        }
+
+        /**
          * Validates and builds the S3AsyncEncryptionClient according
          * to the configuration options passed to the Builder object.
          * @return an instance of the S3AsyncEncryptionClient
@@ -508,7 +680,17 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             }
 
             if (_wrappedClient == null) {
-                _wrappedClient = S3AsyncClient.create();
+                _wrappedClient = S3AsyncClient.builder()
+                        .credentialsProvider(_awsCredentialsProvider)
+                        .region(_region)
+                        .dualstackEnabled(_dualStackEnabled)
+                        .fipsEnabled(_fipsEnabled)
+                        .overrideConfiguration(_overrideConfiguration)
+                        .endpointOverride(_endpointOverride)
+                        .asyncConfiguration(_clientAsyncConfiguration != null ? _clientAsyncConfiguration : ClientAsyncConfiguration.builder().build())
+                        .httpClient(_sdkAsyncHttpClient)
+                        .httpClientBuilder(_sdkAsyncHttpClientBuilder)
+                        .build();
             }
 
             if (_keyring == null) {
@@ -525,7 +707,16 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                             .secureRandom(_secureRandom)
                             .build();
                 } else if (_kmsKeyId != null) {
+                    KmsClient kmsClient = KmsClient.builder()
+                            .credentialsProvider(_awsCredentialsProvider)
+                            .region(_region)
+                            .dualstackEnabled(_dualStackEnabled)
+                            .fipsEnabled(_fipsEnabled)
+                            .overrideConfiguration(_overrideConfiguration)
+                            .build();
+
                     _keyring = KmsKeyring.builder()
+                            .kmsClient(kmsClient)
                             .wrappingKeyId(_kmsKeyId)
                             .enableLegacyWrappingAlgorithms(_enableLegacyWrappingAlgorithms)
                             .secureRandom(_secureRandom)
