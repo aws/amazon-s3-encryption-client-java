@@ -254,6 +254,20 @@ Resources:
             Action: 'kms:*'
             Resource: '*'
 
+  S3ECReleaseKMSKeyIDAlternate:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: Alternate KMS Key for Release Testing
+      Enabled: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
   S3ECReleaseKMSKeyAlias:
     Type: 'AWS::KMS::Alias'
     Properties:
@@ -313,3 +327,66 @@ Resources:
           ]
         }
       ManagedPolicyName: S3EC-Release-Test-KMS-Key-Policy
+
+  S3ECReleaseKMSKeyPolicyAlternate:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseKMSKeyIDAlternate}"
+              ],
+              "Action": [
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:GenerateDataKeyPair"
+              ]
+            }
+          ]
+        }
+      ManagedPolicyName: S3EC-Release-KMS-Key-Policy-Alternate
+
+  S3ECReleaseTestRoleAlternate:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Path: /service-role/
+      RoleName: S3EC-Release-test-role-alternate
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              AWS:
+                Fn::GetAtt: [ CodeBuildServiceRoleRelease, Arn ]
+            Action:
+              - "sts:AssumeRole"
+      Description: >-
+        Grant S3 put and get and KMS (alt key) encrypt, decrypt, and generate access
+        for testing
+      ManagedPolicyArns:
+        - !Ref S3ECReleaseKMSKeyPolicyAlternate
+        - !Ref S3ECReleaseS3BucketPolicy
+
+  S3ECReleaseAssumeAlternatePolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:iam::${AWS::AccountId}:role/service-role/${S3ECReleaseTestRoleAlternate}"
+              ],
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        }
+      ManagedPolicyName: S3EC-Release-Assume-Alternate-Policy
