@@ -96,6 +96,7 @@ Resources:
         - !Ref ParameterStorePolicy
         - !Ref S3ECReleaseTestKMSKeyPolicy
         - !Ref S3ECReleaseS3BucketPolicy
+        - !Ref S3ECReleaseAssumeAlternatePolicy
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
 
@@ -277,7 +278,7 @@ Resources:
   S3ECReleaseTestS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: s3ec-release-test-bucket
+      BucketName: !Sub "s3ec-release-test-bucket-${AWS::StackName}"
       LifecycleConfiguration:
         Rules:
           - Id: Expire in 14 days
@@ -360,8 +361,7 @@ Resources:
         Statement:
           - Effect: "Allow"
             Principal:
-              AWS:
-                Fn::GetAtt: [ CodeBuildServiceRoleRelease, Arn ]
+              Service: codebuild.amazonaws.com
             Action:
               - "sts:AssumeRole"
       Description: >-
@@ -374,19 +374,11 @@ Resources:
   S3ECReleaseAssumeAlternatePolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
-      PolicyDocument: !Sub |
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Resource": [
-                "arn:aws:iam::${AWS::AccountId}:role/service-role/${S3ECReleaseTestRoleAlternate}"
-              ],
-              "Action": [
-                "sts:AssumeRole"
-              ]
-            }
-          ]
-        }
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource:
+              Fn::GetAtt: [ S3ECReleaseTestRoleAlternate, Arn ]
       ManagedPolicyName: S3EC-Release-Assume-Alternate-Policy
