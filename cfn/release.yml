@@ -167,7 +167,7 @@ Resources:
                 "codebuild:BatchPutCodeCoverages"
               ],
               "Resource": [
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${ProjectName}-Release"
+                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${ProjectName}-Release-*"
               ]
             }
           ]
@@ -214,6 +214,7 @@ Resources:
                 "arn:aws:kms:*:658956600833:alias/*"
               ],
               "Action": [
+                "kms:Encrypt", 
                 "kms:Decrypt",
                 "kms:GenerateDataKey"
               ]
@@ -254,6 +255,20 @@ Resources:
             Action: 'kms:*'
             Resource: '*'
 
+  S3ECReleaseKMSKeyIDAlternate:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: Alternate KMS Key for Release Testing
+      Enabled: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
   S3ECReleaseKMSKeyAlias:
     Type: 'AWS::KMS::Alias'
     Properties:
@@ -263,7 +278,7 @@ Resources:
   S3ECReleaseTestS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: s3ec-release-test-bucket
+      BucketName: !Sub "s3ec-release-test-bucket"
       LifecycleConfiguration:
         Rules:
           - Id: Expire in 14 days
@@ -293,6 +308,29 @@ Resources:
   S3ECReleaseTestKMSKeyPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Resource:
+              - Sub! "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseTestingKMSKeyID}"
+              - Sub! "arn:aws:kms:*:${AWS::AccountId}:${S3ECReleaseKMSKeyAlias}"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:GenerateDataKey"
+              - "kms:GenerateDataKeyPair"
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource:
+              Fn::GetAtt: [ S3ECReleaseTestRoleAlternate, Arn ]
+
+
+      ManagedPolicyName: S3EC-Release-Test-KMS-Key-Policy
+
+  S3ECReleaseKMSKeyPolicyAlternate:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
       PolicyDocument: !Sub |
         {
           "Version": "2012-10-17",
@@ -300,11 +338,9 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseTestingKMSKeyID}",
-                "arn:aws:kms:*:${AWS::AccountId}:${S3ECReleaseKMSKeyAlias}"
+                "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseKMSKeyIDAlternate}"
               ],
               "Action": [
-                "kms:Encrypt",
                 "kms:Decrypt",
                 "kms:GenerateDataKey",
                 "kms:GenerateDataKeyPair"
@@ -312,4 +348,24 @@ Resources:
             }
           ]
         }
-      ManagedPolicyName: S3EC-Release-Test-KMS-Key-Policy
+      ManagedPolicyName: S3EC-Release-KMS-Key-Policy-Alternate
+
+  S3ECReleaseTestRoleAlternate:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Path: /service-role/
+      RoleName: S3EC-Release-test-role-alternate
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Description: >-
+        Grant S3 put and get and KMS (alt key) encrypt, decrypt, and generate access
+        for testing
+      ManagedPolicyArns:
+        - !Ref S3ECReleaseKMSKeyPolicyAlternate
+        - !Ref S3ECReleaseS3BucketPolicy
