@@ -279,7 +279,7 @@ Resources:
   S3ECReleaseTestS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Sub "s3ec-release-test-bucket-${AWS::StackName}"
+      BucketName: !Sub "s3ec-release-test-bucket"
       LifecycleConfiguration:
         Rules:
           - Id: Expire in 14 days
