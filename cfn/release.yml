@@ -167,7 +167,7 @@ Resources:
                 "codebuild:BatchPutCodeCoverages"
               ],
               "Resource": [
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${ProjectName}-Release"
+                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${ProjectName}-Release-*"
               ]
             }
           ]
