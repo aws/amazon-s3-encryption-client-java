@@ -96,7 +96,6 @@ Resources:
         - !Ref ParameterStorePolicy
         - !Ref S3ECReleaseTestKMSKeyPolicy
         - !Ref S3ECReleaseS3BucketPolicy
-        - !Ref S3ECReleaseAssumeAlternatePolicy
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
 
@@ -309,25 +308,24 @@ Resources:
   S3ECReleaseTestKMSKeyPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
-      PolicyDocument: !Sub |
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Resource": [
-                "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseTestingKMSKeyID}",
-                "arn:aws:kms:*:${AWS::AccountId}:${S3ECReleaseKMSKeyAlias}"
-              ],
-              "Action": [
-                "kms:Encrypt",
-                "kms:Decrypt",
-                "kms:GenerateDataKey",
-                "kms:GenerateDataKeyPair"
-              ]
-            }
-          ]
-        }
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Resource:
+              - Sub! "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseTestingKMSKeyID}"
+              - Sub! "arn:aws:kms:*:${AWS::AccountId}:${S3ECReleaseKMSKeyAlias}"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:GenerateDataKey"
+              - "kms:GenerateDataKeyPair"
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource:
+              Fn::GetAtt: [ S3ECReleaseTestRoleAlternate, Arn ]
+
+
       ManagedPolicyName: S3EC-Release-Test-KMS-Key-Policy
 
   S3ECReleaseKMSKeyPolicyAlternate:
@@ -371,15 +369,3 @@ Resources:
       ManagedPolicyArns:
         - !Ref S3ECReleaseKMSKeyPolicyAlternate
         - !Ref S3ECReleaseS3BucketPolicy
-
-  S3ECReleaseAssumeAlternatePolicy:
-    Type: 'AWS::IAM::ManagedPolicy'
-    Properties:
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Action: sts:AssumeRole
-            Resource:
-              Fn::GetAtt: [ S3ECReleaseTestRoleAlternate, Arn ]
-      ManagedPolicyName: S3EC-Release-Assume-Alternate-Policy
