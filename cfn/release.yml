@@ -188,7 +188,7 @@ Resources:
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI-xjAvTM",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-CI-Credentials-eBrSNB",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Github/aws-crypto-tools-ci-bot-AGUB3U",
-                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-User-Token-zK61bM",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-haLIjZ",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-Credentials-WgJanS"
               ],
@@ -214,7 +214,7 @@ Resources:
                 "arn:aws:kms:*:658956600833:alias/*"
               ],
               "Action": [
-                "kms:Encrypt", 
+                "kms:Encrypt",
                 "kms:Decrypt",
                 "kms:GenerateDataKey"
               ]
@@ -308,25 +308,26 @@ Resources:
   S3ECReleaseTestKMSKeyPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
+      ManagedPolicyName: S3EC-Release-Test-KMS-Key-Policy
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: "Allow"
             Resource:
-              - Sub! "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseTestingKMSKeyID}"
-              - Sub! "arn:aws:kms:*:${AWS::AccountId}:${S3ECReleaseKMSKeyAlias}"
+              - !Sub "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECReleaseTestingKMSKeyID}"
+              - !Sub "arn:aws:kms:*:${AWS::AccountId}:${S3ECReleaseKMSKeyAlias}"
             Action:
               - "kms:Encrypt"
               - "kms:Decrypt"
               - "kms:GenerateDataKey"
               - "kms:GenerateDataKeyPair"
+          # This effect may need to be commented out for a new deployment.
+          # There is a relationship between the alternate role,
+          # and the Codebuild service role.
+          # By turning this into a 2-stage deployment, this simplifies things.
           - Effect: Allow
             Action: sts:AssumeRole
-            Resource:
-              Fn::GetAtt: [ S3ECReleaseTestRoleAlternate, Arn ]
-
-
-      ManagedPolicyName: S3EC-Release-Test-KMS-Key-Policy
+            Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/service-role/S3EC-Release-test-role-alternate"
 
   S3ECReleaseKMSKeyPolicyAlternate:
     Type: 'AWS::IAM::ManagedPolicy'
@@ -360,7 +361,7 @@ Resources:
         Statement:
           - Effect: "Allow"
             Principal:
-              Service: codebuild.amazonaws.com
+              AWS: !GetAtt CodeBuildServiceRoleRelease.Arn
             Action:
               - "sts:AssumeRole"
       Description: >-
