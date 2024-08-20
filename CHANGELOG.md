@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.2.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.1.3...v3.2.0) (2024-08-20)
+
+### Features
+
+* add KMS Discovery Keyring ([#324](https://github.com/aws/aws-s3-encryption-client-java/issues/324)) ([8d3c06a](https://github.com/aws/aws-s3-encryption-client-java/commit/8d3c06af3c28155ef67e1eca2131e50f74118237))
+* allow S3EncryptionClient and S3AsyncEncryption Client to be configured ([#328](https://github.com/aws/aws-s3-encryption-client-java/issues/328)) ([11f25f6](https://github.com/aws/aws-s3-encryption-client-java/commit/11f25f64fcba5cd577b6eb60349d945efe8c0836))
+
+### Maintenance
+
+* **deps-dev:** bump org.bouncycastle:bcprov-jdk18on ([#260](https://github.com/aws/aws-s3-encryption-client-java/issues/260)) ([cd58967](https://github.com/aws/aws-s3-encryption-client-java/commit/cd58967809022c0ed251a519ffc19d4288bf9e21))
+* **deps:** bump software.amazon.awssdk.crt:aws-crt ([#303](https://github.com/aws/aws-s3-encryption-client-java/issues/303)) ([cfe325e](https://github.com/aws/aws-s3-encryption-client-java/commit/cfe325e872269bc60d83c38fe21ecec1d8bc0e91))
+* update build scripts ([#341](https://github.com/aws/aws-s3-encryption-client-java/issues/341)) ([8fa4266](https://github.com/aws/aws-s3-encryption-client-java/commit/8fa4266fbdf8e7006d80a7762a30e7b92f7eed89))
+* Update Release CFN ([#343](https://github.com/aws/aws-s3-encryption-client-java/issues/343)) ([81606b6](https://github.com/aws/aws-s3-encryption-client-java/commit/81606b67d722605761463b52526802d338927d15)), closes [#382](https://github.com/aws/aws-s3-encryption-client-java/issues/382)
+
 ## [3.1.3](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.1.2...v3.1.3) (2024-06-18)
 
 ### Fixes
