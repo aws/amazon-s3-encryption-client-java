@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.2.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.2.0...v3.2.1) (2024-08-21)
+
+### Maintenance
+
+* Update Release to use token ([#347](https://github.com/aws/aws-s3-encryption-client-java/issues/347)) ([87819d1](https://github.com/aws/aws-s3-encryption-client-java/commit/87819d1af3d5c856b11b38d08ebe256bc4216e60))
+
 ## [3.2.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.1.3...v3.2.0) (2024-08-20)
 
 ### Features
