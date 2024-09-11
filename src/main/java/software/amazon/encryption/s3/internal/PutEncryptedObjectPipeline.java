@@ -85,8 +85,7 @@ public class PutEncryptedObjectPipeline {
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
-        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = ContentMetadataStrategy.OBJECT_METADATA;
-
+        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = new ObjectMetadataEncodingStrategy();
 
         private Builder() {
         }
