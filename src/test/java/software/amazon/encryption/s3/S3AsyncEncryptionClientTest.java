@@ -6,13 +6,7 @@ import com.amazonaws.services.s3.AmazonS3Encryption;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
 import com.amazonaws.services.s3.AmazonS3EncryptionV2;
-import com.amazonaws.services.s3.model.CryptoConfiguration;
-import com.amazonaws.services.s3.model.CryptoConfigurationV2;
-import com.amazonaws.services.s3.model.CryptoMode;
-import com.amazonaws.services.s3.model.CryptoStorageMode;
-import com.amazonaws.services.s3.model.EncryptionMaterials;
-import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
-import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.*;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,13 +24,7 @@ import software.amazon.awssdk.services.kms.model.KmsException;
 import software.amazon.awssdk.services.kms.model.NotFoundException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
-import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
-import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
@@ -56,17 +44,8 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.ALTERNATE_KMS_KEY;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_REGION;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
+import static org.junit.jupiter.api.Assertions.*;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.*;
 
 public class S3AsyncEncryptionClientTest {
 
@@ -82,6 +61,8 @@ public class S3AsyncEncryptionClientTest {
     @Test
     public void asyncCustomConfiguration() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-custom-credentials-async");
+////        final String S3_REGION = "us-east-2";
+//        final String KMS_REGION = "us-east-2";
 
         // use the default creds, but through an explicit credentials provider
         AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
@@ -89,12 +70,12 @@ public class S3AsyncEncryptionClientTest {
         S3AsyncClient wrappedAsyncClient = S3AsyncClient
                 .builder()
                 .credentialsProvider(creds)
-                .region(Region.of(KMS_REGION.toString()))
+//                .region(Region.of(S3_REGION))
                 .build();
         KmsClient kmsClient = KmsClient
                 .builder()
                 .credentialsProvider(creds)
-                .region(Region.of(KMS_REGION.toString()))
+//                .region(Region.of(KMS_REGION))
                 .build();
 
         KmsKeyring keyring = KmsKeyring
