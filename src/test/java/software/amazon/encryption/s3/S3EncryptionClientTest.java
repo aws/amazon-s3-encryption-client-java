@@ -886,11 +886,15 @@ public class S3EncryptionClientTest {
         S3Client s3ClientDefault = S3EncryptionClient.builder()
                 .kmsKeyId(ALTERNATE_KMS_KEY)
                 .build();
-
-        s3ClientDefault.getObjectAsBytes(builder -> builder
-                .bucket(ALTERNATE_BUCKET)
-                .key(objectKey)
-                .build());
+        try {
+            s3ClientDefault.getObjectAsBytes(builder -> builder
+                    .bucket(ALTERNATE_BUCKET)
+                    .key(objectKey)
+                    .build());
+            fail("expected exception");
+        } catch (S3EncryptionClientException e) {
+            // expected
+        }
 
         // Cleanup
         deleteObject(BUCKET, objectKey, s3Client);
