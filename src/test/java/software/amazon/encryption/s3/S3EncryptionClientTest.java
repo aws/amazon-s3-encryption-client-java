@@ -882,6 +882,16 @@ public class S3EncryptionClientTest {
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
+        // Default creds should fail
+        S3Client s3ClientDefault = S3EncryptionClient.builder()
+                .kmsKeyId(ALTERNATE_KMS_KEY)
+                .build();
+
+        s3ClientDefault.getObjectAsBytes(builder -> builder
+                .bucket(ALTERNATE_BUCKET)
+                .key(objectKey)
+                .build());
+
         // Cleanup
         deleteObject(BUCKET, objectKey, s3Client);
         s3Client.close();
