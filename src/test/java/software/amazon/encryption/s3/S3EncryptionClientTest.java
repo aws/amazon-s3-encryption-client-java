@@ -2,18 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3;
 
+import com.amazonaws.auth.*;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
 import com.amazonaws.services.s3.AmazonS3EncryptionV2;
-import com.amazonaws.services.s3.model.CryptoConfigurationV2;
-import com.amazonaws.services.s3.model.CryptoMode;
-import com.amazonaws.services.s3.model.CryptoStorageMode;
-import com.amazonaws.services.s3.model.EncryptionMaterials;
-import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
-import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -22,13 +19,8 @@ import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.model.KmsException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
-import software.amazon.awssdk.services.s3.model.NoSuchUploadException;
-import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.KmsKeyring;
@@ -37,36 +29,17 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.SecureRandom;
-import java.security.Security;
+import java.security.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.*;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.ALTERNATE_KMS_KEY;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_REGION;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.*;
 
 /**
  * This class is an integration test for verifying behavior of the V3 client
@@ -870,6 +843,48 @@ public class S3EncryptionClientTest {
         deleteObject(BUCKET, objectKey, s3Client);
         s3Client.close();
         kmsClient.close();
+    }
+
+    @Test
+    public void s3EncryptionClientMixedCredentialsInstructionFile() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials-instruction-file");
+        final String input = "SimpleTestOfV3EncryptionClient";
+
+        // use alternate creds for KMS
+        AwsCredentialsProvider creds = new S3EncryptionClientTestResources.AlternateRoleCredentialsProvider();
+        S3Client s3Client = S3EncryptionClient.builder()
+                .credentialsProvider(creds)
+                .kmsKeyId(ALTERNATE_KMS_KEY)
+                .build();
+
+        // use alternate creds for S3
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new KMSEncryptionMaterials(ALTERNATE_KMS_KEY));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+        AwsSessionCredentials sdkV2Creds = (AwsSessionCredentials) creds.resolveCredentials();
+        AWSCredentials sdkV1Creds = new BasicSessionCredentials(sdkV2Creds.accessKeyId(), sdkV2Creds.secretAccessKey(), sdkV2Creds.sessionToken());
+        AWSCredentialsProvider sdkV1Provider = new AWSStaticCredentialsProvider(sdkV1Creds);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCredentials(sdkV1Provider)
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        v2Client.putObject(ALTERNATE_BUCKET, objectKey, input);
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
+                .bucket(ALTERNATE_BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     /**
