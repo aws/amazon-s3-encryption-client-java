@@ -180,10 +180,7 @@ public class ContentMetadataDecodingStrategy {
 
         ResponseInputStream<GetObjectResponse> instruction;
         try {
-            // intentionally fail
-            S3AsyncClient newClient = S3AsyncClient.create();
-            instruction = newClient.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
-//            instruction = wrappedAsyncClient_.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
+            instruction = wrappedAsyncClient_.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
         } catch (NoSuchKeyException exception) {
             // Most likely, the customer is attempting to decrypt an object
             // which is not encrypted with the S3 EC.
