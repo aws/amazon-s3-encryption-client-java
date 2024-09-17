@@ -4,6 +4,7 @@ package software.amazon.encryption.s3.internal;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -52,7 +53,11 @@ public class ContentMetadataStrategyTest {
                 .contentIv(bytes)
                 .build();
 
-        ContentMetadata contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, getObjectResponse);
+        // the client won't be used,
+        // but it needs to not be null.
+        // just create a default one
+        S3AsyncClient s3AsyncClient = S3AsyncClient.create();
+        ContentMetadata contentMetadata = new ContentMetadataDecodingStrategy(s3AsyncClient).decode(getObjectRequest, getObjectResponse);
         assertEquals(expectedContentMetadata.algorithmSuite(), contentMetadata.algorithmSuite());
         String actualContentIv = Arrays.toString(contentMetadata.contentIv());
         String expectedContentIv = Arrays.toString(expectedContentMetadata.contentIv());
