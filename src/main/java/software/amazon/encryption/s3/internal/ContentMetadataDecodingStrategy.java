@@ -29,6 +29,9 @@ public class ContentMetadataDecodingStrategy {
     private final S3AsyncClient wrappedAsyncClient_;
 
     public ContentMetadataDecodingStrategy(S3AsyncClient s3AsyncClient) {
+        if (s3AsyncClient == null) {
+            throw new S3EncryptionClientException("ContentMetadataDecodingStrategy requires a non-null async client.");
+        }
         wrappedAsyncClient_ = s3AsyncClient;
     }
 
