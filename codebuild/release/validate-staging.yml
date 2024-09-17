@@ -26,6 +26,7 @@ phases:
       - export AWS_S3EC_TEST_ALT_KMS_KEY_ARN=arn:aws:kms:us-west-2:${ACCOUNT}:key/94f7843c-ec71-4abd-957c-2fb67c991a37
       - export AWS_S3EC_TEST_ALT_ROLE_ARN=arn:aws:iam::${ACCOUNT}:role/service-role/S3EC-Release-test-role-alternate
       - export AWS_S3EC_TEST_BUCKET=s3ec-release-test-bucket
+      - export AWS_S3EC_TEST_ALT_BUCKET=s3ec-release-test-bucket-alternate
       - export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:us-west-2:${ACCOUNT}:key/af4ce40a-05ab-4f7c-b3fa-97bd0c9b7fb1
       - export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:us-west-2:${ACCOUNT}:alias/S3EC-Release-Testing-KMS-Key
       - export AWS_REGION=us-west-2

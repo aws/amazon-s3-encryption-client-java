@@ -305,6 +305,36 @@ Resources:
             Resource:
               - !Join [ "", [ !GetAtt S3ECReleaseTestS3Bucket.Arn, '/*' ] ]
 
+  S3ECReleaseTestS3BucketAlternate:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub "s3ec-release-test-bucket-alternate"
+      LifecycleConfiguration:
+        Rules:
+          - Id: Expire in 14 days
+            Status: Enabled
+            ExpirationInDays: 14
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  S3ECReleaseS3BucketPolicyAlternate:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: S3EC-Release-S3-Bucket-Policy-Alternate
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:DeleteObject'
+            Resource:
+              - !Join [ "", [ !GetAtt S3ECReleaseTestS3BucketAlternate.Arn, '/*' ] ]
+
   S3ECReleaseTestKMSKeyPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
@@ -370,3 +400,4 @@ Resources:
       ManagedPolicyArns:
         - !Ref S3ECReleaseKMSKeyPolicyAlternate
         - !Ref S3ECReleaseS3BucketPolicy
+        - !Ref S3ECReleaseS3BucketPolicyAlternate

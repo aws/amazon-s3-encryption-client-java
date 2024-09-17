@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
 import com.amazonaws.services.s3.AmazonS3EncryptionV2;
 import com.amazonaws.services.s3.model.CryptoConfigurationV2;
@@ -9,11 +13,13 @@ import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.CryptoStorageMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -60,6 +66,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.ALTERNATE_BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.ALTERNATE_KMS_KEY;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ALIAS;
@@ -870,6 +877,97 @@ public class S3EncryptionClientTest {
         deleteObject(BUCKET, objectKey, s3Client);
         s3Client.close();
         kmsClient.close();
+    }
+
+    @Test
+    public void s3EncryptionClientMixedCredentialsInstructionFile() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials-instruction-file");
+        final String input = "SimpleTestOfV3EncryptionClient";
+
+        // use alternate creds for KMS
+        AwsCredentialsProvider creds = new S3EncryptionClientTestResources.AlternateRoleCredentialsProvider();
+        S3Client s3Client = S3EncryptionClient.builder()
+                .credentialsProvider(creds)
+                .kmsKeyId(ALTERNATE_KMS_KEY)
+                .build();
+
+        // use alternate creds for S3
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new KMSEncryptionMaterials(ALTERNATE_KMS_KEY));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+        AwsSessionCredentials sdkV2Creds = (AwsSessionCredentials) creds.resolveCredentials();
+        AWSCredentials sdkV1Creds = new BasicSessionCredentials(sdkV2Creds.accessKeyId(), sdkV2Creds.secretAccessKey(), sdkV2Creds.sessionToken());
+        AWSCredentialsProvider sdkV1Provider = new AWSStaticCredentialsProvider(sdkV1Creds);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCredentials(sdkV1Provider)
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        v2Client.putObject(ALTERNATE_BUCKET, objectKey, input);
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
+                .bucket(ALTERNATE_BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(ALTERNATE_BUCKET, objectKey, s3Client);
+        s3Client.close();
+    }
+
+    @Test
+    public void s3EncryptionClientMixedCredentialsInstructionFileFails() {
+        final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials-instruction-file-fails");
+        final String input = "SimpleTestOfV3EncryptionClient";
+
+        // use alternate creds for KMS
+        AwsCredentialsProvider creds = new S3EncryptionClientTestResources.AlternateRoleCredentialsProvider();
+        S3Client s3Client = S3EncryptionClient.builder()
+                .credentialsProvider(creds)
+                .kmsKeyId(ALTERNATE_KMS_KEY)
+                .build();
+
+        // use alternate creds for S3
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new KMSEncryptionMaterials(ALTERNATE_KMS_KEY));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+        AwsSessionCredentials sdkV2Creds = (AwsSessionCredentials) creds.resolveCredentials();
+        AWSCredentials sdkV1Creds = new BasicSessionCredentials(sdkV2Creds.accessKeyId(), sdkV2Creds.secretAccessKey(), sdkV2Creds.sessionToken());
+        AWSCredentialsProvider sdkV1Provider = new AWSStaticCredentialsProvider(sdkV1Creds);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCredentials(sdkV1Provider)
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        v2Client.putObject(ALTERNATE_BUCKET, objectKey, input);
+
+        // Default creds should fail
+        S3Client s3ClientDefault = S3EncryptionClient.builder()
+                .kmsKeyId(ALTERNATE_KMS_KEY)
+                .build();
+        try {
+            s3ClientDefault.getObjectAsBytes(builder -> builder
+                    .bucket(ALTERNATE_BUCKET)
+                    .key(objectKey)
+                    .build());
+            fail("expected exception");
+        } catch (S3EncryptionClientException e) {
+            // expected
+        }
+
+        // Cleanup
+        deleteObject(ALTERNATE_BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     /**

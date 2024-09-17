@@ -64,6 +64,36 @@ Resources:
             Resource:
               - !Join [ "", [ !GetAtt S3ECGitHubTestS3Bucket.Arn, '/*'] ]
 
+  S3ECGitHubTestS3BucketAlternate:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: s3ec-github-test-bucket-alternate
+      LifecycleConfiguration:
+        Rules:
+          - Id: Expire in 14 days
+            Status: Enabled
+            ExpirationInDays: 14
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  S3ECGitHubS3BucketPolicyAlternate:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: S3EC-GitHub-S3-Bucket-Policy-Alternate
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:DeleteObject'
+            Resource:
+              - !Join [ "", [ !GetAtt S3ECGitHubTestS3BucketAlternate.Arn, '/*'] ]
+
   S3ECGitHubKMSKeyPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
@@ -149,6 +179,7 @@ Resources:
       ManagedPolicyArns:
         - !Ref S3ECGitHubKMSKeyPolicyAlternate
         - !Ref S3ECGitHubS3BucketPolicy
+        - !Ref S3ECGitHubS3BucketPolicyAlternate
 
   S3ECGitHubAssumeAlternatePolicy:
     Type: 'AWS::IAM::ManagedPolicy'

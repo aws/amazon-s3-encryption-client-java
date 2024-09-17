@@ -99,6 +99,7 @@ public class GetEncryptedObjectPipeline {
         ContentMetadata contentMetadata;
         GetObjectResponse getObjectResponse;
         DecryptionMaterials materials;
+        ContentMetadataDecodingStrategy contentMetadataStrategy = new ContentMetadataDecodingStrategy(_s3AsyncClient);
 
         CompletableFuture<T> resultFuture;
 
@@ -117,7 +118,7 @@ public class GetEncryptedObjectPipeline {
         @Override
         public void onResponse(GetObjectResponse response) {
             getObjectResponse = response;
-            contentMetadata = ContentMetadataStrategy.decode(getObjectRequest, response);
+            contentMetadata = contentMetadataStrategy.decode(getObjectRequest, response);
             materials = prepareMaterialsFromRequest(getObjectRequest, response, contentMetadata);
             wrappedAsyncResponseTransformer.onResponse(response);
         }

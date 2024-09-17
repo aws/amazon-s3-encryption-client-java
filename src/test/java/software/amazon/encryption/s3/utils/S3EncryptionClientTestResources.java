@@ -34,7 +34,8 @@ public class S3EncryptionClientTestResources {
     public static final String ALTERNATE_ROLE_ARN = System.getenv("AWS_S3EC_TEST_ALT_ROLE_ARN");
     // Alternate KMS key, which only the alternate role has access to
     public static final String ALTERNATE_KMS_KEY = System.getenv("AWS_S3EC_TEST_ALT_KMS_KEY_ARN");
-
+    // Alternate S3 Bucket, which only the alternate role has access to
+    public static final String ALTERNATE_BUCKET = System.getenv("AWS_S3EC_TEST_ALT_BUCKET");
 
     /**
      * Creds provider for the "alternate" role which is useful for testing cred configuration
