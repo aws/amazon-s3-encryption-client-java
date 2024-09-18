@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.2.2](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.2.1...v3.2.2) (2024-09-18)
+
+### Fixes
+
+* use the configured async client to get the instruction file ([#366](https://github.com/aws/aws-s3-encryption-client-java/issues/366)) ([5249bbf](https://github.com/aws/aws-s3-encryption-client-java/commit/5249bbffbe58f3c14bd5bf8f042fef039896b74e))
+
+### Maintenance
+
+* update upload_artifacts ([#349](https://github.com/aws/aws-s3-encryption-client-java/issues/349)) ([a21cc35](https://github.com/aws/aws-s3-encryption-client-java/commit/a21cc35952f688f12e85df40a62bcd5a1d80a38a))
+
 ## [3.2.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.2.0...v3.2.1) (2024-08-21)
 
 ### Maintenance
