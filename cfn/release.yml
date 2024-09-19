@@ -96,6 +96,8 @@ Resources:
         - !Ref ParameterStorePolicy
         - !Ref S3ECReleaseTestKMSKeyPolicy
         - !Ref S3ECReleaseS3BucketPolicy
+        # TODO: replace with actual arn from CI version
+        #- !Ref S3ECReleaseS3BucketPolicyTestVectors
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
 
