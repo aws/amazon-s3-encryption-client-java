@@ -8,12 +8,20 @@ import com.amazonaws.services.s3.AmazonS3Encryption;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientV2;
 import com.amazonaws.services.s3.AmazonS3EncryptionV2;
-import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.model.CryptoConfiguration;
+import com.amazonaws.services.s3.model.CryptoConfigurationV2;
+import com.amazonaws.services.s3.model.CryptoMode;
+import com.amazonaws.services.s3.model.CryptoStorageMode;
+import com.amazonaws.services.s3.model.EncryptedPutObjectRequest;
+import com.amazonaws.services.s3.model.EncryptionMaterials;
+import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
+import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -33,7 +41,11 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.*;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_REGION;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 /**
  * This class is an integration test for verifying compatibility of ciphertexts
@@ -523,13 +535,10 @@ public class S3EncryptionClientCompatibilityTest {
 
         String input = "This is some content to encrypt using v1 client";
 
-        Map<String, String> ec = new HashMap<>(1);
-        ec.put("foo", "我的资我的资源我的资源我的资源的资源源barbar");
         v1Client.putObject(BUCKET, objectKey, input);
         ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
-                .overrideConfiguration(withAdditionalConfiguration(ec))
                 .build());
         String output = objectResponse.asUtf8String();
 
@@ -888,75 +897,5 @@ public class S3EncryptionClientCompatibilityTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
-    }
-
-    /**
-     * There are S3EC implementations which can write objects to S3 that contain
-     * non-US-ASCII characters in the material description, which is written to
-     * S3 object metadata. The S3 server applies an esoteric encoding to the metadata
-     * in this case. To maintain interoperability between platforms, the Java S3EC
-     * can decrypt these objects despite not being able to write them.
-     */
-    @Test
-    public void DecryptS3EncodedNonASCIIObjectMetadata() {
-        // TODO: Sort out what to do with creds. Probably the best soln is to
-        //       setup a new test-vectors bucket and use that? Unfortunately
-        //       this means IAM changes which are annoying. For now just use the
-        //       Golang bucket with local admin creds, and worry about this later.
-        System.out.println("Attempting to decrypt encoded file");
-        final String objectKey = "unicode-repro-我";
-        final String goBucket = "s3ec-go-github-test-bucket";
-
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId("arn:aws:kms:us-west-2:370957321024:alias/S3EC-Go-Github-KMS-Key")
-                .region(Region.of("us-west-2"))
-                .build();
-
-        Map<String, String> ec = new HashMap<>(2);
-        ec.put("ec-key", "我");
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
-                .bucket(goBucket)
-                .key(objectKey)
-                .overrideConfiguration(withAdditionalConfiguration(ec))
-                .build());
-        String output = objectResponse.asUtf8String();
-
-        System.out.println("Output: " + output);
-
-        // Cleanup
-        v3Client.close();
-
-    }
-    @Test
-    public void DecryptS3EncodedNonASCIIObjectMetadata2() {
-        // TODO: Sort out what to do with creds. Probably the best soln is to
-        //       setup a new test-vectors bucket and use that? Unfortunately
-        //       this means IAM changes which are annoying. For now just use the
-        //       Golang bucket with local admin creds, and worry about this later.
-        System.out.println("Attempting to decrypt encoded file");
-        final String objectKey = "unicode-encryption-context-2024-09-09 18:15:58.719838 -0700 PDT m=+12.4020413355279551138119202161";
-        final String goBucket = "s3ec-go-github-test-bucket";
-
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId("arn:aws:kms:us-west-2:370957321024:alias/S3EC-Go-Github-KMS-Key")
-                .region(Region.of("us-west-2"))
-                .build();
-
-        Map<String, String> ec = new HashMap<>(2);
-        ec.put("ec-key", "ǿ");
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
-                .bucket(goBucket)
-                .key(objectKey)
-                .overrideConfiguration(withAdditionalConfiguration(ec))
-                .build());
-        String output = objectResponse.asUtf8String();
-
-        System.out.println("Output: " + output);
-
-        // Cleanup
-        v3Client.close();
-
     }
 }

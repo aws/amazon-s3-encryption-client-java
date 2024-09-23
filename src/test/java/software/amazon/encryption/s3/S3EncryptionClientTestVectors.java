@@ -35,9 +35,9 @@ public class S3EncryptionClientTestVectors {
             if (vectorInfo.length != 4) {
                 fail("Invalid test case name: " + ciphertext.key());
             }
-//            String runtime = vectorInfo[0];
-//            String majorVersion = vectorInfo[1];
-//            String version = vectorInfo[2];
+            String runtime = vectorInfo[0];
+            // String majorVersion = vectorInfo[1];
+            String version = vectorInfo[2];
             String vectorName = vectorInfo[3];
             if (!vectorName.contains("unicode-encryption-context")) {
                 fail("Only unicode EC tests are currently supported.");
@@ -53,7 +53,7 @@ public class S3EncryptionClientTestVectors {
                     .build());
             String output = getObjectResponse.asUtf8String();
             assertEquals(expected, output);
-//            System.out.printf("Test of v%s for %s passed! Key: %s%n", version, runtime, ciphertext.key());
+            System.out.printf("Test of v%s for %s passed! Key: %s%n", version, runtime, ciphertext.key());
         }
         s3EncryptionClient.close();
     }
