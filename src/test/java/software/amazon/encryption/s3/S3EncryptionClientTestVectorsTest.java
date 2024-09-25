@@ -17,7 +17,7 @@ import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalCon
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.TESTVECTORS_BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.TESTVECTORS_KMS_KEY;
 
-public class S3EncryptionClientTestVectors {
+public class S3EncryptionClientTestVectorsTest {
     @Test
     public void decryptUnicodeTestVectors() {
         S3Client s3EncryptionClient = S3EncryptionClient.builder()

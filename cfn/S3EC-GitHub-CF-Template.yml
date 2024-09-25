@@ -1,11 +1,4 @@
 AWSTemplateFormatVersion: 2010-09-09
-Parameters:
-  ReleaseAccountId:
-    Type: String
-    NoEcho: true
-    Description: The account ID for the release account
-    MinLength: 12
-    MaxLength: 12
 Resources:
   S3ECGitHubKMSKeyID:
     Type: 'AWS::KMS::Key'
@@ -137,6 +130,12 @@ Resources:
       ManagedPolicyName: S3EC-GitHub-S3-Bucket-Policy-testvectors
       PolicyDocument:
         Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:ListBucket'
+            Resource:
+              - !GetAtt S3ECGitHubTestS3BucketTestVectors.Arn
         Statement:
           - Effect: Allow
             Action:
@@ -301,11 +300,6 @@ Resources:
             {
               "Effect": "Allow",
               "Principal": { "AWS": "arn:aws:iam::${AWS::AccountId}:role/ToolsDevelopment" },
-              "Action": "sts:AssumeRole"
-            },
-            {
-              "Effect": "Allow",
-              "Principal": { "AWS": "arn:aws:iam::${ReleaseAccountId}:role/service-role/codebuild-AWS-S3EC-Java-service-role-release" },
               "Action": "sts:AssumeRole"
             }
           ]
