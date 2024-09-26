@@ -95,6 +95,7 @@ Resources:
         - !Ref SecretsManagerPolicyRelease
         - !Ref ParameterStorePolicy
         - !Ref S3ECReleaseTestKMSKeyPolicy
+        - !Ref S3ECReleaseTestKMSKeyPolicyTestVectors
         - !Ref S3ECReleaseS3BucketPolicy
         - !Ref S3ECReleaseS3BucketPolicyTestVectors
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
@@ -341,7 +342,6 @@ Resources:
               - 's3:ListBucket'
             Resource:
               - !GetAtt S3ECReleaseTestS3BucketTestVectors.Arn
-        Statement:
           - Effect: Allow
             Action:
               - 's3:PutObject'

@@ -136,7 +136,6 @@ Resources:
               - 's3:ListBucket'
             Resource:
               - !GetAtt S3ECGitHubTestS3BucketTestVectors.Arn
-        Statement:
           - Effect: Allow
             Action:
               - 's3:PutObject'

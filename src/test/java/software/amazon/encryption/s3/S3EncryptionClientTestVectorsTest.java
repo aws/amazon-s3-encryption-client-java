@@ -24,6 +24,7 @@ public class S3EncryptionClientTestVectorsTest {
                 .kmsKeyId(TESTVECTORS_KMS_KEY)
                 .region(Region.of("us-west-2"))
                 .build();
+        // Reuse s3EncryptionClient, even though this operation doesn't require encryption
         ListObjectsResponse listObjectsResponse = s3EncryptionClient.listObjects(builder -> builder
                 .bucket(TESTVECTORS_BUCKET)
                 .build());
