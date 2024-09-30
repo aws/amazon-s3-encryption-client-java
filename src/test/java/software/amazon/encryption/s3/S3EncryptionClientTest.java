@@ -22,12 +22,14 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.model.KmsException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
@@ -740,6 +742,37 @@ public class S3EncryptionClientTest {
         deleteObject(BUCKET, objectKey, s3Client);
         wrappedClient.close();
         wrappedAsyncClient.close();
+        s3Client.close();
+    }
+
+    @Test
+    public void s3EncryptionClientTopLevelAllOptions() {
+        final String objectKey = appendTestSuffix("s3-client-with-all-top-level-options");
+        AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
+        // use all top-level options;
+        // there isn't a good way to validate every option.
+        S3Client s3Client = S3EncryptionClient.builder()
+                .credentialsProvider(creds)
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(KMS_KEY_ID)
+                .dualstackEnabled(null)
+                .fipsEnabled(null)
+                .overrideConfiguration(ClientOverrideConfiguration.builder().build()) // null is ambiguous
+                .endpointOverride(null)
+                .serviceConfiguration(S3Configuration.builder().build()) // null is ambiguous
+                .accelerate(null)
+                .disableMultiRegionAccessPoints(null)
+                .forcePathStyle(null)
+                .useArnRegion(null)
+                .httpClient(null)
+                .httpClientBuilder(null)
+                .asyncHttpClient(null)
+                .asyncHttpClientBuilder(null)
+                .build();
+
+        simpleV3RoundTrip(s3Client, objectKey);
+
+        deleteObject(BUCKET, objectKey, s3Client);
         s3Client.close();
     }
 

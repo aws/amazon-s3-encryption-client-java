@@ -48,6 +48,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -554,7 +555,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * <p>If the setting is not found in any of the locations above, 'false' will be used.
          */
         public Builder dualstackEnabled(Boolean isDualStackEnabled) {
-            _dualStackEnabled = isDualStackEnabled;
+            _dualStackEnabled = Optional.ofNullable(isDualStackEnabled).orElse(Boolean.FALSE);
             return this;
         }
 
@@ -575,7 +576,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * <p>If the setting is not found in any of the locations above, 'false' will be used.
          */
         public Builder fipsEnabled(Boolean isFipsEnabled) {
-            _fipsEnabled = isFipsEnabled;
+            _fipsEnabled = Optional.ofNullable(isFipsEnabled).orElse(Boolean.FALSE);
             return this;
         }
 
@@ -668,7 +669,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         @Override
-        public S3AsyncClientBuilder serviceConfiguration(S3Configuration serviceConfiguration) {
+        public Builder serviceConfiguration(S3Configuration serviceConfiguration) {
             _serviceConfiguration = serviceConfiguration;
             return this;
         }
@@ -679,7 +680,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * @param accelerate
          */
         @Override
-        public S3AsyncClientBuilder accelerate(Boolean accelerate) {
+        public Builder accelerate(Boolean accelerate) {
             _accelerate = accelerate;
             return this;
         }
@@ -690,7 +691,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * @param disableMultiRegionAccessPoints
          */
         @Override
-        public S3AsyncClientBuilder disableMultiRegionAccessPoints(Boolean disableMultiRegionAccessPoints) {
+        public Builder disableMultiRegionAccessPoints(Boolean disableMultiRegionAccessPoints) {
             _disableMultiRegionAccessPoints = disableMultiRegionAccessPoints;
             return this;
         }
@@ -701,7 +702,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * @param forcePathStyle
          */
         @Override
-        public S3AsyncClientBuilder forcePathStyle(Boolean forcePathStyle) {
+        public Builder forcePathStyle(Boolean forcePathStyle) {
             _forcePathStyle = forcePathStyle;
             return this;
         }
@@ -713,7 +714,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * @param useArnRegion
          */
         @Override
-        public S3AsyncClientBuilder useArnRegion(Boolean useArnRegion) {
+        public Builder useArnRegion(Boolean useArnRegion) {
             _useArnRegion = useArnRegion;
             return this;
         }

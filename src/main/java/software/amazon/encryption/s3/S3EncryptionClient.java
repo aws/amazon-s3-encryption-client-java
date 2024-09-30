@@ -69,6 +69,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -824,7 +825,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
          */
         @Override
         public Builder dualstackEnabled(Boolean isDualStackEnabled) {
-            _dualStackEnabled = isDualStackEnabled;
+            _dualStackEnabled = Optional.ofNullable(isDualStackEnabled).orElse(Boolean.FALSE);
             return this;
         }
 
@@ -846,7 +847,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
          */
         @Override
         public Builder fipsEnabled(Boolean isFipsEnabled) {
-            _fipsEnabled = isFipsEnabled;
+            _fipsEnabled = Optional.ofNullable(isFipsEnabled).orElse(Boolean.FALSE);
             return this;
         }
 

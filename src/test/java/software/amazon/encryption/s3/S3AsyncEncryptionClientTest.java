@@ -22,6 +22,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.regions.Region;
@@ -30,6 +31,7 @@ import software.amazon.awssdk.services.kms.model.KmsException;
 import software.amazon.awssdk.services.kms.model.NotFoundException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
@@ -125,6 +127,48 @@ public class S3AsyncEncryptionClientTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, s3Client);
         wrappedAsyncClient.close();
+        s3Client.close();
+    }
+
+    @Test
+    public void asyncTopLevelConfigurationAllOptions() {
+        final String objectKey = appendTestSuffix("async-top-level-all-options");
+        AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
+        // use all top-level options;
+        // there isn't a good way to validate every option.
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
+                .credentialsProvider(creds)
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(KMS_KEY_ID)
+                .dualstackEnabled(null)
+                .fipsEnabled(null)
+                .overrideConfiguration(ClientOverrideConfiguration.builder().build()) // null is ambiguous
+                .endpointOverride(null)
+                .serviceConfiguration(S3Configuration.builder().build()) // null is ambiguous
+                .accelerate(null)
+                .disableMultiRegionAccessPoints(null)
+                .forcePathStyle(null)
+                .useArnRegion(null)
+                .httpClient(null)
+                .httpClientBuilder(null)
+                .build();
+        final String input = "SimpleTestOfV3EncryptionClientAsync";
+
+        s3Client.putObject(builder -> builder
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .build(),
+                AsyncRequestBody.fromString(input)).join();
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncResponseTransformer.toBytes()).join();
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3Client);
         s3Client.close();
     }
 
