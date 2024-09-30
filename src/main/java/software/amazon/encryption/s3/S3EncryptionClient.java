@@ -5,11 +5,11 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
-import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.client.builder.SdkSyncClientBuilder;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
@@ -17,11 +17,15 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.endpoints.EndpointProvider;
 import software.amazon.awssdk.http.AbortableInputStream;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.s3.DelegatingS3Client;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3BaseClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
@@ -507,9 +511,9 @@ public class S3EncryptionClient extends DelegatingS3Client {
         _wrappedAsyncClient.close();
     }
 
-    // This is very similar to the S3EncryptionClient builder
+    // This is very similar to the S3AsyncEncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options
-    public static class Builder implements AwsClientBuilder {
+    public static class Builder implements S3BaseClientBuilder<Builder, S3EncryptionClient>, SdkSyncClientBuilder<Builder, S3EncryptionClient> {
         // The non-encrypted APIs will use a default client.
         private S3Client _wrappedClient;
         private S3AsyncClient _wrappedAsyncClient;
@@ -536,6 +540,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private ClientOverrideConfiguration _overrideConfiguration = null;
         // this should only be applied to S3 clients
         private URI _endpointOverride = null;
+        private S3Configuration _serviceConfiguration = null;
+        private Boolean _accelerate = null;
+        private Boolean _disableMultiRegionAccessPoints = null;
+        private Boolean _forcePathStyle = null;
+        private Boolean _useArnRegion = null;
+        private SdkHttpClient _httpClient = null;
+        private SdkHttpClient.Builder _httpClientBuilder = null;
+        private SdkAsyncHttpClient _asyncHttpClient = null;
+        private SdkAsyncHttpClient.Builder _asyncHttpClientBuilder = null;
 
         private Builder() {
         }
@@ -876,6 +889,135 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        @Override
+        public Builder serviceConfiguration(S3Configuration serviceConfiguration) {
+            _serviceConfiguration = serviceConfiguration;
+            return this;
+        }
+
+        /**
+         * Enables this client to use S3 Transfer Acceleration endpoints.
+         *
+         * @param accelerate
+         */
+        @Override
+        public Builder accelerate(Boolean accelerate) {
+            _accelerate = accelerate;
+            return this;
+        }
+
+        /**
+         * Disables this client's usage of Multi-Region Access Points.
+         *
+         * @param disableMultiRegionAccessPoints
+         */
+        @Override
+        public Builder disableMultiRegionAccessPoints(Boolean disableMultiRegionAccessPoints) {
+            _disableMultiRegionAccessPoints = disableMultiRegionAccessPoints;
+            return this;
+        }
+
+        /**
+         * Forces this client to use path-style addressing for buckets.
+         *
+         * @param forcePathStyle
+         */
+        @Override
+        public Builder forcePathStyle(Boolean forcePathStyle) {
+            _forcePathStyle = forcePathStyle;
+            return this;
+        }
+
+        /**
+         * Enables this client to use an ARN's region when constructing an endpoint instead of the client's configured
+         * region.
+         *
+         * @param useArnRegion
+         */
+        @Override
+        public Builder useArnRegion(Boolean useArnRegion) {
+            _useArnRegion = useArnRegion;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SdkHttpClient} that the SDK service client will use to make HTTP calls. This HTTP client may be
+         * shared between multiple SDK service clients to share a common connection pool. To create a client you must use an
+         * implementation-specific builder. Note that this method is only recommended when you wish to share an HTTP client across
+         * multiple SDK service clients. If you do not wish to share HTTP clients, it is recommended to use
+         * {@link #httpClientBuilder(SdkHttpClient.Builder)} so that service-specific default configuration may be applied.
+         *
+         * <p>
+         * <b>This client must be closed by the user when it is ready to be disposed. The SDK will not close the HTTP client
+         * when the service client is closed.</b>
+         * </p>
+         *
+         * @param httpClient
+         */
+        @Override
+        public Builder httpClient(SdkHttpClient httpClient) {
+            _httpClient = httpClient;
+            return this;
+        }
+
+        /**
+         * Sets a {@link SdkHttpClient.Builder} that will be used to obtain a configured instance of {@link SdkHttpClient}. Any
+         * service-specific HTTP configuration will be merged with the builder's configuration prior to creating the client. When
+         * there is no desire to share HTTP clients across multiple service clients, the client builder is the preferred way to
+         * customize the HTTP client as it benefits from service-specific default configuration.
+         *
+         * <p>
+         * <b>Clients created by the builder are managed by the SDK and will be closed when the service client is closed.</b>
+         * </p>
+         *
+         * @param httpClientBuilder
+         */
+        @Override
+        public Builder httpClientBuilder(SdkHttpClient.Builder httpClientBuilder) {
+            _httpClientBuilder = httpClientBuilder;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SdkAsyncHttpClient} that the SDK service client will use to make HTTP calls. This HTTP client may be
+         * shared between multiple SDK service clients to share a common connection pool. To create a client you must use an
+         * implementation specific builder. Note that this method is only recommended when you wish to share an HTTP client across
+         * multiple SDK service clients. If you do not wish to share HTTP clients, it is recommended to use
+         * {@link #asyncHttpClientBuilder(SdkAsyncHttpClient.Builder)} so that service specific default configuration may be applied.
+         * In the S3 Encryption Client, this configuration is applied to the inner async client.
+         *
+         * <p>
+         * <b>This client must be closed by the caller when it is ready to be disposed. The SDK will not close the HTTP client
+         * when the service client is closed.</b>
+         * </p>
+         *
+         * @param asyncHttpClient
+         * @return This builder for method chaining.
+         */
+        public Builder asyncHttpClient(SdkAsyncHttpClient asyncHttpClient) {
+            _asyncHttpClient = asyncHttpClient;
+            return this;
+        }
+
+        /**
+         * Sets a custom HTTP client builder that will be used to obtain a configured instance of {@link SdkAsyncHttpClient}. Any
+         * service specific HTTP configuration will be merged with the builder's configuration prior to creating the client. When
+         * there is no desire to share HTTP clients across multiple service clients, the client builder is the preferred way to
+         * customize the HTTP client as it benefits from service specific defaults.
+         * In the S3 Encryption Client, this configuration is applied to the inner async client.
+         *
+         * <p>
+         * <b>Clients created by the builder are managed by the SDK and will be closed when the service client is closed.</b>
+         * </p>
+         *
+         * @param asyncHttpClientBuilder
+         * @return This builder for method chaining.
+         */
+        public Builder asyncHttpClientBuilder(SdkAsyncHttpClient.Builder asyncHttpClientBuilder) {
+            _asyncHttpClientBuilder = asyncHttpClientBuilder;
+            return this;
+        }
+
         /**
          * Validates and builds the S3EncryptionClient according
          * to the configuration options passed to the Builder object.
@@ -902,6 +1044,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .fipsEnabled(_fipsEnabled)
                         .overrideConfiguration(_overrideConfiguration)
                         .endpointOverride(_endpointOverride)
+                        .serviceConfiguration(_serviceConfiguration)
+                        .accelerate(_accelerate)
+                        .disableMultiRegionAccessPoints(_disableMultiRegionAccessPoints)
+                        .forcePathStyle(_forcePathStyle)
+                        .useArnRegion(_useArnRegion)
+                        .httpClient(_httpClient)
+                        .httpClientBuilder(_httpClientBuilder)
                         .build();
             }
 
@@ -913,6 +1062,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .fipsEnabled(_fipsEnabled)
                         .overrideConfiguration(_overrideConfiguration)
                         .endpointOverride(_endpointOverride)
+                        .serviceConfiguration(_serviceConfiguration)
+                        .accelerate(_accelerate)
+                        .disableMultiRegionAccessPoints(_disableMultiRegionAccessPoints)
+                        .forcePathStyle(_forcePathStyle)
+                        .useArnRegion(_useArnRegion)
+                        .httpClient(_asyncHttpClient)
+                        .httpClientBuilder(_asyncHttpClientBuilder)
                         .build();
             }
 
