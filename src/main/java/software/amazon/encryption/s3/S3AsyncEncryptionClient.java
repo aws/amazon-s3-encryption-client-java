@@ -5,7 +5,6 @@ package software.amazon.encryption.s3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
-import software.amazon.awssdk.awscore.client.builder.AwsAsyncClientBuilder;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -18,6 +17,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.s3.DelegatingS3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
@@ -47,6 +48,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -259,7 +261,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
     // This is very similar to the S3EncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options
-    public static class Builder implements AwsAsyncClientBuilder<Builder, S3AsyncEncryptionClient> {
+    public static class Builder implements S3AsyncClientBuilder {
         private S3AsyncClient _wrappedClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private Keyring _keyring;
@@ -286,6 +288,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private ClientAsyncConfiguration _clientAsyncConfiguration = null;
         private SdkAsyncHttpClient _sdkAsyncHttpClient = null;
         private SdkAsyncHttpClient.Builder _sdkAsyncHttpClientBuilder = null;
+        private S3Configuration _serviceConfiguration = null;
+        private Boolean _accelerate = null;
+        private Boolean _disableMultiRegionAccessPoints = null;
+        private Boolean _forcePathStyle = null;
+        private Boolean _useArnRegion = null;
 
         private Builder() {
         }
@@ -548,7 +555,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * <p>If the setting is not found in any of the locations above, 'false' will be used.
          */
         public Builder dualstackEnabled(Boolean isDualStackEnabled) {
-            _dualStackEnabled = isDualStackEnabled;
+            _dualStackEnabled = Optional.ofNullable(isDualStackEnabled).orElse(Boolean.FALSE);
             return this;
         }
 
@@ -569,7 +576,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * <p>If the setting is not found in any of the locations above, 'false' will be used.
          */
         public Builder fipsEnabled(Boolean isFipsEnabled) {
-            _fipsEnabled = isFipsEnabled;
+            _fipsEnabled = Optional.ofNullable(isFipsEnabled).orElse(Boolean.FALSE);
             return this;
         }
 
@@ -661,6 +668,57 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        @Override
+        public Builder serviceConfiguration(S3Configuration serviceConfiguration) {
+            _serviceConfiguration = serviceConfiguration;
+            return this;
+        }
+
+        /**
+         * Enables this client to use S3 Transfer Acceleration endpoints.
+         *
+         * @param accelerate
+         */
+        @Override
+        public Builder accelerate(Boolean accelerate) {
+            _accelerate = accelerate;
+            return this;
+        }
+
+        /**
+         * Disables this client's usage of Multi-Region Access Points.
+         *
+         * @param disableMultiRegionAccessPoints
+         */
+        @Override
+        public Builder disableMultiRegionAccessPoints(Boolean disableMultiRegionAccessPoints) {
+            _disableMultiRegionAccessPoints = disableMultiRegionAccessPoints;
+            return this;
+        }
+
+        /**
+         * Forces this client to use path-style addressing for buckets.
+         *
+         * @param forcePathStyle
+         */
+        @Override
+        public Builder forcePathStyle(Boolean forcePathStyle) {
+            _forcePathStyle = forcePathStyle;
+            return this;
+        }
+
+        /**
+         * Enables this client to use an ARN's region when constructing an endpoint instead of the client's configured
+         * region.
+         *
+         * @param useArnRegion
+         */
+        @Override
+        public Builder useArnRegion(Boolean useArnRegion) {
+            _useArnRegion = useArnRegion;
+            return this;
+        }
+
         /**
          * Validates and builds the S3AsyncEncryptionClient according
          * to the configuration options passed to the Builder object.
@@ -690,6 +748,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                         .asyncConfiguration(_clientAsyncConfiguration != null ? _clientAsyncConfiguration : ClientAsyncConfiguration.builder().build())
                         .httpClient(_sdkAsyncHttpClient)
                         .httpClientBuilder(_sdkAsyncHttpClientBuilder)
+                        .serviceConfiguration(_serviceConfiguration)
+                        .accelerate(_accelerate)
+                        .disableMultiRegionAccessPoints(_disableMultiRegionAccessPoints)
+                        .forcePathStyle(_forcePathStyle)
+                        .useArnRegion(_useArnRegion)
                         .build();
             }
 
@@ -733,5 +796,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
             return new S3AsyncEncryptionClient(this);
         }
+
     }
 }
