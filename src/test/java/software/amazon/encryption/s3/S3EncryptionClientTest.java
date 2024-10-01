@@ -975,6 +975,32 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
+    @Test
+    public void NonUSASCIIMetadataFails() {
+        final String objectKey = appendTestSuffix("non-us-ascii-metadata-fails");
+        final String input = "This is a test.";
+        S3Client v3Client = S3EncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ALIAS)
+                .build();
+
+        Map<String, String> ec = new HashMap<>(1);
+        ec.put("ec-key", "我的源资源");
+        try {
+            v3Client.putObject(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .overrideConfiguration(withAdditionalConfiguration(ec))
+                    .build(), RequestBody.fromString(input));
+        } catch (S3EncryptionClientException exception) {
+            // The Java SDK does not support writing object metadata
+            // with non-US-ASCII characters.
+            assertTrue(exception.getCause() instanceof S3Exception);
+        }
+
+        // Cleanup
+        v3Client.close();
+    }
+
     /**
      * A simple, reusable round-trip (encryption + decryption) using a given
      * S3Client. Useful for testing client configuration.

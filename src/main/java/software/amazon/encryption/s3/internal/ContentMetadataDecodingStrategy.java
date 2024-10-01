@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
+import com.sun.xml.messaging.saaj.packaging.mime.internet.MimeUtility;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
@@ -14,6 +15,10 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.S3Keyring;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -135,9 +140,13 @@ public class ContentMetadataDecodingStrategy {
         // Get encrypted data key encryption context
         final Map<String, String> encryptionContext = new HashMap<>();
         final String jsonEncryptionContext = metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_CONTEXT);
+        // When the encryption context contains non-US-ASCII characters,
+        // the S3 server applies an esoteric encoding to the object metadata.
+        // Reverse that, to allow decryption.
+        final String decodedJsonEncryptionContext = decodeS3CustomEncoding(jsonEncryptionContext);
         try {
             JsonNodeParser parser = JsonNodeParser.create();
-            JsonNode objectNode = parser.parse(jsonEncryptionContext);
+            JsonNode objectNode = parser.parse(decodedJsonEncryptionContext);
 
             for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
                 encryptionContext.put(entry.getKey(), entry.getValue().asString());
@@ -168,6 +177,46 @@ public class ContentMetadataDecodingStrategy {
             return decodeFromObjectMetadata(request, response);
         } else {
             return decodeFromInstructionFile(request, response);
+        }
+    }
+
+    private static String decodeS3CustomEncoding(final String s) {
+        final String mimeDecoded;
+        try {
+            mimeDecoded = MimeUtility.decodeText(s);
+        } catch (UnsupportedEncodingException ex) {
+            throw new S3EncryptionClientException("Unable to decode S3 object metadata: " + s, ex);
+        }
+        // Once MIME decoded, we need to recover the correct code points from the second encoding pass
+        // Otherwise, decryption fails
+        try {
+            final StringBuilder stringBuilder = new StringBuilder();
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final DataOutputStream out = new DataOutputStream(baos);
+            final byte[] sInBytes = mimeDecoded.getBytes(StandardCharsets.UTF_8);
+            final char[] sInChars = mimeDecoded.toCharArray();
+
+            int nonAsciiChars = 0;
+            for (int i = 0; i < sInChars.length; i++) {
+                if (sInChars[i] > 127) {
+                    byte[] buf = {sInBytes[i + nonAsciiChars], sInBytes[i + nonAsciiChars + 1]};
+                    // temporarily re-encode as UTF-8
+                    String wrongString = new String(buf, StandardCharsets.UTF_8);
+                    // write its code point
+                    out.write(wrongString.charAt(0));
+                    nonAsciiChars++;
+                } else {
+                    if (baos.size() > 0) {
+                        // This is not the most efficient, but we prefer to specify UTF_8
+                        stringBuilder.append(new String(baos.toByteArray(), StandardCharsets.UTF_8));
+                        baos.reset();
+                    }
+                    stringBuilder.append(sInChars[i]);
+                }
+            }
+            return stringBuilder.toString();
+        } catch (IOException exception) {
+            throw new S3EncryptionClientException("Unable to decode S3 object metadata: " + s, exception);
         }
     }
 
