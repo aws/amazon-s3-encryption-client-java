@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.model.Credentials;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -28,14 +29,18 @@ public class S3EncryptionClientTestResources {
     // This alias must point to the same key as KMS_KEY_ID
     public static final String KMS_KEY_ALIAS = System.getenv("AWS_S3EC_TEST_KMS_KEY_ALIAS");
     // For now, these are the same.
-    public static final Region S3_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
-    public static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
+    public static final Region S3_REGION = Region.getRegion(Regions.fromName(Optional.ofNullable(System.getenv("AWS_REGION")).orElse("us-west-2")));
+    public static final Region KMS_REGION = Region.getRegion(Regions.fromName(Optional.ofNullable(System.getenv("AWS_REGION")).orElse("us-west-2")));
     // Alternate role to test credential configuration and access denied behavior
     public static final String ALTERNATE_ROLE_ARN = System.getenv("AWS_S3EC_TEST_ALT_ROLE_ARN");
     // Alternate KMS key, which only the alternate role has access to
     public static final String ALTERNATE_KMS_KEY = System.getenv("AWS_S3EC_TEST_ALT_KMS_KEY_ARN");
     // Alternate S3 Bucket, which only the alternate role has access to
     public static final String ALTERNATE_BUCKET = System.getenv("AWS_S3EC_TEST_ALT_BUCKET");
+    // Test Vector bucket
+    public static final String TESTVECTORS_BUCKET = Optional.ofNullable(System.getenv("AWS_S3EC_TEST_TESTVECTORS_BUCKET")).orElse("s3ec-github-test-bucket-testvectors");
+    // Test Vector KMS key
+    public static final String TESTVECTORS_KMS_KEY = Optional.ofNullable(System.getenv("AWS_S3EC_TEST_TESTVECTORS_KMS_KEY_ARN")).orElse("41689b41-3fb1-42bd-92e9-b6bded3e3491");
 
     /**
      * Creds provider for the "alternate" role which is useful for testing cred configuration
