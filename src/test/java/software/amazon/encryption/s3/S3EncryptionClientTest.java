@@ -617,10 +617,15 @@ public class S3EncryptionClientTest {
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
-        // Attempt to get (and decrypt) the (plaintext) object from S3
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)));
+        try {
+            v3Client.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey));
+            fail("expected exception");
+        } catch (S3EncryptionClientException ex) {
+            assertTrue(ex.getMessage().contains("Instruction file not found!"));
+            assertEquals(ex.getCause().getClass(), S3EncryptionClientException.class);
+        }
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
