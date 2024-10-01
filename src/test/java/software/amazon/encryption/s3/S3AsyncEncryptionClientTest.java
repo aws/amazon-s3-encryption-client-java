@@ -67,6 +67,7 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_REGION;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.S3_REGION;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
@@ -91,7 +92,7 @@ public class S3AsyncEncryptionClientTest {
         S3AsyncClient wrappedAsyncClient = S3AsyncClient
                 .builder()
                 .credentialsProvider(creds)
-                .region(Region.of(KMS_REGION.toString()))
+                .region(Region.of(S3_REGION.toString()))
                 .build();
         KmsClient kmsClient = KmsClient
                 .builder()

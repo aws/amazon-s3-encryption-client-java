@@ -14,6 +14,20 @@ Resources:
             Action: 'kms:*'
             Resource: '*'
 
+  S3ECGitHubKMSKeyIDTestVectors:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: KMS Key for GitHub Action Workflow
+      Enabled: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
   S3ECGitHubKMSKeyIDAlternate:
     Type: 'AWS::KMS::Key'
     Properties:
@@ -33,6 +47,12 @@ Resources:
     Properties:
       AliasName: alias/S3EC-Github-KMS-Key
       TargetKeyId: !Ref S3ECGitHubKMSKeyID
+
+  S3ECGitHubKMSKeyAliasTestVectors:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: alias/S3EC-Github-KMS-Key-TestVectors
+      TargetKeyId: !Ref S3ECGitHubKMSKeyIDTestVectors
 
   S3ECGitHubTestS3Bucket:
     Type: 'AWS::S3::Bucket'
@@ -94,6 +114,36 @@ Resources:
             Resource:
               - !Join [ "", [ !GetAtt S3ECGitHubTestS3BucketAlternate.Arn, '/*'] ]
 
+  S3ECGitHubTestS3BucketTestVectors:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: s3ec-github-test-bucket-testvectors
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  S3ECGitHubS3BucketPolicyTestVectors:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: S3EC-GitHub-S3-Bucket-Policy-testvectors
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:ListBucket'
+            Resource:
+              - !GetAtt S3ECGitHubTestS3BucketTestVectors.Arn
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:DeleteObject'
+            Resource:
+              - !Join [ "", [ !GetAtt S3ECGitHubTestS3BucketTestVectors.Arn, '/*'] ]
+
   S3ECGitHubKMSKeyPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
@@ -116,6 +166,29 @@ Resources:
           ]
         }
       ManagedPolicyName: S3EC-GitHub-KMS-Key-Policy
+
+  S3ECGitHubKMSKeyPolicyTestVectors:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:kms:*:${AWS::AccountId}:key/${S3ECGitHubKMSKeyIDTestVectors}",
+                "arn:aws:kms:*:${AWS::AccountId}:${S3ECGitHubKMSKeyAliasTestVectors}"
+              ],
+              "Action": [
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:GenerateDataKeyPair"
+              ]
+            }
+          ]
+        }
+      ManagedPolicyName: S3EC-GitHub-KMS-Key-Policy-TestVectors
 
   S3ECGitHubKMSKeyPolicyAlternate:
     Type: 'AWS::IAM::ManagedPolicy'
@@ -235,7 +308,7 @@ Resources:
         for testing
       ManagedPolicyArns:
         - !Ref S3ECGitHubKMSKeyPolicy
+        - !Ref S3ECGitHubKMSKeyPolicyTestVectors
         - !Ref S3ECGitHubS3BucketPolicy
         - !Ref S3ECGitHubAssumeAlternatePolicy
-
-
+        - !Ref S3ECGitHubS3BucketPolicyTestVectors
