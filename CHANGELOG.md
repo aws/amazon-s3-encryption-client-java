@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.2.3](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.2.2...v3.2.3) (2024-10-04)
+
+### Fixes
+
+* catch CompletionException instead when instruction file is not found ([#379](https://github.com/aws/aws-s3-encryption-client-java/issues/379)) ([dd61547](https://github.com/aws/aws-s3-encryption-client-java/commit/dd6154743eb8729744b8892cecf4033503732220))
+* handle S3 server encoding of non-US-ASCII object metadata ([#375](https://github.com/aws/aws-s3-encryption-client-java/issues/375)) ([b907743](https://github.com/aws/aws-s3-encryption-client-java/commit/b90774384dd775455d1ce048ab758edc50d59fb7))
+* introduce S3-specific client configuration to top-level configuration ([#378](https://github.com/aws/aws-s3-encryption-client-java/issues/378)) ([54fa0cb](https://github.com/aws/aws-s3-encryption-client-java/commit/54fa0cb77bd0d2a4709f1d44085bce0c1c297c87))
+
+### Maintenance
+
+* fix release cfn and codebuild ([#380](https://github.com/aws/aws-s3-encryption-client-java/issues/380)) ([2844498](https://github.com/aws/aws-s3-encryption-client-java/commit/2844498eb61d4a4393a4af7eb14387bd0bb31992))
+* fix release javadocs ([#373](https://github.com/aws/aws-s3-encryption-client-java/issues/373)) ([8a69959](https://github.com/aws/aws-s3-encryption-client-java/commit/8a6995975fc1494b8368bd4e575572224260f133))
+
 ## [3.2.2](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.2.1...v3.2.2) (2024-09-18)
 
 ### Fixes
