@@ -706,11 +706,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
-        @Override
-        public S3AsyncClientBuilder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
-            _disableS3ExpressSessionAuth = disableS3ExpressSessionAuth;
-            return this;
-        }
+        // @Override
+        // public S3AsyncClientBuilder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
+        //     _disableS3ExpressSessionAuth = disableS3ExpressSessionAuth;
+        //     return this;
+        // }
 
         /**
          * Forces this client to use path-style addressing for buckets.
@@ -791,7 +791,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                         .serviceConfiguration(_serviceConfiguration)
                         .accelerate(_accelerate)
                         .disableMultiRegionAccessPoints(_disableMultiRegionAccessPoints)
-                        .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
+                        // .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
                         .forcePathStyle(_forcePathStyle)
                         .useArnRegion(_useArnRegion)
                         .crossRegionAccessEnabled(_crossRegionAccessEnabled)

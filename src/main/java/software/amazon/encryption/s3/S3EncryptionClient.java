@@ -926,11 +926,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
          *
          * @param disableS3ExpressSessionAuth
          */
-        @Override
-        public Builder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
-            _disableS3ExpressSessionAuth = disableS3ExpressSessionAuth;
-            return this;
-        }
+        // @Override
+        // public Builder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
+        //     _disableS3ExpressSessionAuth = disableS3ExpressSessionAuth;
+        //     return this;
+        // }
 
         /**
          * Forces this client to use path-style addressing for buckets.
@@ -1077,7 +1077,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .useArnRegion(_useArnRegion)
                         .httpClient(_httpClient)
                         .httpClientBuilder(_httpClientBuilder)
-                        .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
+                        // .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
                         .crossRegionAccessEnabled(_crossRegionAccessEnabled)
                         .build();
             }
@@ -1097,7 +1097,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .useArnRegion(_useArnRegion)
                         .httpClient(_asyncHttpClient)
                         .httpClientBuilder(_asyncHttpClientBuilder)
-                        .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
+                        // .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
                         .crossRegionAccessEnabled(_crossRegionAccessEnabled)
                         // TODO: Add MPU stuff here too
                         .build();
