@@ -544,8 +544,10 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private S3Configuration _serviceConfiguration = null;
         private Boolean _accelerate = null;
         private Boolean _disableMultiRegionAccessPoints = null;
+        private Boolean _disableS3ExpressSessionAuth = null;
         private Boolean _forcePathStyle = null;
         private Boolean _useArnRegion = null;
+        private Boolean _crossRegionAccessEnabled = null;
         private SdkHttpClient _httpClient = null;
         private SdkHttpClient.Builder _httpClientBuilder = null;
         private SdkAsyncHttpClient _asyncHttpClient = null;
@@ -919,6 +921,18 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         /**
+         * Disables this client's usage of Session Auth for S3Express buckets and reverts to using conventional SigV4 for
+         * those.
+         *
+         * @param disableS3ExpressSessionAuth
+         */
+        @Override
+        public Builder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
+            _disableS3ExpressSessionAuth = disableS3ExpressSessionAuth;
+            return this;
+        }
+
+        /**
          * Forces this client to use path-style addressing for buckets.
          *
          * @param forcePathStyle
@@ -938,6 +952,17 @@ public class S3EncryptionClient extends DelegatingS3Client {
         @Override
         public Builder useArnRegion(Boolean useArnRegion) {
             _useArnRegion = useArnRegion;
+            return this;
+        }
+
+        /**
+         * Enables cross-region bucket access for this client
+         *
+         * @param crossRegionAccessEnabled
+         */
+        @Override
+        public Builder crossRegionAccessEnabled(Boolean crossRegionAccessEnabled) {
+            _crossRegionAccessEnabled = crossRegionAccessEnabled;
             return this;
         }
 
@@ -1052,6 +1077,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .useArnRegion(_useArnRegion)
                         .httpClient(_httpClient)
                         .httpClientBuilder(_httpClientBuilder)
+                        .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
+                        .crossRegionAccessEnabled(_crossRegionAccessEnabled)
                         .build();
             }
 
@@ -1070,6 +1097,9 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .useArnRegion(_useArnRegion)
                         .httpClient(_asyncHttpClient)
                         .httpClientBuilder(_asyncHttpClientBuilder)
+                        .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
+                        .crossRegionAccessEnabled(_crossRegionAccessEnabled)
+                        // TODO: Add MPU stuff here too
                         .build();
             }
 
