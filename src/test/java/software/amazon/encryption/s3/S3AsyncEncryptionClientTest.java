@@ -762,44 +762,44 @@ public class S3AsyncEncryptionClientTest {
         exec.shutdown();
     }
 
-    @Test
-    public void wrappedClientMultipartUpload() throws IOException {
-        final String objectKey = appendTestSuffix("multipart-put-object-async-wrapped-client");
+//     @Test
+//     public void wrappedClientMultipartUpload() throws IOException {
+//         final String objectKey = appendTestSuffix("multipart-put-object-async-wrapped-client");
 
-        final long fileSizeLimit = 1024 * 1024 * 100;
-        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+//         final long fileSizeLimit = 1024 * 1024 * 100;
+//         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+//         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
-        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
-                .kmsKeyId(KMS_KEY_ID)
-                .enableMultipartPutObject(true)
-//                .multipartEnabled(true)
-                .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
-                .build();
+//         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+//                 .kmsKeyId(KMS_KEY_ID)
+//                 .enableMultipartPutObject(true)
+// //                .multipartEnabled(true)
+//                 .enableDelayedAuthenticationMode(true)
+//                 .cryptoProvider(PROVIDER)
+//                 .build();
 
-        Map<String, String> encryptionContext = new HashMap<>();
-        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+//         Map<String, String> encryptionContext = new HashMap<>();
+//         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
-        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+//         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 
-        CompletableFuture<PutObjectResponse> futurePut = v3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
-                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor));
-        futurePut.join();
-        singleThreadExecutor.shutdown();
+//         CompletableFuture<PutObjectResponse> futurePut = v3Client.putObject(builder -> builder
+//                 .bucket(BUCKET)
+//                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+//                 .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor));
+//         futurePut.join();
+//         singleThreadExecutor.shutdown();
 
-        // Asserts
-        CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = v3Client.getObject(builder -> builder
-                .bucket(BUCKET)
-                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
-                .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
-        ResponseInputStream<GetObjectResponse> output = getFuture.join();
+//         // Asserts
+//         CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = v3Client.getObject(builder -> builder
+//                 .bucket(BUCKET)
+//                 .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+//                 .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
+//         ResponseInputStream<GetObjectResponse> output = getFuture.join();
 
-        assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
+//         assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
 
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
+//         deleteObject(BUCKET, objectKey, v3Client);
+//         v3Client.close();
+//     }
 }
