@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -39,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
@@ -52,7 +54,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -63,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.ALTERNATE_KMS_KEY;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
@@ -74,12 +79,15 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 public class S3AsyncEncryptionClientTest {
 
     private static SecretKey AES_KEY;
+    private static Provider PROVIDER;
 
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
+        Security.addProvider(new BouncyCastleProvider());
+        PROVIDER = Security.getProvider("BC");
     }
 
     @Test
@@ -755,4 +763,50 @@ public class S3AsyncEncryptionClientTest {
         exec.shutdown();
     }
 
+    @Test
+    public void wrappedClientMultipartUpload() throws IOException {
+        final String objectKey = appendTestSuffix("multipart-put-object-async-wrapped-client");
+
+        final long fileSizeLimit = 1024 * 1024 * 100;
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+
+        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+            .kmsKeyId(KMS_KEY_ID)
+            .enableDelayedAuthenticationMode(true)
+            .cryptoProvider(PROVIDER)
+            // .enableMultipartPutObject(true)
+            // .multipartEnabled(true)
+            .multipartConfiguration(
+                MultipartConfiguration.builder()
+                    .thresholdInBytes((long)100000000)
+                    .minimumPartSizeInBytes((long)500000)
+                    .build()
+            )
+            .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+
+        CompletableFuture<PutObjectResponse> futurePut = v3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor));
+        futurePut.join();
+        singleThreadExecutor.shutdown();
+
+        // Asserts
+        CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+                .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
+        ResponseInputStream<GetObjectResponse> output = getFuture.join();
+
+        assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
+
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
 }
