@@ -41,6 +41,7 @@ public class GetEncryptedObjectPipeline {
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthentication;
     private final long _bufferSize;
+    private final InstructionFileConfig _instructionFileConfig;
 
     public static Builder builder() {
         return new Builder();
@@ -52,6 +53,7 @@ public class GetEncryptedObjectPipeline {
         this._enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         this._enableDelayedAuthentication = builder._enableDelayedAuthentication;
         this._bufferSize = builder._bufferSize;
+        this._instructionFileConfig = builder._instructionFileConfig;
     }
 
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest, AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
@@ -99,7 +101,7 @@ public class GetEncryptedObjectPipeline {
         ContentMetadata contentMetadata;
         GetObjectResponse getObjectResponse;
         DecryptionMaterials materials;
-        ContentMetadataDecodingStrategy contentMetadataStrategy = new ContentMetadataDecodingStrategy(_s3AsyncClient);
+        ContentMetadataDecodingStrategy contentMetadataStrategy = new ContentMetadataDecodingStrategy(_instructionFileConfig);
 
         CompletableFuture<T> resultFuture;
 
@@ -179,6 +181,7 @@ public class GetEncryptedObjectPipeline {
         private boolean _enableLegacyUnauthenticatedModes;
         private boolean _enableDelayedAuthentication;
         private long _bufferSize;
+        private InstructionFileConfig _instructionFileConfig;
 
         private Builder() {
         }
@@ -210,6 +213,11 @@ public class GetEncryptedObjectPipeline {
 
         public Builder enableDelayedAuthentication(boolean enableDelayedAuthentication) {
             this._enableDelayedAuthentication = enableDelayedAuthentication;
+            return this;
+        }
+
+        public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
+            this._instructionFileConfig = instructionFileConfig;
             return this;
         }
 
