@@ -41,7 +41,7 @@
     <maven.compiler.target>8</maven.compiler.target>
     <maven.compiler.release>8</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <aws.java.sdk.version>2.22.13</aws.java.sdk.version>
+    <aws.java.sdk.version>2.21.46</aws.java.sdk.version>
     <aws.java.crt.version>0.29.24</aws.java.crt.version>
     <com.amazonaws.version>1.12.441</com.amazonaws.version>
   </properties>
