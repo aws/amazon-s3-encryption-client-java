@@ -40,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
@@ -553,6 +554,7 @@ public class S3AsyncEncryptionClientTest {
         // V3 Async Client
         S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .instructionFileConfig(InstructionFileConfig.builder().instructionFileClient(S3Client.create()).build())
                 .build();
 
         // Asserts
