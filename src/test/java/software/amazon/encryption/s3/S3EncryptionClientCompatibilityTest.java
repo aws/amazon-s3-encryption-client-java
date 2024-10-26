@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.encryption.s3.internal.InstructionFileConfig;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -187,6 +188,9 @@ public class S3EncryptionClientCompatibilityTest {
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(S3Client.create())
+                        .build())
                 .build();
 
         // Asserts

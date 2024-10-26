@@ -37,6 +37,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchUploadException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.KmsKeyring;
@@ -924,8 +925,14 @@ public class S3EncryptionClientTest {
 
         // use alternate creds for KMS
         AwsCredentialsProvider creds = new S3EncryptionClientTestResources.AlternateRoleCredentialsProvider();
+        S3Client instFileClient = S3Client.builder()
+                .credentialsProvider(creds)
+                .build();
         S3Client s3Client = S3EncryptionClient.builder()
                 .credentialsProvider(creds)
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(instFileClient)
+                        .build())
                 .kmsKeyId(ALTERNATE_KMS_KEY)
                 .build();
 
