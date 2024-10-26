@@ -32,6 +32,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
+import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.internal.NoRetriesAsyncRequestBody;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
@@ -73,6 +74,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     private final boolean _enableMultipartPutObject;
     private final long _bufferSize;
     private final boolean _clientMultipartEnabled;
+    private InstructionFileConfig _instructionFileConfig;
 
     private S3AsyncEncryptionClient(Builder builder) {
         super(builder._wrappedClient);
@@ -84,6 +86,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _enableMultipartPutObject = builder._enableMultipartPutObject;
         _bufferSize = builder._bufferSize;
         _clientMultipartEnabled = builder._multipartEnabled != null && builder._multipartEnabled;
+        _instructionFileConfig = builder._instructionFileConfig;
     }
 
     /**
@@ -204,6 +207,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .bufferSize(_bufferSize)
+                .instructionFileConfig(_instructionFileConfig)
                 .build();
 
         return pipeline.getObject(getObjectRequest, asyncResponseTransformer);
@@ -281,6 +285,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
         private long _bufferSize = -1L;
+        private InstructionFileConfig _instructionFileConfig = null;
 
         // generic AwsClient configuration to be shared by default clients
         private AwsCredentialsProvider _awsCredentialsProvider = null;
@@ -525,6 +530,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 throw new S3EncryptionClientException("SecureRandom provided to S3EncryptionClient cannot be null");
             }
             _secureRandom = secureRandom;
+            return this;
+        }
+
+        public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
+            _instructionFileConfig = instructionFileConfig;
             return this;
         }
 
@@ -797,6 +807,12 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                         .crossRegionAccessEnabled(_crossRegionAccessEnabled)
                         .multipartEnabled(_multipartEnabled)
                         .multipartConfiguration(_multipartConfiguration)
+                        .build();
+            }
+
+            if (_instructionFileConfig == null) {
+                _instructionFileConfig = InstructionFileConfig.builder()
+                        .instructionFileAsyncClient(_wrappedClient)
                         .build();
             }
 

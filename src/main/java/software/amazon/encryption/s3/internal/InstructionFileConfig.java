@@ -1,0 +1,91 @@
+package software.amazon.encryption.s3.internal;
+
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.encryption.s3.S3EncryptionClientException;
+
+/**
+ * Provides configuration options for instruction file behaviors.
+ */
+public class InstructionFileConfig {
+
+    final private InstructionFileClientType _clientType;
+    final private boolean _disableInstructionFile;
+    final private S3AsyncClient _s3AsyncClient;
+    final private S3Client _s3Client;
+
+    private InstructionFileConfig(final Builder builder) {
+        _clientType = builder._clientType;
+        _disableInstructionFile = builder._disableInstructionFile;
+        _s3Client = builder._s3Client;
+        _s3AsyncClient = builder._s3AsyncClient;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public enum InstructionFileClientType {
+        DEFAULT,
+        ASYNC
+    }
+
+    ResponseInputStream<GetObjectResponse> getInstructionFile(GetObjectRequest request) {
+        if (_disableInstructionFile) {
+            throw new S3EncryptionClientException("Instruction File has been disabled!");
+        }
+        switch (_clientType) {
+            case DEFAULT:
+                return _s3Client.getObject(request);
+            case ASYNC:
+                return _s3AsyncClient.getObject(request, AsyncResponseTransformer.toBlockingInputStream()).join();
+            default:
+                throw new S3EncryptionClientException("Unknown Instruction File Type");
+        }
+    }
+
+    public static class Builder {
+        private InstructionFileClientType _clientType;
+        private boolean _disableInstructionFile;
+        private S3AsyncClient _s3AsyncClient;
+        private S3Client _s3Client;
+
+        /**
+         * When set to true, the S3 Encryption Client will not attempt to get instruction files.
+         * @param disableInstructionFile
+         * @return
+         */
+        public Builder disableInstructionFile(boolean disableInstructionFile) {
+            _disableInstructionFile = disableInstructionFile;
+            return this;
+        }
+
+        public Builder instructionFileClient(S3Client instructionFileClient) {
+            _s3Client = instructionFileClient;
+            return this;
+        }
+
+        public Builder instructionFileAsyncClient(S3AsyncClient instructionFileAsyncClient) {
+            _s3AsyncClient = instructionFileAsyncClient;
+            return this;
+        }
+        public InstructionFileConfig build() {
+            if (_s3Client != null && _s3AsyncClient != null) {
+                throw new S3EncryptionClientException("Only one instruction file client may be set.");
+            }
+            if (_s3Client != null) {
+                _clientType = InstructionFileClientType.DEFAULT;
+            } else if (_s3AsyncClient != null){
+                _clientType = InstructionFileClientType.ASYNC;
+            } else {
+                throw new S3EncryptionClientException("At least one instruction file client must be set.");
+            }
+
+            return new InstructionFileConfig(this);
+        }
+    }
+}
