@@ -3,7 +3,7 @@
 package software.amazon.encryption.s3.internal;
 
 import com.sun.xml.messaging.saaj.packaging.mime.internet.MimeUtility;
-import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -228,7 +228,7 @@ public class ContentMetadataDecodingStrategy {
                 .key(request.key() + INSTRUCTION_FILE_SUFFIX)
                 .build();
 
-        ResponseBytes<GetObjectResponse> instruction;
+        ResponseInputStream<GetObjectResponse> instruction;
         try {
             instruction = instructionFileConfig_.getInstructionFile(instructionGetObjectRequest);
         } catch (CompletionException | S3EncryptionClientException exception) {
@@ -240,7 +240,7 @@ public class ContentMetadataDecodingStrategy {
 
         Map<String, String> metadata = new HashMap<>();
         JsonNodeParser parser = JsonNodeParser.create();
-        JsonNode objectNode = parser.parse(instruction.asByteArray());
+        JsonNode objectNode = parser.parse(instruction);
         for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
             metadata.put(entry.getKey(), entry.getValue().asString());
         }
