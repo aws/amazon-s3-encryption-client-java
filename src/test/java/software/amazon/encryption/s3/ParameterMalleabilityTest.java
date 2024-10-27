@@ -29,7 +29,7 @@ public class ParameterMalleabilityTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    //@Test
+    @Test
     public void contentEncryptionDowngradeAttackFails() {
         final String objectKey = appendTestSuffix("content-downgrade-attack-fails");
         S3Client v3Client = S3EncryptionClient.builder()
@@ -68,7 +68,7 @@ public class ParameterMalleabilityTest {
         v3Client.close();
     }
 
-    //@Test
+    @Test
     public void keyWrapRemovalAttackFails() {
         final String objectKey = appendTestSuffix("keywrap-removal-attack-fails");
         S3Client v3Client = S3EncryptionClient.builder()
@@ -106,7 +106,7 @@ public class ParameterMalleabilityTest {
         v3Client.close();
     }
 
-    //@Test
+    @Test
     public void keyWrapDowngradeAesWrapAttackFails() {
         final String objectKey = appendTestSuffix("keywrap-downgrade-aeswrap-attack-fails");
         S3Client v3Client = S3EncryptionClient.builder()
@@ -145,7 +145,7 @@ public class ParameterMalleabilityTest {
         v3Client.close();
     }
 
-    //@Test
+    @Test
     public void keyWrapDowngradeAesAttackFails() {
         final String objectKey = appendTestSuffix("keywrap-downgrade-aes-attack-fails");
         S3Client v3Client = S3EncryptionClient.builder()

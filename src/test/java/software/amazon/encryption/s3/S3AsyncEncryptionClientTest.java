@@ -40,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
@@ -89,7 +90,7 @@ public class S3AsyncEncryptionClientTest {
         PROVIDER = Security.getProvider("BC");
     }
 
-    //@Test
+    @Test
     public void asyncCustomConfiguration() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-custom-credentials-async");
 
@@ -138,7 +139,7 @@ public class S3AsyncEncryptionClientTest {
         s3Client.close();
     }
 
-    //@Test
+    @Test
     public void asyncTopLevelConfigurationAllOptions() {
         final String objectKey = appendTestSuffix("async-top-level-all-options");
         AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
@@ -180,7 +181,7 @@ public class S3AsyncEncryptionClientTest {
         s3Client.close();
     }
 
-    //@Test
+    @Test
     public void asyncTopLevelConfiguration() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials-async");
 
@@ -213,7 +214,7 @@ public class S3AsyncEncryptionClientTest {
         s3Client.close();
     }
 
-    //@Test
+    @Test
     public void s3AsyncEncryptionClientTopLevelAlternateCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-async-client-with-top-level-alternate-credentials");
         final String input = "S3EncryptionClientTopLevelAlternateCredsTest";
@@ -267,7 +268,7 @@ public class S3AsyncEncryptionClientTest {
         s3ClientAltCreds.close();
     }
 
-    //@Test
+    @Test
     public void s3AsyncEncryptionClientMixedCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials");
         final String input = "S3EncryptionClientTopLevelAlternateCredsTest";
@@ -309,7 +310,7 @@ public class S3AsyncEncryptionClientTest {
         kmsClient.close();
     }
 
-    //@Test
+    @Test
     public void asyncTopLevelConfigurationWrongRegion() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-wrong-region-credentials-async");
 
@@ -337,7 +338,7 @@ public class S3AsyncEncryptionClientTest {
         }
     }
 
-    //@Test
+    @Test
     public void asyncTopLevelConfigurationNullCreds() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-null-credentials-async");
 
@@ -365,7 +366,7 @@ public class S3AsyncEncryptionClientTest {
         }
     }
 
-    //@Test
+    @Test
     public void putAsyncGetDefault() {
         final String objectKey = appendTestSuffix("put-async-get-default");
 
@@ -398,7 +399,7 @@ public class S3AsyncEncryptionClientTest {
         v3AsyncClient.close();
     }
 
-    //@Test
+    @Test
     public void putDefaultGetAsync() {
         final String objectKey = appendTestSuffix("put-default-get-async");
 
@@ -431,7 +432,7 @@ public class S3AsyncEncryptionClientTest {
         v3AsyncClient.close();
     }
 
-    //@Test
+    @Test
     public void putAsyncGetAsync() {
         final String objectKey = appendTestSuffix("put-async-get-async");
 
@@ -461,7 +462,7 @@ public class S3AsyncEncryptionClientTest {
         v3AsyncClient.close();
     }
 
-    //@Test
+    @Test
     public void aesCbcV1toV3Async() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-async");
 
@@ -498,7 +499,7 @@ public class S3AsyncEncryptionClientTest {
         v3Client.close();
     }
 
-    //@Test
+    @Test
     public void failAesCbcV1toV3AsyncWhenDisabled() {
         final String objectKey = appendTestSuffix("fail-aes-cbc-v1-to-v3-async-when-disabled");
 
@@ -553,7 +554,7 @@ public class S3AsyncEncryptionClientTest {
         // V3 Async Client
         S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
-//                .instructionFileConfig(InstructionFileConfig.builder().instructionFileClient(S3Client.create()).build())
+                .instructionFileConfig(InstructionFileConfig.builder().instructionFileClient(S3Client.create()).build())
                 .build();
 
         // Asserts
@@ -572,7 +573,7 @@ public class S3AsyncEncryptionClientTest {
         v3AsyncClient.close();
     }
 
-    //@Test
+    @Test
     public void deleteObjectWithInstructionFileSuccessAsync() {
         final String objectKey = appendTestSuffix("async-delete-object-with-instruction-file");
 
@@ -615,7 +616,7 @@ public class S3AsyncEncryptionClientTest {
         s3Client.close();
     }
 
-    //@Test
+    @Test
     public void deleteObjectsWithInstructionFilesSuccessAsync() {
         final String[] objectKeys = {appendTestSuffix("async-delete-object-with-instruction-file-1"),
                 appendTestSuffix("async-delete-object-with-instruction-file-2"),
@@ -664,7 +665,7 @@ public class S3AsyncEncryptionClientTest {
         s3Client.close();
     }
 
-    //@Test
+    @Test
     public void deleteObjectWithWrongObjectKeySuccessAsync() {
         // V3 Client
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
@@ -676,7 +677,7 @@ public class S3AsyncEncryptionClientTest {
         v3Client.close();
     }
 
-    //@Test
+    @Test
     public void copyObjectTransparentlyAsync() {
         final String objectKey = appendTestSuffix("copy-object-from-here-async");
         final String newObjectKey = appendTestSuffix("copy-object-to-here-async");
@@ -723,7 +724,7 @@ public class S3AsyncEncryptionClientTest {
      * the cipher's block size.
      * @throws IOException
      */
-    //@Test
+    @Test
     public void tinyBufferTest() throws IOException {
         // BouncyCastle actually returns null buffers, unlike ACCP and SunJCE, which return empty buffers
         Security.addProvider(new BouncyCastleProvider());
@@ -763,7 +764,7 @@ public class S3AsyncEncryptionClientTest {
         exec.shutdown();
     }
 
-    //@Test
+    @Test
     public void wrappedClientMultipartUpload() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object-async-wrapped-client");
 

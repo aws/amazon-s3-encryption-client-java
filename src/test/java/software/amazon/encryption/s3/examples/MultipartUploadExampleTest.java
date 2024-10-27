@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class MultipartUploadExampleTest {
 
-    //@Test
+    @Test
     public void testMultipartUploadExamples() throws IOException {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         MultipartUploadExample.main(new String[]{bucket});
