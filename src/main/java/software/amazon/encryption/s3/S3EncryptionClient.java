@@ -1112,6 +1112,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .build();
             }
 
+            // Create default instruction file config.
             if (_instructionFileConfig == null) {
                 _instructionFileConfig = InstructionFileConfig.builder()
                         .instructionFileAsyncClient(_wrappedAsyncClient)

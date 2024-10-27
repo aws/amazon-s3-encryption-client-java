@@ -1,6 +1,6 @@
 package software.amazon.encryption.s3.internal;
 
-import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -34,17 +34,17 @@ public class InstructionFileConfig {
         ASYNC
     }
 
-    ResponseInputStream<GetObjectResponse> getInstructionFile(GetObjectRequest request) {
+    ResponseBytes<GetObjectResponse> getInstructionFile(GetObjectRequest request) {
         if (_disableInstructionFile) {
             throw new S3EncryptionClientException("Instruction File has been disabled!");
         }
         switch (_clientType) {
             case DEFAULT:
-                return _s3Client.getObject(request);
+                return _s3Client.getObjectAsBytes(request);
             case ASYNC:
-                return _s3AsyncClient.getObject(request, AsyncResponseTransformer.toBlockingInputStream()).join();
+                return _s3AsyncClient.getObject(request, AsyncResponseTransformer.toBytes()).join();
             default:
-                throw new S3EncryptionClientException("Unknown Instruction File Type");
+                throw new S3EncryptionClientException("Unknown Instruction File Client Type");
         }
     }
 
