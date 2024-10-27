@@ -8,6 +8,10 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * Provides configuration options for instruction file behaviors.
  */
@@ -42,7 +46,12 @@ public class InstructionFileConfig {
             case DEFAULT:
                 return _s3Client.getObjectAsBytes(request);
             case ASYNC:
-                return _s3AsyncClient.getObject(request, AsyncResponseTransformer.toBytes()).join();
+                ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+                CompletableFuture<ResponseBytes<GetObjectResponse>> future = _s3AsyncClient.getObject(request, AsyncResponseTransformer.toBytes());
+                singleThreadExecutor.submit(future::join);
+                ResponseBytes<GetObjectResponse> response = future.join();
+                singleThreadExecutor.shutdown();
+                return response;
             default:
                 throw new S3EncryptionClientException("Unknown Instruction File Client Type");
         }
