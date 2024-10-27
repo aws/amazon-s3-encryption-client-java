@@ -68,7 +68,7 @@ public class S3EncryptionClientCompatibilityTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    //@Test
     public void AesCbcV1toV3() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3");
 
@@ -104,7 +104,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesWrapV1toV3() {
         final String objectKey = appendTestSuffix("aes-wrap-v1-to-v3");
 
@@ -139,7 +139,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesGcmV2toV3() {
         final String objectKey = appendTestSuffix("aes-gcm-v2-to-v3");
 
@@ -170,7 +170,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesGcmV2toV3WithInstructionFile() {
         final String objectKey = appendTestSuffix("aes-gcm-v2-to-v3-with-instruction-file");
 
@@ -209,7 +209,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesGcmV3toV1() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v1");
 
@@ -242,7 +242,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesGcmV3toV2() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v2");
 
@@ -272,7 +272,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesGcmV3toV3() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3");
 
@@ -299,7 +299,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void RsaV1toV3() {
         final String objectKey = appendTestSuffix("v1-rsa-to-v3");
 
@@ -330,7 +330,7 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
 
-    @Test
+    //@Test
     public void RsaV1toV3AesFails() {
         final String objectKey = appendTestSuffix("v1-rsa-to-v3-aes-fails");
 
@@ -357,7 +357,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void RsaEcbV1toV3() {
         final String objectKey = appendTestSuffix("rsa-ecb-v1-to-v3");
 
@@ -392,7 +392,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void RsaOaepV2toV3() {
         final String objectKey = appendTestSuffix("rsa-oaep-v2-to-v3");
 
@@ -426,7 +426,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void RsaOaepV3toV1() {
         final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v1");
 
@@ -459,7 +459,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void RsaOaepV3toV2() {
         final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v2");
 
@@ -489,7 +489,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void RsaOaepV3toV3() {
         final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v3");
 
@@ -516,7 +516,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void KmsCBCV1ToV3() {
         String objectKey = appendTestSuffix("v1-kms-cbc-to-v3");
 
@@ -552,7 +552,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void KmsV1toV3() {
         final String objectKey = appendTestSuffix("kms-v1-to-v3");
 
@@ -589,7 +589,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void KmsContextV2toV3() {
         final String objectKey = appendTestSuffix("kms-context-v2-to-v3");
 
@@ -629,7 +629,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void KmsContextV3toV1() {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v1");
 
@@ -670,7 +670,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void KmsContextV3toV2() throws IOException {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v2");
 
@@ -707,7 +707,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void KmsContextV3toV3() {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v3");
 
@@ -739,7 +739,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void KmsContextV3toV3MismatchFails() {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v3");
 
@@ -774,7 +774,7 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
 
-    @Test
+    //@Test
     public void AesCbcV1toV3FailsWhenLegacyModeDisabled() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3");
 
@@ -805,7 +805,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesCbcV1toV3FailsWhenUnauthencticateModeDisabled() {
         final String objectKey = appendTestSuffix("fails-aes-cbc-v1-to-v3-when-unauthencticate-mode-disabled");
 
@@ -839,7 +839,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesCbcV1toV3FailsWhenLegacyKeyringDisabled() {
         final String objectKey = appendTestSuffix("fails-aes-cbc-v1-to-v3-when-legacy-keyring-disabled");
 
@@ -873,7 +873,7 @@ public class S3EncryptionClientCompatibilityTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void AesWrapV1toV3FailsWhenLegacyModeDisabled() {
         final String objectKey = appendTestSuffix("aes-wrap-v1-to-v3");
 

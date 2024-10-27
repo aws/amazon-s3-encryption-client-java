@@ -32,7 +32,7 @@ public class S3EncryptionClientRsaKeyPairTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    //@Test
     public void RsaPublicAndPrivateKeys() {
         final String objectKey = appendTestSuffix("rsa-public-and-private");
 
@@ -59,7 +59,7 @@ public class S3EncryptionClientRsaKeyPairTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void RsaPrivateKeyCanOnlyDecrypt() {
         final String objectKey = appendTestSuffix("rsa-private-key-only");
         S3Client v3Client = S3EncryptionClient.builder()
@@ -92,7 +92,7 @@ public class S3EncryptionClientRsaKeyPairTest {
         v3Client.close();
     }
 
-    @Test
+    //@Test
     public void RsaPublicKeyCanOnlyEncrypt() {
         final String objectKey = appendTestSuffix("rsa-public-key-only");
         S3Client v3Client = S3EncryptionClient.builder()

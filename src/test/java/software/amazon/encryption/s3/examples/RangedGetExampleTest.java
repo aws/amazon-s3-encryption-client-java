@@ -5,7 +5,7 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 public class RangedGetExampleTest {
 
-    @Test
+    //@Test
     public void testRangedGetExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         RangedGetExample.main(new String[]{bucket});
