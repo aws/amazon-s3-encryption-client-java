@@ -8,6 +8,7 @@ import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
@@ -231,7 +232,7 @@ public class ContentMetadataDecodingStrategy {
         ResponseInputStream<GetObjectResponse> instruction;
         try {
             instruction = instructionFileConfig_.getInstructionFile(instructionGetObjectRequest);
-        } catch (CompletionException | S3EncryptionClientException exception) {
+        } catch (CompletionException | NoSuchKeyException exception) {
             // Most likely, the customer is attempting to decrypt an object
             // which is not encrypted with the S3 EC.
             throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
