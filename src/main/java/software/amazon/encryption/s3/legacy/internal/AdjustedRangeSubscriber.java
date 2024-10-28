@@ -49,7 +49,7 @@ public class AdjustedRangeSubscriber implements Subscriber<ByteBuffer> {
         // return an empty string; signalling onComplete accomplishes this result
         // and thus maintains compatibility.
         if (virtualAvailable <= 0) {
-            wrappedSubscriber.onComplete();
+            this.onComplete();
         }
     }
 
