@@ -31,6 +31,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
 
     private long _ciphertextLength;
     private Provider _cryptoProvider;
+    private String _contentRange;
 
     private DecryptionMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -39,6 +40,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         this._plaintextDataKey = builder._plaintextDataKey;
         this._ciphertextLength = builder._ciphertextLength;
         this._cryptoProvider = builder._cryptoProvider;
+        this._contentRange = builder._contentRange;
     }
 
     static public Builder builder() {
@@ -92,6 +94,10 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         return CipherProvider.createAndInitCipher(this, iv);
     }
 
+    public String getContentRange() {
+        return _contentRange;
+    }
+
     public Builder toBuilder() {
         return new Builder()
                 .s3Request(_s3Request)
@@ -99,7 +105,8 @@ final public class DecryptionMaterials implements CryptographicMaterials {
                 .encryptionContext(_encryptionContext)
                 .plaintextDataKey(_plaintextDataKey)
                 .ciphertextLength(_ciphertextLength)
-                .cryptoProvider(_cryptoProvider);
+                .cryptoProvider(_cryptoProvider)
+                .contentRange(_contentRange);
     }
 
     static public class Builder {
@@ -110,6 +117,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private byte[] _plaintextDataKey = null;
         private long _ciphertextLength = -1;
+        private String _contentRange = null;
 
         private Builder() {
         }
@@ -143,6 +151,11 @@ final public class DecryptionMaterials implements CryptographicMaterials {
 
         public Builder cryptoProvider(Provider cryptoProvider) {
             _cryptoProvider = cryptoProvider;
+            return this;
+        }
+
+        public Builder contentRange(String contentRange) {
+            _contentRange = contentRange;
             return this;
         }
 

@@ -85,6 +85,7 @@ public class GetEncryptedObjectPipeline {
                 .encryptedDataKeys(encryptedDataKeys)
                 .encryptionContext(contentMetadata.encryptedDataKeyContext())
                 .ciphertextLength(getObjectResponse.contentLength())
+                .contentRange(getObjectResponse.contentRange())
                 .build();
 
         return _cryptoMaterialsManager.decryptMaterials(materialsRequest);
@@ -132,8 +133,8 @@ public class GetEncryptedObjectPipeline {
 
         @Override
         public void onStream(SdkPublisher<ByteBuffer> ciphertextPublisher) {
-            long[] desiredRange = RangedGetUtils.getRange(materials.s3Request().range());
-            long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.s3Request().range());
+            long[] desiredRange = RangedGetUtils.getRange(materials.getContentRange());
+            long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.getContentRange());
             AlgorithmSuite algorithmSuite = materials.algorithmSuite();
             SecretKey contentKey = materials.dataKey();
             final int tagLength = algorithmSuite.cipherTagLengthBits();

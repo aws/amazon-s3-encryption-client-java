@@ -775,8 +775,9 @@ public class S3AsyncEncryptionClientTest {
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableMultipartPutObject(true)
-//                .multipartEnabled(true)
+                .multipartEnabled(true)
                 .enableDelayedAuthenticationMode(true)
+                .enableLegacyUnauthenticatedModes(true)
                 .cryptoProvider(PROVIDER)
                 .build();
 

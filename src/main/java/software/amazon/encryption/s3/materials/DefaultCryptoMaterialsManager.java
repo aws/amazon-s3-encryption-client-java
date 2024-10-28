@@ -38,6 +38,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
                 .encryptionContext(request.encryptionContext())
                 .ciphertextLength(request.ciphertextLength())
                 .cryptoProvider(_cryptoProvider)
+                .contentRange(request.contentRange())
                 .build();
 
         return _keyring.onDecrypt(materials, request.encryptedDataKeys());

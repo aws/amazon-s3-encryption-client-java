@@ -18,14 +18,23 @@ public class RangedGetUtils {
         if (range == null) {
             return null;
         }
-        if (!range.matches("^bytes=(\\d+-\\d+|\\d+-)$")) {
+        if (range.matches("^bytes=(\\d+-\\d+|\\d+-)$")) {
+            String[] rangeSplit = range.substring(6).split("-");
+            long[] adjustedRange = new long[2];
+            adjustedRange[0] = Long.parseLong(rangeSplit[0]);
+            adjustedRange[1] = (rangeSplit.length < 2 || rangeSplit[1].isEmpty()) ? Long.MAX_VALUE : Long.parseLong(rangeSplit[1]);
+            return adjustedRange;
+        } else if (range.matches("bytes \\d+-\\d+\\/\\d+")) {
+            // New-style ranges
+            String[] oldStyleRange = range.substring(6).split("/");
+            String[] rangeSplit = oldStyleRange[0].split("-");
+            long[] adjustedRange = new long[2];
+            adjustedRange[0] = Long.parseLong(rangeSplit[0]);
+            adjustedRange[1] = (rangeSplit.length < 2 || rangeSplit[1].isEmpty()) ? Long.MAX_VALUE : Long.parseLong(rangeSplit[1]);
+            return adjustedRange;
+        } else {
             return null;
         }
-        String[] rangeSplit = range.substring(6).split("-");
-        long[] adjustedRange = new long[2];
-        adjustedRange[0] = Long.parseLong(rangeSplit[0]);
-        adjustedRange[1] = (rangeSplit.length < 2 || rangeSplit[1].isEmpty()) ? Long.MAX_VALUE : Long.parseLong(rangeSplit[1]);
-        return adjustedRange;
     }
 
     public static String getCryptoRangeAsString(String desiredRange) {
