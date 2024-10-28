@@ -1063,6 +1063,7 @@ public class S3EncryptionClientTest {
         S3Client s3ClientDisabledInstructionFile = S3EncryptionClient.builder()
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .disableInstructionFile(true)
+                        .instructionFileClient(S3Client.create())
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
@@ -1081,6 +1082,7 @@ public class S3EncryptionClientTest {
         S3Client s3Client = S3EncryptionClient.builder()
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .disableInstructionFile(false)
+                        .instructionFileClient(S3Client.create())
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
@@ -1095,7 +1097,7 @@ public class S3EncryptionClientTest {
         // Cleanup
         deleteObject(ALTERNATE_BUCKET, objectKey, s3ClientDisabledInstructionFile);
         s3ClientDisabledInstructionFile.close();
-
+        s3Client.close();
     }
     /**
      * A simple, reusable round-trip (encryption + decryption) using a given

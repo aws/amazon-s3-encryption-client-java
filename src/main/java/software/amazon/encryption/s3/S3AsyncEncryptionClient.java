@@ -267,6 +267,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     @Override
     public void close() {
         _wrappedClient.close();
+        _instructionFileConfig.closeClient();
     }
 
     // This is very similar to the S3EncryptionClient builder

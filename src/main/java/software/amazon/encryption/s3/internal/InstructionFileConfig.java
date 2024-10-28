@@ -48,6 +48,18 @@ public class InstructionFileConfig {
         }
     }
 
+    /**
+     * Closes the S3Client or S3AsyncClient used for instruction files.
+     */
+    public void closeClient() {
+        if (_s3AsyncClient != null) {
+            _s3AsyncClient.close();
+        }
+        if (_s3Client != null) {
+            _s3Client.close();
+        }
+    }
+
     public static class Builder {
         private InstructionFileClientType _clientType;
         private boolean _disableInstructionFile;
@@ -81,8 +93,8 @@ public class InstructionFileConfig {
                 _clientType = InstructionFileClientType.DEFAULT;
             } else if (_s3AsyncClient != null){
                 _clientType = InstructionFileClientType.ASYNC;
-            } else {
-                throw new S3EncryptionClientException("At least one instruction file client must be set.");
+            } else if (_clientType == InstructionFileClientType.DEFAULT){
+                _clientType = InstructionFileClientType.DEFAULT;
             }
 
             return new InstructionFileConfig(this);
