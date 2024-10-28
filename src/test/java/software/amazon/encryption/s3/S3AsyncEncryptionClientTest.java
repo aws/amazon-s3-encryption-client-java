@@ -794,7 +794,16 @@ public class S3AsyncEncryptionClientTest {
         singleThreadExecutor.shutdown();
 
         // Asserts
-        CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = v3Client.getObject(builder -> builder
+        S3AsyncClient v3ClientGet = S3AsyncEncryptionClient.builder()
+                .kmsKeyId(KMS_KEY_ID)
+                .enableMultipartPutObject(true)
+//                .multipartEnabled(true)
+                .enableDelayedAuthenticationMode(true)
+                .enableLegacyUnauthenticatedModes(true)
+                .cryptoProvider(PROVIDER)
+                .build();
+
+        CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = v3ClientGet.getObject(builder -> builder
                 .bucket(BUCKET)
                 .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
                 .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
