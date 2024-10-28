@@ -18,7 +18,6 @@ public class RangedGetUtils {
         if (range == null) {
             return null;
         }
-        // TODO: Match on "new style" ranged gets and throw an exception
         if (range.matches("^bytes=(\\d+-\\d+|\\d+-)$")) {
             String[] rangeSplit = range.substring(6).split("-");
             long[] adjustedRange = new long[2];
