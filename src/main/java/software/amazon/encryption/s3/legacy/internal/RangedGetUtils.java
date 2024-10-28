@@ -15,37 +15,17 @@ import java.nio.ByteBuffer;
 public class RangedGetUtils {
 
     public static long[] getRange(String range) {
-        // OLD:
         if (range == null) {
-            System.out.println("range is null");
             return null;
         }
         if (!range.matches("^bytes=(\\d+-\\d+|\\d+-)$")) {
-            System.out.println("range does not match: " + range);
             return null;
         }
-        System.out.println("processing range: " + range);
         String[] rangeSplit = range.substring(6).split("-");
         long[] adjustedRange = new long[2];
         adjustedRange[0] = Long.parseLong(rangeSplit[0]);
         adjustedRange[1] = (rangeSplit.length < 2 || rangeSplit[1].isEmpty()) ? Long.MAX_VALUE : Long.parseLong(rangeSplit[1]);
-        System.out.println(String.format("returning range: %d. %d", adjustedRange[0], adjustedRange[1]));
         return adjustedRange;
-        // NEW:
-//        if (range == null) {
-//            return null;
-//        }
-//        if (range.matches("^bytes=(\\d+-\\d+|\\d+-)$")) {
-//            String[] rangeSplit = range.substring(6).split("-");
-//            long[] adjustedRange = new long[2];
-//            adjustedRange[0] = Long.parseLong(rangeSplit[0]);
-//            adjustedRange[1] = (rangeSplit.length < 2 || rangeSplit[1].isEmpty()) ? Long.MAX_VALUE : Long.parseLong(rangeSplit[1]);
-//            return adjustedRange;
-//        } else if (range.matches("bytes \\d+-\\d+\\/\\d+")) {
-//            throw new S3EncryptionClientException(String.format("Range: %s is not supported by S3 Encryption Client", range));
-//        } else {
-//            return null;
-//        }
     }
 
     public static String getCryptoRangeAsString(String desiredRange) {

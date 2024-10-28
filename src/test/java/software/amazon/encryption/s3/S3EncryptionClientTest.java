@@ -624,7 +624,6 @@ public class S3EncryptionClientTest {
                     .key(objectKey));
             fail("expected exception");
         } catch (S3EncryptionClientException ex) {
-            System.out.println(ex.getMessage());
             assertTrue(ex.getMessage().contains("Instruction file not found!"));
             assertEquals(ex.getCause().getClass(), S3EncryptionClientException.class);
         }
