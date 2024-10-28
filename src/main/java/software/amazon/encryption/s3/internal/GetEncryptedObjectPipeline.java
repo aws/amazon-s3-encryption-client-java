@@ -72,6 +72,13 @@ public class GetEncryptedObjectPipeline {
 
     private DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
                                                             final ContentMetadata contentMetadata) {
+        // If the response contains a range, but the request does not,
+        // then this is an unsupported case where the client is using multipart downloads.
+        // Until this is supported, throw an exception
+        if (getObjectRequest.range() == null && getObjectResponse.contentRange() != null) {
+            throw new S3EncryptionClientException("Content range in response but is missing from request. Ensure multipart upload is not enabled on the wrapped async client.");
+        }
+
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
             throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
@@ -85,7 +92,7 @@ public class GetEncryptedObjectPipeline {
                 .encryptedDataKeys(encryptedDataKeys)
                 .encryptionContext(contentMetadata.encryptedDataKeyContext())
                 .ciphertextLength(getObjectResponse.contentLength())
-                .contentRange(getObjectResponse.contentRange())
+                .contentRange(getObjectRequest.range())
                 .build();
 
         return _cryptoMaterialsManager.decryptMaterials(materialsRequest);
