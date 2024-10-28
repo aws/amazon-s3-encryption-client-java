@@ -824,17 +824,37 @@ public class S3AsyncEncryptionClientTest {
     }
 
     @Test
-    public void wrappedClientMultipartUpload() throws IOException {
+    public void wrappedClientMultipartUploadThrowsException() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object-async-wrapped-client");
 
         final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
+        // using top-level configuration throws an exception
+        try {
+            S3AsyncEncryptionClient.builder()
+                    .kmsKeyId(KMS_KEY_ID)
+                    .enableMultipartPutObject(true)
+                    .multipartEnabled(true)
+                    .enableDelayedAuthenticationMode(true)
+                    .enableLegacyUnauthenticatedModes(true)
+                    .cryptoProvider(PROVIDER)
+                    .build();
+            fail("expected exception");
+        } catch (UnsupportedOperationException exception) {
+            assertTrue(exception.getMessage().contains("S3 Encryption Client"));
+        }
+
+        // passing a wrapped client will throw an exception,
+        // but not until GetObject is called
+        S3AsyncClient wrappedClient = S3AsyncClient.builder()
+                .multipartEnabled(true)
+                .build();
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableMultipartPutObject(true)
-                .multipartEnabled(true)
+                .wrappedClient(wrappedClient)
                 .enableDelayedAuthenticationMode(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .cryptoProvider(PROVIDER)
@@ -852,13 +872,21 @@ public class S3AsyncEncryptionClientTest {
         futurePut.join();
         singleThreadExecutor.shutdown();
 
-        // Asserts
+        // using the same MPU client should fail
+        try {
+            v3Client.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+                    .key(objectKey), AsyncResponseTransformer.toBlockingInputStream()).join();
+            fail("expected exception");
+        } catch (CompletionException exception) {
+            assertEquals(S3EncryptionClientException.class, exception.getCause().getClass());
+        }
+
+        // using a client without MPU should pass
         S3AsyncClient v3ClientGet = S3AsyncEncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
-                .enableMultipartPutObject(true)
-//                .multipartEnabled(true)
                 .enableDelayedAuthenticationMode(true)
-                .enableLegacyUnauthenticatedModes(true)
                 .cryptoProvider(PROVIDER)
                 .build();
 

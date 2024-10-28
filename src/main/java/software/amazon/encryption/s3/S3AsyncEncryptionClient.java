@@ -73,7 +73,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     private final boolean _enableDelayedAuthenticationMode;
     private final boolean _enableMultipartPutObject;
     private final long _bufferSize;
-    private final boolean _clientMultipartEnabled;
     private InstructionFileConfig _instructionFileConfig;
 
     private S3AsyncEncryptionClient(Builder builder) {
@@ -85,7 +84,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
         _enableMultipartPutObject = builder._enableMultipartPutObject;
         _bufferSize = builder._bufferSize;
-        _clientMultipartEnabled = builder._multipartEnabled != null && builder._multipartEnabled;
         _instructionFileConfig = builder._instructionFileConfig;
     }
 
@@ -154,13 +152,10 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
     private CompletableFuture<PutObjectResponse> multipartPutObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody) {
         S3AsyncClient mpuClient;
-        if (_wrappedClient instanceof S3CrtAsyncClient && !_clientMultipartEnabled) {
+        if (_wrappedClient instanceof S3CrtAsyncClient) {
             // if the wrappedClient is a CRT, use it
             mpuClient = _wrappedClient;
-        } else if (_clientMultipartEnabled) {
-            mpuClient = _wrappedClient;
-        }
-        else {
+        } else {
             // else create a default CRT client
             mpuClient = S3AsyncClient.crtCreate();
         }
@@ -755,9 +750,9 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          */
         @Override
         public Builder multipartEnabled(Boolean enabled) {
-//            if (enabled) {
-//                throw new UnsupportedOperationException("The S3 Encryption Client does not support wrapped clients with automatic multipart enabled.");
-//            }
+            if (enabled) {
+                throw new UnsupportedOperationException("The S3 Encryption Client does not support wrapped clients with automatic multipart enabled.");
+            }
             _multipartEnabled = enabled;
             return this;
         }
