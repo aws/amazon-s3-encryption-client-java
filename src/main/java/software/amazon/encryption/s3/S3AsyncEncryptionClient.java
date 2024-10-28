@@ -746,8 +746,18 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        /**
+         * Multipart is NOT currently supported by the S3 Encryption Client.
+         * Do not enable this option, and do not pass in a wrapped client
+         * with multipart enabled, GET requests could be corrupted.
+         * @param enabled MUST be false
+         * @return
+         */
         @Override
         public Builder multipartEnabled(Boolean enabled) {
+//            if (enabled) {
+//                throw new UnsupportedOperationException("The S3 Encryption Client does not support wrapped clients with automatic multipart enabled.");
+//            }
             _multipartEnabled = enabled;
             return this;
         }
@@ -780,12 +790,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 }
             } else {
                 _bufferSize = DEFAULT_BUFFER_SIZE_BYTES;
-            }
-
-            // The S3 Async Client has its own multipart setting,
-            // we enforce that the S3EC multipart PutObject setting is enabled as well.
-            if (_multipartEnabled != null && _multipartEnabled && !_enableMultipartPutObject) {
-                throw new S3EncryptionClientException("EnableMultipartPutObject MUST be enabled when the MultipartEnabled option is set to true.");
             }
 
             if (_wrappedClient == null) {
