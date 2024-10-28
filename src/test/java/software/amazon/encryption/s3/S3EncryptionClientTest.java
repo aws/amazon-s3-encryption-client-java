@@ -1042,6 +1042,61 @@ public class S3EncryptionClientTest {
         v3Client.close();
     }
 
+    @Test
+    public void testDisableInstructionFile() {
+        final String objectKey = appendTestSuffix("disable-instruction-file");
+        final String input = "SimpleTestOfV3EncryptionClient";
+
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new KMSEncryptionMaterials(KMS_KEY_ID));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        v2Client.putObject(BUCKET, objectKey, input);
+
+        S3Client s3ClientDisabledInstructionFile = S3EncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .disableInstructionFile(true)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        try {
+            s3ClientDisabledInstructionFile.getObjectAsBytes(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build());
+            fail("expected exception");
+        } catch (S3EncryptionClientException exception) {
+            System.out.println(exception.getMessage());
+            exception.printStackTrace();
+        }
+
+        S3Client s3Client = S3EncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .disableInstructionFile(false)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
+                .bucket(ALTERNATE_BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(ALTERNATE_BUCKET, objectKey, s3ClientDisabledInstructionFile);
+        s3ClientDisabledInstructionFile.close();
+
+    }
     /**
      * A simple, reusable round-trip (encryption + decryption) using a given
      * S3Client. Useful for testing client configuration.
