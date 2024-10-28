@@ -232,7 +232,7 @@ public class ContentMetadataDecodingStrategy {
         ResponseInputStream<GetObjectResponse> instruction;
         try {
             instruction = instructionFileConfig_.getInstructionFile(instructionGetObjectRequest);
-        } catch (CompletionException | NoSuchKeyException exception) {
+        } catch (CompletionException | S3EncryptionClientException | NoSuchKeyException exception) {
             // Most likely, the customer is attempting to decrypt an object
             // which is not encrypted with the S3 EC.
             throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +

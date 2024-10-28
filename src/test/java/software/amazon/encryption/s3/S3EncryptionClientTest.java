@@ -1075,10 +1075,7 @@ public class S3EncryptionClientTest {
                     .build());
             fail("expected exception");
         } catch (S3EncryptionClientException exception) {
-            System.out.println(exception.getMessage());
-            System.out.println("----");
-            assertTrue(exception.getMessage().contains("Instruction file not found! Please ensure the object you are attempting to decrypt has been encrypted using the S3 Encryption Client."));
-            assertTrue(exception.getMessage().contains("Instruction File has been disabled!"));
+            assertTrue(exception.getMessage().contains("Instruction file not found!"));
         }
 
         S3Client s3Client = S3EncryptionClient.builder()
