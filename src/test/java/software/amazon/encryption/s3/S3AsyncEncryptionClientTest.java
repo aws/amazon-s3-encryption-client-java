@@ -12,6 +12,7 @@ import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.CryptoStorageMode;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -762,6 +763,64 @@ public class S3AsyncEncryptionClientTest {
         deleteObject(BUCKET, objectKey, v3AsyncClient);
         v3AsyncClient.close();
         exec.shutdown();
+    }
+
+    @Test
+    public void testAsyncInstructionFileConfig() {
+        final String objectKey = appendTestSuffix("async-instruction-file-config");
+        final String input = "SimpleTestOfV3EncryptionClient";
+
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new KMSEncryptionMaterials(KMS_KEY_ID));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        v2Client.putObject(BUCKET, objectKey, input);
+
+        S3AsyncClient s3ClientDisabledInstructionFile = S3AsyncEncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .disableInstructionFile(true)
+                        .instructionFileClient(S3Client.create())
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        try {
+            s3ClientDisabledInstructionFile.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build(), AsyncResponseTransformer.toBytes()).join();
+            fail("expected exception");
+        } catch (Exception exception) {
+            assertEquals(exception.getCause().getClass(), S3EncryptionClientException.class);
+            assertTrue(exception.getMessage().contains("Instruction file not found!"));
+        }
+
+        S3Client s3Client = S3EncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .disableInstructionFile(false)
+                        .instructionFileClient(S3Client.create())
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3ClientDisabledInstructionFile);
+        s3ClientDisabledInstructionFile.close();
+        s3Client.close();
     }
 
     @Test

@@ -1043,8 +1043,8 @@ public class S3EncryptionClientTest {
     }
 
     @Test
-    public void testDisableInstructionFile() {
-        final String objectKey = appendTestSuffix("disable-instruction-file");
+    public void testInstructionFileConfig() {
+        final String objectKey = appendTestSuffix("instruction-file-config");
         final String input = "SimpleTestOfV3EncryptionClient";
 
         EncryptionMaterialsProvider materialsProvider =
@@ -1098,6 +1098,7 @@ public class S3EncryptionClientTest {
         s3ClientDisabledInstructionFile.close();
         s3Client.close();
     }
+
     /**
      * A simple, reusable round-trip (encryption + decryption) using a given
      * S3Client. Useful for testing client configuration.

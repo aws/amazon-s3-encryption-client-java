@@ -30,7 +30,7 @@ public class InstructionFileConfig {
     }
 
     public enum InstructionFileClientType {
-        DEFAULT,
+        SYNCHRONOUS,
         ASYNC
     }
 
@@ -39,7 +39,7 @@ public class InstructionFileConfig {
             throw new S3EncryptionClientException("Instruction File has been disabled!");
         }
         switch (_clientType) {
-            case DEFAULT:
+            case SYNCHRONOUS:
                 return _s3Client.getObject(request);
             case ASYNC:
                 return _s3AsyncClient.getObject(request, AsyncResponseTransformer.toBlockingInputStream()).join();
@@ -90,11 +90,11 @@ public class InstructionFileConfig {
                 throw new S3EncryptionClientException("Only one instruction file client may be set.");
             }
             if (_s3Client != null) {
-                _clientType = InstructionFileClientType.DEFAULT;
+                _clientType = InstructionFileClientType.SYNCHRONOUS;
             } else if (_s3AsyncClient != null){
                 _clientType = InstructionFileClientType.ASYNC;
-            } else if (_clientType == InstructionFileClientType.DEFAULT){
-                _clientType = InstructionFileClientType.DEFAULT;
+            } else {
+                throw new S3EncryptionClientException("At least one instruction file client must be set.");
             }
 
             return new InstructionFileConfig(this);
