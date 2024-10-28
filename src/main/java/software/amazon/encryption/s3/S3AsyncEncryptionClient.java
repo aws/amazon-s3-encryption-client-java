@@ -713,7 +713,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         @Override
-        public S3AsyncClientBuilder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
+        public Builder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
             _disableS3ExpressSessionAuth = disableS3ExpressSessionAuth;
             return this;
         }
@@ -742,9 +742,9 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
-         * Multipart is NOT currently supported by the S3 Encryption Client.
-         * Do not enable this option, and do not pass in a wrapped client
-         * with multipart enabled, GET requests could be corrupted.
+         * Multipart via the wrapped client is currently NOT supported by the S3 Encryption Client.
+         * Use the {@link this.enableMultipartPutObject()} option instead for high-level multipart uploads.
+         * Multipart downloads are currently NOT supported.
          * @param enabled MUST be false
          * @return
          */
@@ -758,7 +758,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         @Override
-        public S3AsyncClientBuilder multipartConfiguration(MultipartConfiguration multipartConfiguration) {
+        public Builder multipartConfiguration(MultipartConfiguration multipartConfiguration) {
             _multipartConfiguration = multipartConfiguration;
             return this;
         }

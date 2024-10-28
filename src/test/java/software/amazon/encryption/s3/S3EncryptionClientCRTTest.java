@@ -533,8 +533,8 @@ public class S3EncryptionClientCRTTest {
     }
 
     @Test
-    public void AsyncAesGcmV3toV3LargeObject() throws IOException {
-        final String objectKey = appendTestSuffix("async-aes-gcm-v3-to-v3-large-object");
+    public void AsyncAesGcmV3toV3LargeObjectCRT() throws IOException {
+        final String objectKey = appendTestSuffix("async-aes-gcm-v3-to-v3-large-object-crt");
 
         final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);

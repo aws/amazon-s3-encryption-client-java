@@ -1109,7 +1109,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .httpClientBuilder(_asyncHttpClientBuilder)
                         .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
                         .crossRegionAccessEnabled(_crossRegionAccessEnabled)
-                        // TODO: Add MPU stuff here too
                         .build();
             }
 

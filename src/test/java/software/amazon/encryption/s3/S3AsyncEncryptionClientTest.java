@@ -41,6 +41,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
@@ -161,6 +162,11 @@ public class S3AsyncEncryptionClientTest {
                 .useArnRegion(null)
                 .httpClient(null)
                 .httpClientBuilder(null)
+                .multipartEnabled(false)
+                .multipartConfiguration(MultipartConfiguration.builder().build()) // null is ambiguous
+                .disableS3ExpressSessionAuth(null)
+                .crossRegionAccessEnabled(null)
+                .instructionFileConfig(InstructionFileConfig.builder().instructionFileClient(S3Client.create()).build())
                 .build();
         final String input = "SimpleTestOfV3EncryptionClientAsync";
 

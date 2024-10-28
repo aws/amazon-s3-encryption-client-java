@@ -774,6 +774,9 @@ public class S3EncryptionClientTest {
                 .httpClientBuilder(null)
                 .asyncHttpClient(null)
                 .asyncHttpClientBuilder(null)
+                .disableS3ExpressSessionAuth(null)
+                .crossRegionAccessEnabled(null)
+                .instructionFileConfig(InstructionFileConfig.builder().instructionFileClient(S3Client.create()).build())
                 .build();
 
         simpleV3RoundTrip(s3Client, objectKey);
