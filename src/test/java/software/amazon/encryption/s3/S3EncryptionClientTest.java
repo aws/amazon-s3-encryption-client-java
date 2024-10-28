@@ -1062,10 +1062,12 @@ public class S3EncryptionClientTest {
 
         v2Client.putObject(BUCKET, objectKey, input);
 
+        S3Client wrappedClient = S3Client.create();
         S3Client s3ClientDisabledInstructionFile = S3EncryptionClient.builder()
+                .wrappedClient(wrappedClient)
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .disableInstructionFile(true)
-                        .instructionFileClient(S3Client.create())
+                        .instructionFileClient(wrappedClient)
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
@@ -1083,7 +1085,7 @@ public class S3EncryptionClientTest {
         S3Client s3Client = S3EncryptionClient.builder()
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .disableInstructionFile(false)
-                        .instructionFileClient(S3Client.create())
+                        .instructionFileClient(wrappedClient)
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
