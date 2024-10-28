@@ -1075,8 +1075,8 @@ public class S3EncryptionClientTest {
                     .build());
             fail("expected exception");
         } catch (S3EncryptionClientException exception) {
-            System.out.println(exception.getMessage());
-            exception.printStackTrace();
+            assertTrue(exception.getMessage().contains("Instruction file not found! Please ensure the object you are attempting to decrypt has been encrypted using the S3 Encryption Client."));
+            assertTrue(exception.getMessage().contains("Instruction File has been disabled!"));
         }
 
         S3Client s3Client = S3EncryptionClient.builder()
@@ -1088,14 +1088,14 @@ public class S3EncryptionClientTest {
                 .build();
 
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
-                .bucket(ALTERNATE_BUCKET)
+                .bucket(BUCKET)
                 .key(objectKey)
                 .build());
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(ALTERNATE_BUCKET, objectKey, s3ClientDisabledInstructionFile);
+        deleteObject(BUCKET, objectKey, s3ClientDisabledInstructionFile);
         s3ClientDisabledInstructionFile.close();
         s3Client.close();
     }
