@@ -544,6 +544,7 @@ public class S3EncryptionClientCRTTest {
         S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .wrappedClient(S3AsyncClient.crtCreate())
+                .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)
                 .build();
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
