@@ -162,8 +162,8 @@ public class S3AsyncEncryptionClientTest {
                 .useArnRegion(null)
                 .httpClient(null)
                 .httpClientBuilder(null)
-                .multipartEnabled(false)
-                .multipartConfiguration(MultipartConfiguration.builder().build()) // null is ambiguous
+                // .multipartEnabled(false)
+                // .multipartConfiguration(MultipartConfiguration.builder().build()) // null is ambiguous
                 .disableS3ExpressSessionAuth(null)
                 .crossRegionAccessEnabled(null)
                 .instructionFileConfig(InstructionFileConfig.builder().instructionFileClient(S3Client.create()).build())
@@ -906,5 +906,19 @@ public class S3AsyncEncryptionClientTest {
 
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+    }
+
+    @Test
+    public void S3AsyncClientBuilderForbidsMultipartEnabled() throws IOException {
+        assertThrows(
+            UnsupportedOperationException.class,
+            () -> S3AsyncEncryptionClient.builder().multipartEnabled(Boolean.TRUE));
+    }
+
+    @Test
+    public void S3AsyncClientBuilderForbidsMultipartConfiguration() throws IOException {
+        assertThrows(
+            UnsupportedOperationException.class,
+            () -> S3AsyncEncryptionClient.builder().multipartConfiguration(MultipartConfiguration.builder().build()));
     }
 }
