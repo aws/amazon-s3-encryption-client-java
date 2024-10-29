@@ -792,7 +792,6 @@ public class S3AsyncEncryptionClientTest {
         S3AsyncClient s3ClientDisabledInstructionFile = S3AsyncEncryptionClient.builder()
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .disableInstructionFile(true)
-                        .instructionFileClient(S3Client.create())
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
@@ -811,7 +810,6 @@ public class S3AsyncEncryptionClientTest {
         S3Client s3Client = S3EncryptionClient.builder()
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .disableInstructionFile(false)
-                        .instructionFileClient(S3Client.create())
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
                 .build();

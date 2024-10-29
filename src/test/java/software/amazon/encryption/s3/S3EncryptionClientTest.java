@@ -1067,7 +1067,6 @@ public class S3EncryptionClientTest {
                 .wrappedClient(wrappedClient)
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .disableInstructionFile(true)
-                        .instructionFileClient(wrappedClient)
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
@@ -1085,7 +1084,6 @@ public class S3EncryptionClientTest {
         S3Client s3Client = S3EncryptionClient.builder()
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .disableInstructionFile(false)
-                        .instructionFileClient(wrappedClient)
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
