@@ -765,6 +765,9 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             throw new UnsupportedOperationException("The S3 Encryption Client does not support wrapped clients with automatic multipart enabled.");
         }
 
+        /**
+         * Enables cross-region bucket access for this client
+         */
         @Override
         public Builder crossRegionAccessEnabled(Boolean crossRegionAccessEnabled) {
             _crossRegionAccessEnabled = crossRegionAccessEnabled;
