@@ -32,8 +32,6 @@ import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -42,7 +40,6 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -549,19 +546,14 @@ public class S3EncryptionClientCRTTest {
                 .build();
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 
-        Map<String, String> encryptionContext = new HashMap<>();
-        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
-
         CompletableFuture<PutObjectResponse> futurePut = asyncClient.putObject(builder -> builder
                 .bucket(BUCKET)
-                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
                 .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor));
         futurePut.join();
         singleThreadExecutor.shutdown();
 
         CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = asyncClient.getObject(builder -> builder
                 .bucket(BUCKET)
-                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
                 .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
         ResponseInputStream<GetObjectResponse> output = getFuture.join();
 
