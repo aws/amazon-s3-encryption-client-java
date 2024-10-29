@@ -531,7 +531,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
         /**
          * Sets the Instruction File configuration for the S3 Encryption Client.
-         * The InstructionFileConfig can be used to specify an S3 client to use for retrieval,
+         * The InstructionFileConfig can be used to specify an S3 client to use for retrieval of Instruction files,
          * or to disable GetObject requests for the instruction file.
          * @param instructionFileConfig
          * @return
