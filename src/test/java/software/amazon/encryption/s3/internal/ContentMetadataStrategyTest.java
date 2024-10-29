@@ -57,7 +57,10 @@ public class ContentMetadataStrategyTest {
         // but it needs to not be null.
         // just create a default one
         S3AsyncClient s3AsyncClient = S3AsyncClient.create();
-        ContentMetadata contentMetadata = new ContentMetadataDecodingStrategy(s3AsyncClient).decode(getObjectRequest, getObjectResponse);
+        InstructionFileConfig instructionFileConfig = InstructionFileConfig.builder()
+                .instructionFileAsyncClient(s3AsyncClient)
+                .build();
+        ContentMetadata contentMetadata = new ContentMetadataDecodingStrategy(instructionFileConfig).decode(getObjectRequest, getObjectResponse);
         assertEquals(expectedContentMetadata.algorithmSuite(), contentMetadata.algorithmSuite());
         String actualContentIv = Arrays.toString(contentMetadata.contentIv());
         String expectedContentIv = Arrays.toString(expectedContentMetadata.contentIv());

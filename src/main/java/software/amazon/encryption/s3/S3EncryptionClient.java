@@ -47,6 +47,7 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
+import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.internal.MultiFileOutputStream;
 import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
@@ -104,6 +105,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     private final boolean _enableMultipartPutObject;
     private final MultipartUploadObjectPipeline _multipartPipeline;
     private final long _bufferSize;
+    private final InstructionFileConfig _instructionFileConfig;
 
     private S3EncryptionClient(Builder builder) {
         super(builder._wrappedClient);
@@ -116,6 +118,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         _enableMultipartPutObject = builder._enableMultipartPutObject;
         _multipartPipeline = builder._multipartPipeline;
         _bufferSize = builder._bufferSize;
+        _instructionFileConfig = builder._instructionFileConfig;
     }
 
     /**
@@ -258,6 +261,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .bufferSize(_bufferSize)
+                .instructionFileConfig(_instructionFileConfig)
                 .build();
 
         try {
@@ -510,6 +514,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     public void close() {
         _wrappedClient.close();
         _wrappedAsyncClient.close();
+        _instructionFileConfig.closeClient();
     }
 
     // This is very similar to the S3AsyncEncryptionClient builder
@@ -532,7 +537,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private SecureRandom _secureRandom = new SecureRandom();
         private boolean _enableLegacyUnauthenticatedModes = false;
         private long _bufferSize = -1L;
-
+        private InstructionFileConfig _instructionFileConfig = null;
         // generic AwsClient configuration to be shared by default clients
         private AwsCredentialsProvider _awsCredentialsProvider = null;
         private Region _region = null;
@@ -544,8 +549,10 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private S3Configuration _serviceConfiguration = null;
         private Boolean _accelerate = null;
         private Boolean _disableMultiRegionAccessPoints = null;
+        private Boolean _disableS3ExpressSessionAuth = null;
         private Boolean _forcePathStyle = null;
         private Boolean _useArnRegion = null;
+        private Boolean _crossRegionAccessEnabled = null;
         private SdkHttpClient _httpClient = null;
         private SdkHttpClient.Builder _httpClientBuilder = null;
         private SdkAsyncHttpClient _asyncHttpClient = null;
@@ -787,6 +794,18 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         /**
+         * Sets the Instruction File configuration for the S3 Encryption Client.
+         * The InstructionFileConfig can be used to specify an S3 client to use for retrieval of Instruction files,
+         * or to disable GetObject requests for the instruction file.
+         * @param instructionFileConfig
+         * @return
+         */
+        public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
+            _instructionFileConfig = instructionFileConfig;
+            return this;
+        }
+
+        /**
          * The credentials provider to use for all inner clients, including KMS, if a KMS key ID is provided.
          * Note that if a wrapped client is configured, the wrapped client will take precedence over this option.
          * @param awsCredentialsProvider
@@ -919,6 +938,18 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         /**
+         * Disables this client's usage of Session Auth for S3Express buckets and reverts to using conventional SigV4 for
+         * those.
+         *
+         * @param disableS3ExpressSessionAuth
+         */
+        @Override
+        public Builder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
+            _disableS3ExpressSessionAuth = disableS3ExpressSessionAuth;
+            return this;
+        }
+
+        /**
          * Forces this client to use path-style addressing for buckets.
          *
          * @param forcePathStyle
@@ -938,6 +969,17 @@ public class S3EncryptionClient extends DelegatingS3Client {
         @Override
         public Builder useArnRegion(Boolean useArnRegion) {
             _useArnRegion = useArnRegion;
+            return this;
+        }
+
+        /**
+         * Enables cross-region bucket access for this client
+         *
+         * @param crossRegionAccessEnabled
+         */
+        @Override
+        public Builder crossRegionAccessEnabled(Boolean crossRegionAccessEnabled) {
+            _crossRegionAccessEnabled = crossRegionAccessEnabled;
             return this;
         }
 
@@ -1052,6 +1094,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .useArnRegion(_useArnRegion)
                         .httpClient(_httpClient)
                         .httpClientBuilder(_httpClientBuilder)
+                        .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
+                        .crossRegionAccessEnabled(_crossRegionAccessEnabled)
                         .build();
             }
 
@@ -1070,6 +1114,14 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .useArnRegion(_useArnRegion)
                         .httpClient(_asyncHttpClient)
                         .httpClientBuilder(_asyncHttpClientBuilder)
+                        .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
+                        .crossRegionAccessEnabled(_crossRegionAccessEnabled)
+                        .build();
+            }
+
+            if (_instructionFileConfig == null) {
+                _instructionFileConfig = InstructionFileConfig.builder()
+                        .instructionFileClient(_wrappedClient)
                         .build();
             }
 

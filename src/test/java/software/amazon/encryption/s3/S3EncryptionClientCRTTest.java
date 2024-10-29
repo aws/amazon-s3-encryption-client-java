@@ -8,9 +8,12 @@ import com.amazonaws.services.s3.model.CryptoConfiguration;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+import org.apache.commons.io.IOUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -18,15 +21,25 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.utils.BoundedInputStream;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -37,12 +50,15 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 public class S3EncryptionClientCRTTest {
 
     private static SecretKey AES_KEY;
+    private static Provider PROVIDER;
 
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
+        Security.addProvider(new BouncyCastleProvider());
+        PROVIDER = Security.getProvider("BC");
     }
 
     @Test
@@ -511,6 +527,40 @@ public class S3EncryptionClientCRTTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+    }
+
+    @Test
+    public void AsyncAesGcmV3toV3LargeObjectCRT() throws IOException {
+        final String objectKey = appendTestSuffix("async-aes-gcm-v3-to-v3-large-object-crt");
+
+        final long fileSizeLimit = 1024 * 1024 * 100;
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+
+        // Async CRT Client
+        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .wrappedClient(S3AsyncClient.crtCreate())
+                .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(PROVIDER)
+                .build();
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+
+        CompletableFuture<PutObjectResponse> futurePut = asyncClient.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor));
+        futurePut.join();
+        singleThreadExecutor.shutdown();
+
+        CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = asyncClient.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
+        ResponseInputStream<GetObjectResponse> output = getFuture.join();
+
+        assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
+        // Cleanup
+        deleteObject(BUCKET, objectKey, asyncClient);
+        asyncClient.close();
     }
 
 }

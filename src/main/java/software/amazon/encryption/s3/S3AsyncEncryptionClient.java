@@ -30,7 +30,9 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Request;
+import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
+import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.internal.NoRetriesAsyncRequestBody;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
 import software.amazon.encryption.s3.materials.AesKeyring;
@@ -71,6 +73,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     private final boolean _enableDelayedAuthenticationMode;
     private final boolean _enableMultipartPutObject;
     private final long _bufferSize;
+    private InstructionFileConfig _instructionFileConfig;
 
     private S3AsyncEncryptionClient(Builder builder) {
         super(builder._wrappedClient);
@@ -81,6 +84,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _enableDelayedAuthenticationMode = builder._enableDelayedAuthenticationMode;
         _enableMultipartPutObject = builder._enableMultipartPutObject;
         _bufferSize = builder._bufferSize;
+        _instructionFileConfig = builder._instructionFileConfig;
     }
 
     /**
@@ -147,16 +151,16 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     }
 
     private CompletableFuture<PutObjectResponse> multipartPutObject(PutObjectRequest putObjectRequest, AsyncRequestBody requestBody) {
-        S3AsyncClient crtClient;
+        S3AsyncClient mpuClient;
         if (_wrappedClient instanceof S3CrtAsyncClient) {
             // if the wrappedClient is a CRT, use it
-            crtClient = _wrappedClient;
+            mpuClient = _wrappedClient;
         } else {
-            // else create a default one
-            crtClient = S3AsyncClient.crtCreate();
+            // else create a default CRT client
+            mpuClient = S3AsyncClient.crtCreate();
         }
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
-                .s3AsyncClient(crtClient)
+                .s3AsyncClient(mpuClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .build();
@@ -198,6 +202,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .enableLegacyUnauthenticatedModes(_enableLegacyUnauthenticatedModes)
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .bufferSize(_bufferSize)
+                .instructionFileConfig(_instructionFileConfig)
                 .build();
 
         return pipeline.getObject(getObjectRequest, asyncResponseTransformer);
@@ -257,6 +262,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     @Override
     public void close() {
         _wrappedClient.close();
+        _instructionFileConfig.closeClient();
     }
 
     // This is very similar to the S3EncryptionClient builder
@@ -275,6 +281,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
         private long _bufferSize = -1L;
+        private InstructionFileConfig _instructionFileConfig = null;
 
         // generic AwsClient configuration to be shared by default clients
         private AwsCredentialsProvider _awsCredentialsProvider = null;
@@ -291,8 +298,12 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private S3Configuration _serviceConfiguration = null;
         private Boolean _accelerate = null;
         private Boolean _disableMultiRegionAccessPoints = null;
+        private Boolean _disableS3ExpressSessionAuth = null;
         private Boolean _forcePathStyle = null;
         private Boolean _useArnRegion = null;
+        private Boolean _crossRegionAccessEnabled = null;
+        // private Boolean _multipartEnabled = null;
+        // private MultipartConfiguration _multipartConfiguration = null;
 
         private Builder() {
         }
@@ -519,6 +530,18 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
+         * Sets the Instruction File configuration for the S3 Encryption Client.
+         * The InstructionFileConfig can be used to specify an S3 client to use for retrieval of Instruction files,
+         * or to disable GetObject requests for the instruction file.
+         * @param instructionFileConfig
+         * @return
+         */
+        public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
+            _instructionFileConfig = instructionFileConfig;
+            return this;
+        }
+
+        /**
          * The credentials provider to use for all inner clients, including KMS, if a KMS key ID is provided.
          * Note that if a wrapped client is configured, the wrapped client will take precedence over this option.
          * @param awsCredentialsProvider
@@ -697,6 +720,16 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         }
 
         /**
+         * Disables this client's usage of Session Auth for S3Express buckets and reverts to using conventional SigV4 for
+         * those.
+         */
+        @Override
+        public Builder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
+            _disableS3ExpressSessionAuth = disableS3ExpressSessionAuth;
+            return this;
+        }
+
+        /**
          * Forces this client to use path-style addressing for buckets.
          *
          * @param forcePathStyle
@@ -716,6 +749,35 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         @Override
         public Builder useArnRegion(Boolean useArnRegion) {
             _useArnRegion = useArnRegion;
+            return this;
+        }
+
+        /**
+         * Multipart via the wrapped client is currently NOT supported by the S3 Encryption Client.
+         * Use the {@link this.enableMultipartPutObject()} option instead for high-level multipart uploads.
+         * Multipart downloads are currently NOT supported.
+         */
+        @Override
+        public Builder multipartEnabled(Boolean enabled) {
+            throw new UnsupportedOperationException("The S3 Encryption Client does not support wrapped clients with automatic multipart enabled.");
+        }
+
+        /**
+         * Multipart via the wrapped client is currently NOT supported by the S3 Encryption Client.
+         * Use the {@link this.enableMultipartPutObject()} option instead for high-level multipart uploads.
+         * Multipart downloads are currently NOT supported.
+         */
+        @Override
+        public Builder multipartConfiguration(MultipartConfiguration multipartConfiguration) {
+            throw new UnsupportedOperationException("The S3 Encryption Client does not support wrapped clients with automatic multipart enabled.");
+        }
+
+        /**
+         * Enables cross-region bucket access for this client
+         */
+        @Override
+        public Builder crossRegionAccessEnabled(Boolean crossRegionAccessEnabled) {
+            _crossRegionAccessEnabled = crossRegionAccessEnabled;
             return this;
         }
 
@@ -751,8 +813,21 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                         .serviceConfiguration(_serviceConfiguration)
                         .accelerate(_accelerate)
                         .disableMultiRegionAccessPoints(_disableMultiRegionAccessPoints)
+                        .disableS3ExpressSessionAuth(_disableS3ExpressSessionAuth)
                         .forcePathStyle(_forcePathStyle)
                         .useArnRegion(_useArnRegion)
+                        .crossRegionAccessEnabled(_crossRegionAccessEnabled)
+                        // If either of these are null, the AWS SDK will throw an exception.
+                        // Since there is no way to set them without an exception being thrown,
+                        // this would always result in an exception.
+                        // .multipartEnabled(_multipartEnabled)
+                        // .multipartConfiguration(_multipartConfiguration)
+                        .build();
+            }
+
+            if (_instructionFileConfig == null) {
+                _instructionFileConfig = InstructionFileConfig.builder()
+                        .instructionFileAsyncClient(_wrappedClient)
                         .build();
             }
 
