@@ -809,6 +809,7 @@ public class S3AsyncEncryptionClientTest {
 
         S3Client s3Client = S3EncryptionClient.builder()
                 .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(S3Client.create())
                         .disableInstructionFile(false)
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
