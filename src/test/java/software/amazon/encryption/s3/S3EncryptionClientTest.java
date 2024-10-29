@@ -624,7 +624,7 @@ public class S3EncryptionClientTest {
                     .key(objectKey));
             fail("expected exception");
         } catch (S3EncryptionClientException ex) {
-            assertTrue(ex.getMessage().contains("Instruction file not found!"));
+            assertTrue(ex.getMessage().contains("Exception encountered while fetching Instruction File."));
             assertEquals(ex.getCause().getClass(), S3EncryptionClientException.class);
         }
 
@@ -1078,7 +1078,7 @@ public class S3EncryptionClientTest {
                     .build());
             fail("expected exception");
         } catch (S3EncryptionClientException exception) {
-            assertTrue(exception.getMessage().contains("Instruction file not found!"));
+            assertTrue(exception.getMessage().contains("Exception encountered while fetching Instruction File."));
         }
 
         S3Client s3Client = S3EncryptionClient.builder()
