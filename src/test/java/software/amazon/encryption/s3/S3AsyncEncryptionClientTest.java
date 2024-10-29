@@ -804,7 +804,7 @@ public class S3AsyncEncryptionClientTest {
             fail("expected exception");
         } catch (Exception exception) {
             assertEquals(exception.getCause().getClass(), S3EncryptionClientException.class);
-            assertTrue(exception.getMessage().contains("Instruction file not found!"));
+            assertTrue(exception.getMessage().contains("Exception encountered while fetching Instruction File."));
         }
 
         S3Client s3Client = S3EncryptionClient.builder()

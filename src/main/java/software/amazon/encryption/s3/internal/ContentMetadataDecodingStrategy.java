@@ -233,10 +233,12 @@ public class ContentMetadataDecodingStrategy {
         try {
             instruction = instructionFileConfig_.getInstructionFile(instructionGetObjectRequest);
         } catch (CompletionException | S3EncryptionClientException | NoSuchKeyException exception) {
-            // Most likely, the customer is attempting to decrypt an object
-            // which is not encrypted with the S3 EC.
-            throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
-                    " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
+            // This happens when the customer is attempting to decrypt an object
+            // which is not encrypted with the S3 EC,
+            // or instruction files are disabled,
+            // or the instruction file is lost.
+            throw new S3EncryptionClientException("Exception encountered while fetching Instruction File. Ensure the object you are" +
+                    " attempting to decrypt has been encrypted using the S3 Encryption Client and instruction files are enabled.", exception);
         }
 
         Map<String, String> metadata = new HashMap<>();

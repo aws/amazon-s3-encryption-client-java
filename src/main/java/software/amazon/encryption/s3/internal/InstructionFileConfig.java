@@ -14,13 +14,11 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
 public class InstructionFileConfig {
 
     final private InstructionFileClientType _clientType;
-    final private boolean _disableInstructionFile;
     final private S3AsyncClient _s3AsyncClient;
     final private S3Client _s3Client;
 
     private InstructionFileConfig(final Builder builder) {
         _clientType = builder._clientType;
-        _disableInstructionFile = builder._disableInstructionFile;
         _s3Client = builder._s3Client;
         _s3AsyncClient = builder._s3AsyncClient;
     }
@@ -32,20 +30,19 @@ public class InstructionFileConfig {
     public enum InstructionFileClientType {
         DISABLED,
         SYNCHRONOUS,
-        ASYNC;
+        ASYNC
     }
 
     ResponseInputStream<GetObjectResponse> getInstructionFile(GetObjectRequest request) {
-        if (_disableInstructionFile) {
-            throw new S3EncryptionClientException("Instruction File has been disabled!");
-        }
         switch (_clientType) {
             case SYNCHRONOUS:
                 return _s3Client.getObject(request);
             case ASYNC:
                 return _s3AsyncClient.getObject(request, AsyncResponseTransformer.toBlockingInputStream()).join();
             case DISABLED:
+                throw new S3EncryptionClientException("Instruction File has been disabled!");
             default:
+                // this should never happen
                 throw new S3EncryptionClientException("Unknown Instruction File Type");
         }
     }
@@ -78,11 +75,21 @@ public class InstructionFileConfig {
             return this;
         }
 
+        /**
+         * Sets the S3 client to use to retrieve instruction files.
+         * @param instructionFileClient
+         * @return
+         */
         public Builder instructionFileClient(S3Client instructionFileClient) {
             _s3Client = instructionFileClient;
             return this;
         }
 
+        /**
+         * Sets the S3 Async client to use to retrieve instruction files.
+         * @param instructionFileAsyncClient
+         * @return
+         */
         public Builder instructionFileAsyncClient(S3AsyncClient instructionFileAsyncClient) {
             _s3AsyncClient = instructionFileAsyncClient;
             return this;
