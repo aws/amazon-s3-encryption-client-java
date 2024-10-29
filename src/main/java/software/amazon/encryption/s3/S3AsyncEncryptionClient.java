@@ -302,8 +302,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private Boolean _forcePathStyle = null;
         private Boolean _useArnRegion = null;
         private Boolean _crossRegionAccessEnabled = null;
-        private Boolean _multipartEnabled = null;
-        private MultipartConfiguration _multipartConfiguration = null;
+        // private Boolean _multipartEnabled = null;
+        // private MultipartConfiguration _multipartConfiguration = null;
 
         private Builder() {
         }
@@ -712,6 +712,10 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             return this;
         }
 
+        /**
+         * Disables this client's usage of Session Auth for S3Express buckets and reverts to using conventional SigV4 for
+         * those.
+         */
         @Override
         public Builder disableS3ExpressSessionAuth(Boolean disableS3ExpressSessionAuth) {
             _disableS3ExpressSessionAuth = disableS3ExpressSessionAuth;
@@ -745,24 +749,25 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
          * Multipart via the wrapped client is currently NOT supported by the S3 Encryption Client.
          * Use the {@link this.enableMultipartPutObject()} option instead for high-level multipart uploads.
          * Multipart downloads are currently NOT supported.
-         * @param enabled MUST be false
-         * @return
          */
         @Override
         public Builder multipartEnabled(Boolean enabled) {
-            if (enabled) {
-                throw new UnsupportedOperationException("The S3 Encryption Client does not support wrapped clients with automatic multipart enabled.");
-            }
-            _multipartEnabled = enabled;
-            return this;
+            throw new UnsupportedOperationException("The S3 Encryption Client does not support wrapped clients with automatic multipart enabled.");
         }
 
+        /**
+         * Multipart via the wrapped client is currently NOT supported by the S3 Encryption Client.
+         * Use the {@link this.enableMultipartPutObject()} option instead for high-level multipart uploads.
+         * Multipart downloads are currently NOT supported.
+         */
         @Override
         public Builder multipartConfiguration(MultipartConfiguration multipartConfiguration) {
-            _multipartConfiguration = multipartConfiguration;
-            return this;
+            throw new UnsupportedOperationException("The S3 Encryption Client does not support wrapped clients with automatic multipart enabled.");
         }
 
+        /**
+         * Enables cross-region bucket access for this client
+         */
         @Override
         public Builder crossRegionAccessEnabled(Boolean crossRegionAccessEnabled) {
             _crossRegionAccessEnabled = crossRegionAccessEnabled;
@@ -805,8 +810,11 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                         .forcePathStyle(_forcePathStyle)
                         .useArnRegion(_useArnRegion)
                         .crossRegionAccessEnabled(_crossRegionAccessEnabled)
-                        .multipartEnabled(_multipartEnabled)
-                        .multipartConfiguration(_multipartConfiguration)
+                        // If either of these are null, the AWS SDK will throw an exception.
+                        // Since there is no way to set them without an exception being thrown,
+                        // this would always result in an exception.
+                        // .multipartEnabled(_multipartEnabled)
+                        // .multipartConfiguration(_multipartConfiguration)
                         .build();
             }
 
