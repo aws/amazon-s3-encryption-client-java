@@ -89,7 +89,7 @@ public class InstructionFileConfig {
         }
         public InstructionFileConfig build() {
             if ((_s3AsyncClient != null || _s3Client != null) && _disableInstructionFile) {
-                throw new S3EncryptionClientException("Instruction File have been disabled but a client has been passed!");
+                throw new S3EncryptionClientException("Instruction Files have been disabled but a client has been passed!");
             }
             if (_disableInstructionFile) {
                 // We know both clients are null, so carry on.
