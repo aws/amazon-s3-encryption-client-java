@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.3.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.2.3...v3.3.0) (2024-10-30)
+
+### Features
+
+* allow configuration of instruction file client, add new top-level client options, disable wrapped multipart upload ([#387](https://github.com/aws/aws-s3-encryption-client-java/issues/387)) ([37e772f](https://github.com/aws/aws-s3-encryption-client-java/commit/37e772f06230efcae618b31767dbd4c59c54a6d4))
+
+### Maintenance
+
+* add ListBucket permission to release role ([#391](https://github.com/aws/aws-s3-encryption-client-java/issues/391)) ([fa1e6cc](https://github.com/aws/aws-s3-encryption-client-java/commit/fa1e6cc981c0ecfef5c5b5c8e65472beedfddf66))
+* **deps-dev:** bump commons-io:commons-io from 2.11.0 to 2.14.0 ([#381](https://github.com/aws/aws-s3-encryption-client-java/issues/381)) ([5e03842](https://github.com/aws/aws-s3-encryption-client-java/commit/5e038421e0757a72590aa6409932abb0f377ba9c))
+
 ## [3.2.3](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.2.2...v3.2.3) (2024-10-04)
 
 ### Fixes
