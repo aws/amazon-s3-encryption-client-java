@@ -666,11 +666,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
          * @return Returns a reference to this object so that method calls can be chained together.
          */
         public Builder kmsKeyId(String kmsKeyId) {
-            try {
-                Class.forName("software.amazon.awssdk.services.kms.KmsClient");
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("software.amazon.awssdk:kms is required to set up with KMS key", e);
-            }
+            this._kmsKeyId = kmsKeyId;
             checkKeyOptions();
 
             return this;
@@ -1143,6 +1139,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
                             .secureRandom(_secureRandom)
                             .build();
                 } else if (_kmsKeyId != null) {
+                    try {
+                        Class.forName("software.amazon.awssdk.services.kms.KmsClient");
+                    } catch (ClassNotFoundException e) {
+                        throw new RuntimeException("software.amazon.awssdk:kms is required to set up with KMS key", e);
+                    }
                     KmsClient kmsClient = KmsClient.builder()
                             .credentialsProvider(_awsCredentialsProvider)
                             .region(_region)
