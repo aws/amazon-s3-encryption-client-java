@@ -1139,11 +1139,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
                             .secureRandom(_secureRandom)
                             .build();
                 } else if (_kmsKeyId != null) {
-                    try {
-                        Class.forName("software.amazon.awssdk.services.kms.KmsClient");
-                    } catch (ClassNotFoundException e) {
-                        throw new RuntimeException("software.amazon.awssdk:kms is required to set up with KMS key", e);
-                    }
                     KmsClient kmsClient = KmsClient.builder()
                             .credentialsProvider(_awsCredentialsProvider)
                             .region(_region)
