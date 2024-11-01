@@ -75,7 +75,6 @@
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>kms</artifactId>
       <version>2.28.28</version>
-      <optional>true</optional>
     </dependency>
 
     <!-- Used when enableMultipartPutObject is configured -->
