@@ -41,6 +41,7 @@ public class GetEncryptedObjectPipeline {
     private final boolean _enableLegacyUnauthenticatedModes;
     private final boolean _enableDelayedAuthentication;
     private final long _bufferSize;
+    private final InstructionFileConfig _instructionFileConfig;
 
     public static Builder builder() {
         return new Builder();
@@ -52,6 +53,7 @@ public class GetEncryptedObjectPipeline {
         this._enableLegacyUnauthenticatedModes = builder._enableLegacyUnauthenticatedModes;
         this._enableDelayedAuthentication = builder._enableDelayedAuthentication;
         this._bufferSize = builder._bufferSize;
+        this._instructionFileConfig = builder._instructionFileConfig;
     }
 
     public <T> CompletableFuture<T> getObject(GetObjectRequest getObjectRequest, AsyncResponseTransformer<GetObjectResponse, T> asyncResponseTransformer) {
@@ -70,6 +72,13 @@ public class GetEncryptedObjectPipeline {
 
     private DecryptionMaterials prepareMaterialsFromRequest(final GetObjectRequest getObjectRequest, final GetObjectResponse getObjectResponse,
                                                             final ContentMetadata contentMetadata) {
+        // If the response contains a range, but the request does not,
+        // then this is an unsupported case where the client is using multipart downloads.
+        // Until this is supported, throw an exception
+        if (getObjectRequest.range() == null && getObjectResponse.contentRange() != null) {
+            throw new S3EncryptionClientException("Content range in response but is missing from request. Ensure multipart upload is not enabled on the wrapped async client.");
+        }
+
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
             throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
@@ -83,6 +92,7 @@ public class GetEncryptedObjectPipeline {
                 .encryptedDataKeys(encryptedDataKeys)
                 .encryptionContext(contentMetadata.encryptedDataKeyContext())
                 .ciphertextLength(getObjectResponse.contentLength())
+                .contentRange(getObjectRequest.range())
                 .build();
 
         return _cryptoMaterialsManager.decryptMaterials(materialsRequest);
@@ -99,7 +109,7 @@ public class GetEncryptedObjectPipeline {
         ContentMetadata contentMetadata;
         GetObjectResponse getObjectResponse;
         DecryptionMaterials materials;
-        ContentMetadataDecodingStrategy contentMetadataStrategy = new ContentMetadataDecodingStrategy(_s3AsyncClient);
+        ContentMetadataDecodingStrategy contentMetadataStrategy = new ContentMetadataDecodingStrategy(_instructionFileConfig);
 
         CompletableFuture<T> resultFuture;
 
@@ -130,8 +140,8 @@ public class GetEncryptedObjectPipeline {
 
         @Override
         public void onStream(SdkPublisher<ByteBuffer> ciphertextPublisher) {
-            long[] desiredRange = RangedGetUtils.getRange(materials.s3Request().range());
-            long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.s3Request().range());
+            long[] desiredRange = RangedGetUtils.getRange(materials.getContentRange());
+            long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.getContentRange());
             AlgorithmSuite algorithmSuite = materials.algorithmSuite();
             SecretKey contentKey = materials.dataKey();
             final int tagLength = algorithmSuite.cipherTagLengthBits();
@@ -179,6 +189,7 @@ public class GetEncryptedObjectPipeline {
         private boolean _enableLegacyUnauthenticatedModes;
         private boolean _enableDelayedAuthentication;
         private long _bufferSize;
+        private InstructionFileConfig _instructionFileConfig;
 
         private Builder() {
         }
@@ -210,6 +221,11 @@ public class GetEncryptedObjectPipeline {
 
         public Builder enableDelayedAuthentication(boolean enableDelayedAuthentication) {
             this._enableDelayedAuthentication = enableDelayedAuthentication;
+            return this;
+        }
+
+        public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
+            this._instructionFileConfig = instructionFileConfig;
             return this;
         }
 

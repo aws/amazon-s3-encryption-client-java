@@ -4,12 +4,11 @@ package software.amazon.encryption.s3.internal;
 
 import com.sun.xml.messaging.saaj.packaging.mime.internet.MimeUtility;
 import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
@@ -31,13 +30,13 @@ public class ContentMetadataDecodingStrategy {
 
     private static final Base64.Decoder DECODER = Base64.getDecoder();
 
-    private final S3AsyncClient wrappedAsyncClient_;
+    private final InstructionFileConfig instructionFileConfig_;
 
-    public ContentMetadataDecodingStrategy(S3AsyncClient s3AsyncClient) {
-        if (s3AsyncClient == null) {
-            throw new S3EncryptionClientException("ContentMetadataDecodingStrategy requires a non-null async client.");
+    public ContentMetadataDecodingStrategy(InstructionFileConfig instructionFileConfig) {
+        if (instructionFileConfig == null) {
+            throw new S3EncryptionClientException("ContentMetadataDecodingStrategy requires a non-null instruction file config.");
         }
-        wrappedAsyncClient_ = s3AsyncClient;
+        instructionFileConfig_ = instructionFileConfig;
     }
 
     private ContentMetadata readFromMap(Map<String, String> metadata, GetObjectResponse response) {
@@ -232,13 +231,14 @@ public class ContentMetadataDecodingStrategy {
 
         ResponseInputStream<GetObjectResponse> instruction;
         try {
-            instruction = wrappedAsyncClient_.getObject(instructionGetObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
-        }
-        catch (CompletionException exception) {
-            // Most likely, the customer is attempting to decrypt an object
-            // which is not encrypted with the S3 EC.
-            throw new S3EncryptionClientException("Instruction file not found! Please ensure the object you are" +
-                    " attempting to decrypt has been encrypted using the S3 Encryption Client.", exception);
+            instruction = instructionFileConfig_.getInstructionFile(instructionGetObjectRequest);
+        } catch (CompletionException | S3EncryptionClientException | NoSuchKeyException exception) {
+            // This happens when the customer is attempting to decrypt an object
+            // which is not encrypted with the S3 EC,
+            // or instruction files are disabled,
+            // or the instruction file is lost.
+            throw new S3EncryptionClientException("Exception encountered while fetching Instruction File. Ensure the object you are" +
+                    " attempting to decrypt has been encrypted using the S3 Encryption Client and instruction files are enabled.", exception);
         }
 
         Map<String, String> metadata = new HashMap<>();

@@ -37,6 +37,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchUploadException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.KmsKeyring;
@@ -623,7 +624,7 @@ public class S3EncryptionClientTest {
                     .key(objectKey));
             fail("expected exception");
         } catch (S3EncryptionClientException ex) {
-            assertTrue(ex.getMessage().contains("Instruction file not found!"));
+            assertTrue(ex.getMessage().contains("Exception encountered while fetching Instruction File."));
             assertEquals(ex.getCause().getClass(), S3EncryptionClientException.class);
         }
 
@@ -773,6 +774,9 @@ public class S3EncryptionClientTest {
                 .httpClientBuilder(null)
                 .asyncHttpClient(null)
                 .asyncHttpClientBuilder(null)
+                .disableS3ExpressSessionAuth(null)
+                .crossRegionAccessEnabled(null)
+                .instructionFileConfig(InstructionFileConfig.builder().instructionFileClient(S3Client.create()).build())
                 .build();
 
         simpleV3RoundTrip(s3Client, objectKey);
@@ -924,8 +928,14 @@ public class S3EncryptionClientTest {
 
         // use alternate creds for KMS
         AwsCredentialsProvider creds = new S3EncryptionClientTestResources.AlternateRoleCredentialsProvider();
+        S3Client instFileClient = S3Client.builder()
+                .credentialsProvider(creds)
+                .build();
         S3Client s3Client = S3EncryptionClient.builder()
                 .credentialsProvider(creds)
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(instFileClient)
+                        .build())
                 .kmsKeyId(ALTERNATE_KMS_KEY)
                 .build();
 
@@ -1032,6 +1042,64 @@ public class S3EncryptionClientTest {
 
         // Cleanup
         v3Client.close();
+    }
+
+    @Test
+    public void testInstructionFileConfig() {
+        final String objectKey = appendTestSuffix("instruction-file-config");
+        final String input = "SimpleTestOfV3EncryptionClient";
+
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new KMSEncryptionMaterials(KMS_KEY_ID));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        v2Client.putObject(BUCKET, objectKey, input);
+
+        S3Client wrappedClient = S3Client.create();
+        S3Client s3ClientDisabledInstructionFile = S3EncryptionClient.builder()
+                .wrappedClient(wrappedClient)
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .disableInstructionFile(true)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        try {
+            s3ClientDisabledInstructionFile.getObjectAsBytes(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build());
+            fail("expected exception");
+        } catch (S3EncryptionClientException exception) {
+            assertTrue(exception.getMessage().contains("Exception encountered while fetching Instruction File."));
+        }
+
+        S3Client s3Client = S3EncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(wrappedClient)
+                        .disableInstructionFile(false)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3ClientDisabledInstructionFile);
+        s3ClientDisabledInstructionFile.close();
+        s3Client.close();
     }
 
     /**

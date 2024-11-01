@@ -3,13 +3,12 @@
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 public class DecryptMaterialsRequest {
 
@@ -18,6 +17,7 @@ public class DecryptMaterialsRequest {
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final Map<String, String> _encryptionContext;
     private final long _ciphertextLength;
+    private final String _contentRange;
 
     private DecryptMaterialsRequest(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -25,6 +25,7 @@ public class DecryptMaterialsRequest {
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._encryptionContext = builder._encryptionContext;
         this._ciphertextLength = builder._ciphertextLength;
+        this._contentRange = builder._contentRange;
     }
 
     static public Builder builder() {
@@ -63,6 +64,10 @@ public class DecryptMaterialsRequest {
         return _ciphertextLength;
     }
 
+    public String contentRange() {
+        return _contentRange;
+    }
+
     static public class Builder {
 
         public GetObjectRequest _s3Request = null;
@@ -70,6 +75,7 @@ public class DecryptMaterialsRequest {
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private long _ciphertextLength = -1;
+        private String _contentRange = null;
 
         private Builder() {
         }
@@ -100,6 +106,11 @@ public class DecryptMaterialsRequest {
 
         public Builder ciphertextLength(long ciphertextLength) {
             _ciphertextLength = ciphertextLength;
+            return this;
+        }
+
+        public Builder contentRange(String range) {
+            _contentRange = range;
             return this;
         }
 
