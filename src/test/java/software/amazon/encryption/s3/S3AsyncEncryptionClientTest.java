@@ -151,6 +151,110 @@ public class S3AsyncEncryptionClientTest {
     }
 
     @Test
+    public void asyncWrappedMultipartUploadString() {
+        final String objectKey = appendTestSuffix("wrapped-multipart-upload-async");
+
+        S3AsyncClient wrappedClient = S3AsyncClient.builder()
+                .multipartEnabled(true)
+                .multipartConfiguration(MultipartConfiguration.builder().build())
+                .build();
+
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        S3AsyncClient s3ClientWithMultipart = S3AsyncEncryptionClient.builder()
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(KMS_KEY_ID)
+                .wrappedClient(wrappedClient)
+                .build();
+
+        final String input = "SimpleTestOfV3EncryptionClientAsync";
+
+        s3ClientWithMultipart.putObject(builder -> builder
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .build(),
+                AsyncRequestBody.fromString(input)).join();
+
+        try {
+            s3ClientWithMultipart.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build(), AsyncResponseTransformer.toBytes()).join();
+        } catch (CompletionException exception) {
+            assertEquals(S3EncryptionClientException.class, exception.getCause().getClass());
+        }
+
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncResponseTransformer.toBytes()).join();
+
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3ClientWithMultipart);
+        s3ClientWithMultipart.close();
+    }
+
+    @Test
+    public void asyncWrappedMultipartUploadStream() throws IOException {
+        final String objectKey = appendTestSuffix("wrapped-multipart-upload-async-stream");
+
+        S3AsyncClient wrappedClient = S3AsyncClient.builder()
+                .multipartEnabled(true)
+                .multipartConfiguration(MultipartConfiguration.builder().build())
+                .build();
+
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(KMS_KEY_ID)
+                .enableDelayedAuthenticationMode(true)
+                .build();
+
+        S3AsyncClient s3ClientWithMultipart = S3AsyncEncryptionClient.builder()
+                .region(Region.of(KMS_REGION.toString()))
+                .kmsKeyId(KMS_KEY_ID)
+                .wrappedClient(wrappedClient)
+                .build();
+
+        final long fileSizeLimit = 1024 * 1024 * 100;
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+        s3ClientWithMultipart.putObject(builder -> builder
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .build(),
+                AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor)).join();
+        singleThreadExecutor.shutdown();
+
+        try {
+            s3ClientWithMultipart.getObject(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build(), AsyncResponseTransformer.toBlockingInputStream()).join();
+        } catch (CompletionException exception) {
+            assertEquals(S3EncryptionClientException.class, exception.getCause().getClass());
+        }
+
+        ResponseInputStream<GetObjectResponse> objectResponse = s3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncResponseTransformer.toBlockingInputStream()).join();
+
+        assertTrue(IOUtils.contentEquals(objectStreamForResult, objectResponse));
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3ClientWithMultipart);
+        s3ClientWithMultipart.close();
+    }
+
+    @Test
     public void transferManagerUploadString() {
         final String objectKey = appendTestSuffix("tm-string");
         final String input = "short test of s3 encryption client with transfer manager";
@@ -193,7 +297,6 @@ public class S3AsyncEncryptionClientTest {
 
         final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResultTm = new BoundedInputStream(fileSizeLimit);
 
         S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
@@ -241,7 +344,6 @@ public class S3AsyncEncryptionClientTest {
 
         final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResultTm = new BoundedInputStream(fileSizeLimit);
 
         S3AsyncClient wrappedCrt = S3AsyncClient.crtBuilder()
