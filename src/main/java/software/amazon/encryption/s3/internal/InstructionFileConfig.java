@@ -16,6 +16,7 @@ public class InstructionFileConfig {
     final private InstructionFileClientType _clientType;
     final private S3AsyncClient _s3AsyncClient;
     final private S3Client _s3Client;
+    final private boolean _enableInstructionFilePut;
 
     private InstructionFileConfig(final Builder builder) {
         _clientType = builder._clientType;

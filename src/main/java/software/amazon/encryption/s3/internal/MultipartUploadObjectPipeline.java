@@ -67,11 +67,10 @@ public class MultipartUploadObjectPipeline {
 
         MultipartEncryptedContent encryptedContent = _contentEncryptionStrategy.initMultipartEncryption(materials);
 
-        Map<String, String> metadata = new HashMap<>(request.metadata());
-        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), metadata);
-        request = request.toBuilder()
+        CreateMultipartUploadRequest createMpuRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), request);
+        request = createMpuRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
-                .metadata(metadata).build();
+                .build();
 
         CreateMultipartUploadResponse response = _s3AsyncClient.createMultipartUpload(request).join();
 
