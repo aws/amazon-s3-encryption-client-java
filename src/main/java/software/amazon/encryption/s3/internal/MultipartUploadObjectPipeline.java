@@ -216,7 +216,7 @@ public class MultipartUploadObjectPipeline {
     public static class Builder {
         private final Map<String, MultipartUploadMaterials> _multipartUploadMaterials =
                 Collections.synchronizedMap(new HashMap<>());
-        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = new ObjectMetadataEncodingStrategy();
+        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = new ContentMetadataEncodingStrategy();
         private S3AsyncClient _s3AsyncClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;

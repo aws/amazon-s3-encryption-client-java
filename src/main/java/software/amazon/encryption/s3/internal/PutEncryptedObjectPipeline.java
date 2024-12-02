@@ -81,7 +81,8 @@ public class PutEncryptedObjectPipeline {
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
-        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = new ObjectMetadataEncodingStrategy();
+        private InstructionFileConfig _instructionFileConfig;
+        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
 
         private Builder() {
         }
@@ -106,6 +107,11 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
+        public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
+            this._instructionFileConfig = instructionFileConfig;
+            return this;
+        }
+
         public PutEncryptedObjectPipeline build() {
             // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
             if (_asyncContentEncryptionStrategy == null) {
@@ -114,6 +120,8 @@ public class PutEncryptedObjectPipeline {
                         .secureRandom(_secureRandom)
                         .build();
             }
+            _contentMetadataEncodingStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
+
             return new PutEncryptedObjectPipeline(this);
         }
     }
