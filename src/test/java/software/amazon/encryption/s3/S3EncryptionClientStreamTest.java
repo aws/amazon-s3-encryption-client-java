@@ -17,6 +17,7 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -24,8 +25,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.IoUtils;
-import software.amazon.encryption.s3.utils.BoundedStreamBufferer;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
+import software.amazon.encryption.s3.utils.BoundedStreamBufferer;
 import software.amazon.encryption.s3.utils.MarkResetBoundedZerosInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
@@ -133,6 +134,63 @@ public class S3EncryptionClientStreamTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+    }
+
+    @Test
+    public void ordinaryInputStreamV3UnboundedAsync() {
+        try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder().aesKey(AES_KEY).build()) {
+            final String objectKey = appendTestSuffix("ordinaryInputStreamV3UnboundedAsync");
+            BlockingInputStreamAsyncRequestBody body =
+                    AsyncRequestBody.forBlockingInputStream(null);
+            try {
+                s3AsyncEncryptionClient.putObject(r -> r.bucket(BUCKET).key(objectKey), body);
+                fail("Expected exception!");
+            } catch (S3EncryptionClientException exception) {
+                // expected
+                assertTrue(exception.getMessage().contains("Unbounded streams are currently not supported"));
+            }
+        }
+    }
+
+    @Test
+    public void ordinaryInputStreamV3UnboundedMultipartAsync() {
+        try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableMultipartPutObject(true)
+                .build()) {
+            final String objectKey = appendTestSuffix("ordinaryInputStreamV3UnboundedAsync");
+            BlockingInputStreamAsyncRequestBody body =
+                    AsyncRequestBody.forBlockingInputStream(null);
+            try {
+                s3AsyncEncryptionClient.putObject(r -> r.bucket(BUCKET).key(objectKey), body);
+                fail("Expected exception!");
+            } catch (S3EncryptionClientException exception) {
+                // expected
+                assertTrue(exception.getMessage().contains("Unbounded streams are currently not supported"));
+            }
+        }
+    }
+
+    @Test
+    public void ordinaryInputStreamV3UnboundedCrt() {
+        try (S3AsyncClient s3CrtAsyncClient = S3AsyncClient.crtCreate()) {
+            try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder()
+                    .aesKey(AES_KEY)
+                    .enableMultipartPutObject(true)
+                    .wrappedClient(s3CrtAsyncClient)
+                    .build()) {
+                final String objectKey = appendTestSuffix("ordinaryInputStreamV3UnboundedCrt");
+                BlockingInputStreamAsyncRequestBody body =
+                        AsyncRequestBody.forBlockingInputStream(null);
+                try {
+                    s3AsyncEncryptionClient.putObject(r -> r.bucket(BUCKET).key(objectKey), body);
+                    fail("Expected exception!");
+                } catch (S3EncryptionClientException exception) {
+                    // expected
+                    assertTrue(exception.getMessage().contains("Unbounded streams are currently not supported"));
+                }
+            }
+        }
     }
 
     @Test
@@ -274,9 +332,9 @@ public class S3EncryptionClientStreamTest {
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
         final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
         v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
-                                   .bucket(BUCKET)
-                                   .key(objectKey)
-                                   .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
 
         largeObjectStream.close();
 
@@ -327,9 +385,9 @@ public class S3EncryptionClientStreamTest {
         final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
         CompletableFuture<PutObjectResponse> futurePut = v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
-                                                                                           .bucket(BUCKET)
-                                                                                           .key(objectKey)
-                                                                                           .build(), AsyncRequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit, singleThreadExecutor));
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncRequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit, singleThreadExecutor));
 
         futurePut.join();
         largeObjectStream.close();
@@ -387,7 +445,7 @@ public class S3EncryptionClientStreamTest {
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
-                
+
         S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .enableDelayedAuthenticationMode(true)
