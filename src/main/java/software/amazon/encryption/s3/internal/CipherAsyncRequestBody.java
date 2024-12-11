@@ -4,6 +4,7 @@ package software.amazon.encryption.s3.internal;
 
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
 import java.nio.ByteBuffer;
@@ -35,7 +36,9 @@ public class CipherAsyncRequestBody implements AsyncRequestBody {
 
     @Override
     public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
-        wrappedAsyncRequestBody.subscribe(new CipherSubscriber(subscriber, contentLength().orElse(-1L), materials, iv));
+        wrappedAsyncRequestBody.subscribe(new CipherSubscriber(subscriber,
+                contentLength().orElseThrow(() -> new S3EncryptionClientException("Unbounded streams are currently not supported.")),
+                materials, iv));
     }
 
     @Override
