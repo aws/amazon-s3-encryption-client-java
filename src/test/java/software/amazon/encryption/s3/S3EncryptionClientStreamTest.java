@@ -154,7 +154,10 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void ordinaryInputStreamV3UnboundedMultipartAsync() {
-        try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder().aesKey(AES_KEY).enableMultipartPutObject(true).wrappedClient(s3AsyncClient).build()) {
+        try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .enableMultipartPutObject(true)
+                .build()) {
             final String objectKey = appendTestSuffix("ordinaryInputStreamV3UnboundedAsync");
             BlockingInputStreamAsyncRequestBody body =
                     AsyncRequestBody.forBlockingInputStream(null);
@@ -171,7 +174,11 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void ordinaryInputStreamV3UnboundedCrt() {
         try (S3AsyncClient s3CrtAsyncClient = S3AsyncClient.crtCreate()) {
-            try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder().aesKey(AES_KEY).enableMultipartPutObject(true).wrappedClient(s3CrtAsyncClient).build()) {
+            try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder()
+                    .aesKey(AES_KEY)
+                    .enableMultipartPutObject(true)
+                    .wrappedClient(s3CrtAsyncClient)
+                    .build()) {
                 final String objectKey = appendTestSuffix("ordinaryInputStreamV3UnboundedCrt");
                 BlockingInputStreamAsyncRequestBody body =
                         AsyncRequestBody.forBlockingInputStream(null);
