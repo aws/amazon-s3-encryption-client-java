@@ -23,10 +23,9 @@ public class ContentMetadataEncodingStrategy {
 
     public PutObjectRequest encodeMetadata(EncryptionMaterials materials, byte[] iv, PutObjectRequest putObjectRequest) {
         if (_instructionFileConfig.isInstructionFilePutEnabled()) {
-            // TODO: serialize inst file as string
             final String metadataString = metadataToString(materials, iv);
-            _instructionFileConfig.putInstructionFile(putObjectRequest, "");
-            // the original object is returned as-is
+            _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString);
+            // the original request object is returned as-is
             return putObjectRequest;
         } else {
             Map<String, String> newMetadata = addMetadataToMap(putObjectRequest.metadata(), materials, iv);
@@ -45,7 +44,20 @@ public class ContentMetadataEncodingStrategy {
 
     private String metadataToString(EncryptionMaterials materials, byte[] iv) {
         // this is just the metadata map serialized as JSON
-        return "";
+        // so first get the Map
+        final Map<String, String> metadataMap = addMetadataToMap(new HashMap<>(), materials, iv);
+        // then serialize it
+        try (JsonWriter jsonWriter = JsonWriter.create()) {
+            jsonWriter.writeStartObject();
+            for (Map.Entry<String, String> entry : metadataMap.entrySet()) {
+                jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
+            }
+            jsonWriter.writeEndObject();
+
+            return new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
+        } catch (JsonWriter.JsonGenerationException e) {
+            throw new S3EncryptionClientException("Cannot serialize materials to JSON.", e);
+        }
     }
 
     private Map<String, String> addMetadataToMap(Map<String, String> map, EncryptionMaterials materials, byte[] iv) {

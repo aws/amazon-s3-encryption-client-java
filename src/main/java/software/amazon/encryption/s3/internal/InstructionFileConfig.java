@@ -12,6 +12,12 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+import static software.amazon.encryption.s3.internal.MetadataKeyConstants.INSTRUCTION_FILE;
+
 /**
  * Provides configuration options for instruction file behaviors.
  */
@@ -49,11 +55,23 @@ public class InstructionFileConfig {
         if (!_enableInstructionFilePut) {
             throw new S3EncryptionClientException("Enable Instruction File Put must be set to true in order to call PutObject with an instruction file!");
         }
+
+        // Instruction file DOES NOT contain the same metadata as the actual object
+        Map<String, String> instFileMetadata = new HashMap<>(1);
+        // It contains a key with no value identifying it as an instruction file
+        instFileMetadata.put(INSTRUCTION_FILE, "");
+
+        // In a future release, non-default suffixes will be supported.
+        // Use toBuilder to keep all other fields the same as the actual request
+        final PutObjectRequest instPutRequest = request.toBuilder()
+                .key(request.key() + INSTRUCTION_FILE_SUFFIX)
+                .metadata(instFileMetadata)
+                .build();
         switch (_clientType) {
             case SYNCHRONOUS:
-                return _s3Client.putObject(request, RequestBody.fromString(instructionFileContent));
+                return _s3Client.putObject(instPutRequest, RequestBody.fromString(instructionFileContent));
             case ASYNC:
-                return _s3AsyncClient.putObject(request, AsyncRequestBody.fromString(instructionFileContent)).join();
+                return _s3AsyncClient.putObject(instPutRequest, AsyncRequestBody.fromString(instructionFileContent)).join();
             case DISABLED:
                 // this should never happen because we check enablePut first
                 throw new S3EncryptionClientException("Instruction File has been disabled!");

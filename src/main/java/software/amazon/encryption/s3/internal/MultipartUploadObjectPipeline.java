@@ -216,12 +216,13 @@ public class MultipartUploadObjectPipeline {
     public static class Builder {
         private final Map<String, MultipartUploadMaterials> _multipartUploadMaterials =
                 Collections.synchronizedMap(new HashMap<>());
-        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = new ContentMetadataEncodingStrategy();
+        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
         private S3AsyncClient _s3AsyncClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         // To Create Cipher which is used in during uploadPart requests.
         private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
+        private InstructionFileConfig _instructionFileConfig;
 
         private Builder() {
         }
@@ -246,6 +247,11 @@ public class MultipartUploadObjectPipeline {
             return this;
         }
 
+        public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
+            this._instructionFileConfig = instructionFileConfig;
+            return this;
+        }
+
         public MultipartUploadObjectPipeline build() {
             // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
             if (_contentEncryptionStrategy == null) {
@@ -254,6 +260,7 @@ public class MultipartUploadObjectPipeline {
                         .secureRandom(_secureRandom)
                         .build();
             }
+            _contentMetadataEncodingStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
             return new MultipartUploadObjectPipeline(this);
         }
     }

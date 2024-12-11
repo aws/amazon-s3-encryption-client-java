@@ -205,6 +205,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .s3AsyncClient(_wrappedAsyncClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
+                .instructionFileConfig(_instructionFileConfig)
                 .build();
 
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();

@@ -561,6 +561,7 @@ public class S3EncryptionClientCompatibilityTest {
 
         CryptoConfiguration v1Config =
                 new CryptoConfiguration(CryptoMode.AuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile)
                         .withAwsKmsRegion(KMS_REGION);
 
         AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
@@ -585,7 +586,7 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
+//        deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
     }
 
@@ -596,8 +597,10 @@ public class S3EncryptionClientCompatibilityTest {
         // V2 Client
         EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(KMS_KEY_ID);
 
+        CryptoConfigurationV2 config = new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption);
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
                 .withEncryptionMaterialsProvider(materialsProvider)
+                .withCryptoConfiguration(config)
                 .build();
 
         // V3 Client
