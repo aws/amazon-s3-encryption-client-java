@@ -339,6 +339,7 @@ Resources:
             Action:
               - 's3:ListBucket'
             Resource:
+              - !GetAtt S3ECReleaseTestS3Bucket.Arn
               - !GetAtt S3ECReleaseTestS3BucketTestVectors.Arn
 
   S3ECReleaseTestS3BucketAlternate:

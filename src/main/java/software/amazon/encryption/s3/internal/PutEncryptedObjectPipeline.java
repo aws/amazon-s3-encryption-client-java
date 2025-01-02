@@ -53,7 +53,7 @@ public class PutEncryptedObjectPipeline {
                 contentLength = request.contentLength();
             }
         } else {
-            contentLength = requestBody.contentLength().orElse(-1L);
+            contentLength = requestBody.contentLength().orElseThrow(() -> new S3EncryptionClientException("Unbounded streams are currently not supported."));
         }
 
         if (contentLength > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {

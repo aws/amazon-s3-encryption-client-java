@@ -754,7 +754,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
         /**
          * Multipart via the wrapped client is currently NOT supported by the S3 Encryption Client.
-         * Use the {@link this.enableMultipartPutObject()} option instead for high-level multipart uploads.
+         * Use the {@link Builder#enableMultipartPutObject(boolean)} option instead for high-level multipart uploads.
          * Multipart downloads are currently NOT supported.
          */
         @Override
@@ -764,7 +764,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
         /**
          * Multipart via the wrapped client is currently NOT supported by the S3 Encryption Client.
-         * Use the {@link this.enableMultipartPutObject()} option instead for high-level multipart uploads.
+         * Use the {@link Builder#enableMultipartPutObject(boolean)} option instead for high-level multipart uploads.
          * Multipart downloads are currently NOT supported.
          */
         @Override
