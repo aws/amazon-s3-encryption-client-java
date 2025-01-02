@@ -193,7 +193,6 @@ public class S3AsyncEncryptionClientTest {
 
         final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResultTm = new BoundedInputStream(fileSizeLimit);
 
         S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
@@ -241,12 +240,9 @@ public class S3AsyncEncryptionClientTest {
 
         final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResultTm = new BoundedInputStream(fileSizeLimit);
 
         S3AsyncClient wrappedCrt = S3AsyncClient.crtBuilder()
-                .minimumPartSizeInBytes(8000000L)
-                .thresholdInBytes(500L)
                 .build();
         S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
                 .wrappedClient(wrappedCrt)

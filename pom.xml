@@ -137,8 +137,9 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3-transfer-manager</artifactId>
-      <optional>true</optional>
       <version>2.28.28</version>
+      <optional>true</optional>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
