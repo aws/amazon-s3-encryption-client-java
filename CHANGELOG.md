@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.3.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.0...v3.3.1) (2025-01-24)
+
+### Fixes
+
+* KMS Dependency is required ([44e9886](https://github.com/aws/aws-s3-encryption-client-java/commit/44e988677505bdc207936d0a981a0ca67dfd1a8a))
+* treat null matdesc as empty ([#448](https://github.com/aws/aws-s3-encryption-client-java/issues/448)) ([bcd711e](https://github.com/aws/aws-s3-encryption-client-java/commit/bcd711eb65707bac99775a011e3e159c6e3a79e6))
+* unbounded streams are not supported ([#422](https://github.com/aws/aws-s3-encryption-client-java/issues/422)) ([034bb89](https://github.com/aws/aws-s3-encryption-client-java/commit/034bb89ae5933b4d56e9892f19bb1e8f1f27010e))
+
 ## [3.3.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.2.3...v3.3.0) (2024-10-30)
 
 ### Features
