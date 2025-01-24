@@ -138,11 +138,8 @@ public class ContentMetadataDecodingStrategy {
 
         // Get encrypted data key encryption context
         final Map<String, String> encryptionContext = new HashMap<>();
-        String jsonEncryptionContext = metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_CONTEXT);
-        if (jsonEncryptionContext == null) {
-            // The V2 client treats null value here as empty, do the same to avoid incompatibility
-            jsonEncryptionContext = "{}";
-        }
+        // The V2 client treats null value here as empty, do the same to avoid incompatibility
+        String jsonEncryptionContext = metadata.getOrDefault(MetadataKeyConstants.ENCRYPTED_DATA_KEY_CONTEXT, "{}");
         // When the encryption context contains non-US-ASCII characters,
         // the S3 server applies an esoteric encoding to the object metadata.
         // Reverse that, to allow decryption.
