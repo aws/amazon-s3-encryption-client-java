@@ -11,12 +11,12 @@ public class S3EncryptionClientException extends SdkClientException {
     }
 
     public S3EncryptionClientException(String message) {
-        super(SdkClientException.builder()
+        super(S3EncryptionClientException.builder()
                 .message(message));
     }
 
     public S3EncryptionClientException(String message, Throwable cause) {
-        super(SdkClientException.builder()
+        super(S3EncryptionClientException.builder()
                 .message(message)
                 .cause(cause));
     }
