@@ -30,6 +30,7 @@ public class CipherProvider {
      * @return a Cipher object, initialized and ready to use
      */
     public static Cipher createAndInitCipher(final CryptographicMaterials materials, byte[] iv) {
+        System.out.println("creating a cipher.");
         // Validate that the IV has been populated. There is a small chance
         // that an IV containing only 0s is (validly) randomly generated,
         // but the tradeoff is worth the protection, and an IV of 0s is
@@ -41,6 +42,7 @@ public class CipherProvider {
             Cipher cipher = CryptoFactory.createCipher(materials.algorithmSuite().cipherName(), materials.cryptoProvider());
             switch (materials.algorithmSuite()) {
                 case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+                    System.out.println("initting a GCM cipher");
                     cipher.init(materials.cipherMode().opMode(), materials.dataKey(), new GCMParameterSpec(materials.algorithmSuite().cipherTagLengthBits(), iv));
                     break;
                 case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
