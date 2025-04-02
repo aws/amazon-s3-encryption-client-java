@@ -43,6 +43,7 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
         this._cryptoProvider = builder._cryptoProvider;
         this._plaintextLength = builder._plaintextLength;
         this._cipher = builder._cipher;
+        System.out.println("initializing upload materials");
     }
 
     static public Builder builder() {
@@ -73,6 +74,7 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
      */
     @Override
     public Cipher getCipher(byte[] iv) {
+        System.out.println("returning cipher");
         if (!Arrays.equals(iv, _cipher.getIV())) {
             throw new S3EncryptionClientException("IVs in MultipartUploadMaterials do not match!");
         }
