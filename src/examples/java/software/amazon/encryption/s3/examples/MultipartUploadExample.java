@@ -78,6 +78,7 @@ public class MultipartUploadExample {
 
         // Process and Upload each part
         while ((bytesRead = inputStream.read(partData, 0, partData.length)) != -1) {
+            System.out.println("part no: " + partsSent);
             outputStream.write(partData, 0, bytesRead);
             if (bytesSent < PART_SIZE) {
                 bytesSent += bytesRead;

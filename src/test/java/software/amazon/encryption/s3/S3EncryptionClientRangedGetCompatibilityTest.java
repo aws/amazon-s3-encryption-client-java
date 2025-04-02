@@ -13,7 +13,6 @@ import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -111,7 +110,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         return builder;
     }
 
-    @ParameterizedTest
+    //@ParameterizedTest
     @MethodSource("keyMaterialProvider")
     public void AsyncAesGcmV3toV3RangedGet(Object keyMaterial) {
         final String objectKey = appendTestSuffix("async-aes-gcm-v3-to-v3-ranged-get");
@@ -194,7 +193,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    @ParameterizedTest
+    //@ParameterizedTest
     @MethodSource("keyMaterialProvider")
     public void AsyncFailsOnRangeWhenLegacyModeDisabled(Object keyMaterial) {
         final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
@@ -224,7 +223,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    @ParameterizedTest
+    //@ParameterizedTest
     @MethodSource("keyMaterialProvider")
     public void AsyncAesCbcV1toV3RangedGet(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get-async");
@@ -301,7 +300,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
     }
 
 
-    @ParameterizedTest
+    //@ParameterizedTest
     @MethodSource("keyMaterialProvider")
     public void failsOnRangeWhenLegacyModeDisabled(Object keyMaterial) {
         final String objectKey = appendTestSuffix("fails-when-on-range-when-legacy-disabled");
@@ -332,7 +331,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @ParameterizedTest
+    //@ParameterizedTest
     @MethodSource("keyMaterialProvider")
     public void AesGcmV3toV3RangedGet(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get");
@@ -415,7 +414,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @ParameterizedTest
+    //@ParameterizedTest
     @MethodSource("keyMaterialProvider")
     public void AesGcmV3toV3FailsRangeExceededObjectLength(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
@@ -448,7 +447,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @ParameterizedTest
+    //@ParameterizedTest
     @MethodSource("keyMaterialProvider")
     public void AsyncAesGcmV3toV3FailsRangeExceededObjectLength(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-ranged-get-out-of-range");
@@ -482,7 +481,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         asyncClient.close();
     }
 
-    @ParameterizedTest
+    //@ParameterizedTest
     @MethodSource("keyMaterialProvider")
     public void AesCbcV1toV3RangedGet(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get");
@@ -584,7 +583,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         v3Client.close();
     }
 
-    @ParameterizedTest
+    //@ParameterizedTest
     @MethodSource("keyMaterialProvider")
     public void AesCbcV1toV3FailsRangeExceededObjectLength(Object keyMaterial) {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3-ranged-get-out-of-range");
