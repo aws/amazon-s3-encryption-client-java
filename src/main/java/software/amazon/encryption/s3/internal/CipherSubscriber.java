@@ -25,6 +25,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private byte[] outputBuffer;
 
     CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, boolean isLastPart) {
+        System.out.println("Initializing CipherSubscriber");
         this.wrappedSubscriber = wrappedSubscriber;
         this.contentLength = contentLength;
         this.materials = materials;

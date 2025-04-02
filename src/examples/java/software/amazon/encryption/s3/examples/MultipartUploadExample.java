@@ -97,6 +97,7 @@ public class MultipartUploadExample {
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
 
             // Upload all the different parts of the object
+            System.out.println("uploading part no: " + uploadPartRequest.partNumber());
             UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
                     RequestBody.fromInputStream(partInputStream, partInputStream.available()));
 
