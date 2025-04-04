@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3.examples;
 
+import com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider;
 import org.apache.commons.io.IOUtils;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -55,8 +55,8 @@ public class MultipartUploadExample {
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
-        Security.addProvider(new BouncyCastleProvider());
-        Provider PROVIDER = Security.getProvider("AmazonCorrettoCryptoProvider");
+        Security.addProvider(new AmazonCorrettoCryptoProvider());
+        Provider PROVIDER = Security.getProvider(AmazonCorrettoCryptoProvider.PROVIDER_NAME);
 
         // Instantiate the S3 Encryption Client to encrypt and decrypt
         // by specifying a KMS Key with the kmsKeyId builder parameter.
