@@ -85,7 +85,6 @@ public class MultipartUploadExample {
 
         // Process and Upload each part
         while ((bytesRead = inputStream.read(partData, 0, partData.length)) != -1) {
-            System.out.println("part no: " + partsSent);
             outputStream.write(partData, 0, bytesRead);
             if (bytesSent < PART_SIZE) {
                 bytesSent += bytesRead;
@@ -104,7 +103,6 @@ public class MultipartUploadExample {
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
 
             // Upload all the different parts of the object
-            System.out.println("uploading part no: " + uploadPartRequest.partNumber());
             UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
                     RequestBody.fromInputStream(partInputStream, partInputStream.available()));
 
@@ -133,7 +131,6 @@ public class MultipartUploadExample {
 
         // Upload the last part multipart upload to invoke `cipher.doFinal()`
         final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
-        System.out.println("uploading FINAL part no: " + uploadPartRequest.partNumber());
         UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
                 RequestBody.fromInputStream(partInputStream, partInputStream.available()));
 
@@ -144,7 +141,6 @@ public class MultipartUploadExample {
 
         // Finally call completeMultipartUpload operation to tell S3 to merge all uploaded
         // parts and finish the multipart operation.
-        System.out.println("completing MPU");
         v3Client.completeMultipartUpload(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -152,7 +148,6 @@ public class MultipartUploadExample {
                 .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         // Call getObject to retrieve and decrypt the object from S3
-        System.out.println("GetObject follows");
         ResponseInputStream<GetObjectResponse> output = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));

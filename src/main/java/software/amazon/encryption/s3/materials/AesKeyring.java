@@ -138,7 +138,6 @@ public class AesKeyring extends S3Keyring {
 
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, iv);
             final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-            System.out.println("aes keyring cipher - shouldn't happen..");
             cipher.init(Cipher.DECRYPT_MODE, _wrappingKey, gcmParameterSpec);
 
             final byte[] aADBytes = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);

@@ -138,24 +138,9 @@ public class GetEncryptedObjectPipeline {
             long[] desiredRange = RangedGetUtils.getRange(materials.getContentRange());
             long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.getContentRange());
             AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-//            SecretKey contentKey = materials.dataKey();
-//            final int tagLength = algorithmSuite.cipherTagLengthBits();
             byte[] iv = contentMetadata.contentIv();
             if (algorithmSuite == AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF) {
                 iv = AesCtrUtils.adjustIV(iv, cryptoRange[0]);
-            }
-            //                final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
-            switch (algorithmSuite) {
-                case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
-                    System.out.println("initting a GCM cipher for decrypt...");
-//                        cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
-                    break;
-                case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
-                case ALG_AES_256_CBC_IV16_NO_KDF:
-//                        cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
-                    break;
-                default:
-                    throw new S3EncryptionClientException("Unknown algorithm: " + algorithmSuite.cipherName());
             }
 
             if (algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF)

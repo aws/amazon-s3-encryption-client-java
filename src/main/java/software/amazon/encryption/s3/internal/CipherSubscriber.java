@@ -25,7 +25,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private byte[] outputBuffer;
 
     CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, boolean isLastPart) {
-        System.out.println("Initializing CipherSubscriber. It is " + (isLastPart ? "infact" : "NOT") + " the last part!");
         this.wrappedSubscriber = wrappedSubscriber;
         this.contentLength = contentLength;
         this.materials = materials;
@@ -102,7 +101,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             return;
         }
         try {
-            System.out.println("Doing final!");
             outputBuffer = cipher.doFinal();
             // Send the final bytes to the wrapped subscriber
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
