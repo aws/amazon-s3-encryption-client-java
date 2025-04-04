@@ -56,7 +56,7 @@ public class MultipartUploadExample {
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
         Security.addProvider(new BouncyCastleProvider());
-        Provider PROVIDER = Security.getProvider("BC");
+        Provider PROVIDER = Security.getProvider("AmazonCorrettoCryptoProvider");
 
         // Instantiate the S3 Encryption Client to encrypt and decrypt
         // by specifying a KMS Key with the kmsKeyId builder parameter.
