@@ -102,6 +102,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             return;
         }
         try {
+            System.out.println("Doing final!");
             outputBuffer = cipher.doFinal();
             // Send the final bytes to the wrapped subscriber
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
