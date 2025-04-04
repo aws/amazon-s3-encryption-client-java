@@ -1,6 +1,7 @@
 package software.amazon.encryption.s3.examples;
 
 import org.apache.commons.io.IOUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -17,6 +18,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.Provider;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +55,9 @@ public class MultipartUploadExample {
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
+        Security.addProvider(new BouncyCastleProvider());
+        Provider PROVIDER = Security.getProvider("BC");
+
         // Instantiate the S3 Encryption Client to encrypt and decrypt
         // by specifying a KMS Key with the kmsKeyId builder parameter.
         // enable `enableDelayedAuthenticationMode` parameter to download more than 64MB object or
@@ -62,6 +68,7 @@ public class MultipartUploadExample {
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableDelayedAuthenticationMode(true)
+                .cryptoProvider(PROVIDER)
                 .build();
 
         // Create Multipart upload request to S3
