@@ -17,7 +17,6 @@ import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
-import javax.crypto.SecretKey;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
@@ -139,8 +138,8 @@ public class GetEncryptedObjectPipeline {
             long[] desiredRange = RangedGetUtils.getRange(materials.getContentRange());
             long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.getContentRange());
             AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-            SecretKey contentKey = materials.dataKey();
-            final int tagLength = algorithmSuite.cipherTagLengthBits();
+//            SecretKey contentKey = materials.dataKey();
+//            final int tagLength = algorithmSuite.cipherTagLengthBits();
             byte[] iv = contentMetadata.contentIv();
             if (algorithmSuite == AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF) {
                 iv = AesCtrUtils.adjustIV(iv, cryptoRange[0]);
