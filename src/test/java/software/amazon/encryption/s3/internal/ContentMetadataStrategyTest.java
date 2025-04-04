@@ -40,7 +40,7 @@ public class ContentMetadataStrategyTest {
                 .build();
     }
 
-    //@Test
+    @Test
     public void decodeWithObjectMetadata() {
         getObjectResponse = GetObjectResponse.builder()
                 .metadata(metadata)

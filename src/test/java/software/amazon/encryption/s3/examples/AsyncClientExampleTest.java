@@ -5,7 +5,7 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 public class AsyncClientExampleTest {
 
-    //@Test
+    @Test
     public void testAsyncClientExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         AsyncClientExample.main(new String[]{bucket});

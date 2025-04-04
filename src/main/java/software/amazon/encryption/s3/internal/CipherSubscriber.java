@@ -18,8 +18,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
     private Cipher cipher;
     private final Long contentLength;
-    private final CryptographicMaterials materials;
-    private byte[] iv;
     private boolean isLastPart;
 
     private byte[] outputBuffer;
@@ -27,8 +25,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, boolean isLastPart) {
         this.wrappedSubscriber = wrappedSubscriber;
         this.contentLength = contentLength;
-        this.materials = materials;
-        this.iv = iv;
         cipher = materials.getCipher(iv);
         this.isLastPart = isLastPart;
     }
