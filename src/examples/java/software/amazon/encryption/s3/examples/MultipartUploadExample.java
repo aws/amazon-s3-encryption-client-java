@@ -99,8 +99,6 @@ public class MultipartUploadExample {
                     .key(objectKey)
                     .uploadId(initiateResult.uploadId())
                     .partNumber(partsSent)
-                    // TODO: Did the default change???
-                    .sdkPartType(SdkPartType.DEFAULT)
                     .build();
 
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
