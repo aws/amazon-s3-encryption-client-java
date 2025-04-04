@@ -153,6 +153,7 @@ public class GetEncryptedObjectPipeline {
                 final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
                 switch (algorithmSuite) {
                     case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+                        System.out.println("initting a GCM cipher for decrypt...");
                         cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
                         break;
                     case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:

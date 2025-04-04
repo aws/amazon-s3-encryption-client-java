@@ -132,6 +132,7 @@ public class RsaKeyring extends S3Keyring {
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
             final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+            System.out.println("rsa keyring cipher - shouldn't happen..");
             cipher.init(Cipher.UNWRAP_MODE, _partialRsaKeyPair.getPrivateKey(), OAEP_PARAMETER_SPEC);
 
             String dataKeyAlgorithm = materials.algorithmSuite().dataKeyAlgorithm();

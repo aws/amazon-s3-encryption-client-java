@@ -50,7 +50,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
         if (amountToReadFromByteBuffer > 0) {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
-            System.out.println("updating cipher...");
             outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
             if (outputBuffer == null || outputBuffer.length == 0) {
                 // The underlying data is too short to fill in the block cipher.
