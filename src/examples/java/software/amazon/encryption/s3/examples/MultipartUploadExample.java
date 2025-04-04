@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3.examples;
 
-import com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -18,8 +17,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.Provider;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +32,7 @@ public class MultipartUploadExample {
     public static void main(final String[] args) throws IOException {
         BUCKET = args[0];
         LowLevelMultipartUpload();
-//        HighLevelMultipartPutObject();
+        HighLevelMultipartPutObject();
     }
 
     /**
@@ -55,9 +52,6 @@ public class MultipartUploadExample {
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
-        Security.addProvider(new AmazonCorrettoCryptoProvider());
-        Provider PROVIDER = Security.getProvider(AmazonCorrettoCryptoProvider.PROVIDER_NAME);
-
         // Instantiate the S3 Encryption Client to encrypt and decrypt
         // by specifying a KMS Key with the kmsKeyId builder parameter.
         // enable `enableDelayedAuthenticationMode` parameter to download more than 64MB object or
@@ -68,7 +62,6 @@ public class MultipartUploadExample {
         S3Client v3Client = S3EncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
                 .build();
 
         // Create Multipart upload request to S3
