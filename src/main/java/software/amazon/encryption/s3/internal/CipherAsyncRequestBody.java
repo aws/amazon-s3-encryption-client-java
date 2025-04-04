@@ -20,12 +20,14 @@ public class CipherAsyncRequestBody implements AsyncRequestBody {
     private final Long ciphertextLength;
     private final CryptographicMaterials materials;
     private final byte[] iv;
+    private final boolean isLastPart;
 
     public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv, final boolean isLastPart) {
         this.wrappedAsyncRequestBody = wrappedAsyncRequestBody;
         this.ciphertextLength = ciphertextLength;
         this.materials = materials;
         this.iv = iv;
+        this.isLastPart = isLastPart;
     }
 
     public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv) {
@@ -38,7 +40,7 @@ public class CipherAsyncRequestBody implements AsyncRequestBody {
     public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
         wrappedAsyncRequestBody.subscribe(new CipherSubscriber(subscriber,
                 contentLength().orElseThrow(() -> new S3EncryptionClientException("Unbounded streams are currently not supported.")),
-                materials, iv));
+                materials, iv, isLastPart));
     }
 
     @Override

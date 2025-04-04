@@ -1,10 +1,6 @@
 package software.amazon.encryption.s3.examples;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
-import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
-
+import org.apache.commons.io.IOUtils;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -26,7 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 
 public class MultipartUploadExample {
     public static String BUCKET;
