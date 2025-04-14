@@ -17,12 +17,7 @@ import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.IvParameterSpec;
 import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -143,42 +138,23 @@ public class GetEncryptedObjectPipeline {
             long[] desiredRange = RangedGetUtils.getRange(materials.getContentRange());
             long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.getContentRange());
             AlgorithmSuite algorithmSuite = materials.algorithmSuite();
-            SecretKey contentKey = materials.dataKey();
-            final int tagLength = algorithmSuite.cipherTagLengthBits();
             byte[] iv = contentMetadata.contentIv();
             if (algorithmSuite == AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF) {
                 iv = AesCtrUtils.adjustIV(iv, cryptoRange[0]);
             }
-            try {
-                final Cipher cipher = CryptoFactory.createCipher(algorithmSuite.cipherName(), materials.cryptoProvider());
-                switch (algorithmSuite) {
-                    case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
-                        cipher.init(Cipher.DECRYPT_MODE, contentKey, new GCMParameterSpec(tagLength, iv));
-                        break;
-                    case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
-                    case ALG_AES_256_CBC_IV16_NO_KDF:
-                        cipher.init(Cipher.DECRYPT_MODE, contentKey, new IvParameterSpec(iv));
-                        break;
-                    default:
-                        throw new S3EncryptionClientException("Unknown algorithm: " + algorithmSuite.cipherName());
-                }
 
-                if (algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF)
-                        || algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF)
-                        || _enableDelayedAuthentication) {
-                    // CBC and GCM with delayed auth enabled use a standard publisher
-                    CipherPublisher plaintextPublisher = new CipherPublisher(ciphertextPublisher,
-                            getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits(), materials, iv);
-                    wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
-                } else {
-                    // Use buffered publisher for GCM when delayed auth is not enabled
-                    BufferedCipherPublisher plaintextPublisher = new BufferedCipherPublisher(ciphertextPublisher,
-                            getObjectResponse.contentLength(), materials, iv, _bufferSize);
-                    wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
-                }
-
-            } catch (GeneralSecurityException e) {
-                throw new S3EncryptionClientException("Unable to " + algorithmSuite.cipherName() + " content decrypt.", e);
+            if (algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF)
+                    || algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF)
+                    || _enableDelayedAuthentication) {
+                // CBC and GCM with delayed auth enabled use a standard publisher
+                CipherPublisher plaintextPublisher = new CipherPublisher(ciphertextPublisher,
+                        getObjectResponse.contentLength(), desiredRange, contentMetadata.contentRange(), algorithmSuite.cipherTagLengthBits(), materials, iv);
+                wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
+            } else {
+                // Use buffered publisher for GCM when delayed auth is not enabled
+                BufferedCipherPublisher plaintextPublisher = new BufferedCipherPublisher(ciphertextPublisher,
+                        getObjectResponse.contentLength(), materials, iv, _bufferSize);
+                wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
             }
         }
     }
