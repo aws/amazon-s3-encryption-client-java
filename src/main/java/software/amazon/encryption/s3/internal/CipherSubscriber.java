@@ -47,23 +47,39 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
             outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
             if (outputBuffer == null || outputBuffer.length == 0) {
-                // The underlying data is too short to fill in the block cipher.
-                // Note that while the JCE Javadoc specifies that the outputBuffer is null in this case,
-                // in practice SunJCE and ACCP return an empty buffer instead, hence checks for
-                // null OR length == 0.
-                if (contentRead.get() == contentLength) {
-                    // All content has been read, so complete to get the final bytes
-                    this.onComplete();
-                }
-                // Otherwise, wait for more bytes. To avoid blocking,
-                // send an empty buffer to the wrapped subscriber.
-                wrappedSubscriber.onNext(ByteBuffer.allocate(0));
+                // No bytes provided from upstream; just return.
+                // No need to emit empty bytes to downstream; this can be misinterpreted.
+                return;
             } else {
-                wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
+                boolean atEnd = isLastPart && contentRead.get() + amountToReadFromByteBuffer >= contentLength;
+
+                if (atEnd) {
+                    // If all content has been read, send the final bytes in this onNext call.
+                    // The final bytes must be sent with the final onNext call, not during the onComplete call.
+                    byte[] finalBytes;
+                    try {
+                        finalBytes = cipher.doFinal();
+                    } catch (final GeneralSecurityException exception) {
+                        wrappedSubscriber.onError(exception);
+                        throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
+                    }
+
+                    // Combine outputBuffer and finalBytes if both exist
+                    byte[] combinedBuffer;
+                    if (outputBuffer != null && outputBuffer.length > 0) {
+                        combinedBuffer = new byte[outputBuffer.length + finalBytes.length];
+                        System.arraycopy(outputBuffer, 0, combinedBuffer, 0, outputBuffer.length);
+                        System.arraycopy(finalBytes, 0, combinedBuffer, outputBuffer.length, finalBytes.length);
+                    } else {
+                        combinedBuffer = finalBytes;
+                    }
+                    wrappedSubscriber.onNext(ByteBuffer.wrap(combinedBuffer));
+                    return;
+                } else {
+                    // Not at end; send content so far
+                    wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
+                }
             }
-        } else {
-            // Do nothing
-            wrappedSubscriber.onNext(byteBuffer);
         }
     }
 
@@ -91,20 +107,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onComplete() {
-        if (!isLastPart) {
-            // If this isn't the last part, skip doFinal, we aren't done
-            wrappedSubscriber.onComplete();
-            return;
-        }
-        try {
-            outputBuffer = cipher.doFinal();
-            // Send the final bytes to the wrapped subscriber
-            wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
-        } catch (final GeneralSecurityException exception) {
-            // Forward error, else the wrapped subscriber waits indefinitely
-            wrappedSubscriber.onError(exception);
-            throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
-        }
         wrappedSubscriber.onComplete();
     }
 
