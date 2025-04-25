@@ -47,9 +47,8 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
             outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
             if (outputBuffer == null || outputBuffer.length == 0) {
-                // No bytes provided from upstream; just return.
-                // No need to emit empty bytes to downstream; this can be misinterpreted.
-                return;
+                // No bytes provided from upstream; to avoid blocking, send an empty buffer to the wrapped subscriber.
+                wrappedSubscriber.onNext(ByteBuffer.allocate(0));
             } else {
                 boolean atEnd = isLastPart && contentRead.get() + amountToReadFromByteBuffer >= contentLength;
 
@@ -80,6 +79,9 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                     wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
                 }
             }
+        } else {
+            // Do nothing
+            wrappedSubscriber.onNext(byteBuffer);
         }
     }
 
