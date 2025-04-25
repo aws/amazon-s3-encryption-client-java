@@ -63,7 +63,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // No bytes provided from upstream; to avoid blocking, send an empty buffer to the wrapped subscriber.
                 wrappedSubscriber.onNext(ByteBuffer.allocate(0));
             } else {
-                boolean atEnd = isLastPart && contentRead.get() + amountToReadFromByteBuffer >= contentLength;
+                boolean atEnd = isLastPart && contentRead.get() >= contentLength;
 
                 if (atEnd) {
                     // If all content has been read, send the final bytes in this onNext call.
