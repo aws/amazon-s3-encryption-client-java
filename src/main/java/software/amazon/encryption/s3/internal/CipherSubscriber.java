@@ -73,7 +73,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                         combinedBuffer = finalBytes;
                     }
                     wrappedSubscriber.onNext(ByteBuffer.wrap(combinedBuffer));
-                    return;
                 } else {
                     // Not at end; send content so far
                     wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
