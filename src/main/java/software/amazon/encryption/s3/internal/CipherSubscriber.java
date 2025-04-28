@@ -66,6 +66,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 } else {
                     // Done, wait for upstream to signal onComplete
                     System.out.println("[CipherSubscriber] All content read (contentRead: " + contentRead.get() + ", contentLength: " + contentLength + "), waiting for onComplete");
+                    this.onComplete();
                 }
             }
         } else {
