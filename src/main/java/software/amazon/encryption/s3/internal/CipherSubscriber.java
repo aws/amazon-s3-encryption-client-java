@@ -58,6 +58,11 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onNext(ByteBuffer byteBuffer) {
+        System.out.println("[CipherSubscriber] ByteBuffer content: " + byteBuffer.toString());
+//        while (byteBuffer.hasRemaining()) {
+//            byte b = byteBuffer.get();
+//            System.out.printf("%02x ", b); // Print as hex
+//        }
         System.out.println("[CipherSubscriber] onNext called with buffer size: " + byteBuffer.remaining());
         System.out.println("[CipherSubscriber] isLastPart: " + isLastPart);
         int amountToReadFromByteBuffer = getAmountToReadFromByteBuffer(byteBuffer);
@@ -67,7 +72,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             System.out.println("[CipherSubscriber] Processing chunk of size: " + amountToReadFromByteBuffer);
             byte[] buf = BinaryUtils.copyBytesFrom(byteBuffer, amountToReadFromByteBuffer);
             System.out.println("[CipherSubscriber] Copied " + buf.length + " bytes from input buffer");
-            
+
             outputBuffer = cipher.update(buf, 0, amountToReadFromByteBuffer);
             System.out.println("[CipherSubscriber] Cipher update produced output buffer of length: " + (outputBuffer != null ? outputBuffer.length : 0));
 
@@ -87,8 +92,8 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 if (contentRead.get() < amount) {
                     wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
                 } else {
-                    System.out.println("[CipherSubscriber] All content read (contentRead: " + contentRead.get() + ", contentLength: " + contentLength + "), calling onComplete");
-                    this.onComplete();
+                    System.out.println("[CipherSubscriber] All content read (contentRead: " + contentRead.get() + ", contentLength: " + contentLength + "), waiting for onComplete");
+//                    this.onComplete();
                 }
             }
         } else {
@@ -138,36 +143,37 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             wrappedSubscriber.onComplete();
             return;
         }
+        byte[] finalBytes;
         try {
             System.out.println("[CipherSubscriber] Calling cipher.doFinal()");
-            byte[] finalBytes = cipher.doFinal();
-            System.out.println("[CipherSubscriber] doFinal produced " + (finalBytes != null ? finalBytes.length : 0) + " bytes");
-            
-            byte[] combinedBytes;
-            if (outputBuffer != null && outputBuffer.length > 0 && finalBytes != null && finalBytes.length > 0) {
-                System.out.println("[CipherSubscriber] Combining outputBuffer (" + outputBuffer.length + " bytes) with finalBytes (" + finalBytes.length + " bytes)");
-                combinedBytes = new byte[outputBuffer.length + finalBytes.length];
-                System.arraycopy(outputBuffer, 0, combinedBytes, 0, outputBuffer.length);
-                System.arraycopy(finalBytes, 0, combinedBytes, outputBuffer.length, finalBytes.length);
-            } else if (outputBuffer != null && outputBuffer.length > 0) {
-                System.out.println("[CipherSubscriber] Using only outputBuffer (" + outputBuffer.length + " bytes)");
-                combinedBytes = outputBuffer;
-            } else if (finalBytes != null && finalBytes.length > 0) {
-                System.out.println("[CipherSubscriber] Using only finalBytes (" + finalBytes.length + " bytes)");
-                combinedBytes = finalBytes;
-            } else {
-                System.out.println("[CipherSubscriber] No bytes to send");
-                combinedBytes = new byte[0];
-            }
-            
-            if (combinedBytes.length > 0) {
-                System.out.println("[CipherSubscriber] Sending combined bytes to wrapped subscriber of length " + combinedBytes.length);
-                wrappedSubscriber.onNext(ByteBuffer.wrap(combinedBytes));
-            }
+            finalBytes = cipher.doFinal();
         } catch (final GeneralSecurityException exception) {
             System.out.println("[CipherSubscriber] Error during doFinal: " + exception.getMessage());
             wrappedSubscriber.onError(exception);
             throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
+        }
+        System.out.println("[CipherSubscriber] doFinal produced " + (finalBytes != null ? finalBytes.length : 0) + " bytes");
+
+        byte[] combinedBytes;
+        if (outputBuffer != null && outputBuffer.length > 0 && finalBytes != null && finalBytes.length > 0) {
+            System.out.println("[CipherSubscriber] Combining outputBuffer (" + outputBuffer.length + " bytes) with finalBytes (" + finalBytes.length + " bytes)");
+            combinedBytes = new byte[outputBuffer.length + finalBytes.length];
+            System.arraycopy(outputBuffer, 0, combinedBytes, 0, outputBuffer.length);
+            System.arraycopy(finalBytes, 0, combinedBytes, outputBuffer.length, finalBytes.length);
+        } else if (outputBuffer != null && outputBuffer.length > 0) {
+            System.out.println("[CipherSubscriber] Using only outputBuffer (" + outputBuffer.length + " bytes)");
+            combinedBytes = outputBuffer;
+        } else if (finalBytes != null && finalBytes.length > 0) {
+            System.out.println("[CipherSubscriber] Using only finalBytes (" + finalBytes.length + " bytes)");
+            combinedBytes = finalBytes;
+        } else {
+            System.out.println("[CipherSubscriber] No bytes to send");
+            combinedBytes = new byte[0];
+        }
+
+        if (combinedBytes.length > 0) {
+            System.out.println("[CipherSubscriber] Sending combined bytes to wrapped subscriber of length " + combinedBytes.length);
+            wrappedSubscriber.onNext(ByteBuffer.wrap(combinedBytes));
         }
         System.out.println("[CipherSubscriber] Completing wrapped subscriber");
         wrappedSubscriber.onComplete();
