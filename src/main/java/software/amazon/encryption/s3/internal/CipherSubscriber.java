@@ -87,10 +87,12 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // Since this class can only call `wrappedSubscriber.onNext` once,
                 // it must send all remaining data in the next onNext call,
                 // including the result of cipher.doFinal(), if applicable.
-                // Calling `wrappedSubscriber.onNext` more than once violates the Reactive Streams specification
-                // and can cause exceptions downstream.
+                // Calling `wrappedSubscriber.onNext` more than once for `request(1)` 
+                // violates the Reactive Streams specification and can cause exceptions downstream.
                 if (contentRead.get() + tagLength >= contentLength) {
                     // All content has been read; complete the stream.
+                    // (Signalling onComplete from here is Reactive Streams-spec compliant;
+                    // this class is allowed to call onComplete, even if upstream has not yet signaled onComplete.)
                     this.onComplete();
                 } else {
                     // Needs to read more data, so send the data downstream,
@@ -128,7 +130,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onComplete() {
-        // onComplete can be signalled to CipherSubscriber multiple times
+        // onComplete can be signalled to CipherSubscriber multiple times,
         // but additional calls should be deduped to avoid calling onNext multiple times
         // and raising exceptions.
         if (onCompleteCalled) {
@@ -149,7 +151,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
         // If this is the last part, compute doFinal and include its result in the value sent downstream.
         // The result of doFinal MUST be included with the bytes that were in outputBuffer in the final onNext call.
-        // When this class calculates it has read all content 
         byte[] finalBytes = null;
         try {
             finalBytes = cipher.doFinal();
