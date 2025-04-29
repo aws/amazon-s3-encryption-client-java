@@ -73,8 +73,8 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             } else {
                 // Once all content has been read, call onComplete.
                 // This class can identify when all content has been read because the amount of data read so far
-                // plus the tag length will equal the content length.
-                if (contentRead.get() + tagLength == contentLength) {
+                // plus the tag length exceeds the content length.
+                if (contentRead.get() + tagLength >= contentLength) {
                     // All content has been read, so complete the stream.
                     // The next onNext call MUST include all bytes, including the result of cipher.doFinal().
                     // Sending any additional onNext calls violates the Reactive Streams specification
