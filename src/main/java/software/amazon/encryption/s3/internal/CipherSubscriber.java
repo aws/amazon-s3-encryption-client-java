@@ -30,7 +30,8 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         cipher = materials.getCipher(iv);
         this.isLastPart = isLastPart;
 
-        // Determine the tag length based on the cipher algorithm
+        // Determine the tag length based on the cipher algorithm.
+        // This class uses the tag length to identify the end of the stream before the onComplete signal is sent.
         if (cipher.getAlgorithm().contains("GCM")) {
             tagLength = 16;
         } else if (cipher.getAlgorithm().contains("CBC") || cipher.getAlgorithm().contains("CTR")) {
@@ -71,14 +72,25 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // send an empty buffer to the wrapped subscriber.
                 wrappedSubscriber.onNext(ByteBuffer.allocate(0));
             } else {
+                // Check if stream has read all expected content.
                 // Once all content has been read, call onComplete.
-                // This class can identify when all content has been read because the amount of data read so far
-                // plus the tag length exceeds the content length.
+                // 
+                // This class determines that all content has been read by checking if
+                // the amount of data read so far plus the tag length is at least the content length.
+                // Once this is true, downstream will never call `request` again
+                // (beyond the current request that is being responded to in this onNext invocation.)
+                // As a result, this class can only call `wrappedSubscriber.onNext` one more time.
+                // (Reactive streams require that downstream sends a `request(n)` 
+                // to indicate it is ready for more data, and upstream responds to that request by calling `onNext`.
+                // The `n` in request is the maximum number of `onNext` calls that downstream 
+                // will allow upstream to make, and seems to always be 1 for the AsyncBodySubscriber.)
+                // Since this class can only call `wrappedSubscriber.onNext` once,
+                // it must send all remaining data in the next onNext call,
+                // including the result of cipher.doFinal(), if applicable.
+                // Calling `wrappedSubscriber.onNext` more than once violates the Reactive Streams specification
+                // and can cause exceptions downstream.
                 if (contentRead.get() + tagLength >= contentLength) {
-                    // All content has been read, so complete the stream.
-                    // The next onNext call MUST include all bytes, including the result of cipher.doFinal().
-                    // Sending any additional onNext calls violates the Reactive Streams specification
-                    // and can lead to issues.
+                    // All content has been read; complete the stream.
                     this.onComplete();
                 } else {
                     // Needs to read more data, so send the data downstream,
@@ -116,14 +128,17 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onComplete() {
-        // onComplete can be signalled to CipherSubscriber multiple times,
-        // but additional calls should be deduped.
+        // onComplete can be signalled to CipherSubscriber multiple times
+        // but additional calls should be deduped to avoid calling onNext multiple times
+        // and raising exceptions.
         if (onCompleteCalled) {
             return;
         }
         onCompleteCalled = true;
 
         // If this isn't the last part, skip doFinal and just send outputBuffer downstream.
+        // doFinal requires that all parts have been processed to compute the tag,
+        // so the tag will only be computed when the last part is processed.
         if (!isLastPart) {
             // First, propagate the bytes that were in outputBuffer downstream.
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
@@ -132,7 +147,9 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             return;
         }
 
-        // If this is the last part, include the result of doFinal in the value sent downstream.
+        // If this is the last part, compute doFinal and include its result in the value sent downstream.
+        // The result of doFinal MUST be included with the bytes that were in outputBuffer in the final onNext call.
+        // When this class calculates it has read all content 
         byte[] finalBytes = null;
         try {
             finalBytes = cipher.doFinal();
@@ -141,7 +158,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
             // Forward error, else the wrapped subscriber waits indefinitely
             wrappedSubscriber.onError(exception);
-            // Even though doFinal failed, propagate the onComplete signal downstream.
+            // Even though doFinal failed, propagate the onComplete signal downstream
             wrappedSubscriber.onComplete();
             throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
         }
