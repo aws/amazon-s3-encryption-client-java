@@ -19,6 +19,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private Cipher cipher;
     private final Long contentLength;
     private boolean isLastPart;
+    private int tagLength;
     private boolean onCompleteCalled = false;
 
     private byte[] outputBuffer;
@@ -28,6 +29,15 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         this.contentLength = contentLength;
         cipher = materials.getCipher(iv);
         this.isLastPart = isLastPart;
+
+        // Determine the tag length based on the cipher algorithm
+        if (cipher.getAlgorithm().contains("GCM")) {
+            tagLength = 16;
+        } else if (cipher.getAlgorithm().contains("CBC") || cipher.getAlgorithm().contains("CTR")) {
+            tagLength = 0;
+        } else {
+            throw new IllegalArgumentException("Unsupported cipher type: " + cipher.getAlgorithm());
+        }
     }
 
     CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
@@ -61,20 +71,19 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // send an empty buffer to the wrapped subscriber.
                 wrappedSubscriber.onNext(ByteBuffer.allocate(0));
             } else {
-                // cipher.update will only return a block of data if it has been provided a full block of data.
-                // If it has been provided a partial block of data, it will not return partial data.
-                // If the CipherSubscriber is done sending data, but the total amount of data is not a multiple of the block size,
-                // the amount of content returned by the cipher will be less than the contentLength by at most the block size.
-                // Calling `doFinal` will return the remaining bytes along with the tag.
-                Long amount = contentLength - cipher.getBlockSize();
-                if (contentRead.get() < amount) {
-                    // If the amount of data read so far is less than the amount of data that should have been read,
-                    // send the data downstream, expecting that downstream will request more data.
-                    wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
-                } else {
-                    // If the amount of data read so far is at least the amount of data that should have been read,
-                    // complete the stream, as downstream will not request any more data.
+                // Once all content has been read, call onComplete.
+                // This class can identify when all content has been read because the amount of data read so far
+                // plus the tag length will equal the content length.
+                if (contentRead.get() + tagLength == contentLength) {
+                    // All content has been read, so complete the stream.
+                    // The next onNext call MUST include all bytes, including the result of cipher.doFinal().
+                    // Sending any additional onNext calls violates the Reactive Streams specification
+                    // and can lead to issues.
                     this.onComplete();
+                } else {
+                    // Needs to read more data, so send the data downstream,
+                    // expecting that downstream will continue to request more data.
+                    wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
                 }
             }
         } else {
@@ -107,17 +116,23 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onComplete() {
+        // onComplete can be signalled to CipherSubscriber multiple times,
+        // but additional calls should be deduped.
         if (onCompleteCalled) {
             return;
         }
         onCompleteCalled = true;
+
+        // If this isn't the last part, skip doFinal and just send outputBuffer downstream.
         if (!isLastPart) {
-            // If this isn't the last part, skip doFinal, we aren't done
+            // First, propagate the bytes that were in outputBuffer downstream.
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
+            // Then, propagate the onComplete signal downstream.
             wrappedSubscriber.onComplete();
             return;
         }
 
+        // If this is the last part, include the result of doFinal in the value sent downstream.
         byte[] finalBytes = null;
         try {
             finalBytes = cipher.doFinal();
@@ -126,14 +141,14 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             wrappedSubscriber.onNext(ByteBuffer.wrap(outputBuffer));
             // Forward error, else the wrapped subscriber waits indefinitely
             wrappedSubscriber.onError(exception);
-            // Even though doFinal failed, downstream still expects to receive onComplete signal
+            // Even though doFinal failed, propagate the onComplete signal downstream.
             wrappedSubscriber.onComplete();
             throw new S3EncryptionClientSecurityException(exception.getMessage(), exception);
         }
 
         // Combine the bytes from outputBuffer and finalBytes into one onNext call.
-        // Downstream has requested `1` in its request method, so this class can only call onNext once.
-        // This onNext call must contain both the bytes from outputBuffer and the tag.
+        // Downstream has requested one item in its request method, so this class can only call onNext once.
+        // This single onNext call must contain both the bytes from outputBuffer and the tag.
         byte[] combinedBytes;
         if (outputBuffer != null && outputBuffer.length > 0 && finalBytes != null && finalBytes.length > 0) {
             combinedBytes = new byte[outputBuffer.length + finalBytes.length];
@@ -147,9 +162,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             combinedBytes = new byte[0];
         }
 
-        if (combinedBytes.length > 0) {
-            wrappedSubscriber.onNext(ByteBuffer.wrap(combinedBytes));
-        }
+        wrappedSubscriber.onNext(ByteBuffer.wrap(combinedBytes));
         wrappedSubscriber.onComplete();
     }
 
