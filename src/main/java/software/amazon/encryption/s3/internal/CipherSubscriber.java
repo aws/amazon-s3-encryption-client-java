@@ -65,23 +65,25 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // send an empty buffer to the wrapped subscriber.
                 wrappedSubscriber.onNext(ByteBuffer.allocate(0));
             } else {
-                // Check if stream has read all expected content.
-                // Once all content has been read, call onComplete.
-                // 
-                // This class determines that all content has been read by checking if
-                // the amount of data read so far plus the tag length is at least the content length.
-                // Once this is true, downstream will never call `request` again
-                // (beyond the current request that is being responded to in this onNext invocation.)
-                // As a result, this class can only call `wrappedSubscriber.onNext` one more time.
-                // (Reactive streams require that downstream sends a `request(n)`
-                // to indicate it is ready for more data, and upstream responds to that request by calling `onNext`.
-                // The `n` in request is the maximum number of `onNext` calls that downstream 
-                // will allow upstream to make, and seems to always be 1 for the AsyncBodySubscriber.)
-                // Since this class can only call `wrappedSubscriber.onNext` once,
-                // it must send all remaining data in the next onNext call,
-                // including the result of cipher.doFinal(), if applicable.
-                // Calling `wrappedSubscriber.onNext` more than once for `request(1)` 
-                // violates the Reactive Streams specification and can cause exceptions downstream.
+                /*
+                 Check if stream has read all expected content.
+                 Once all content has been read, call onComplete.
+
+                 This determines that all content has been read by checking if
+                 the amount of data read so far plus the tag length is at least the content length.
+                 Once this is true, downstream will never call `request` again
+                 (beyond the current request that is being responded to in this onNext invocation.)
+                 As a result, this class can only call `wrappedSubscriber.onNext` one more time.
+                 (Reactive streams require that downstream sends a `request(n)`
+                 to indicate it is ready for more data, and upstream responds to that request by calling `onNext`.
+                 The `n` in request is the maximum number of `onNext` calls that downstream
+                 will allow upstream to make, and seems to always be 1 for the AsyncBodySubscriber.)
+                 Since this class can only call `wrappedSubscriber.onNext` once,
+                 it must send all remaining data in the next onNext call,
+                 including the result of cipher.doFinal(), if applicable.
+                 Calling `wrappedSubscriber.onNext` more than once for `request(1)`
+                 violates the Reactive Streams specification and can cause exceptions downstream.
+                */
                 if (contentRead.get() + tagLength >= contentLength) {
                     // All content has been read; complete the stream.
                     // (Signalling onComplete from here is Reactive Streams-spec compliant;
