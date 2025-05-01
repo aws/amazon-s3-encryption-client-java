@@ -17,29 +17,20 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final AtomicLong contentRead = new AtomicLong(0);
     private final Subscriber<? super ByteBuffer> wrappedSubscriber;
-    private Cipher cipher;
+    private final Cipher cipher;
     private final Long contentLength;
-    private boolean isLastPart;
-    private int tagLength;
-    private AtomicBoolean finalBytesCalled = new AtomicBoolean(false);
+    private final boolean isLastPart;
+    private final int tagLength;
+    private final AtomicBoolean finalBytesCalled = new AtomicBoolean(false);
 
     private byte[] outputBuffer;
 
     CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, boolean isLastPart) {
         this.wrappedSubscriber = wrappedSubscriber;
         this.contentLength = contentLength;
-        cipher = materials.getCipher(iv);
+        this.cipher = materials.getCipher(iv);
         this.isLastPart = isLastPart;
-
-        // Determine the tag length based on the cipher algorithm.
-        // This class uses the tag length to identify the end of the stream before the onComplete signal is sent.
-        if (cipher.getAlgorithm().contains("GCM")) {
-            tagLength = 16;
-        } else if (cipher.getAlgorithm().contains("CBC") || cipher.getAlgorithm().contains("CTR")) {
-            tagLength = 0;
-        } else {
-            throw new IllegalArgumentException("Unsupported cipher type: " + cipher.getAlgorithm());
-        }
+        this.tagLength = materials.algorithmSuite().cipherTagLengthBytes();
     }
 
     CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
@@ -140,7 +131,12 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         wrappedSubscriber.onComplete();
     }
 
-    public void finalBytes() {
+    /**
+     * Finalize encryption, including calculating the auth tag for AES-GCM.
+     * As such this method MUST only be called once, which is enforced using
+     * `finalBytesCalled`.
+     */
+    private void finalBytes() {
         if (!finalBytesCalled.compareAndSet(false, true)) {
             // already called, don't repeat
             return;
