@@ -67,7 +67,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
             } else {
                 /*
                  Check if stream has read all expected content.
-                 Once all content has been read, call onComplete.
+                 Once all content has been read, call `finalBytes`.
 
                  This determines that all content has been read by checking if
                  the amount of data read so far plus the tag length is at least the content length.
@@ -86,8 +86,6 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 */
                 if (contentRead.get() + tagLength >= contentLength) {
                     // All content has been read; complete the stream.
-                    // (Signalling onComplete from here is Reactive Streams-spec compliant;
-                    // this class is allowed to call onComplete, even if upstream has not yet signaled onComplete.)
                     finalBytes();
                 } else {
                     // Needs to read more data, so send the data downstream,
@@ -127,7 +125,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     public void onComplete() {
         // In rare cases, e.g. when the last part of a low-level MPU has 0 length,
         // onComplete will be called before onNext is called once.
-        if (contentRead.get() < contentLength) {
+        if (contentRead.get() + tagLength <= contentLength) {
             finalBytes();
         }
         wrappedSubscriber.onComplete();
