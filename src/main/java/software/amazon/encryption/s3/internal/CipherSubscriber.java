@@ -11,6 +11,7 @@ import software.amazon.encryption.s3.materials.CryptographicMaterials;
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
@@ -20,6 +21,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final Long contentLength;
     private boolean isLastPart;
     private int tagLength;
+    private AtomicBoolean finalBytesCalled = new AtomicBoolean(false);
 
     private byte[] outputBuffer;
 
@@ -139,6 +141,11 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     }
 
     public void finalBytes() {
+        if (!finalBytesCalled.compareAndSet(false, true)) {
+            // already called, don't repeat
+            return;
+        }
+
         // If this isn't the last part, skip doFinal and just send outputBuffer downstream.
         // doFinal requires that all parts have been processed to compute the tag,
         // so the tag will only be computed when the last part is processed.
