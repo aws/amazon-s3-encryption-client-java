@@ -47,17 +47,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     @Override
     public void onSubscribe(Subscription s) {
-        wrappedSubscriber.onSubscribe(new Subscription() {
-            @Override
-            public void request(long n) {
-                s.request(n);
-            }
-
-            @Override
-            public void cancel() {
-                s.cancel();
-            }
-        });
+        wrappedSubscriber.onSubscribe(s);
     }
 
     @Override
