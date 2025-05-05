@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.3.3](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.2...v3.3.3) (2025-05-05)
+
+### Fixes
+
+* fix CipherSubscriber to only call onNext once per request ([#456](https://github.com/aws/aws-s3-encryption-client-java/issues/456)) ([646b735](https://github.com/aws/aws-s3-encryption-client-java/commit/646b735b052ced18a5c01f9d369ac6a81c8e2ce1))
+
 ## [3.3.2](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.1...v3.3.2) (2025-04-16)
 
 ### Fixes
