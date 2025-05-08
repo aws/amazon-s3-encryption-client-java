@@ -42,20 +42,10 @@ public class UploadObjectObserver {
         this.es = es;
         return this;
     }
-
-    protected CreateMultipartUploadRequest newCreateMultipartUploadRequest(
-            PutObjectRequest request) {
-        return CreateMultipartUploadRequest.builder()
-                .bucket(request.bucket())
-                .key(request.key())
-                .metadata(request.metadata())
-                .overrideConfiguration(request.overrideConfiguration().orElse(null))
-                .build();
-    }
-
+    
     public String onUploadCreation(PutObjectRequest req) {
         CreateMultipartUploadResponse res =
-                s3EncryptionClient.createMultipartUpload(newCreateMultipartUploadRequest(req));
+                s3EncryptionClient.createMultipartUpload(ConvertSDKRequests.convert(req));
         return this.uploadId = res.uploadId();
     }
 
