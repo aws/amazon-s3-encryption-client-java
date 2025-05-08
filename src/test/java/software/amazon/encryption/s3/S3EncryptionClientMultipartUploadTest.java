@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.SdkPartType;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
+import software.amazon.awssdk.services.s3.model.StorageClass;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 
@@ -517,6 +518,45 @@ public class S3EncryptionClientMultipartUploadTest {
             assertThrows(S3EncryptionClientException.class, () -> v3Client.uploadPart(uploadPartRequest,
                     RequestBody.fromInputStream(partInputStream, partInputStream.available())));
         }
+
+        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+        v3Client.close();
+    }
+
+    @Test
+    public void multipartPutObjectWithOptions() throws IOException {
+        final String objectKey = appendTestSuffix("multipart-put-object-with-options");
+
+        final long fileSizeLimit = 1024 * 1024 * 10;
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+
+        final S3Client v3Client = S3EncryptionClient.builder()
+          .kmsKeyId(KMS_KEY_ID)
+          .enableMultipartPutObject(true)
+          .enableDelayedAuthenticationMode(true)
+          .cryptoProvider(PROVIDER)
+          .build();
+
+        final Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+        final StorageClass storageClass = StorageClass.INTELLIGENT_TIERING;
+
+        v3Client.putObject(builder -> builder
+          .bucket(BUCKET)
+          .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+          .storageClass(storageClass)
+          .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit));
+
+        // Asserts
+        final ResponseInputStream<GetObjectResponse> output = v3Client.getObject(builder -> builder
+          .bucket(BUCKET)
+          .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+          .key(objectKey));
+
+        assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
+        assertEquals(storageClass, output.response().storageClass());
 
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
