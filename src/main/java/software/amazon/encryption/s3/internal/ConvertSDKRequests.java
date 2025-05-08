@@ -1,7 +1,8 @@
 package software.amazon.encryption.s3.internal;
 
-import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.ChecksumType;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.time.Instant;
 import java.util.Map;
 
