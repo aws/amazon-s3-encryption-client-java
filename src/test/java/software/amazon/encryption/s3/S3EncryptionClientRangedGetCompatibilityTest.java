@@ -264,6 +264,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         assertEquals("klmnopqrst0", output);
 
         // Valid start index within input and end index out of range, returns object from start index to End of Stream
+        // This causes a spurious NPE to be logged when debug logging is enabled.
         objectResponse = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=190-300")
@@ -288,6 +289,7 @@ public class S3EncryptionClientRangedGetCompatibilityTest {
         assertEquals(input, output);
 
         // Invalid range starting index and ending index greater than object length but within Cipher Block size, returns empty object
+        // This causes a spurious NPE to be logged when debug logging is enabled.
         objectResponse = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=216-217")

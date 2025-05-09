@@ -729,6 +729,8 @@ public class S3AsyncEncryptionClientTest {
      * Test which artificially limits the size of buffers using {@link TinyBufferAsyncRequestBody}.
      * This tests edge cases where network conditions result in buffers with length shorter than
      * the cipher's block size.
+     * Note that TinyAsyncRequestBody is not fully spec-compliant, and will cause IllegalStateExceptions
+     * to be logged when debug logging is enabled.
      * @throws IOException
      */
     @Test
