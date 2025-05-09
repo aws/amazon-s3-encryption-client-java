@@ -129,7 +129,7 @@ public class ConvertSDKRequests {
                   "https://github.com/aws/amazon-s3-encryption-client-java/issues." +
                   "To work around this issue you can disable multi part upload," +
                   "or not set this value on put." +
-                  "You may also be able to update this value after the pub object request completes."
+                  "You may be able to update this value after the PutObject request completes."
               );
           }
         }
