@@ -128,7 +128,7 @@ public class ConvertSDKRequests {
                   "Please report this to the Amazon S3 Encryption Client for Java: " +
                   "https://github.com/aws/amazon-s3-encryption-client-java/issues." +
                   "To work around this issue you can disable multi part upload," +
-                  "or not set this value on put." +
+                  "use the Async client, or not set this value on PutObject." +
                   "You may be able to update this value after the PutObject request completes."
               );
           }
