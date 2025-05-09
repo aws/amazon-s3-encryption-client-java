@@ -123,7 +123,7 @@ public class ConvertSDKRequests {
               // we loudly signal that we don't know how to handle this field.
               throw new IllegalArgumentException(
                 f.locationName() + " is an unknown field. " +
-                  "The S3Encryption Client will not silently disable this option." +
+                  "The S3 Encryption Client does not recognize this option and cannot set it on the CreateMultipartUploadRequest." +
                   "This may be a new S3 feature." +
                   "Please report this to the Amazon S3 Encryption Client for Java: " +
                   "https://github.com/aws/amazon-s3-encryption-client-java/issues." +
