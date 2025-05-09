@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.AmazonS3EncryptionV2;
 import com.amazonaws.services.s3.model.CryptoConfigurationV2;
 import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.CryptoStorageMode;
+import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
@@ -15,6 +16,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -164,10 +172,10 @@ public class S3EncryptionClientInstructionFileTest {
         s3Client.close();
         defaultClient.close();
     }
+
     @Test
-    public void testPutWithInstructionFile() {
-        final String objectKey = appendTestSuffix("instruction-file-put-object");
-        final String objectKeyV2 = appendTestSuffix("instruction-file-put-object-v2");
+    public void testPutWithInstructionFileV3ToV2Kms() {
+        final String objectKey = appendTestSuffix("instruction-file-put-object-v3-to-v2-kms");
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
@@ -183,24 +191,6 @@ public class S3EncryptionClientInstructionFileTest {
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
-        // Get the instruction file separately using a default client
-        S3Client defaultClient = S3Client.create();
-        ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey + ".instruction")
-                .build());
-        assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
-
-        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build());
-        String output = objectResponse.asUtf8String();
-        assertEquals(input, output);
-
-        // Temporary - Generate an instruction file in V2 to compare against V3
-        // TODO: do this for other keyrings as well
-        // TODO: Instead, make a V3ToV2 test
         EncryptionMaterialsProvider materialsProvider =
                 new StaticEncryptionMaterialsProvider(new KMSEncryptionMaterials(KMS_KEY_ID));
         CryptoConfigurationV2 cryptoConfig =
@@ -212,10 +202,92 @@ public class S3EncryptionClientInstructionFileTest {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
-        v2Client.putObject(BUCKET, objectKeyV2, input);
+        String result = v2Client.getObjectAsString(BUCKET, objectKey);
+        assertEquals(input, result);
 
         // Cleanup
-//        deleteObject(BUCKET, objectKey, s3Client);
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
+    }
+
+    @Test
+    public void testPutWithInstructionFileV3ToV2Aes() throws NoSuchAlgorithmException {
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(256);
+        SecretKey aesKey = keyGen.generateKey();
+        final String objectKey = appendTestSuffix("instruction-file-put-object-v3-to-v2-aes");
+        final String input = "SimpleTestOfV3EncryptionClient";
+        S3Client wrappedClient = S3Client.create();
+        S3Client s3Client = S3EncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(wrappedClient)
+                        .enableInstructionFilePutObject(true)
+                        .build())
+                .aesKey(aesKey)
+                .build();
+
+        s3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
+
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(aesKey));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        String result = v2Client.getObjectAsString(BUCKET, objectKey);
+        assertEquals(input, result);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
+    }
+
+    @Test
+    public void testPutWithInstructionFileV3ToV2Rsa() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
+        keyPairGen.initialize(2048);
+        KeyPair rsaKey = keyPairGen.generateKeyPair();
+
+        final String objectKey = appendTestSuffix("instruction-file-put-object-v3-to-v2-rsa");
+        final String input = "SimpleTestOfV3EncryptionClient";
+        S3Client wrappedClient = S3Client.create();
+        S3Client s3Client = S3EncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(wrappedClient)
+                        .enableInstructionFilePutObject(true)
+                        .build())
+                .rsaKeyPair(rsaKey)
+                .build();
+
+        s3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
+
+        EncryptionMaterialsProvider materialsProvider =
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(rsaKey));
+        CryptoConfigurationV2 cryptoConfig =
+                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+                        .withStorageMode(CryptoStorageMode.InstructionFile);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        String result = v2Client.getObjectAsString(BUCKET, objectKey);
+        assertEquals(input, result);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, s3Client);
         s3Client.close();
     }
 }
