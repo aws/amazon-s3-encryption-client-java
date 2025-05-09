@@ -121,7 +121,16 @@ public class ConvertSDKRequests {
             default:
               // Rather than silently dropping the value,
               // we loudly signal that we don't know how to handle this field.
-              throw new IllegalArgumentException("Unknown PutObjectRequest field " + f.locationName() + ".");
+              throw new IllegalArgumentException(
+                f.locationName() + " is an unknown field. " +
+                  "The S3 Encryption Client does not recognize this option and cannot set it on the CreateMultipartUploadRequest." +
+                  "This may be a new S3 feature." +
+                  "Please report this to the Amazon S3 Encryption Client for Java: " +
+                  "https://github.com/aws/amazon-s3-encryption-client-java/issues." +
+                  "To work around this issue you can disable multi part upload," +
+                  "use the Async client, or not set this value on PutObject." +
+                  "You may be able to update this value after the PutObject request completes."
+              );
           }
         }
       });
