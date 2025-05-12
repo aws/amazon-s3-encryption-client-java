@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.4](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.3...v3.3.4) (2025-05-12)
+
+### Fixes
+
+* Add details to error message ([#459](https://github.com/aws/aws-s3-encryption-client-java/issues/459)) ([0d32b4a](https://github.com/aws/aws-s3-encryption-client-java/commit/0d32b4a81662c5dc8ca85cf6f5dd09252f014b6e)), closes [#458](https://github.com/aws/aws-s3-encryption-client-java/issues/458)
+* Support all PutObjectRequest fields ([#458](https://github.com/aws/aws-s3-encryption-client-java/issues/458)) ([99cce95](https://github.com/aws/aws-s3-encryption-client-java/commit/99cce95ab8e376f4a096401e56a88d6fc34ace44))
+
 ## [3.3.3](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.2...v3.3.3) (2025-05-05)
 
 ### Fixes
