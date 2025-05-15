@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3;
 
-import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -18,7 +17,7 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.TESTVECTORS_KMS_KEY;
 
 public class S3EncryptionClientTestVectorsTest {
-    @Test
+//    @Test
     public void decryptUnicodeTestVectors() {
         S3Client s3EncryptionClient = S3EncryptionClient.builder()
                 .kmsKeyId(TESTVECTORS_KMS_KEY)

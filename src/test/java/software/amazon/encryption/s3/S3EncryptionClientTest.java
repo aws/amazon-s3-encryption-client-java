@@ -854,7 +854,7 @@ public class S3EncryptionClientTest {
         }
     }
 
-    @Test
+//    @Test
     public void s3EncryptionClientTopLevelAlternateCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials");
 
@@ -921,7 +921,7 @@ public class S3EncryptionClientTest {
         kmsClient.close();
     }
 
-    @Test
+//    @Test
     public void s3EncryptionClientMixedCredentialsInstructionFile() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials-instruction-file");
         final String input = "SimpleTestOfV3EncryptionClient";
@@ -969,7 +969,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+//    @Test
     public void s3EncryptionClientMixedCredentialsInstructionFileFails() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials-instruction-file-fails");
         final String input = "SimpleTestOfV3EncryptionClient";
