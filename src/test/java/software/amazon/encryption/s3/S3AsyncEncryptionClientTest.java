@@ -910,16 +910,46 @@ public class S3AsyncEncryptionClientTest {
     }
 
     @Test
-    public void S3AsyncClientBuilderForbidsMultipartEnabled() throws IOException {
+    public void s3AsyncClientBuilderForbidsMultipartEnabled() {
         assertThrows(
             UnsupportedOperationException.class,
             () -> S3AsyncEncryptionClient.builder().multipartEnabled(Boolean.TRUE));
     }
 
     @Test
-    public void S3AsyncClientBuilderForbidsMultipartConfiguration() throws IOException {
+    public void s3AsyncClientBuilderForbidsMultipartConfiguration() {
         assertThrows(
             UnsupportedOperationException.class,
             () -> S3AsyncEncryptionClient.builder().multipartConfiguration(MultipartConfiguration.builder().build()));
+    }
+
+    @Test
+    public void s3AsyncClientForbidsCreateMultipartUpload() {
+        S3AsyncClient s3AsyncClient = S3AsyncEncryptionClient.builder()
+                .kmsKeyId("fails")
+                .build();
+
+        assertThrows(UnsupportedOperationException.class, () -> s3AsyncClient.createMultipartUpload(builder -> builder.bucket(BUCKET).key("expected-fail").build()).join());
+        s3AsyncClient.close();
+    }
+
+    @Test
+    public void s3AsyncClientForbidsUploadPart() {
+        S3AsyncClient s3AsyncClient = S3AsyncEncryptionClient.builder()
+                .kmsKeyId("fails")
+                .build();
+
+        assertThrows(UnsupportedOperationException.class, () -> s3AsyncClient.uploadPart(builder -> builder.uploadId("fail").build(), AsyncRequestBody.fromString("fail")).join());
+        s3AsyncClient.close();
+    }
+
+    @Test
+    public void s3AsyncClientForbidsCompleteMultipartUpload() {
+        S3AsyncClient s3AsyncClient = S3AsyncEncryptionClient.builder()
+                .kmsKeyId("fails")
+                .build();
+
+        assertThrows(UnsupportedOperationException.class, () -> s3AsyncClient.completeMultipartUpload(builder -> builder.uploadId("fail").build()).join());
+        s3AsyncClient.close();
     }
 }

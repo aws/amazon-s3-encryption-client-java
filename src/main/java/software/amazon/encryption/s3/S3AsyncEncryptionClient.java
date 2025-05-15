@@ -20,6 +20,10 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
@@ -30,6 +34,8 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Request;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
@@ -254,6 +260,24 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .delete(builder -> builder.objects(objectsToDelete))
                 .build());
+    }
+
+    @Override
+    public CompletableFuture<CreateMultipartUploadResponse> createMultipartUpload(CreateMultipartUploadRequest createMultipartUploadRequest) {
+        throw new UnsupportedOperationException("The S3 Async Encryption Client does not support low-level multipart uploads. " +
+                "Please use Multipart PutObject or the default (synchronous) client to use this API.");
+    }
+
+    @Override
+    public CompletableFuture<UploadPartResponse> uploadPart(UploadPartRequest uploadPartRequest, AsyncRequestBody asyncRequestBody) {
+        throw new UnsupportedOperationException("The S3 Async Encryption Client does not support low-level multipart uploads. " +
+                "Please use Multipart PutObject or the default (synchronous) client to use this API.");
+    }
+
+    @Override
+    public CompletableFuture<CompleteMultipartUploadResponse> completeMultipartUpload(CompleteMultipartUploadRequest completeMultipartUploadRequest) {
+        throw new UnsupportedOperationException("The S3 Async Encryption Client does not support low-level multipart uploads. " +
+                "Please use Multipart PutObject or the default (synchronous) client to use this API.");
     }
 
     /**
