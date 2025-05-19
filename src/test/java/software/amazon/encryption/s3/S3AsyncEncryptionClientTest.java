@@ -221,7 +221,7 @@ public class S3AsyncEncryptionClientTest {
         s3Client.close();
     }
 
-//    @Test
+    @Test
     public void s3AsyncEncryptionClientTopLevelAlternateCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-async-client-with-top-level-alternate-credentials");
         final String input = "S3EncryptionClientTopLevelAlternateCredsTest";
@@ -275,7 +275,7 @@ public class S3AsyncEncryptionClientTest {
         s3ClientAltCreds.close();
     }
 
-//    @Test
+    @Test
     public void s3AsyncEncryptionClientMixedCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials");
         final String input = "S3EncryptionClientTopLevelAlternateCredsTest";
