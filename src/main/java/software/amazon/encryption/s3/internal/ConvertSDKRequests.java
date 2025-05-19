@@ -3,6 +3,7 @@ package software.amazon.encryption.s3.internal;
 import java.time.Instant;
 import java.util.Map;
 
+import org.apache.commons.logging.LogFactory;
 import software.amazon.awssdk.services.s3.model.ChecksumType;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
@@ -198,8 +199,16 @@ public class ConvertSDKRequests {
                     // These fields exist only in CompleteMultipartUploadResponse, not in PutObjectResponse
                     break;
                   default:
-                    // We should silently drop unknown fields because,
-                    // once the object is stored we expect to return success response.
+                    // We should NOT throw an exception for unknown fields because
+                    // once the object is stored, we expect to return a successful response.
+                    // Emit a log at info level for awareness.
+                    LogFactory.getLog(ConvertSDKRequests.class).info(f.memberName() + " returned in CompleteMultipartUploadResponse for "
+                            + response.key() + " is an unknown field." +
+                            "The S3 Encryption Client does not recognize this option and cannot set it on the CompleteMultipartUploadResponse." +
+                            "This may be a new S3 feature." +
+                            "Please report this to the Amazon S3 Encryption Client for Java: " +
+                            "https://github.com/aws/amazon-s3-encryption-client-java/issues."
+                    );
                     break;
                 }
               }
