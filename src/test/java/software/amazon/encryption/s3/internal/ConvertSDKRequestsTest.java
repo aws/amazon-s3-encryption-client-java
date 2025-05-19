@@ -17,7 +17,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .bucket(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.bucket());
   }
@@ -28,7 +28,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .acl(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.acl());
   }
@@ -39,7 +39,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .acl(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.acl().toString());
   }
@@ -50,7 +50,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .bucketKeyEnabled(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.bucketKeyEnabled());
   }
@@ -61,7 +61,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .cacheControl(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.cacheControl());
   }
@@ -72,7 +72,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .checksumAlgorithm(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.checksumAlgorithm());
   }
@@ -83,7 +83,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .checksumAlgorithm(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.checksumAlgorithm().toString());
   }
@@ -94,7 +94,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .contentDisposition(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.contentDisposition());
   }
@@ -105,7 +105,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .contentEncoding(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.contentEncoding());
   }
@@ -116,7 +116,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .contentLanguage(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.contentLanguage());
   }
@@ -127,7 +127,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .contentType(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.contentType());
   }
@@ -138,7 +138,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .expectedBucketOwner(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.expectedBucketOwner());
   }
@@ -149,7 +149,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .expires(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.expires());
   }
@@ -160,7 +160,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .grantFullControl(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.grantFullControl());
   }
@@ -171,7 +171,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .grantRead(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.grantRead());
   }
@@ -182,7 +182,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .grantReadACP(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.grantReadACP());
   }
@@ -193,7 +193,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .grantWriteACP(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.grantWriteACP());
   }
@@ -204,7 +204,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .key(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.key());
   }
@@ -216,7 +216,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .metadata(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.metadata());
   }
@@ -227,7 +227,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .objectLockLegalHoldStatus(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockLegalHoldStatus());
   }
@@ -238,7 +238,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .objectLockLegalHoldStatus(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockLegalHoldStatus().toString());
   }
@@ -249,7 +249,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .objectLockMode(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockMode());
   }
@@ -260,7 +260,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .objectLockMode(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockMode().toString());
   }
@@ -271,7 +271,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .objectLockRetainUntilDate(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockRetainUntilDate());
   }
@@ -282,7 +282,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .requestPayer(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.requestPayer());
   }
@@ -293,7 +293,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .requestPayer(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.requestPayer().toString());
   }
@@ -304,7 +304,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .serverSideEncryption(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.serverSideEncryption());
   }
@@ -315,7 +315,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .serverSideEncryption(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.serverSideEncryption().toString());
   }
@@ -326,7 +326,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .sseCustomerAlgorithm(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.sseCustomerAlgorithm());
   }
@@ -337,7 +337,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .sseCustomerKey(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.sseCustomerKey());
   }
@@ -348,7 +348,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .ssekmsKeyId(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.ssekmsKeyId());
   }
@@ -359,7 +359,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .ssekmsEncryptionContext(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.ssekmsEncryptionContext());
   }
@@ -370,7 +370,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .storageClass(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.storageClass());
   }
@@ -381,7 +381,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .storageClass(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.storageClass().toString());
   }
@@ -392,7 +392,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .tagging(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.tagging());
   }
@@ -403,7 +403,7 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .websiteRedirectLocation(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.websiteRedirectLocation());
   }
@@ -417,9 +417,57 @@ class ConvertSDKRequestsTest {
     PutObjectRequest originalRequest = PutObjectRequest.builder()
       .overrideConfiguration(value)
       .build();
-    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convert(originalRequest);
+    final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertTrue(convertedRequest.overrideConfiguration().isPresent());
     assertEquals(value, convertedRequest.overrideConfiguration().get());
+  }
+
+  @Test
+  public void testConvertResponse() {
+    // Create a CompleteMultipartUploadResponse with various fields set
+    CompleteMultipartUploadResponse completeResponse = CompleteMultipartUploadResponse.builder()
+            .eTag("test-etag")
+            .expiration("test-expiration")
+            .checksumCRC32("test-crc32")
+            .checksumCRC32C("test-crc32c")
+            .checksumCRC64NVME("test-crc64")
+            .checksumSHA1("test-sha1")
+            .checksumSHA256("test-sha256")
+            .checksumType(ChecksumType.COMPOSITE)
+            .serverSideEncryption(ServerSideEncryption.AWS_KMS)
+            .versionId("test-version-id")
+            .ssekmsKeyId("test-kms-key-id")
+            .bucketKeyEnabled(true)
+            .requestCharged("requester")
+            // Fields that should be ignored
+            .location("test-location")
+            .bucket("test-bucket")
+            .key("test-key")
+            .build();
+
+    // Convert the response
+    PutObjectResponse putResponse = ConvertSDKRequests.convertResponse(completeResponse);
+
+    // Verify that fields were copied correctly
+    assertEquals("test-etag", putResponse.eTag());
+    assertEquals("test-expiration", putResponse.expiration());
+    assertEquals("test-crc32", putResponse.checksumCRC32());
+    assertEquals("test-crc32c", putResponse.checksumCRC32C());
+    assertEquals("test-crc64", putResponse.checksumCRC64NVME());
+    assertEquals("test-sha1", putResponse.checksumSHA1());
+    assertEquals("test-sha256", putResponse.checksumSHA256());
+    assertEquals(ChecksumType.COMPOSITE.toString(), putResponse.checksumTypeAsString());
+    assertEquals(ServerSideEncryption.AWS_KMS.toString(), putResponse.serverSideEncryptionAsString());
+    assertEquals("test-version-id", putResponse.versionId());
+    assertEquals("test-kms-key-id", putResponse.ssekmsKeyId());
+    assertTrue(putResponse.bucketKeyEnabled());
+    assertEquals("requester", putResponse.requestChargedAsString());
+
+    // Verify that fields that can't be populated are null
+    assertNull(putResponse.sseCustomerAlgorithm());
+    assertNull(putResponse.sseCustomerKeyMD5());
+    assertNull(putResponse.ssekmsEncryptionContext());
+    assertNull(putResponse.size());
   }
 }

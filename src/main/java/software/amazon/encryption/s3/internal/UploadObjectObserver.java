@@ -44,7 +44,7 @@ public class UploadObjectObserver {
     
     public String onUploadCreation(PutObjectRequest req) {
         CreateMultipartUploadResponse res =
-                s3EncryptionClient.createMultipartUpload(ConvertSDKRequests.convert(req));
+                s3EncryptionClient.createMultipartUpload(ConvertSDKRequests.convertRequest(req));
         return this.uploadId = res.uploadId();
     }
 
