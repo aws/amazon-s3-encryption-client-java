@@ -209,7 +209,6 @@ public class ConvertSDKRequests {
                             "Please report this to the Amazon S3 Encryption Client for Java: " +
                             "https://github.com/aws/amazon-s3-encryption-client-java/issues."
                     );
-                    break;
                 }
               }
             });
