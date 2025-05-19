@@ -108,7 +108,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                  violates the Reactive Streams specification and can cause exceptions downstream.
                 */
                 System.out.println("[CipherSubscriber] Checking content read threshold: contentRead=" + contentRead.get() + ", tagLength=" + tagLength + ", contentLength=" + contentLength);
-                if (contentRead.get() + tagLength >= contentLength) {
+                if (contentRead.get() + (isEncrypt ? tagLength : 0) >= contentLength) {
                     // All content has been read; complete the stream.
                     System.out.println("[CipherSubscriber] Content read threshold (" + contentRead.get() + ") reached, proceeding to finalBytes");
                     finalBytes();

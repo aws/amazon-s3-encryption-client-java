@@ -25,14 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CipherSubscriberTest {
     // Helper classes for testing
-    class MySubscriber implements Subscriber<ByteBuffer> {
+    class SimpleSubscriber implements Subscriber<ByteBuffer> {
 
         public static final long DEFAULT_REQUEST_SIZE = 1;
 
         private final AtomicBoolean isSubscribed = new AtomicBoolean(false);
         private final AtomicLong requestedItems = new AtomicLong(0);
         private final AtomicLong lengthOfData = new AtomicLong(0);
-        private LinkedList<ByteBuffer> buffersSeen = new LinkedList<>();
+        private final LinkedList<ByteBuffer> buffersSeen = new LinkedList<>();
         private Subscription subscription;
 
         @Override
@@ -41,14 +41,13 @@ class CipherSubscriberTest {
                 this.subscription = s;
                 requestMore(DEFAULT_REQUEST_SIZE);
             } else {
-                s.cancel(); // Cancel the new subscription if we're already subscribed
+                s.cancel();
             }
         }
 
         @Override
         public void onNext(ByteBuffer item) {
             // Process the item here
-            System.out.println("Received: " + item);
             lengthOfData.addAndGet(item.capacity());
             buffersSeen.add(item);
 
@@ -63,7 +62,7 @@ class CipherSubscriberTest {
 
         @Override
         public void onComplete() {
-            System.out.println("Stream completed");
+            // Do nothing.
         }
 
         public void cancel() {
@@ -74,15 +73,9 @@ class CipherSubscriberTest {
 
         private void requestMore(long n) {
             if (subscription != null) {
-                System.out.println("Requesting more...");
                 requestedItems.addAndGet(n);
                 subscription.request(n);
             }
-        }
-
-        // Getter methods for testing
-        public boolean isSubscribed() {
-            return isSubscribed.get();
         }
 
         public List<ByteBuffer> getBuffersSeen() {
@@ -91,7 +84,7 @@ class CipherSubscriberTest {
     }
 
     class TestPublisher<T> {
-        private List<Subscriber<T>> subscribers = new ArrayList<>();
+        private final List<Subscriber<T>> subscribers = new ArrayList<>(1);
 
         public void subscribe(Subscriber<T> subscriber) {
             subscribers.add(subscriber);
@@ -116,22 +109,27 @@ class CipherSubscriberTest {
     }
 
     class TestSubscription implements Subscription {
-        private long requestedItems = 0;
+        private long requestCount = 0;
+        private final AtomicBoolean canceled = new AtomicBoolean(false);
 
         @Override
         public void request(long n) {
-            System.out.println("received req for " + n);
-            requestedItems += n;
-            System.out.println("total req'd items is " + requestedItems);
+            if (!canceled.get()) {
+                requestCount += n;
+            } else {
+                // Maybe do something more useful/correct eventually,
+                // for now just throw an exception
+                throw new RuntimeException("Subscription has been canceled!");
+            }
         }
 
         @Override
         public void cancel() {
-            // Implementation for testing cancel behavior
+            canceled.set(true);
         }
 
-        public long getRequestedItems() {
-            return requestedItems;
+        public long getRequestCount() {
+            return requestCount;
         }
     }
 
@@ -160,22 +158,34 @@ class CipherSubscriberTest {
                 .build();
     }
 
+    private byte[] getByteArrayFromFixedLengthByteBuffers(List<ByteBuffer> byteBuffers, long expectedLength) {
+        if (expectedLength > Integer.MAX_VALUE) {
+            throw new RuntimeException("Use a smaller expected length.");
+        }
+        return getByteArrayFromFixedLengthByteBuffers(byteBuffers, (int) expectedLength);
+    }
+
+    private byte[] getByteArrayFromFixedLengthByteBuffers(List<ByteBuffer> byteBuffers, int expectedLength) {
+        byte[] bytes = new byte[expectedLength];
+        int offset = 0;
+        for (ByteBuffer bb : byteBuffers) {
+            int remaining = bb.remaining();
+            bb.get(bytes, offset, remaining);
+            offset += remaining;
+        }
+        return bytes;
+    }
+
     @Test
-    public void testSubscriberBehavior() throws InterruptedException {
+    public void testSubscriberBehaviorOneChunk() {
+        AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         String plaintext = "unit test of cipher subscriber";
         EncryptionMaterials materials = getTestEncryptMaterials(plaintext);
         byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
         // we reject 0-ized IVs, so just do something
         iv[0] = 1;
-        MySubscriber wrappedSubscriber = new MySubscriber();
+        SimpleSubscriber wrappedSubscriber = new SimpleSubscriber();
         CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, (long) plaintext.getBytes(StandardCharsets.UTF_8).length, materials, iv);
-
-        // Arrange
-        // TODO: These need to be moved probably to the wrappedSubscriber,
-        // so they are actually updated as the subscription is processed.
-//        CountDownLatch completionLatch = new CountDownLatch(1);
-//        AtomicInteger receivedItems = new AtomicInteger(0);
-//        AtomicInteger errorCount = new AtomicInteger(0);
 
         // Act
         TestPublisher<ByteBuffer> publisher = new TestPublisher<>();
@@ -185,35 +195,19 @@ class CipherSubscriberTest {
         assertTrue(publisher.isSubscribed());
         assertEquals(1, publisher.getSubscriberCount());
 
-        // Simulate publishing items
-//        publisher.emit("item1");
         ByteBuffer ptBb = ByteBuffer.wrap(plaintext.getBytes(StandardCharsets.UTF_8));
-        System.out.println("emitting...");
         publisher.emit(ptBb);
-        System.out.println("emitted");
 
         // Complete the stream
-        System.out.println("completing...");
         publisher.complete();
-        System.out.println("completed.");
 
-        // Assert
-//        assertTrue(completionLatch.await(5, TimeUnit.SECONDS));
-//        assertEquals(1, wrappedSubscriber.getRequestedItems());
-//        assertEquals(0, errorCount.get());
-        long expectedLength = plaintext.getBytes(StandardCharsets.UTF_8).length + AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherTagLengthBytes();
+        long expectedLength = plaintext.getBytes(StandardCharsets.UTF_8).length + algorithmSuite.cipherTagLengthBytes();
         assertEquals(expectedLength, wrappedSubscriber.lengthOfData.get());
-        byte[] ctBytes = new byte[(int) expectedLength];
-        int offset = 0;
-        for (ByteBuffer bb : wrappedSubscriber.getBuffersSeen()) {
-            int remaining = bb.remaining();
-            bb.get(ctBytes, offset, remaining);
-            offset += remaining;
-        }
+        byte[] ctBytes = getByteArrayFromFixedLengthByteBuffers(wrappedSubscriber.getBuffersSeen(), expectedLength);
 
         // Now decrypt.
         DecryptionMaterials decryptionMaterials = getTestDecryptionMaterialsFromEncMats(materials);
-        MySubscriber wrappedDecryptSubscriber = new MySubscriber();
+        SimpleSubscriber wrappedDecryptSubscriber = new SimpleSubscriber();
         CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, iv);
         TestPublisher<ByteBuffer> decryptPublisher = new TestPublisher<>();
         decryptPublisher.subscribe(decryptSubscriber);
@@ -224,58 +218,80 @@ class CipherSubscriberTest {
 
         // Simulate publishing items
         ByteBuffer ctBb = ByteBuffer.wrap(ctBytes);
-        System.out.println("emitting...");
         decryptPublisher.emit(ctBb);
-        System.out.println("emitted");
 
         // Complete the stream
-        System.out.println("completing...");
         decryptPublisher.complete();
-        System.out.println("completed.");
 
-        // Assert
         long expectedLengthPt = plaintext.getBytes(StandardCharsets.UTF_8).length;
         assertEquals(expectedLengthPt, wrappedDecryptSubscriber.lengthOfData.get());
-        byte[] ptBytes = new byte[(int) expectedLengthPt];
-        int offsetPt = 0;
-        for (ByteBuffer bb : wrappedDecryptSubscriber.getBuffersSeen()) {
-            int remaining = bb.remaining();
-            bb.get(ptBytes, offsetPt, remaining);
-            offsetPt += remaining;
-        }
-        // Round trip encrypt/decrypt succeeds.
+        byte[] ptBytes = getByteArrayFromFixedLengthByteBuffers(wrappedDecryptSubscriber.getBuffersSeen(), expectedLengthPt);
+        // Assert round trip encrypt/decrypt succeeds.
         assertEquals(plaintext, new String(ptBytes, StandardCharsets.UTF_8));
     }
 
-////    @Test
-//    void testBackpressure() {
-//        // Arrange
-//        CipherSubscriber<ByteBuffer> subscriber = new CipherSubscriber(wrappedSubscriber, contentLength, materials, iv);
-//        TestSubscription subscription = new TestSubscription();
-//
-//        // Act
-//        subscriber.onSubscribe(subscription);
-//
-//        // Assert
-//        assertEquals(TestSubscriber.DEFAULT_REQUEST_SIZE, subscription.getRequestedItems());
-//    }
-//
-////    @Test
-//    void testErrorHandling() {
-//        // Arrange
-//        AtomicInteger errorCount = new AtomicInteger(0);
-//        MySubscriber<String> subscriber = new MySubscriber<>() {
-//            @Override
-//            public void onError(Throwable t) {
-//                errorCount.incrementAndGet();
-//            }
-//        };
-//
-//        // Act
-//        subscriber.onError(new RuntimeException("Test error"));
-//
-//        // Assert
-//        assertEquals(1, errorCount.get());
-//    }
-}
+    @Test
+    public void testSubscriberBehaviorTagLengthLastChunk() {
+        AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
+        String plaintext = "unit test of cipher subscriber tag length last chunk";
+        EncryptionMaterials materials = getTestEncryptMaterials(plaintext);
+        byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
+        // we reject 0-ized IVs, so just do something non-zero
+        iv[0] = 1;
+        SimpleSubscriber wrappedSubscriber = new SimpleSubscriber();
+        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, (long) plaintext.getBytes(StandardCharsets.UTF_8).length, materials, iv);
 
+        // Setup Publisher
+        TestPublisher<ByteBuffer> publisher = new TestPublisher<>();
+        publisher.subscribe(subscriber);
+
+        // Verify subscription behavior
+        assertTrue(publisher.isSubscribed());
+        assertEquals(1, publisher.getSubscriberCount());
+
+        // Send data to be encrypted
+        ByteBuffer ptBb = ByteBuffer.wrap(plaintext.getBytes(StandardCharsets.UTF_8));
+        publisher.emit(ptBb);
+        publisher.complete();
+
+        // Convert to byte array for convenience
+        long expectedLength = plaintext.getBytes(StandardCharsets.UTF_8).length + algorithmSuite.cipherTagLengthBytes();
+        assertEquals(expectedLength, wrappedSubscriber.lengthOfData.get());
+        byte[] ctBytes = getByteArrayFromFixedLengthByteBuffers(wrappedSubscriber.getBuffersSeen(), expectedLength);
+
+        // Now decrypt the ciphertext
+        DecryptionMaterials decryptionMaterials = getTestDecryptionMaterialsFromEncMats(materials);
+        SimpleSubscriber wrappedDecryptSubscriber = new SimpleSubscriber();
+        CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, iv);
+        TestPublisher<ByteBuffer> decryptPublisher = new TestPublisher<>();
+        decryptPublisher.subscribe(decryptSubscriber);
+
+        // Verify subscription behavior
+        assertTrue(decryptPublisher.isSubscribed());
+        assertEquals(1, decryptPublisher.getSubscriberCount());
+
+        int taglength = algorithmSuite.cipherTagLengthBytes();
+        int ciphertextWithoutTagLength = ctBytes.length - taglength;
+
+        // Create the main ByteBuffer (all except last 16 bytes)
+        ByteBuffer mainBuffer = ByteBuffer.allocate(ciphertextWithoutTagLength);
+        mainBuffer.put(ctBytes, 0, ciphertextWithoutTagLength);
+        mainBuffer.flip();
+
+        // Create the tag ByteBuffer (last 16 bytes)
+        ByteBuffer tagBuffer = ByteBuffer.allocate(taglength);
+        tagBuffer.put(ctBytes, ciphertextWithoutTagLength, taglength);
+        tagBuffer.flip();
+
+        // Send the ciphertext, then the tag separately
+        decryptPublisher.emit(mainBuffer);
+        decryptPublisher.emit(tagBuffer);
+        decryptPublisher.complete();
+
+        long expectedLengthPt = plaintext.getBytes(StandardCharsets.UTF_8).length;
+        assertEquals(expectedLengthPt, wrappedDecryptSubscriber.lengthOfData.get());
+        byte[] ptBytes = getByteArrayFromFixedLengthByteBuffers(wrappedDecryptSubscriber.getBuffersSeen(), expectedLengthPt);
+        // Assert round trip encrypt/decrypt succeeds
+        assertEquals(plaintext, new String(ptBytes, StandardCharsets.UTF_8));
+    }
+}
