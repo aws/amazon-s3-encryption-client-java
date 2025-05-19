@@ -129,10 +129,10 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     public void onComplete() {
         // In rare cases, e.g. when the last part of a low-level MPU has 0 length,
         // onComplete will be called before onNext is called once.
-        // tagLength should only be added on Encrypt
-        if (contentRead.get() + (isEncrypt ? tagLength : 0) >= contentLength) {
-            finalBytes();
-        }
+        // So, call finalBytes here just in case there's any unsent data left.
+        // Most likely, finalBytes has already been called by the last onNext,
+        // but finalBytes guards against multiple invocations so it's safe to call again.
+        finalBytes();
         wrappedSubscriber.onComplete();
     }
 

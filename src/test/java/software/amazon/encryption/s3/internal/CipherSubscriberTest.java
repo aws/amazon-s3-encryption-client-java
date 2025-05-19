@@ -185,7 +185,7 @@ class CipherSubscriberTest {
         // we reject 0-ized IVs, so just do something
         iv[0] = 1;
         SimpleSubscriber wrappedSubscriber = new SimpleSubscriber();
-        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, (long) plaintext.getBytes(StandardCharsets.UTF_8).length, materials, iv);
+        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, iv);
 
         // Act
         TestPublisher<ByteBuffer> publisher = new TestPublisher<>();
@@ -239,7 +239,7 @@ class CipherSubscriberTest {
         // we reject 0-ized IVs, so just do something non-zero
         iv[0] = 1;
         SimpleSubscriber wrappedSubscriber = new SimpleSubscriber();
-        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, (long) plaintext.getBytes(StandardCharsets.UTF_8).length, materials, iv);
+        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, iv);
 
         // Setup Publisher
         TestPublisher<ByteBuffer> publisher = new TestPublisher<>();
