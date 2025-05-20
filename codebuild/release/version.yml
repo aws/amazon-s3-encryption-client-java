@@ -30,4 +30,4 @@ phases:
   build:
     commands:
       # semantic-release uses config stored in ~/.releaserc
-      - npx semantic-release --branches $BRANCH --no-ci
+      - npx --package=conventional-changelog-conventionalcommits --package=@semantic-release/git --package=@semantic-release/exec --package=@semantic-release/changelog semantic-release --branches $BRANCH --no-ci
