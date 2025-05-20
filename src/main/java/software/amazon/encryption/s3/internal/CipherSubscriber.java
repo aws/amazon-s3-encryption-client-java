@@ -21,6 +21,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final Long contentLength;
     private final boolean isLastPart;
     private final int tagLength;
+    private final boolean isEncrypt;
     private final AtomicBoolean finalBytesCalled = new AtomicBoolean(false);
 
     private byte[] outputBuffer;
@@ -31,6 +32,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         this.cipher = materials.getCipher(iv);
         this.isLastPart = isLastPart;
         this.tagLength = materials.algorithmSuite().cipherTagLengthBytes();
+        this.isEncrypt = (CipherMode.DECRYPT != materials.cipherMode());
     }
 
     CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
@@ -56,7 +58,9 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                 // Note that while the JCE Javadoc specifies that the outputBuffer is null in this case,
                 // in practice SunJCE and ACCP return an empty buffer instead, hence checks for
                 // null OR length == 0.
-                if (contentRead.get() + tagLength >= contentLength) {
+
+                // tagLength should only be added on Encrypt
+                if (contentRead.get() + (isEncrypt ? tagLength : 0) >= contentLength) {
                     // All content has been read, so complete to get the final bytes
                     finalBytes();
                     return;
@@ -84,7 +88,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
                  Calling `wrappedSubscriber.onNext` more than once for `request(1)`
                  violates the Reactive Streams specification and can cause exceptions downstream.
                 */
-                if (contentRead.get() + tagLength >= contentLength) {
+                if (contentRead.get() + (isEncrypt ? tagLength : 0) >= contentLength) {
                     // All content has been read; complete the stream.
                     finalBytes();
                 } else {
@@ -125,9 +129,10 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
     public void onComplete() {
         // In rare cases, e.g. when the last part of a low-level MPU has 0 length,
         // onComplete will be called before onNext is called once.
-        if (contentRead.get() + tagLength <= contentLength) {
-            finalBytes();
-        }
+        // So, call finalBytes here just in case there's any unsent data left.
+        // Most likely, finalBytes has already been called by the last onNext,
+        // but finalBytes guards against multiple invocations so it's safe to call again.
+        finalBytes();
         wrappedSubscriber.onComplete();
     }
 
