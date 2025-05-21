@@ -19,6 +19,7 @@ phases:
       - npm install @semantic-release/changelog -d
       - npm install @semantic-release/exec -d
       - npm install @semantic-release/git -d
+      - npm install conventional-changelog-conventionalcommits -d
       - npm install --save conventional-changelog
     runtime-versions:
       nodejs: 16
@@ -30,4 +31,4 @@ phases:
   build:
     commands:
       # semantic-release uses config stored in ~/.releaserc
-      - npx --package=conventional-changelog-conventionalcommits --package=@semantic-release/git --package=@semantic-release/exec --package=@semantic-release/changelog semantic-release --branches $BRANCH --no-ci
+      - npx semantic-release --branches $BRANCH --no-ci
