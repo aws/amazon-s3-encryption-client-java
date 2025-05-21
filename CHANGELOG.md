@@ -1,13 +1,5 @@
 # Changelog
 
-## [3.3.5](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.4...v3.3.5) (2025-05-20)
-
-### Fixes
-
-* determine effective contentLength, account for tagLength on decrypt ([#463](https://github.com/aws/aws-s3-encryption-client-java/issues/463)) ([969d721](https://github.com/aws/aws-s3-encryption-client-java/commit/969d7213b7bd6250fbce159bd5705a19ee439f23))
-* disable low-level Multipart Upload in Async client ([#461](https://github.com/aws/aws-s3-encryption-client-java/issues/461)) ([599f941](https://github.com/aws/aws-s3-encryption-client-java/commit/599f9417335efac4cf952e555a99bbc6d7d8cc0f))
-* support PutObjectResponse fields ([#462](https://github.com/aws/aws-s3-encryption-client-java/issues/462)) ([dec503b](https://github.com/aws/aws-s3-encryption-client-java/commit/dec503b49f3e57113de16fcc861ee1ecedbd2ff6))
-
 ## [3.3.4](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.3...v3.3.4) (2025-05-12)
 
 ### Fixes
