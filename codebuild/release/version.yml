@@ -32,3 +32,4 @@ phases:
     commands:
       # semantic-release uses config stored in ~/.releaserc
       - npx semantic-release --branches $BRANCH --no-ci
+      
