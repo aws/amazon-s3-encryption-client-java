@@ -46,6 +46,7 @@ import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.ConvertSDKRequests;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.internal.MultiFileOutputStream;
@@ -192,11 +193,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         if (_enableMultipartPutObject) {
             try {
-                CompleteMultipartUploadResponse completeResponse = multipartPutObject(putObjectRequest, requestBody);
-                PutObjectResponse response = PutObjectResponse.builder()
-                        .eTag(completeResponse.eTag())
-                        .build();
-                return response;
+                return multipartPutObject(putObjectRequest, requestBody);
             } catch (Throwable e) {
                 throw new S3EncryptionClientException("Exception while performing Multipart Upload PutObject", e);
             }
@@ -275,7 +272,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
     }
 
-    private CompleteMultipartUploadResponse multipartPutObject(PutObjectRequest request, RequestBody requestBody) throws Throwable {
+    private PutObjectResponse multipartPutObject(PutObjectRequest request, RequestBody requestBody) throws Throwable {
         // Similar logic exists in the MultipartUploadObjectPipeline,
         // but the request types do not match so refactoring is not possible
         final long contentLength;
@@ -355,7 +352,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
             outputStream.cleanup();
         }
         // Complete upload
-        return observer.onCompletion(partETags);
+        return ConvertSDKRequests.convertResponse(observer.onCompletion(partETags));
     }
 
     private <T extends Throwable> T onAbort(UploadObjectObserver observer, T t) {

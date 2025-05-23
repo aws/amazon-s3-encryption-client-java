@@ -13,14 +13,16 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ChecksumType;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.SdkPartType;
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
+import software.amazon.awssdk.services.s3.model.StorageClass;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
-import software.amazon.awssdk.services.s3.model.StorageClass;
 import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 
@@ -543,18 +545,23 @@ public class S3EncryptionClientMultipartUploadTest {
 
         final StorageClass storageClass = StorageClass.INTELLIGENT_TIERING;
 
-        v3Client.putObject(builder -> builder
+        // PutObject
+        final PutObjectResponse putObjectResponse = v3Client.putObject(builder -> builder
           .bucket(BUCKET)
           .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
           .storageClass(storageClass)
           .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit));
 
-        // Asserts
+        assertEquals(ChecksumType.FULL_OBJECT.toString(), putObjectResponse.checksumTypeAsString());
+        assertEquals(ServerSideEncryption.AES256.toString(), putObjectResponse.serverSideEncryptionAsString());
+
+        // GetObject
         final ResponseInputStream<GetObjectResponse> output = v3Client.getObject(builder -> builder
           .bucket(BUCKET)
           .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
           .key(objectKey));
 
+        // Asserts
         assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
         assertEquals(storageClass, output.response().storageClass());
 

@@ -1,14 +1,18 @@
 package software.amazon.encryption.s3.internal;
 
-import software.amazon.awssdk.services.s3.model.ChecksumType;
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.time.Instant;
 import java.util.Map;
 
+import org.apache.commons.logging.LogFactory;
+import software.amazon.awssdk.services.s3.model.ChecksumType;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+
 public class ConvertSDKRequests {
 
-  public static CreateMultipartUploadRequest convert(PutObjectRequest request) {
+  public static CreateMultipartUploadRequest convertRequest(PutObjectRequest request) {
 
     final CreateMultipartUploadRequest.Builder output = CreateMultipartUploadRequest.builder();
     request
@@ -121,7 +125,16 @@ public class ConvertSDKRequests {
             default:
               // Rather than silently dropping the value,
               // we loudly signal that we don't know how to handle this field.
-              throw new IllegalArgumentException("Unknown PutObjectRequest field " + f.locationName() + ".");
+              throw new IllegalArgumentException(
+                f.locationName() + " is an unknown field. " +
+                  "The S3 Encryption Client does not recognize this option and cannot set it on the CreateMultipartUploadRequest." +
+                  "This may be a new S3 feature." +
+                  "Please report this to the Amazon S3 Encryption Client for Java: " +
+                  "https://github.com/aws/amazon-s3-encryption-client-java/issues." +
+                  "To work around this issue you can disable multi part upload," +
+                  "use the Async client, or not set this value on PutObject." +
+                  "You may be able to update this value after the PutObject request completes."
+              );
           }
         }
       });
@@ -129,6 +142,77 @@ public class ConvertSDKRequests {
       // OverrideConfiguration is not as SDKField but still needs to be supported
       .overrideConfiguration(request.overrideConfiguration().orElse(null))
       .build();
+  }
+
+  public static PutObjectResponse convertResponse(CompleteMultipartUploadResponse response) {
+    final PutObjectResponse.Builder output = PutObjectResponse.builder();
+    response
+            .toBuilder()
+            .sdkFields()
+            .forEach(f -> {
+              final Object value = f.getValueOrDefault(response);
+              if (value != null) {
+                switch (f.memberName()) {
+                  case "ETag":
+                    output.eTag((String) value);
+                    break;
+                  case "Expiration":
+                    output.expiration((String) value);
+                    break;
+                  case "ChecksumCRC32":
+                    output.checksumCRC32((String) value);
+                    break;
+                  case "ChecksumCRC32C":
+                    output.checksumCRC32C((String) value);
+                    break;
+                  case "ChecksumCRC64NVME":
+                    output.checksumCRC64NVME((String) value);
+                    break;
+                  case "ChecksumSHA1":
+                    output.checksumSHA1((String) value);
+                    break;
+                  case "ChecksumSHA256":
+                    output.checksumSHA256((String) value);
+                    break;
+                  case "ChecksumType":
+                    output.checksumType((String) value);
+                    break;
+                  case "ServerSideEncryption":
+                    output.serverSideEncryption((String) value);
+                    break;
+                  case "VersionId":
+                    output.versionId((String) value);
+                    break;
+                  case "SSEKMSKeyId":
+                    output.ssekmsKeyId((String) value);
+                    break;
+                  case "BucketKeyEnabled":
+                    output.bucketKeyEnabled((Boolean) value);
+                    break;
+                  case "RequestCharged":
+                    output.requestCharged((String) value);
+                    break;
+                  // Ignored fields: Location, Bucket, Key
+                  case "Location":
+                  case "Bucket":
+                  case "Key":
+                    // These fields exist only in CompleteMultipartUploadResponse, not in PutObjectResponse
+                    break;
+                  default:
+                    // We should NOT throw an exception for unknown fields because
+                    // once the object is stored, we expect to return a successful response.
+                    // Emit a log at info level for awareness.
+                    LogFactory.getLog(ConvertSDKRequests.class).info(f.memberName() + " returned in CompleteMultipartUploadResponse for "
+                            + response.key() + " is an unknown field." +
+                            "The S3 Encryption Client does not recognize this option and cannot set it on the CompleteMultipartUploadResponse." +
+                            "This may be a new S3 feature." +
+                            "Please report this to the Amazon S3 Encryption Client for Java: " +
+                            "https://github.com/aws/amazon-s3-encryption-client-java/issues."
+                    );
+                }
+              }
+            });
+    return output.build();
   }
 
   private static boolean isStringStringMap(Object value) {
