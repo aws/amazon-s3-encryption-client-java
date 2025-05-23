@@ -19,6 +19,7 @@ phases:
       - npm install @semantic-release/changelog -d
       - npm install @semantic-release/exec -d
       - npm install @semantic-release/git -d
+      - npm install conventional-changelog-conventionalcommits -d
       - npm install --save conventional-changelog
     runtime-versions:
       nodejs: 16

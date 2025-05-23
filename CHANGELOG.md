@@ -1,5 +1,46 @@
 # Changelog
 
+## [3.3.5](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.4...v3.3.5) (2025-05-21)
+
+### Fixes
+
+* determine effective contentLength, account for tagLength on decrypt ([#463](https://github.com/aws/aws-s3-encryption-client-java/issues/463)) ([969d721](https://github.com/aws/aws-s3-encryption-client-java/commit/969d7213b7bd6250fbce159bd5705a19ee439f23))
+* disable low-level Multipart Upload in Async client ([#461](https://github.com/aws/aws-s3-encryption-client-java/issues/461)) ([599f941](https://github.com/aws/aws-s3-encryption-client-java/commit/599f9417335efac4cf952e555a99bbc6d7d8cc0f))
+* support PutObjectResponse fields ([#462](https://github.com/aws/aws-s3-encryption-client-java/issues/462)) ([dec503b](https://github.com/aws/aws-s3-encryption-client-java/commit/dec503b49f3e57113de16fcc861ee1ecedbd2ff6))
+
+### Maintenance
+
+* Revert "Amazon S3 Encryption Client 3.3.5 Release -- 2025-05-20" ([#465](https://github.com/aws/aws-s3-encryption-client-java/issues/465)) ([3f9ac8e](https://github.com/aws/aws-s3-encryption-client-java/commit/3f9ac8e419f5ed55f59fb0daf742fc2945eea9d0))
+* update dependency needed for semantic-release  ([#464](https://github.com/aws/aws-s3-encryption-client-java/issues/464)) ([0fd3b58](https://github.com/aws/aws-s3-encryption-client-java/commit/0fd3b5826964b41a07a4c004fd0500404e347360))
+
+## [3.3.4](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.3...v3.3.4) (2025-05-12)
+
+### Fixes
+
+* Add details to error message ([#459](https://github.com/aws/aws-s3-encryption-client-java/issues/459)) ([0d32b4a](https://github.com/aws/aws-s3-encryption-client-java/commit/0d32b4a81662c5dc8ca85cf6f5dd09252f014b6e)), closes [#458](https://github.com/aws/aws-s3-encryption-client-java/issues/458)
+* Support all PutObjectRequest fields ([#458](https://github.com/aws/aws-s3-encryption-client-java/issues/458)) ([99cce95](https://github.com/aws/aws-s3-encryption-client-java/commit/99cce95ab8e376f4a096401e56a88d6fc34ace44))
+
+## [3.3.3](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.2...v3.3.3) (2025-05-05)
+
+### Fixes
+
+* fix CipherSubscriber to only call onNext once per request ([#456](https://github.com/aws/aws-s3-encryption-client-java/issues/456)) ([646b735](https://github.com/aws/aws-s3-encryption-client-java/commit/646b735b052ced18a5c01f9d369ac6a81c8e2ce1))
+
+## [3.3.2](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.1...v3.3.2) (2025-04-16)
+
+### Fixes
+
+* add builders to S3EncryptionClientException class ([#450](https://github.com/aws/aws-s3-encryption-client-java/issues/450)) ([647c809](https://github.com/aws/aws-s3-encryption-client-java/commit/647c809a0e0cc44abdd0c9bd192a3c78d29fdc71))
+* allow CipherSubscriber to determine if the part is last part ([#453](https://github.com/aws/aws-s3-encryption-client-java/issues/453)) ([12355a1](https://github.com/aws/aws-s3-encryption-client-java/commit/12355a11e29e81ebc3c903aaa7caee5a271a0ea8))
+
+## [3.3.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.0...v3.3.1) (2025-01-24)
+
+### Fixes
+
+* KMS Dependency is required ([44e9886](https://github.com/aws/aws-s3-encryption-client-java/commit/44e988677505bdc207936d0a981a0ca67dfd1a8a))
+* treat null matdesc as empty ([#448](https://github.com/aws/aws-s3-encryption-client-java/issues/448)) ([bcd711e](https://github.com/aws/aws-s3-encryption-client-java/commit/bcd711eb65707bac99775a011e3e159c6e3a79e6))
+* unbounded streams are not supported ([#422](https://github.com/aws/aws-s3-encryption-client-java/issues/422)) ([034bb89](https://github.com/aws/aws-s3-encryption-client-java/commit/034bb89ae5933b4d56e9892f19bb1e8f1f27010e))
+
 ## [3.3.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.2.3...v3.3.0) (2024-10-30)
 
 ### Features

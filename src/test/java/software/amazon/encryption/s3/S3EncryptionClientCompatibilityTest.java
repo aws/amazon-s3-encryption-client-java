@@ -25,6 +25,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
 
@@ -168,6 +169,7 @@ public class S3EncryptionClientCompatibilityTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+
     }
 
     @Test
@@ -901,5 +903,63 @@ public class S3EncryptionClientCompatibilityTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+    }
+
+    @Test
+    public void nullMaterialDescriptionV3() {
+        final String objectKey = appendTestSuffix("null-matdesc-v3");
+
+        // V2 Client
+        EncryptionMaterialsProvider materialsProvider =
+          new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+          .withEncryptionMaterialsProvider(materialsProvider)
+          .build();
+
+        // V3 Client
+        S3Client v3Client = S3EncryptionClient.builder()
+          .aesKey(AES_KEY)
+          .build();
+
+        // Asserts
+        final String input = "AesGcmWithNullMatDesc";
+        v2Client.putObject(BUCKET, objectKey, input);
+
+        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+          .bucket(BUCKET)
+          .key(objectKey));
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        // Now remove MatDesc - this must be done via CopyObject
+        final String copyKey = objectKey + "copied";
+        Map<String, String> modMd = new HashMap<>(objectResponse.response().metadata());
+        modMd.remove("x-amz-meta-x-amz-matdesc");
+        modMd.remove("x-amz-matdesc");
+        v3Client.copyObject(builder -> builder
+          .sourceBucket(BUCKET)
+          .destinationBucket(BUCKET)
+          .sourceKey(objectKey)
+          .destinationKey(copyKey)
+          .metadataDirective(MetadataDirective.REPLACE)
+          .metadata(modMd)
+          .build());
+
+        // V2
+        String v2CopyOut = v2Client.getObjectAsString(BUCKET, copyKey);
+        assertEquals(input, v2CopyOut);
+
+        // V3
+        ResponseBytes<GetObjectResponse> objectResponseCopy = v3Client.getObjectAsBytes(builder -> builder
+          .bucket(BUCKET)
+          .key(copyKey));
+        String outputCopy = objectResponseCopy.asUtf8String();
+        assertEquals(input, outputCopy);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        deleteObject(BUCKET, copyKey, v3Client);
+        v3Client.close();
+
     }
 }

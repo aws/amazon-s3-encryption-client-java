@@ -6,7 +6,7 @@
 
   <groupId>software.amazon.encryption.s3</groupId>
   <artifactId>amazon-s3-encryption-client-java</artifactId>
-  <version>3.3.0</version>
+  <version>3.3.5</version>
   <packaging>jar</packaging>
 
   <name>Amazon S3 Encryption Client</name>
@@ -56,7 +56,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.29.29</version>
+        <version>2.31.14</version>
         <optional>true</optional>
         <type>pom</type>
         <scope>import</scope>
@@ -68,13 +68,13 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
-      <version>2.29.29</version>
+      <version>2.31.14</version>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>kms</artifactId>
-      <version>2.29.29</version>
+      <version>2.31.14</version>
     </dependency>
 
     <!-- Used when enableMultipartPutObject is configured -->
@@ -82,7 +82,7 @@
       <groupId>software.amazon.awssdk.crt</groupId>
       <artifactId>aws-crt</artifactId>
       <optional>true</optional>
-      <version>0.33.5</version>
+      <version>0.37.0</version>
     </dependency>
 
     <dependency>
@@ -171,7 +171,7 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>sts</artifactId>
-      <version>2.29.29</version>
+      <version>2.31.14</version>
       <optional>true</optional>
       <scope>test</scope>
     </dependency>

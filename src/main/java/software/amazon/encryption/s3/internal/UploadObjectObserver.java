@@ -7,7 +7,6 @@ import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.SdkPartType;
@@ -42,20 +41,10 @@ public class UploadObjectObserver {
         this.es = es;
         return this;
     }
-
-    protected CreateMultipartUploadRequest newCreateMultipartUploadRequest(
-            PutObjectRequest request) {
-        return CreateMultipartUploadRequest.builder()
-                .bucket(request.bucket())
-                .key(request.key())
-                .metadata(request.metadata())
-                .overrideConfiguration(request.overrideConfiguration().orElse(null))
-                .build();
-    }
-
+    
     public String onUploadCreation(PutObjectRequest req) {
         CreateMultipartUploadResponse res =
-                s3EncryptionClient.createMultipartUpload(newCreateMultipartUploadRequest(req));
+                s3EncryptionClient.createMultipartUpload(ConvertSDKRequests.convertRequest(req));
         return this.uploadId = res.uploadId();
     }
 
