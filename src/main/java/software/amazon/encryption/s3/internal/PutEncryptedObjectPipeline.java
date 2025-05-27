@@ -24,7 +24,8 @@ public class PutEncryptedObjectPipeline {
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
-
+    //Debugging:
+    final private InstructionFileConfig _instructionFileConfig;
     public static Builder builder() {
         return new Builder();
     }
@@ -34,6 +35,7 @@ public class PutEncryptedObjectPipeline {
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._asyncContentEncryptionStrategy = builder._asyncContentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
+        this._instructionFileConfig = builder._instructionFileConfig;
     }
 
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {

@@ -79,7 +79,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     private final boolean _enableDelayedAuthenticationMode;
     private final boolean _enableMultipartPutObject;
     private final long _bufferSize;
-    private InstructionFileConfig _instructionFileConfig;
+    private final InstructionFileConfig _instructionFileConfig;
 
     private S3AsyncEncryptionClient(Builder builder) {
         super(builder._wrappedClient);
@@ -151,6 +151,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
+                //Debugging: added this line
+                .instructionFileConfig(_instructionFileConfig)
                 .build();
 
         return pipeline.putObject(putObjectRequest, requestBody);
@@ -162,13 +164,16 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             // if the wrappedClient is a CRT, use it
             mpuClient = _wrappedClient;
         } else {
-            // else create a default CRT client
+            // else create a default CRT client (debugging: yes goes here)
             mpuClient = S3AsyncClient.crtCreate();
         }
+        //The issue is here: after this step, the instruction file config is null
+        //Debugging: added this line to include the instruction file config
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
                 .s3AsyncClient(mpuClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
+                .instructionFileConfig(_instructionFileConfig)
                 .build();
         // Ensures parts are not retried to avoid corrupting ciphertext
         AsyncRequestBody noRetryBody = new NoRetriesAsyncRequestBody(requestBody);
@@ -287,6 +292,10 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     public void close() {
         _wrappedClient.close();
         _instructionFileConfig.closeClient();
+    }
+
+    public InstructionFileConfig get_instructionFileConfig() {
+        return _instructionFileConfig;
     }
 
     // This is very similar to the S3EncryptionClient builder
