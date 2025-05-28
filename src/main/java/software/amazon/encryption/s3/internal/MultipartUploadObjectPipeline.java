@@ -42,6 +42,7 @@ public class MultipartUploadObjectPipeline {
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
+    final private InstructionFileConfig _instructionFileConfig;
     /**
      * Map of data about in progress encrypted multipart uploads.
      */
@@ -53,6 +54,7 @@ public class MultipartUploadObjectPipeline {
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
         this._multipartUploadMaterials = builder._multipartUploadMaterials;
+        this._instructionFileConfig = builder._instructionFileConfig;
     }
 
     public static Builder builder() {
