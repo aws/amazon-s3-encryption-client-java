@@ -9,26 +9,46 @@ import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.SdkPartType;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
+import software.amazon.encryption.s3.utils.BoundedInputStream;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.S3_REGION;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
@@ -290,4 +310,149 @@ public class S3EncryptionClientInstructionFileTest {
         deleteObject(BUCKET, objectKey, s3Client);
         s3Client.close();
     }
+
+    @Test
+    public void testMultipartPutWithInstructionFile() throws IOException, NoSuchAlgorithmException {
+        final String object_key = appendTestSuffix("test-multipart-put-instruction-file");
+
+        final long fileSizeLimit = 1024 * 1024 * 50; //50 MB
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+
+        S3Client wrappedClient = S3Client.create();
+        S3Client s3Client = S3EncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(wrappedClient)
+                        .enableInstructionFilePutObject(true)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("test-key", "test-value");
+
+
+        s3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                .key(object_key), RequestBody.fromInputStream(inputStream, fileSizeLimit));
+
+        S3Client defaultClient = S3Client.create();
+        ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(object_key + ".instruction")
+                .build());
+        assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
+
+        ResponseInputStream<GetObjectResponse> getResponse = s3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                .key(object_key));
+
+        assertTrue(IOUtils.contentEquals(objectStreamForResult, getResponse));
+
+        deleteObject(BUCKET, object_key, s3Client);
+        s3Client.close();
+
+    }
+
+    @Test
+    public void testLowLevelMultipartPutWithInstructionFile() throws NoSuchAlgorithmException, IOException {
+        final String object_key = appendTestSuffix("test-low-level-multipart-put-instruction-file");
+
+        final long fileSizeLimit = 1024 * 1024 * 50;
+        final int PART_SIZE = 10 * 1024 * 1024;
+        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+
+        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
+        keyPairGen.initialize(2048);
+        KeyPair rsaKey = keyPairGen.generateKeyPair();
+
+        S3Client wrappedClient = S3Client.create();
+
+        S3Client v3Client = S3EncryptionClient.builder()
+                .rsaKeyPair(rsaKey)
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(wrappedClient)
+                        .enableInstructionFilePutObject(true)
+                        .build())
+                .enableDelayedAuthenticationMode(true)
+                .build();
+
+
+        CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
+                builder.bucket(BUCKET).key(object_key));
+
+        List<CompletedPart> partETags = new ArrayList<>();
+
+        int bytesRead, bytesSent = 0;
+        byte[] partData = new byte[PART_SIZE];
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        int partsSent = 1;
+        while ((bytesRead = inputStream.read(partData, 0, partData.length)) != -1) {
+            outputStream.write(partData, 0, bytesRead);
+            if (bytesSent < PART_SIZE) {
+                bytesSent += bytesRead;
+                continue;
+            }
+            UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
+                    .bucket(BUCKET)
+                    .key(object_key)
+                    .uploadId(initiateResult.uploadId())
+                    .partNumber(partsSent)
+                    .build();
+
+            final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+            UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
+                    RequestBody.fromInputStream(partInputStream, partInputStream.available()));
+
+            partETags.add(CompletedPart.builder()
+                    .partNumber(partsSent)
+                    .eTag(uploadPartResult.eTag())
+                    .build());
+            outputStream.reset();
+            bytesSent = 0;
+            partsSent++;
+        }
+        inputStream.close();
+        UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
+                .bucket(BUCKET)
+                .key(object_key)
+                .uploadId(initiateResult.uploadId())
+                .partNumber(partsSent)
+                .sdkPartType(SdkPartType.LAST)
+                .build();
+        final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
+                RequestBody.fromInputStream(partInputStream, partInputStream.available()));
+        partETags.add(CompletedPart.builder()
+                .partNumber(partsSent)
+                .eTag(uploadPartResult.eTag())
+                .build());
+        v3Client.completeMultipartUpload(builder -> builder
+                .bucket(BUCKET)
+                .key(object_key)
+                .uploadId(initiateResult.uploadId())
+                .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
+
+        S3Client defaultClient = S3Client.create();
+        ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(object_key + ".instruction")
+                .build());
+        assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
+
+        ResponseInputStream<GetObjectResponse> getResponse = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(object_key));
+
+        assertTrue(IOUtils.contentEquals(objectStreamForResult, getResponse));
+
+        deleteObject(BUCKET, object_key, v3Client);
+        v3Client.close();
+    }
+
 }
+
