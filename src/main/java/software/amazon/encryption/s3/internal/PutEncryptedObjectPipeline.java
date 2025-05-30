@@ -24,7 +24,6 @@ public class PutEncryptedObjectPipeline {
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
-    //Debugging:
     final private InstructionFileConfig _instructionFileConfig;
     public static Builder builder() {
         return new Builder();

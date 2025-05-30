@@ -151,7 +151,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
-                //Debugging: added this line
                 .instructionFileConfig(_instructionFileConfig)
                 .build();
 
@@ -164,11 +163,9 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
             // if the wrappedClient is a CRT, use it
             mpuClient = _wrappedClient;
         } else {
-            // else create a default CRT client (debugging: yes goes here)
+            // else create a default CRT client
             mpuClient = S3AsyncClient.crtCreate();
         }
-        //The issue is here: after this step, the instruction file config is null
-        //Debugging: added this line to include the instruction file config
         PutEncryptedObjectPipeline pipeline = PutEncryptedObjectPipeline.builder()
                 .s3AsyncClient(mpuClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
@@ -294,9 +291,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _instructionFileConfig.closeClient();
     }
 
-    public InstructionFileConfig get_instructionFileConfig() {
-        return _instructionFileConfig;
-    }
 
     // This is very similar to the S3EncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options
