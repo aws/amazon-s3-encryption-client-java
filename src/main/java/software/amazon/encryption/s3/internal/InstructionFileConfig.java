@@ -1,12 +1,22 @@
 package software.amazon.encryption.s3.internal;
 
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+import static software.amazon.encryption.s3.internal.MetadataKeyConstants.INSTRUCTION_FILE;
 
 /**
  * Provides configuration options for instruction file behaviors.
@@ -16,13 +26,14 @@ public class InstructionFileConfig {
     final private InstructionFileClientType _clientType;
     final private S3AsyncClient _s3AsyncClient;
     final private S3Client _s3Client;
+    final private boolean _enableInstructionFilePut;
 
     private InstructionFileConfig(final Builder builder) {
         _clientType = builder._clientType;
         _s3Client = builder._s3Client;
         _s3AsyncClient = builder._s3AsyncClient;
+        _enableInstructionFilePut = builder._enableInstructionFilePut;
     }
-
     public static Builder builder() {
         return new Builder();
     }
@@ -31,6 +42,42 @@ public class InstructionFileConfig {
         DISABLED,
         SYNCHRONOUS,
         ASYNC
+    }
+
+    boolean isInstructionFilePutEnabled() {
+        return _enableInstructionFilePut;
+    }
+
+    PutObjectResponse putInstructionFile(PutObjectRequest request, String instructionFileContent) {
+        // This shouldn't happen in practice because the metadata strategy will evaluate
+        // if instruction file Puts are enabled before calling this method; check again anyway for robustness
+        if (!_enableInstructionFilePut) {
+            throw new S3EncryptionClientException("Enable Instruction File Put must be set to true in order to call PutObject with an instruction file!");
+        }
+
+        // Instruction file DOES NOT contain the same metadata as the actual object
+        Map<String, String> instFileMetadata = new HashMap<>(1);
+        // It contains a key with no value identifying it as an instruction file
+        instFileMetadata.put(INSTRUCTION_FILE, "");
+
+        // In a future release, non-default suffixes will be supported.
+        // Use toBuilder to keep all other fields the same as the actual request
+        final PutObjectRequest instPutRequest = request.toBuilder()
+                .key(request.key() + INSTRUCTION_FILE_SUFFIX)
+                .metadata(instFileMetadata)
+                .build();
+        switch (_clientType) {
+            case SYNCHRONOUS:
+                return _s3Client.putObject(instPutRequest, RequestBody.fromString(instructionFileContent));
+            case ASYNC:
+                return _s3AsyncClient.putObject(instPutRequest, AsyncRequestBody.fromString(instructionFileContent)).join();
+            case DISABLED:
+                // this should never happen because we check enablePut first
+                throw new S3EncryptionClientException("Instruction File has been disabled!");
+            default:
+                // this should never happen
+                throw new S3EncryptionClientException("Unknown Instruction File Type");
+        }
     }
 
     ResponseInputStream<GetObjectResponse> getInstructionFile(GetObjectRequest request) {
@@ -64,6 +111,7 @@ public class InstructionFileConfig {
         private boolean _disableInstructionFile;
         private S3AsyncClient _s3AsyncClient;
         private S3Client _s3Client;
+        private boolean _enableInstructionFilePut;
 
         /**
          * When set to true, the S3 Encryption Client will not attempt to get instruction files.
@@ -72,6 +120,11 @@ public class InstructionFileConfig {
          */
         public Builder disableInstructionFile(boolean disableInstructionFile) {
             _disableInstructionFile = disableInstructionFile;
+            return this;
+        }
+
+        public Builder enableInstructionFilePutObject(boolean enableInstructionFilePutObject) {
+            _enableInstructionFilePut = enableInstructionFilePutObject;
             return this;
         }
 
@@ -94,6 +147,7 @@ public class InstructionFileConfig {
             _s3AsyncClient = instructionFileAsyncClient;
             return this;
         }
+
         public InstructionFileConfig build() {
             if ((_s3AsyncClient != null || _s3Client != null) && _disableInstructionFile) {
                 throw new S3EncryptionClientException("Instruction Files have been disabled but a client has been passed!");
@@ -101,6 +155,9 @@ public class InstructionFileConfig {
             if (_disableInstructionFile) {
                 // We know both clients are null, so carry on.
                 this._clientType = InstructionFileClientType.DISABLED;
+                if (_enableInstructionFilePut) {
+                    throw new S3EncryptionClientException("Instruction Files must be enabled to enable Instruction Files for PutObject.");
+                }
                 return new InstructionFileConfig(this);
             }
             if (_s3Client != null && _s3AsyncClient != null) {
