@@ -3,6 +3,7 @@ package software.amazon.encryption.s3.internal;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
@@ -36,12 +37,19 @@ public class ContentMetadataEncodingStrategy {
     }
 
     public CreateMultipartUploadRequest encodeMetadata(EncryptionMaterials materials, byte[] iv, CreateMultipartUploadRequest createMultipartUploadRequest) {
-        Map<String, String> newMetadata = addMetadataToMap(createMultipartUploadRequest.metadata(), materials, iv);
-        return createMultipartUploadRequest.toBuilder()
-                .metadata(newMetadata)
-                .build();
+        if(_instructionFileConfig.isInstructionFilePutEnabled()) {
+            final String metadataString = metadataToString(materials, iv);
+            PutObjectRequest putObjectRequest = ConvertSDKRequests.convertRequest(createMultipartUploadRequest);
+            _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString);
+            // the original request object is returned as-is
+            return createMultipartUploadRequest;
+        } else {
+            Map<String, String> newMetadata = addMetadataToMap(createMultipartUploadRequest.metadata(), materials, iv);
+            return createMultipartUploadRequest.toBuilder()
+                    .metadata(newMetadata)
+                    .build();
+        }
     }
-
     private String metadataToString(EncryptionMaterials materials, byte[] iv) {
         // this is just the metadata map serialized as JSON
         // so first get the Map
