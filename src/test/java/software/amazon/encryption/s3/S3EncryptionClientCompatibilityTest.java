@@ -238,21 +238,21 @@ public class S3EncryptionClientCompatibilityTest {
                 .withCryptoConfiguration(cryptoConfig)
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
-        UploadObjectRequest uploadObjectRequest = new UploadObjectRequest("s3ec-github-test-bucket-597133212884", objectKey, inputStream, new ObjectMetadata())
+        UploadObjectRequest uploadObjectRequest = new UploadObjectRequest(BUCKET, objectKey, inputStream, new ObjectMetadata())
                 .withPartSize(1024 * 1024 * 5)
-                .withStorageClass(StorageClass.Glacier);
+                .withStorageClass(StorageClass.StandardInfrequentAccess);
         v2Client.uploadObject(uploadObjectRequest);
 
         //Assert that the storage class on main object matches "GLACIER"
-        GetObjectMetadataRequest mainObjectRequest = new GetObjectMetadataRequest("s3ec-github-test-bucket-597133212884", objectKey);
+        GetObjectMetadataRequest mainObjectRequest = new GetObjectMetadataRequest(BUCKET, objectKey);
         ObjectMetadata  mainObjectMetadata = v2Client.getObjectMetadata(mainObjectRequest);
-        assertEquals("GLACIER", mainObjectMetadata.getStorageClass());
+        assertEquals("STANDARD_IA", mainObjectMetadata.getStorageClass());
 
         //Assert that the instruction file does not contain storage class (V2)
-        GetObjectMetadataRequest  instructionObjectRequest = new GetObjectMetadataRequest("s3ec-github-test-bucket-597133212884", objectKey + ".instruction");
+        GetObjectMetadataRequest  instructionObjectRequest = new GetObjectMetadataRequest(BUCKET, objectKey + ".instruction");
         ObjectMetadata instructionFileMetadata = v2Client.getObjectMetadata(instructionObjectRequest);
 
-        assertNotEquals("GLACIER", instructionFileMetadata.getStorageClass());
+        assertNotEquals("STANDARD_IA", instructionFileMetadata.getStorageClass());
 
     }
 
