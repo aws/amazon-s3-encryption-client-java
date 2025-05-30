@@ -34,7 +34,6 @@ public class InstructionFileConfig {
         _s3AsyncClient = builder._s3AsyncClient;
         _enableInstructionFilePut = builder._enableInstructionFilePut;
     }
-
     public static Builder builder() {
         return new Builder();
     }
