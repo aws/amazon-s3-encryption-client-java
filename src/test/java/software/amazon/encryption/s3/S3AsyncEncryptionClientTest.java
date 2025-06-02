@@ -844,7 +844,8 @@ public class S3AsyncEncryptionClientTest {
         S3Client wrappedClient = S3Client.create();
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .instructionFileConfig(InstructionFileConfig.builder()
-                        .instructionFileClient(wrappedClient)
+//                        .instructionFileClient(S3AsyncClient.create())
+                        .instructionFileAsyncClient(S3AsyncClient.create())
                         .enableInstructionFilePutObject(true)
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
