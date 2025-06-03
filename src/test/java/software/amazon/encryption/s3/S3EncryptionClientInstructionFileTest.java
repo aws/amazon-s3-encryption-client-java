@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.SdkPartType;
+import software.amazon.awssdk.services.s3.model.StorageClass;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
@@ -96,7 +97,7 @@ public class S3EncryptionClientInstructionFileTest {
 
     @Test
     public void testDisabledClientFails() {
-        final String objectKey = appendTestSuffix("instruction-file-put-object");
+        final String objectKey = appendTestSuffix("instruction-file-put-object-disabled-fails");
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
@@ -144,7 +145,7 @@ public class S3EncryptionClientInstructionFileTest {
      */
     @Test
     public void testInstructionFileDelete() {
-        final String objectKey = appendTestSuffix("instruction-file-put-object");
+        final String objectKey = appendTestSuffix("instruction-file-put-object-delete");
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
@@ -318,6 +319,7 @@ public class S3EncryptionClientInstructionFileTest {
         final long fileSizeLimit = 1024 * 1024 * 50; //50 MB
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+        final StorageClass storageClass = StorageClass.STANDARD_IA;
 
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
@@ -326,6 +328,7 @@ public class S3EncryptionClientInstructionFileTest {
                         .enableInstructionFilePutObject(true)
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
+                .enableMultipartPutObject(true)
                 .build();
 
         Map<String, String> encryptionContext = new HashMap<>();
@@ -334,6 +337,7 @@ public class S3EncryptionClientInstructionFileTest {
 
         s3Client.putObject(builder -> builder
                 .bucket(BUCKET)
+                .storageClass(storageClass)
                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
                 .key(object_key), RequestBody.fromInputStream(inputStream, fileSizeLimit));
 
@@ -343,6 +347,7 @@ public class S3EncryptionClientInstructionFileTest {
                 .key(object_key + ".instruction")
                 .build());
         assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
+        assertEquals(storageClass.toString(), directInstGetResponse.response().storageClassAsString());
 
         ResponseInputStream<GetObjectResponse> getResponse = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
@@ -364,6 +369,7 @@ public class S3EncryptionClientInstructionFileTest {
         final int PART_SIZE = 10 * 1024 * 1024;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+        final StorageClass storageClass = StorageClass.STANDARD_IA;
 
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
         keyPairGen.initialize(2048);
@@ -382,7 +388,7 @@ public class S3EncryptionClientInstructionFileTest {
 
 
         CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
-                builder.bucket(BUCKET).key(object_key));
+                builder.bucket(BUCKET).key(object_key).storageClass(storageClass));
 
         List<CompletedPart> partETags = new ArrayList<>();
 
@@ -443,6 +449,7 @@ public class S3EncryptionClientInstructionFileTest {
                 .key(object_key + ".instruction")
                 .build());
         assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
+        assertEquals(storageClass.toString(), directInstGetResponse.response().storageClassAsString());
 
         ResponseInputStream<GetObjectResponse> getResponse = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)

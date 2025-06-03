@@ -262,6 +262,9 @@ public class MultipartUploadObjectPipeline {
                         .secureRandom(_secureRandom)
                         .build();
             }
+            if(_instructionFileConfig == null) {
+                _instructionFileConfig = InstructionFileConfig.builder().build();
+            }
             _contentMetadataEncodingStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
             return new MultipartUploadObjectPipeline(this);
         }

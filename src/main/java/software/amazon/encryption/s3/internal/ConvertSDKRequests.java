@@ -13,7 +13,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 public class ConvertSDKRequests {
 
   public static PutObjectRequest convertRequest(CreateMultipartUploadRequest request) {
-
+    /*Converts a CreateMultipartUploadRequest into a PutObjectRequest by setting optional fields needed for
+    putInstructionFile operation.
+     */
     final PutObjectRequest.Builder output = PutObjectRequest.builder();
     request
             .toBuilder()
@@ -119,13 +121,13 @@ public class ConvertSDKRequests {
                     // Rather than silently dropping the value,
                     // we loudly signal that we don't know how to handle this field.
                     throw new IllegalArgumentException(
-                            f.locationName() + " is an unknown field. " +
+                            f.memberName() + " is an unknown field. " +
                                     "The S3 Encryption Client does not recognize this option and cannot set it on the PutObjectRequest." +
                                     "This may be a new S3 feature." +
                                     "Please report this to the Amazon S3 Encryption Client for Java: " +
                                     "https://github.com/aws/amazon-s3-encryption-client-java/issues." +
-                                    "To work around this issue you can disable multi part upload," +
-                                    "use the Async client, or not set this value on PutObject." +
+                                    "To work around this issue, you can disable Instruction File on PutObject or disable" +
+                                    "multi part upload, or use the Async client, or not set this value on PutObject." +
                                     "You may be able to update this value after the PutObject request completes."
                     );
                 }
@@ -138,7 +140,9 @@ public class ConvertSDKRequests {
   }
 
   public static CreateMultipartUploadRequest convertRequest(PutObjectRequest request) {
-
+     /*Converts a PutObjectRequest into a CreateMultipartUploadRequest by setting optional fields needed for high-level
+     multipart upload operation.
+     */
     final CreateMultipartUploadRequest.Builder output = CreateMultipartUploadRequest.builder();
     request
       .toBuilder()
@@ -251,7 +255,7 @@ public class ConvertSDKRequests {
               // Rather than silently dropping the value,
               // we loudly signal that we don't know how to handle this field.
               throw new IllegalArgumentException(
-                f.locationName() + " is an unknown field. " +
+                f.memberName() + " is an unknown field. " +
                   "The S3 Encryption Client does not recognize this option and cannot set it on the CreateMultipartUploadRequest." +
                   "This may be a new S3 feature." +
                   "Please report this to the Amazon S3 Encryption Client for Java: " +

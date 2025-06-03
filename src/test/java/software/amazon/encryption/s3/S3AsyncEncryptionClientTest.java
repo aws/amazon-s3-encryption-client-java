@@ -45,6 +45,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.StorageClass;
+import software.amazon.awssdk.services.s3.model.StorageClassAnalysisDataExport;
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.encryption.s3.internal.ConvertSDKRequests;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
@@ -883,8 +884,8 @@ public class S3AsyncEncryptionClientTest {
     public void testAsyncInstructionFileConfigMultipartWithOptions() {
         final String objectKey = appendTestSuffix("test-multipart-async-instruction-file-config-options");
         final String input = "SimpleTestOfV3EncryptionClient";
+        final StorageClass storageClass = StorageClass.STANDARD_IA;
 
-        AwsCredentialsProvider credentials = DefaultCredentialsProvider.create();
         S3Client wrappedClient = S3Client.create();
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .instructionFileConfig(InstructionFileConfig.builder()
@@ -893,24 +894,15 @@ public class S3AsyncEncryptionClientTest {
                         .build())
                 .kmsKeyId(KMS_KEY_ID)
                 .enableMultipartPutObject(true)
-                .credentialsProvider(credentials)
                 .build();
-        CreateMultipartUploadRequest multipartUploadRequest = CreateMultipartUploadRequest.builder()
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
-                .storageClass(StorageClass.STANDARD_IA)
+                .storageClass(storageClass)
                 .build();
-        assertNotNull(multipartUploadRequest);
-
-        PutObjectRequest putObjectRequest = ConvertSDKRequests.convertRequest(multipartUploadRequest);
-
-        assertNotNull(putObjectRequest);
-        assertEquals(putObjectRequest.storageClassAsString(), multipartUploadRequest.storageClassAsString());
 
         CompletableFuture<PutObjectResponse> putObjectResponse = v3Client.putObject(putObjectRequest, AsyncRequestBody.fromString(input));
         putObjectResponse.join();
-
-        assertNotNull(putObjectResponse);
 
         ResponseBytes<GetObjectResponse> instructionFileResponse = wrappedClient.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
@@ -920,12 +912,8 @@ public class S3AsyncEncryptionClientTest {
         Map<String, String> metadata = instructionFileResponse.response().metadata();
         assertTrue(metadata.containsKey("x-amz-crypto-instr-file"));
 
-        HeadObjectResponse instructionHeadResponse = wrappedClient.headObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey + ".instruction")
-                .build());
-        assertNotNull(instructionHeadResponse.storageClass());
-        assertEquals(instructionHeadResponse.storageClassAsString(), StorageClass.STANDARD_IA.toString());
+        assertEquals(storageClass.toString(), instructionFileResponse.response().storageClassAsString());
+
         CompletableFuture<ResponseBytes<GetObjectResponse>> futureGetObj = v3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
@@ -934,7 +922,7 @@ public class S3AsyncEncryptionClientTest {
         assertNotNull(getResponse);
         assertEquals(input, getResponse.asUtf8String());
 
-        assertEquals(getResponse.response().storageClassAsString(), StorageClass.STANDARD_IA.toString());
+        assertEquals(getResponse.response().storageClassAsString(), storageClass.toString());
 
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();

@@ -3,7 +3,6 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.services.s3.model.*;
 
-import java.awt.event.ComponentListener;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -486,7 +485,7 @@ class ConvertSDKRequestsTest {
   }
 
   @Test
-  public void testConversionAllFields() {
+  public void testConversionAllFieldsMultipartUploadRequestToPutObjectRequest() {
     Map<String, String> metadata = new HashMap<String, String>();
     metadata.put("test-key-1", "test-value-1");
     metadata.put("test-key-2", "test-value-2");
