@@ -12,10 +12,15 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 public class ConvertSDKRequests {
 
+  /**
+   * Converts a CreateMultipartUploadRequest to a PutObjectRequest. This conversion is necessary when
+   * Instruction File PutObject is enabled and a multipart upload is performed.The method copies all the
+   * relevant fields from the CreateMultipartUploadRequest to the PutObjectRequest.
+   * @param request The CreateMultipartUploadRequest to convert
+   * @return The converted PutObjectRequest
+   * @throws IllegalArgumentException  if the request contains an invalid field
+   */
   public static PutObjectRequest convertRequest(CreateMultipartUploadRequest request) {
-    /*Converts a CreateMultipartUploadRequest into a PutObjectRequest by setting optional fields needed for
-    putInstructionFile operation.
-     */
     final PutObjectRequest.Builder output = PutObjectRequest.builder();
     request
             .toBuilder()
@@ -138,11 +143,15 @@ public class ConvertSDKRequests {
             .overrideConfiguration(request.overrideConfiguration().orElse(null))
             .build();
   }
-
+  /**
+   * Converts a PutObjectRequest to CreateMultipartUploadRequest.This conversion is necessary to convert an
+   * original PutObjectRequest into a CreateMultipartUploadRequest to initiate the
+   * multipart upload while maintaining the original request's configuration.
+   * @param request The PutObjectRequest to convert
+   * @return The converted CreateMultipartUploadRequest
+   * @throws IllegalArgumentException if the request contains an invalid field
+   */
   public static CreateMultipartUploadRequest convertRequest(PutObjectRequest request) {
-     /*Converts a PutObjectRequest into a CreateMultipartUploadRequest by setting optional fields needed for high-level
-     multipart upload operation.
-     */
     final CreateMultipartUploadRequest.Builder output = CreateMultipartUploadRequest.builder();
     request
       .toBuilder()
