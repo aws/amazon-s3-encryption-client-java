@@ -67,6 +67,8 @@ public class S3EncryptionClientMultipartUploadTest {
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
+
+
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableMultipartPutObject(true)
@@ -78,11 +80,12 @@ public class S3EncryptionClientMultipartUploadTest {
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-        
+
         CompletableFuture<PutObjectResponse> futurePut = v3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
                 .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor));
+
         futurePut.join();
         singleThreadExecutor.shutdown();
 

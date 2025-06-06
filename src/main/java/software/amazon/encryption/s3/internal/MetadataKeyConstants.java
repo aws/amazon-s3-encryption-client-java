@@ -13,4 +13,6 @@ public class MetadataKeyConstants {
     // This is usually an actual Java cipher e.g. AES/GCM/NoPadding
     public static final String CONTENT_CIPHER = "x-amz-cek-alg";
     public static final String CONTENT_CIPHER_TAG_LENGTH = "x-amz-tag-len";
+    // Only used in instruction files to identify them as such
+    public static final String INSTRUCTION_FILE = "x-amz-crypto-instr-file";
 }

@@ -15,8 +15,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_Bucket() {
     final String value = "test-bucket";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .bucket(value)
-      .build();
+            .bucket(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.bucket());
@@ -26,8 +26,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ACL() {
     final ObjectCannedACL value = ObjectCannedACL.PRIVATE;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .acl(value)
-      .build();
+            .acl(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.acl());
@@ -37,8 +37,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ACL2() {
     final String value = ObjectCannedACL.PRIVATE.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .acl(value)
-      .build();
+            .acl(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.acl().toString());
@@ -48,8 +48,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_BucketKeyEnabled() {
     final Boolean value = true;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .bucketKeyEnabled(value)
-      .build();
+            .bucketKeyEnabled(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.bucketKeyEnabled());
@@ -59,8 +59,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_CacheControl() {
     final String value = "max-age=3600";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .cacheControl(value)
-      .build();
+            .cacheControl(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.cacheControl());
@@ -70,8 +70,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ChecksumAlgorithm() {
     final ChecksumAlgorithm value = ChecksumAlgorithm.SHA256;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .checksumAlgorithm(value)
-      .build();
+            .checksumAlgorithm(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.checksumAlgorithm());
@@ -81,8 +81,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ChecksumAlgorithm2() {
     final String value = ChecksumAlgorithm.SHA256.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .checksumAlgorithm(value)
-      .build();
+            .checksumAlgorithm(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.checksumAlgorithm().toString());
@@ -92,8 +92,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ContentDisposition() {
     final String value = "attachment; filename=\"filename.jpg\"";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .contentDisposition(value)
-      .build();
+            .contentDisposition(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.contentDisposition());
@@ -103,8 +103,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ContentEncoding() {
     final String value = "gzip";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .contentEncoding(value)
-      .build();
+            .contentEncoding(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.contentEncoding());
@@ -114,8 +114,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ContentLanguage() {
     final String value = "en-US";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .contentLanguage(value)
-      .build();
+            .contentLanguage(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.contentLanguage());
@@ -125,8 +125,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ContentType() {
     final String value = "text/plain";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .contentType(value)
-      .build();
+            .contentType(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.contentType());
@@ -136,8 +136,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ExpectedBucketOwner() {
     final String value = "owner123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .expectedBucketOwner(value)
-      .build();
+            .expectedBucketOwner(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.expectedBucketOwner());
@@ -147,8 +147,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_Expires() {
     final Instant value = Instant.now();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .expires(value)
-      .build();
+            .expires(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.expires());
@@ -158,8 +158,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_GrantFullControl() {
     final String value = "id=123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .grantFullControl(value)
-      .build();
+            .grantFullControl(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.grantFullControl());
@@ -169,8 +169,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_GrantRead() {
     final String value = "id=123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .grantRead(value)
-      .build();
+            .grantRead(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.grantRead());
@@ -180,8 +180,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_GrantReadACP() {
     final String value = "id=123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .grantReadACP(value)
-      .build();
+            .grantReadACP(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.grantReadACP());
@@ -191,8 +191,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_GrantWriteACP() {
     final String value = "id=123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .grantWriteACP(value)
-      .build();
+            .grantWriteACP(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.grantWriteACP());
@@ -202,8 +202,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_Key() {
     final String value = "test-key";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .key(value)
-      .build();
+            .key(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.key());
@@ -214,8 +214,8 @@ class ConvertSDKRequestsTest {
     final Map<String, String> value = new HashMap<>();
     value.put("key1", "value1");
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .metadata(value)
-      .build();
+            .metadata(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.metadata());
@@ -225,8 +225,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ObjectLockLegalHoldStatus() {
     final ObjectLockLegalHoldStatus value = ObjectLockLegalHoldStatus.ON;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .objectLockLegalHoldStatus(value)
-      .build();
+            .objectLockLegalHoldStatus(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockLegalHoldStatus());
@@ -236,8 +236,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ObjectLockLegalHoldStatus2() {
     final String value = ObjectLockLegalHoldStatus.ON.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .objectLockLegalHoldStatus(value)
-      .build();
+            .objectLockLegalHoldStatus(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockLegalHoldStatus().toString());
@@ -247,8 +247,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ObjectLockMode() {
     final ObjectLockMode value = ObjectLockMode.GOVERNANCE;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .objectLockMode(value)
-      .build();
+            .objectLockMode(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockMode());
@@ -258,8 +258,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ObjectLockMode2() {
     final String value = "GOVERNANCE";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .objectLockMode(value)
-      .build();
+            .objectLockMode(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockMode().toString());
@@ -269,8 +269,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ObjectLockRetainUntilDate() {
     final Instant value = Instant.now();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .objectLockRetainUntilDate(value)
-      .build();
+            .objectLockRetainUntilDate(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.objectLockRetainUntilDate());
@@ -280,8 +280,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_RequestPayer() {
     final RequestPayer value = RequestPayer.REQUESTER;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .requestPayer(value)
-      .build();
+            .requestPayer(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.requestPayer());
@@ -291,8 +291,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_RequestPayer2() {
     final String value = RequestPayer.REQUESTER.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .requestPayer(value)
-      .build();
+            .requestPayer(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.requestPayer().toString());
@@ -302,8 +302,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ServerSideEncryption() {
     final ServerSideEncryption value = ServerSideEncryption.AES256;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .serverSideEncryption(value)
-      .build();
+            .serverSideEncryption(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.serverSideEncryption());
@@ -313,8 +313,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_ServerSideEncryption2() {
     final String value = ServerSideEncryption.AES256.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .serverSideEncryption(value)
-      .build();
+            .serverSideEncryption(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.serverSideEncryption().toString());
@@ -324,8 +324,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_SSECustomerAlgorithm() {
     final String value = "AES256";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .sseCustomerAlgorithm(value)
-      .build();
+            .sseCustomerAlgorithm(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.sseCustomerAlgorithm());
@@ -335,8 +335,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_SSECustomerKey() {
     final String value = "key123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .sseCustomerKey(value)
-      .build();
+            .sseCustomerKey(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.sseCustomerKey());
@@ -346,8 +346,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_SSEKMSKeyId() {
     final String value = "arn:aws:kms:region:123456789012:key/key-id";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .ssekmsKeyId(value)
-      .build();
+            .ssekmsKeyId(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.ssekmsKeyId());
@@ -357,8 +357,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_SSEKMSEncryptionContext() {
     final String value = "context123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .ssekmsEncryptionContext(value)
-      .build();
+            .ssekmsEncryptionContext(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.ssekmsEncryptionContext());
@@ -368,8 +368,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_StorageClass() {
     final StorageClass value = StorageClass.STANDARD;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .storageClass(value)
-      .build();
+            .storageClass(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.storageClass());
@@ -379,8 +379,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_StorageClass2() {
     final String value = StorageClass.STANDARD.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .storageClass(value)
-      .build();
+            .storageClass(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.storageClass().toString());
@@ -390,8 +390,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_Tagging() {
     final String value = "key1=value1&key2=value2";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .tagging(value)
-      .build();
+            .tagging(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.tagging());
@@ -401,8 +401,8 @@ class ConvertSDKRequestsTest {
   void testConvertPutObjectRequest_WebsiteRedirectLocation() {
     final String value = "/redirected";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .websiteRedirectLocation(value)
-      .build();
+            .websiteRedirectLocation(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertEquals(value, convertedRequest.websiteRedirectLocation());
@@ -411,12 +411,12 @@ class ConvertSDKRequestsTest {
   @Test
   void testConvertPutObjectRequest_OverrideConfiguration() {
     final AwsRequestOverrideConfiguration value = AwsRequestOverrideConfiguration
-      .builder()
-      .apiCallAttemptTimeout(Duration.ofMillis(100))
-      .build();
+            .builder()
+            .apiCallAttemptTimeout(Duration.ofMillis(100))
+            .build();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
-      .overrideConfiguration(value)
-      .build();
+            .overrideConfiguration(value)
+            .build();
     final CreateMultipartUploadRequest convertedRequest = ConvertSDKRequests.convertRequest(originalRequest);
     assertNotNull(convertedRequest);
     assertTrue(convertedRequest.overrideConfiguration().isPresent());
@@ -470,4 +470,120 @@ class ConvertSDKRequestsTest {
     assertNull(putResponse.ssekmsEncryptionContext());
     assertNull(putResponse.size());
   }
+
+  @Test
+  public void testBasicConvertMultipartUploadRequest() {
+    // Create a MultipartUploadRequest with various fields set
+    CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
+            .bucket("test-bucket")
+            .key("test-key")
+            .build();
+    PutObjectRequest result = ConvertSDKRequests.convertRequest(request);
+    assertEquals("test-bucket", result.bucket());
+    assertEquals("test-key", result.key());
+    assertNotNull(result);
+  }
+
+  @Test
+  public void testConversionAllFieldsMultipartUploadRequestToPutObjectRequest() {
+    Map<String, String> metadata = new HashMap<String, String>();
+    metadata.put("test-key-1", "test-value-1");
+    metadata.put("test-key-2", "test-value-2");
+    metadata.put("test-key-3", "test-value-3");
+
+    Instant expires = Instant.now();
+    Instant retainUntilDate = Instant.now();
+
+    CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
+            .acl("test-acl")
+            .bucket("test-bucket")
+            .bucketKeyEnabled(true)
+            .cacheControl("test-cache-control")
+            .checksumAlgorithm("test-checksum-algorithm")
+            .contentDisposition("test-content-disposition")
+            .contentEncoding("test-content-encoding")
+            .contentLanguage("test-content-language")
+            .contentType("test-content-type")
+            .expectedBucketOwner("test-bucket-owner")
+            .expires(expires)
+            .grantFullControl("test-grant-full-control")
+            .grantRead("test-grant-read")
+            .grantReadACP("test-grant-read-acp")
+            .grantWriteACP("test-grant-write-acp")
+            .key("test-key")
+            .metadata(metadata)
+            .objectLockLegalHoldStatus(ObjectLockLegalHoldStatus.OFF)
+            .objectLockMode(ObjectLockMode.COMPLIANCE)
+            .objectLockRetainUntilDate(retainUntilDate)
+            .requestPayer(RequestPayer.REQUESTER)
+            .serverSideEncryption(ServerSideEncryption.AWS_KMS_DSSE)
+            .sseCustomerAlgorithm("test-sse-customer-algorithm")
+            .sseCustomerKey("test-sse-customer-key")
+            .ssekmsEncryptionContext("test-ssekms-encryption-context")
+            .ssekmsKeyId("test-ssekms-key-id")
+            .storageClass(StorageClass.SNOW)
+            .tagging("test-tagging")
+            .websiteRedirectLocation("test-website-redirect-location")
+            .build();
+    PutObjectRequest result = ConvertSDKRequests.convertRequest(request);
+    assertEquals("test-acl", result.aclAsString());
+    assertEquals("test-bucket", result.bucket());
+    assertEquals(true, result.bucketKeyEnabled());
+    assertEquals("test-cache-control", result.cacheControl());
+    assertEquals("test-checksum-algorithm", result.checksumAlgorithmAsString());
+    assertEquals("test-content-disposition", result.contentDisposition());
+    assertEquals("test-content-encoding", result.contentEncoding());
+    assertEquals("test-content-language", result.contentLanguage());
+    assertEquals("test-content-type", result.contentType());
+    assertEquals("test-bucket-owner", result.expectedBucketOwner());
+    assertEquals(expires, result.expires());
+    assertEquals("test-grant-full-control", result.grantFullControl());
+    assertEquals("test-grant-read", result.grantRead());
+    assertEquals("test-grant-read-acp", result.grantReadACP());
+    assertEquals("test-grant-write-acp", result.grantWriteACP());
+    assertEquals("test-key", result.key());
+    assertEquals(metadata, result.metadata());
+    assertEquals(ObjectLockLegalHoldStatus.OFF.toString(), result.objectLockLegalHoldStatusAsString());
+    assertEquals(ObjectLockMode.COMPLIANCE.toString(), result.objectLockModeAsString());
+    assertEquals(retainUntilDate, result.objectLockRetainUntilDate());
+    assertEquals(RequestPayer.REQUESTER.toString(), result.requestPayerAsString());
+    assertEquals(ServerSideEncryption.AWS_KMS_DSSE.toString(), result.serverSideEncryptionAsString());
+    assertEquals("test-sse-customer-algorithm", result.sseCustomerAlgorithm());
+    assertEquals("test-sse-customer-key", result.sseCustomerKey());
+    assertEquals("test-ssekms-encryption-context", result.ssekmsEncryptionContext());
+    assertEquals("test-ssekms-key-id", result.ssekmsKeyId());
+    assertEquals(StorageClass.SNOW.toString(), result.storageClassAsString());
+    assertEquals("test-tagging", result.tagging());
+    assertEquals("test-website-redirect-location", result.websiteRedirectLocation());
+  }
+
+  @Test
+  public void testConvertMultipartUploadRequestWithNullValues() {
+    CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
+            .bucket("test-bucket")
+            .key("test-key")
+            .tagging("test-tagging")
+            .objectLockMode(ObjectLockMode.COMPLIANCE)
+            .contentLanguage("test-content-language")
+            .grantReadACP("test-grant-read-acp")
+            .build();
+    PutObjectRequest result = ConvertSDKRequests.convertRequest(request);
+    assertEquals("test-bucket", result.bucket());
+    assertEquals("test-key", result.key());
+    assertEquals("test-tagging", result.tagging());
+    assertEquals(ObjectLockMode.COMPLIANCE.toString(), result.objectLockModeAsString());
+    assertEquals("test-content-language", result.contentLanguage());
+    assertEquals("test-grant-read-acp", result.grantReadACP());
+
+    assertNull(result.aclAsString());
+    assertNull(result.grantFullControl());
+    assertNull(result.grantRead());
+    assertNull(result.storageClass());
+    assertNull(result.websiteRedirectLocation());
+    assertTrue(result.metadata().isEmpty());
+
+  }
 }
+
+
+
