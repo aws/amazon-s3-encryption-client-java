@@ -107,6 +107,9 @@ public class ConvertSDKRequests {
                   case "SSECustomerKey":
                     output.sseCustomerKey((String) value);
                     break;
+                  case "SSECustomerKeyMD5":
+                    output.sseCustomerKeyMD5((String) value);
+                    break;
                   case "SSEKMSEncryptionContext":
                     output.ssekmsEncryptionContext((String) value);
                     break;
@@ -175,8 +178,6 @@ public class ConvertSDKRequests {
             case "ChecksumAlgorithm":
               output.checksumAlgorithm((String) value);
               break;
-            case "ChecksumType":
-              output.checksumType((ChecksumType) value);
             case "ContentDisposition":
               assert value instanceof String;
               output.contentDisposition((String) value);
@@ -244,6 +245,9 @@ public class ConvertSDKRequests {
               break;
             case "SSECustomerKey":
               output.sseCustomerKey((String) value);
+              break;
+            case "SSECustomerKeyMD5":
+              output.sseCustomerKeyMD5((String) value);
               break;
             case "SSEKMSEncryptionContext":
               output.ssekmsEncryptionContext((String) value);
