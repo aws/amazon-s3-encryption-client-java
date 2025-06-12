@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
-import software.amazon.awssdk.services.s3.model.ChecksumType;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
