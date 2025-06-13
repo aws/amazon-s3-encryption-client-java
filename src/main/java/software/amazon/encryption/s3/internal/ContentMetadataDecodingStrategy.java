@@ -169,7 +169,6 @@ public class ContentMetadataDecodingStrategy {
 
     public ContentMetadata decode(GetObjectRequest request, GetObjectResponse response) {
         Map<String, String> metadata = response.metadata();
-        ContentMetadataDecodingStrategy strategy;
         if (metadata != null
                 && metadata.containsKey(MetadataKeyConstants.CONTENT_IV)
                 && (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)

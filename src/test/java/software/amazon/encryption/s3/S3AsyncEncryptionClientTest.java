@@ -39,8 +39,10 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.StorageClass;
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.materials.KmsKeyring;
@@ -66,6 +68,7 @@ import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -828,6 +831,98 @@ public class S3AsyncEncryptionClientTest {
         deleteObject(BUCKET, objectKey, s3ClientDisabledInstructionFile);
         s3ClientDisabledInstructionFile.close();
         s3Client.close();
+    }
+    @Test
+    public void testAsyncInstructionFileConfigMultipart() {
+        final String objectKey = appendTestSuffix("test-multipart-async-instruction-file-config");
+        final String input = "SimpleTestOfV3EncryptionClient";
+
+        AwsCredentialsProvider credentials = DefaultCredentialsProvider.create();
+        S3Client wrappedClient = S3Client.create();
+        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(wrappedClient)
+                        .enableInstructionFilePutObject(true)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .enableMultipartPutObject(true)
+                .credentialsProvider(credentials)
+                .build();
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build();
+        CompletableFuture<PutObjectResponse> putObjectResponse = v3Client.putObject(request, AsyncRequestBody.fromString(input));
+        putObjectResponse.join();
+
+        assertNotNull(putObjectResponse);
+
+        ResponseBytes<GetObjectResponse> instructionFileResponse = wrappedClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey + ".instruction")
+                .build());
+        assertNotNull(instructionFileResponse);
+        assertTrue(instructionFileResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
+
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureGetObj = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncResponseTransformer.toBytes());
+        ResponseBytes<GetObjectResponse> getResponse = futureGetObj.join();
+        assertNotNull(getResponse);
+        assertEquals(input, getResponse.asUtf8String());
+
+        deleteObject(BUCKET, objectKey, v3Client);
+
+        v3Client.close();
+    }
+    @Test
+    public void testAsyncInstructionFileConfigMultipartWithOptions() {
+        final String objectKey = appendTestSuffix("test-multipart-async-instruction-file-config-options");
+        final String input = "SimpleTestOfV3EncryptionClient";
+        final StorageClass storageClass = StorageClass.STANDARD_IA;
+
+        S3Client wrappedClient = S3Client.create();
+        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(wrappedClient)
+                        .enableInstructionFilePutObject(true)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .enableMultipartPutObject(true)
+                .build();
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .storageClass(storageClass)
+                .build();
+
+        CompletableFuture<PutObjectResponse> putObjectResponse = v3Client.putObject(putObjectRequest, AsyncRequestBody.fromString(input));
+        putObjectResponse.join();
+
+        ResponseBytes<GetObjectResponse> instructionFileResponse = wrappedClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey + ".instruction")
+                .build());
+        assertNotNull(instructionFileResponse);
+        Map<String, String> metadata = instructionFileResponse.response().metadata();
+        assertTrue(metadata.containsKey("x-amz-crypto-instr-file"));
+
+        assertEquals(storageClass.toString(), instructionFileResponse.response().storageClassAsString());
+
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureGetObj = v3Client.getObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), AsyncResponseTransformer.toBytes());
+        ResponseBytes<GetObjectResponse> getResponse = futureGetObj.join();
+        assertNotNull(getResponse);
+        assertEquals(input, getResponse.asUtf8String());
+
+        assertEquals(getResponse.response().storageClassAsString(), storageClass.toString());
+
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+
     }
 
     @Test

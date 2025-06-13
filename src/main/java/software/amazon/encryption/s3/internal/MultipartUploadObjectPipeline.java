@@ -42,6 +42,7 @@ public class MultipartUploadObjectPipeline {
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
+    final private InstructionFileConfig _instructionFileConfig;
     /**
      * Map of data about in progress encrypted multipart uploads.
      */
@@ -53,6 +54,7 @@ public class MultipartUploadObjectPipeline {
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
         this._multipartUploadMaterials = builder._multipartUploadMaterials;
+        this._instructionFileConfig = builder._instructionFileConfig;
     }
 
     public static Builder builder() {
@@ -67,11 +69,10 @@ public class MultipartUploadObjectPipeline {
 
         MultipartEncryptedContent encryptedContent = _contentEncryptionStrategy.initMultipartEncryption(materials);
 
-        Map<String, String> metadata = new HashMap<>(request.metadata());
-        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), metadata);
-        request = request.toBuilder()
+        CreateMultipartUploadRequest createMpuRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), request);
+        request = createMpuRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
-                .metadata(metadata).build();
+                .build();
 
         CreateMultipartUploadResponse response = _s3AsyncClient.createMultipartUpload(request).join();
 
@@ -217,12 +218,13 @@ public class MultipartUploadObjectPipeline {
     public static class Builder {
         private final Map<String, MultipartUploadMaterials> _multipartUploadMaterials =
                 Collections.synchronizedMap(new HashMap<>());
-        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = new ObjectMetadataEncodingStrategy();
+        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
         private S3AsyncClient _s3AsyncClient;
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         // To Create Cipher which is used in during uploadPart requests.
         private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
+        private InstructionFileConfig _instructionFileConfig;
 
         private Builder() {
         }
@@ -247,6 +249,11 @@ public class MultipartUploadObjectPipeline {
             return this;
         }
 
+        public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
+            this._instructionFileConfig = instructionFileConfig;
+            return this;
+        }
+
         public MultipartUploadObjectPipeline build() {
             // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
             if (_contentEncryptionStrategy == null) {
@@ -255,6 +262,10 @@ public class MultipartUploadObjectPipeline {
                         .secureRandom(_secureRandom)
                         .build();
             }
+            if(_instructionFileConfig == null) {
+                _instructionFileConfig = InstructionFileConfig.builder().build();
+            }
+            _contentMetadataEncodingStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
             return new MultipartUploadObjectPipeline(this);
         }
     }
