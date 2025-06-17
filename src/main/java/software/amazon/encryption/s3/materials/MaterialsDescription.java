@@ -6,6 +6,11 @@ package software.amazon.encryption.s3.materials;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+/**
+ * This class is used to store and manage key-value pairs that describe keyring,specifically for AES and RSA Keyring.
+ * This will be useful during re-encryption of instruction file.
+ * The stored Materials Description are immutable once created.
+ */
 
 public class MaterialsDescription {
     private final Map<String, String> materialsDescription;
