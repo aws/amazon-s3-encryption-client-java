@@ -26,11 +26,13 @@ abstract public class S3Keyring implements Keyring {
     protected final DataKeyGenerator _dataKeyGenerator;
     private final boolean _enableLegacyWrappingAlgorithms;
     private final SecureRandom _secureRandom;
+    protected final MaterialsDescription _materialsDescription;
 
     protected S3Keyring(Builder<?, ?> builder) {
         _enableLegacyWrappingAlgorithms = builder._enableLegacyWrappingAlgorithms;
         _secureRandom = builder._secureRandom;
         _dataKeyGenerator = builder._dataKeyGenerator;
+        _materialsDescription = builder._materialsDescription;
     }
 
     /**
@@ -149,6 +151,7 @@ abstract public class S3Keyring implements Keyring {
         private boolean _enableLegacyWrappingAlgorithms = false;
         private SecureRandom _secureRandom;
         private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
+        protected MaterialsDescription _materialsDescription;
 
 
         protected Builder() {}
@@ -178,6 +181,10 @@ abstract public class S3Keyring implements Keyring {
                 throw new S3EncryptionClientException("DataKeyGenerator cannot be null!");
             }
             _dataKeyGenerator = dataKeyGenerator;
+            return builder();
+        }
+        public BuilderT materialsDescription(final MaterialsDescription materialsDescription) {
+            _materialsDescription = materialsDescription;
             return builder();
         }
 
