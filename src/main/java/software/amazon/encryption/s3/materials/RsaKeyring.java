@@ -197,7 +197,11 @@ public class RsaKeyring extends S3Keyring {
         return decryptDataKeyStrategies;
     }
 
-    public static class Builder extends S3Keyring.Builder<S3Keyring, Builder> {
+  public MaterialsDescription getMaterialsDescription() {
+        return _materialsDescription;
+  }
+
+  public static class Builder extends S3Keyring.Builder<S3Keyring, Builder> {
         private PartialRsaKeyPair _partialRsaKeyPair;
 
         private Builder() {

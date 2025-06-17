@@ -177,7 +177,11 @@ public class AesKeyring extends S3Keyring {
         return decryptDataKeyStrategies;
     }
 
-    public static class Builder extends S3Keyring.Builder<AesKeyring, Builder> {
+  public MaterialsDescription getMaterialsDescription() {
+        return _materialsDescription;
+  }
+
+  public static class Builder extends S3Keyring.Builder<AesKeyring, Builder> {
         private SecretKey _wrappingKey;
 
         private Builder() {
