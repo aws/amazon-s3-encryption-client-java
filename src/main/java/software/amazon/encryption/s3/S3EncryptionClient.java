@@ -21,6 +21,7 @@ import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.ReEncryptResponse;
 import software.amazon.awssdk.services.s3.DelegatingS3Client;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3BaseClientBuilder;
@@ -52,6 +53,8 @@ import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.internal.MultiFileOutputStream;
 import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
+import software.amazon.encryption.s3.internal.ReEncryptInstructionFileRequest;
+import software.amazon.encryption.s3.internal.ReEncryptInstructionFileResponse;
 import software.amazon.encryption.s3.internal.UploadObjectObserver;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
@@ -504,6 +507,12 @@ public class S3EncryptionClient extends DelegatingS3Client {
             throw new S3EncryptionClientException("Unable to abort Multipart upload.", e);
         }
     }
+    public ReEncryptInstructionFileResponse reEncryptInstructionFile(ReEncryptInstructionFileRequest request) {
+
+    }
+
+
+
 
     /**
      * Closes the wrapped clients.
