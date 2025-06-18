@@ -183,6 +183,7 @@ public class AesKeyring extends S3Keyring {
 
   public static class Builder extends S3Keyring.Builder<AesKeyring, Builder> {
         private SecretKey _wrappingKey;
+        private boolean _reEncryptInstructionFile = false;
 
         private Builder() {
             super();
@@ -203,8 +204,16 @@ public class AesKeyring extends S3Keyring {
             _wrappingKey = wrappingKey;
             return builder();
         }
+        public Builder reEncryptInstructionFile(boolean reEncryptInstructionFile) {
+            _reEncryptInstructionFile = reEncryptInstructionFile;
+            return builder();
+
+        }
 
         public AesKeyring build() {
+            if (_reEncryptInstructionFile && _materialsDescription == null) {
+                throw new S3EncryptionClientException("Materials description must be provided for re-encrypt instruction file!");
+            }
             return new AesKeyring(this);
         }
     }

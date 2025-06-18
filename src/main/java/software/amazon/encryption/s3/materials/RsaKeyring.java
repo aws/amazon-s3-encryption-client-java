@@ -203,6 +203,7 @@ public class RsaKeyring extends S3Keyring {
 
   public static class Builder extends S3Keyring.Builder<S3Keyring, Builder> {
         private PartialRsaKeyPair _partialRsaKeyPair;
+        private boolean _reEncryptInstructionFile = false;
 
         private Builder() {
             super();
@@ -217,10 +218,18 @@ public class RsaKeyring extends S3Keyring {
             _partialRsaKeyPair = partialRsaKeyPair;
             return builder();
         }
+        public Builder reEncryptInstructionFile(final boolean reEncryptInstructionFile) {
+            _reEncryptInstructionFile = reEncryptInstructionFile;
+            return builder();
+        }
 
         public RsaKeyring build() {
+            if (_reEncryptInstructionFile && _materialsDescription == null) {
+                throw new S3EncryptionClientException("Materials description must be provided for re-encrypt instruction file!");
+            }
             return new RsaKeyring(this);
         }
-    }
+
+  }
 
 }
