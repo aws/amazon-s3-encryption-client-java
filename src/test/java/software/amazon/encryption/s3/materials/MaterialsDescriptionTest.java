@@ -2,7 +2,6 @@ package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import software.amazon.encryption.s3.S3EncryptionClientException;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
