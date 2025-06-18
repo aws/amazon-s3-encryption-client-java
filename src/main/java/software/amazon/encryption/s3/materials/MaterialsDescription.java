@@ -3,16 +3,19 @@
 
 package software.amazon.encryption.s3.materials;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-/**
- * This class is used to store and manage key-value pairs that describe keyring,specifically for AES and RSA Keyring.
- * This will be useful during re-encryption of instruction file.
- * The stored Materials Description are immutable once created.
- */
+import java.util.Set;
 
-public class MaterialsDescription {
+/**
+ * This class is used to provide key-value pairs that describe the key material used with the Keyring, specifically for AES and RSA Keyrings.
+ * This will be useful during the re-encryption of instruction file.
+ * The stored Materials Description is immutable once created.
+ */
+public class MaterialsDescription implements Map<String, String> {
     private final Map<String, String> materialsDescription;
 
     private MaterialsDescription(Builder builder) {
@@ -21,10 +24,72 @@ public class MaterialsDescription {
     public static Builder builder() {
         return new Builder();
     }
-    public Map<String, String> getDescription() {
+    public Map<String, String> getMaterialsDescription() {
       return this.materialsDescription;
     }
-    public static class Builder {
+
+  @Override
+  public int size() {
+    return materialsDescription.size();
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return materialsDescription.isEmpty();
+  }
+
+  @Override
+  public boolean containsKey(Object key) {
+    return materialsDescription.containsKey(key);
+  }
+
+  @Override
+  public boolean containsValue(Object value) {
+    return materialsDescription.containsValue(value);
+  }
+
+  @Override
+  public String get(Object key) {
+    return materialsDescription.get(key);
+  }
+
+  @Override
+  public String put(String key, String value) {
+    return materialsDescription.put(key, value);
+  }
+
+  @Override
+  public String remove(Object key) {
+    return materialsDescription.remove(key);
+  }
+
+  @Override
+  public void putAll(Map<? extends String, ? extends String> m) {
+      materialsDescription.putAll(m);
+  }
+
+  @Override
+  public void clear() {
+      materialsDescription.clear();
+  }
+
+  @Override
+  public Set<String> keySet() {
+     return materialsDescription.keySet();
+  }
+
+  @Override
+  public Collection<String> values() {
+      return materialsDescription.values();
+  }
+
+  @Override
+  public Set<Entry<String, String>> entrySet() {
+      return materialsDescription.entrySet();
+  }
+
+
+  public static class Builder {
         private final Map<String, String> materialsDescription = new HashMap<>();
         public Builder put(String key, String value) {
             if (key == null || value == null) {

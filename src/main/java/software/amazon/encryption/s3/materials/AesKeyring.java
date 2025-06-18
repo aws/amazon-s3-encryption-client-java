@@ -211,9 +211,6 @@ public class AesKeyring extends S3Keyring {
         }
 
         public AesKeyring build() {
-            if (_reEncryptInstructionFile && _materialsDescription == null) {
-                throw new S3EncryptionClientException("Materials description must be provided for re-encrypt instruction file!");
-            }
             return new AesKeyring(this);
         }
     }

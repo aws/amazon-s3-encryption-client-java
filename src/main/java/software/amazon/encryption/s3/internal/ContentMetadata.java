@@ -5,6 +5,7 @@ package software.amazon.encryption.s3.internal;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
+import software.amazon.encryption.s3.materials.MaterialsDescription;
 
 import java.util.Collections;
 import java.util.Map;
@@ -21,6 +22,7 @@ public class ContentMetadata {
     private final String _contentCipher;
     private final String _contentCipherTagLength;
     private final String _contentRange;
+    private final MaterialsDescription _materialsDescription;
 
     private ContentMetadata(Builder builder) {
         _algorithmSuite = builder._algorithmSuite;
@@ -33,6 +35,7 @@ public class ContentMetadata {
         _contentCipher = builder._contentCipher;
         _contentCipherTagLength = builder._contentCipherTagLength;
         _contentRange = builder._contentRange;
+        _materialsDescription = builder._materialsDescription;
     }
 
     public static Builder builder() {
@@ -49,6 +52,10 @@ public class ContentMetadata {
 
     public String encryptedDataKeyAlgorithm() {
         return _encryptedDataKeyAlgorithm;
+    }
+
+    public MaterialsDescription materialsDescription() {
+        return _materialsDescription;
     }
 
     /**
@@ -91,6 +98,7 @@ public class ContentMetadata {
         private String _contentCipher;
         private String _contentCipherTagLength;
         public String _contentRange;
+        private MaterialsDescription _materialsDescription;
 
         private Builder() {
 
@@ -123,6 +131,10 @@ public class ContentMetadata {
 
         public Builder contentRange(String contentRange) {
             _contentRange = contentRange;
+            return this;
+        }
+        public Builder materialsDescription(MaterialsDescription materialsDescription) {
+            _materialsDescription = materialsDescription;
             return this;
         }
 

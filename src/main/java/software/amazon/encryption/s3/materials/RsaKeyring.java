@@ -224,9 +224,6 @@ public class RsaKeyring extends S3Keyring {
         }
 
         public RsaKeyring build() {
-            if (_reEncryptInstructionFile && _materialsDescription == null) {
-                throw new S3EncryptionClientException("Materials description must be provided for re-encrypt instruction file!");
-            }
             return new RsaKeyring(this);
         }
 
