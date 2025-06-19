@@ -20,13 +20,17 @@ public abstract class RawKeyring extends S3Keyring {
   public boolean reEncryptInstructionFile() {
     return _reEncryptInstructionFile;
   }
+  public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
+    warnIfEncryptionContextIsPresent(materials);
+
+    return materials;
+  }
   public void warnIfEncryptionContextIsPresent(EncryptionMaterials materials) {
     materials.s3Request().overrideConfiguration()
       .flatMap(overrideConfiguration ->
         overrideConfiguration.executionAttributes()
           .getOptionalAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT))
       .ifPresent(ctx -> LogFactory.getLog(getClass()).warn("Usage of Encryption Context provides no security benefit in " + getClass().getSimpleName()));
-
   }
   public static abstract class Builder<KeyringT extends RawKeyring, BuilderT extends Builder<KeyringT, BuilderT>>
       extends S3Keyring.Builder<KeyringT, BuilderT> {
