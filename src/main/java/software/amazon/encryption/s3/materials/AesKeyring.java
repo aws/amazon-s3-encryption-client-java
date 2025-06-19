@@ -177,10 +177,6 @@ public class AesKeyring extends RawKeyring {
         return decryptDataKeyStrategies;
     }
 
-  public MaterialsDescription getMaterialsDescription() {
-        return _materialsDescription;
-  }
-
   public static class Builder extends RawKeyring.Builder<AesKeyring, Builder> {
         private SecretKey _wrappingKey;
 
