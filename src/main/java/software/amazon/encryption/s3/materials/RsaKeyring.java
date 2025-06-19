@@ -104,13 +104,6 @@ public class RsaKeyring extends RawKeyring {
         }
 
         @Override
-        public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
-            warnIfEncryptionContextIsPresent(materials);
-
-            return materials;
-        }
-
-        @Override
         public byte[] encryptDataKey(SecureRandom secureRandom,
                                      EncryptionMaterials materials) throws GeneralSecurityException {
             final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
