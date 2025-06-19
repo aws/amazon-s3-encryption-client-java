@@ -129,24 +129,6 @@ abstract public class S3Keyring implements Keyring {
 
     abstract protected Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies();
 
-    /**
-     * Checks if an encryption context is present in the EncryptionMaterials and issues a warning
-     * if an encryption context is found.
-     * <p>
-     * Encryption context is not recommended for use with
-     * non-KMS keyrings as it may not provide additional security benefits.
-     *
-     * @param materials EncryptionMaterials
-     */
-    public void warnIfEncryptionContextIsPresent(EncryptionMaterials materials) {
-        materials.s3Request().overrideConfiguration()
-                .flatMap(overrideConfiguration ->
-                                 overrideConfiguration.executionAttributes()
-                                         .getOptionalAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT))
-                .ifPresent(ctx -> LogFactory.getLog(getClass()).warn("Usage of Encryption Context provides no security benefit in " + getClass().getSimpleName()));
-
-    }
-
     abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
         private boolean _enableLegacyWrappingAlgorithms = false;
         private SecureRandom _secureRandom;
