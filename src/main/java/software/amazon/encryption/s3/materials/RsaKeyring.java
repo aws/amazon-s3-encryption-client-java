@@ -23,7 +23,7 @@ import java.util.Map;
  * This keyring can wrap keys with the active keywrap algorithm and
  * unwrap with the active and legacy algorithms for RSA keys.
  */
-public class RsaKeyring extends S3Keyring {
+public class RsaKeyring extends RawKeyring {
 
     private final PartialRsaKeyPair _partialRsaKeyPair;
 
@@ -201,9 +201,8 @@ public class RsaKeyring extends S3Keyring {
         return _materialsDescription;
   }
 
-  public static class Builder extends S3Keyring.Builder<S3Keyring, Builder> {
+  public static class Builder extends RawKeyring.Builder<RsaKeyring, RsaKeyring.Builder> {
         private PartialRsaKeyPair _partialRsaKeyPair;
-        private boolean _reEncryptInstructionFile = false;
 
         private Builder() {
             super();
@@ -216,10 +215,6 @@ public class RsaKeyring extends S3Keyring {
 
         public Builder wrappingKeyPair(final PartialRsaKeyPair partialRsaKeyPair) {
             _partialRsaKeyPair = partialRsaKeyPair;
-            return builder();
-        }
-        public Builder reEncryptInstructionFile(final boolean reEncryptInstructionFile) {
-            _reEncryptInstructionFile = reEncryptInstructionFile;
             return builder();
         }
 
