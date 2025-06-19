@@ -197,10 +197,6 @@ public class RsaKeyring extends RawKeyring {
         return decryptDataKeyStrategies;
     }
 
-  public MaterialsDescription getMaterialsDescription() {
-        return _materialsDescription;
-  }
-
   public static class Builder extends RawKeyring.Builder<RsaKeyring, RsaKeyring.Builder> {
         private PartialRsaKeyPair _partialRsaKeyPair;
 
