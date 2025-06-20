@@ -3,11 +3,17 @@ package software.amazon.encryption.s3.materials;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.encryption.s3.S3EncryptionClient;
+
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 public class MaterialsDescriptionTest {
   private static SecretKey AES_KEY;
@@ -98,5 +106,69 @@ public class MaterialsDescriptionTest {
     assertEquals(2, rsaKeyring.getMaterialsDescription().getMaterialsDescription().size());
 
   }
+  @Test
+  public void testAesMaterialsDescriptionInObjectMetadata() {
+    MaterialsDescription materialsDescription = MaterialsDescription.builder()
+      .put("version", "1.0")
+      .build();
+    AesKeyring aesKeyring = AesKeyring.builder()
+      .wrappingKey(AES_KEY)
+      .reEncryptInstructionFile(true)
+      .secureRandom(new SecureRandom())
+      .materialsDescription(materialsDescription)
+      .build();
+    S3EncryptionClient client = S3EncryptionClient.builder()
+      .keyring(aesKeyring)
+      .build();
+    final String input = "Testing Materials Description in Object Metadata!";
+    final String objectKey = "test-aes-materials-description-in-object-metadata";
+
+    client.putObject(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build(), RequestBody.fromString(input)
+    );
+    ResponseBytes<GetObjectResponse> responseBytes = client.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build());
+    assertEquals(input, responseBytes.asUtf8String());
+    assertEquals("{\"version\":\"1.0\"}", responseBytes.response().metadata().get("x-amz-matdesc"));
+
+    deleteObject(BUCKET, objectKey, client);
+
+  }
+  @Test
+  public void testRsaMaterialsDescriptionInObjectMetadata() {
+    PartialRsaKeyPair keyPair = new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), RSA_KEY_PAIR.getPublic());
+    MaterialsDescription materialsDescription = MaterialsDescription.builder()
+      .put("version", "1.0")
+      .put("admin", "yes")
+      .build();
+    RsaKeyring rsaKeyring = RsaKeyring.builder()
+      .wrappingKeyPair(keyPair)
+      .reEncryptInstructionFile(true)
+      .materialsDescription(materialsDescription)
+      .build();
+    S3EncryptionClient client = S3EncryptionClient.builder()
+      .keyring(rsaKeyring)
+      .build();
+    final String input = "Testing Materials Description in Object Metadata!";
+    final String objectKey = "test-rsa-materials-description-in-object-metadata";
+
+    client.putObject(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build(), RequestBody.fromString(input)
+    );
+    ResponseBytes<GetObjectResponse> responseBytes = client.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build());
+    assertEquals(input, responseBytes.asUtf8String());
+    assertEquals("{\"admin\":\"yes\",\"version\":\"1.0\"}", responseBytes.response().metadata().get("x-amz-matdesc"));
+
+  }
+
 
 }
