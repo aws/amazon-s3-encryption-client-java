@@ -113,8 +113,8 @@ public class ContentMetadata {
             return this;
         }
 
-        public Builder encryptedDataKeyContext(Map<String, String> encryptedDataKeyContext) {
-            _encryptionContextOrMatDesc = Collections.unmodifiableMap(encryptedDataKeyContext);
+        public Builder encryptionContextOrMatDesc(Map<String, String> encryptionContextOrMatDesc) {
+            _encryptionContextOrMatDesc = Collections.unmodifiableMap(encryptionContextOrMatDesc);
             return this;
         }
 
