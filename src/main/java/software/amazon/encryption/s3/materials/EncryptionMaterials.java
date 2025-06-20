@@ -138,7 +138,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         private byte[] _plaintextDataKey = null;
         private long _plaintextLength = -1;
         private Provider _cryptoProvider = null;
-        private MaterialsDescription _materialsDescription;
+        private MaterialsDescription _materialsDescription = MaterialsDescription.builder().build();
 
         private Builder() {
         }
@@ -153,7 +153,9 @@ final public class EncryptionMaterials implements CryptographicMaterials {
             return this;
         }
         public Builder materialsDescription(MaterialsDescription materialsDescription) {
-            _materialsDescription = materialsDescription;
+            _materialsDescription = materialsDescription == null
+                    ? MaterialsDescription.builder().build()
+                    : materialsDescription;
             return this;
         }
         public Builder encryptionContext(Map<String, String> encryptionContext) {
