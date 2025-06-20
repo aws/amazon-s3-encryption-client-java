@@ -16,26 +16,24 @@ public class ContentMetadata {
 
     private final EncryptedDataKey _encryptedDataKey;
     private final String _encryptedDataKeyAlgorithm;
-    private final Map<String, String> _encryptedDataKeyContext;
+    private final Map<String, String> _encryptionContextOrMatDesc;
 
     private final byte[] _contentIv;
     private final String _contentCipher;
     private final String _contentCipherTagLength;
     private final String _contentRange;
-    private final MaterialsDescription _materialsDescription;
 
     private ContentMetadata(Builder builder) {
         _algorithmSuite = builder._algorithmSuite;
 
         _encryptedDataKey = builder._encryptedDataKey;
         _encryptedDataKeyAlgorithm = builder._encryptedDataKeyAlgorithm;
-        _encryptedDataKeyContext = builder._encryptedDataKeyContext;
+        _encryptionContextOrMatDesc = builder._encryptionContextOrMatDesc;
 
         _contentIv = builder._contentIv;
         _contentCipher = builder._contentCipher;
         _contentCipherTagLength = builder._contentCipherTagLength;
         _contentRange = builder._contentRange;
-        _materialsDescription = builder._materialsDescription;
     }
 
     public static Builder builder() {
@@ -54,9 +52,6 @@ public class ContentMetadata {
         return _encryptedDataKeyAlgorithm;
     }
 
-    public MaterialsDescription materialsDescription() {
-        return _materialsDescription;
-    }
 
     /**
      * Note that the underlying implementation uses a Collections.unmodifiableMap which is
@@ -65,7 +60,7 @@ public class ContentMetadata {
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
         + " implementation is immutable")
     public Map<String, String> encryptedDataKeyContext() {
-        return _encryptedDataKeyContext;
+        return _encryptionContextOrMatDesc;
     }
 
     public byte[] contentIv() {
@@ -92,13 +87,12 @@ public class ContentMetadata {
 
         private EncryptedDataKey _encryptedDataKey;
         private String _encryptedDataKeyAlgorithm;
-        private Map<String, String> _encryptedDataKeyContext;
+        private Map<String, String> _encryptionContextOrMatDesc;
 
         private byte[] _contentIv;
         private String _contentCipher;
         private String _contentCipherTagLength;
         public String _contentRange;
-        private MaterialsDescription _materialsDescription;
 
         private Builder() {
 
@@ -120,7 +114,7 @@ public class ContentMetadata {
         }
 
         public Builder encryptedDataKeyContext(Map<String, String> encryptedDataKeyContext) {
-            _encryptedDataKeyContext = Collections.unmodifiableMap(encryptedDataKeyContext);
+            _encryptionContextOrMatDesc = Collections.unmodifiableMap(encryptedDataKeyContext);
             return this;
         }
 
@@ -131,10 +125,6 @@ public class ContentMetadata {
 
         public Builder contentRange(String contentRange) {
             _contentRange = contentRange;
-            return this;
-        }
-        public Builder materialsDescription(MaterialsDescription materialsDescription) {
-            _materialsDescription = materialsDescription;
             return this;
         }
 
