@@ -136,8 +136,8 @@ public class ContentMetadataDecodingStrategy {
                 .keyProviderInfo(keyProviderInfo.getBytes(StandardCharsets.UTF_8))
                 .build();
 
-        // Get encrypted data key encryption context
-        final Map<String, String> encryptionContext = new HashMap<>();
+        // Get encrypted data key encryption context or materials description (depending on the keyring)
+        final Map<String, String> encryptionContextOrMatDesc = new HashMap<>();
         // The V2 client treats null value here as empty, do the same to avoid incompatibility
         String jsonEncryptionContext = metadata.getOrDefault(MetadataKeyConstants.ENCRYPTED_DATA_KEY_CONTEXT, "{}");
         // When the encryption context contains non-US-ASCII characters,
@@ -149,7 +149,7 @@ public class ContentMetadataDecodingStrategy {
             JsonNode objectNode = parser.parse(decodedJsonEncryptionContext);
 
             for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
-                encryptionContext.put(entry.getKey(), entry.getValue().asString());
+                encryptionContextOrMatDesc.put(entry.getKey(), entry.getValue().asString());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -161,7 +161,7 @@ public class ContentMetadataDecodingStrategy {
         return ContentMetadata.builder()
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKey(edk)
-                .encryptedDataKeyContext(encryptionContext)
+                .encryptionContextOrMatDesc(encryptionContextOrMatDesc)
                 .contentIv(iv)
                 .contentRange(contentRange)
                 .build();

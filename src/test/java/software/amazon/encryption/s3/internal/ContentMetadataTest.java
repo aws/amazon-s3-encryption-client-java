@@ -35,7 +35,7 @@ public class ContentMetadataTest {
                 .encryptedDataKey(encryptedDataKey)
                 .contentIv(contentIv)
                 .encryptedDataKeyAlgorithm(encryptedDataKeyAlgorithm)
-                .encryptedDataKeyContext(encryptedDataKeyContext)
+                .encryptionContextOrMatDesc(encryptedDataKeyContext)
                 .build();
     }
 
