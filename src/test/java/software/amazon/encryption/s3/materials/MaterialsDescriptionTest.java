@@ -251,7 +251,7 @@ public class MaterialsDescriptionTest {
       .build();
 
     final String input = "Testing Materials Description in Instruction File!";
-    final String objectKey = "test-rsa-materials-description-in-object-metadata";
+    final String objectKey = "test-rsa-materials-description-in-instruction-file";
 
     client.putObject(builder -> builder
       .bucket(BUCKET)
