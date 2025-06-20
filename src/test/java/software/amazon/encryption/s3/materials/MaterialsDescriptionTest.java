@@ -1,12 +1,18 @@
 package software.amazon.encryption.s3.materials;
 
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
+
+import software.amazon.awssdk.protocols.jsoncore.JsonNode;
+import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClient;
+import software.amazon.encryption.s3.internal.InstructionFileConfig;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -153,8 +159,8 @@ public class MaterialsDescriptionTest {
     S3EncryptionClient client = S3EncryptionClient.builder()
       .keyring(rsaKeyring)
       .build();
-    final String input = "Testing Materials Description in Object Metadata!";
-    final String objectKey = "test-rsa-materials-description-in-object-metadata";
+    final String input = "Testing Materials Description in Instruction File!";
+    final String objectKey = "test-rsa-materials-description-in-instruction-file";
 
     client.putObject(builder -> builder
       .bucket(BUCKET)
@@ -168,7 +174,113 @@ public class MaterialsDescriptionTest {
     assertEquals(input, responseBytes.asUtf8String());
     assertEquals("{\"admin\":\"yes\",\"version\":\"1.0\"}", responseBytes.response().metadata().get("x-amz-matdesc"));
 
-  }
+    deleteObject(BUCKET, objectKey, client);
 
+  }
+  @Test
+  public void testAesMaterialsDescriptionInInstructionFile() {
+    MaterialsDescription materialsDescription = MaterialsDescription.builder()
+      .put("version", "1.0")
+      .build();
+    AesKeyring aesKeyring = AesKeyring.builder()
+      .wrappingKey(AES_KEY)
+      .reEncryptInstructionFile(true)
+      .secureRandom(new SecureRandom())
+      .materialsDescription(materialsDescription)
+      .build();
+
+    S3Client wrappedClient= S3Client.create();
+    S3EncryptionClient client = S3EncryptionClient.builder()
+      .keyring(aesKeyring)
+      .instructionFileConfig(InstructionFileConfig.builder()
+        .enableInstructionFilePutObject(true)
+        .instructionFileClient(wrappedClient)
+        .build())
+      .build();
+
+    final String input = "Testing Materials Description in Instruction File!";
+    final String objectKey = "test-aes-materials-description-in-instruction-file";
+
+    client.putObject(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build(), RequestBody.fromString(input)
+    );
+    ResponseBytes<GetObjectResponse> responseBytes = client.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build());
+    assertEquals(input, responseBytes.asUtf8String());
+
+    S3Client defaultClient= S3Client.create();
+
+    ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey + ".instruction")
+      .build());
+
+    String instructionFileContent = directInstGetResponse.asUtf8String();
+    JsonNodeParser parser = JsonNodeParser.create();
+    JsonNode objectNode = parser.parse(instructionFileContent);
+
+    String matDesc = objectNode.asObject().get("x-amz-matdesc").asString();
+    assertEquals("{\"version\":\"1.0\"}", matDesc);
+
+  }
+  @Test
+  public void testRsaMaterialsDescriptionInInstructionFile() {
+    PartialRsaKeyPair keyPair = new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), RSA_KEY_PAIR.getPublic());
+    MaterialsDescription materialsDescription = MaterialsDescription.builder()
+      .put("version", "1.0")
+      .put("admin", "yes")
+      .build();
+
+    RsaKeyring rsaKeyring = RsaKeyring.builder()
+      .wrappingKeyPair(keyPair)
+      .reEncryptInstructionFile(true)
+      .materialsDescription(materialsDescription)
+      .build();
+
+    S3Client wrappedClient= S3Client.create();
+    S3EncryptionClient client = S3EncryptionClient.builder()
+      .keyring(rsaKeyring)
+      .instructionFileConfig(InstructionFileConfig.builder()
+        .enableInstructionFilePutObject(true)
+        .instructionFileClient(wrappedClient)
+        .build())
+      .build();
+
+    final String input = "Testing Materials Description in Instruction File!";
+    final String objectKey = "test-rsa-materials-description-in-object-metadata";
+
+    client.putObject(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build(), RequestBody.fromString(input)
+    );
+    ResponseBytes<GetObjectResponse> responseBytes = client.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build());
+    assertEquals(input, responseBytes.asUtf8String());
+
+    S3Client defaultClient= S3Client.create();
+
+    ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey + ".instruction")
+      .build());
+
+    String instructionFileContent = directInstGetResponse.asUtf8String();
+    JsonNodeParser parser = JsonNodeParser.create();
+    JsonNode objectNode = parser.parse(instructionFileContent);
+
+    String matDesc = objectNode.asObject().get("x-amz-matdesc").asString();
+    assertEquals("{\"admin\":\"yes\",\"version\":\"1.0\"}", matDesc);
+
+
+    deleteObject(BUCKET, objectKey, client);
+
+  }
 
 }
