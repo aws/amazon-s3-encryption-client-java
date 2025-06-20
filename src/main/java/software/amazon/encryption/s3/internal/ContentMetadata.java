@@ -5,7 +5,6 @@ package software.amazon.encryption.s3.internal;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
-import software.amazon.encryption.s3.materials.MaterialsDescription;
 
 import java.util.Collections;
 import java.util.Map;

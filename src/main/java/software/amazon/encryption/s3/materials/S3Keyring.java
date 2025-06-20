@@ -3,7 +3,6 @@
 package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 import java.nio.charset.StandardCharsets;
@@ -13,8 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.crypto.SecretKey;
-
-import org.apache.commons.logging.LogFactory;
 
 /**
  * This serves as the base class for all the keyrings in the S3 encryption client.
