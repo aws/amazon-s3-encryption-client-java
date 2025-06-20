@@ -20,8 +20,14 @@ public abstract class RawKeyring extends S3Keyring {
   public boolean getReEncryptInstructionFile() {
     return _reEncryptInstructionFile;
   }
-  public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
+  public EncryptionMaterials modifyMaterialHelper(EncryptionMaterials materials) {
     warnIfEncryptionContextIsPresent(materials);
+    if (_materialsDescription != null && !_materialsDescription.isEmpty()) {
+      materials = materials.toBuilder()
+        .materialsDescription(_materialsDescription)
+        .build();
+      return materials;
+    }
 
     return materials;
   }
