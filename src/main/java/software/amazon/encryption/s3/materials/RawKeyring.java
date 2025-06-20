@@ -5,6 +5,9 @@ package software.amazon.encryption.s3.materials;
 import org.apache.commons.logging.LogFactory;
 import software.amazon.encryption.s3.S3EncryptionClient;
 
+/**
+ * This is an abstract base class for keyrings that use raw cryptographic keys (AES + RSA)
+ */
 public abstract class RawKeyring extends S3Keyring {
   protected final MaterialsDescription _materialsDescription;
   protected final boolean _reEncryptInstructionFile;
