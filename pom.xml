@@ -336,7 +336,7 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.sonatype.central</groupId>Add commentMore actions
+            <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
             <version>0.7.0</version>
             <extensions>true</extensions>
