@@ -311,8 +311,8 @@ public class S3EncryptionClientMatDescTest {
     S3EncryptionClient client = S3EncryptionClient.builder()
       .keyring(rsaKeyring)
       .build();
-    final String input = "Testing Materials Description in Instruction File!";
-    final String objectKey = appendTestSuffix("test-rsa-materials-description-in-instruction-file");
+    final String input = "Testing Materials Description in Instruction File and not Encryption Context!";
+    final String objectKey = appendTestSuffix("test-rsa-materials-description-in-instruction-file-and-not-encryption-context");
     final String encryptionContext = "{\"admin\":\"yes\"}";
 
     client.putObject(builder -> builder
@@ -332,8 +332,6 @@ public class S3EncryptionClientMatDescTest {
     JsonNode matDescNode = parser.parse(responseBytes.response().metadata().get("x-amz-matdesc"));
     assertEquals("1.0", matDescNode.asObject().get("version").asString());
     assertNull(matDescNode.asObject().get("admin"));
-
-    deleteObject(BUCKET, objectKey, client);
 
   }
 
