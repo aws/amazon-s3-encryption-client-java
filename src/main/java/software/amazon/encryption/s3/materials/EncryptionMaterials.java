@@ -4,6 +4,7 @@ package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.services.s3.model.S3Request;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.CipherMode;
 import software.amazon.encryption.s3.internal.CipherProvider;
@@ -187,6 +188,9 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         }
 
         public EncryptionMaterials build() {
+            if (!_materialsDescription.isEmpty() && !_encryptionContext.isEmpty()) {
+                throw new S3EncryptionClientException("MaterialsDescription and EncryptionContext cannot both be set!");
+            }
             return new EncryptionMaterials(this);
         }
     }

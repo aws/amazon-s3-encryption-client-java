@@ -90,7 +90,7 @@ public class AesKeyring extends RawKeyring {
 
         @Override
         public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
-            return modifyMaterialHelper(materials);
+            return modifyMaterialsForRawKeyring(materials);
         }
 
         @Override

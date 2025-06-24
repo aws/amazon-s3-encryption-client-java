@@ -54,7 +54,7 @@ public class MaterialsDescription implements Map<String, String> {
 
   @Override
   public String put(String key, String value) {
-    return materialsDescription.put(key, value);
+    throw new UnsupportedOperationException("This map is immutable");
   }
 
   @Override
@@ -64,7 +64,7 @@ public class MaterialsDescription implements Map<String, String> {
 
   @Override
   public void putAll(Map<? extends String, ? extends String> m) {
-      materialsDescription.putAll(m);
+      throw new UnsupportedOperationException("This map is immutable");
   }
 
   @Override
@@ -101,9 +101,7 @@ public class MaterialsDescription implements Map<String, String> {
           if (description == null) {
             throw new IllegalArgumentException("Description must not be null");
           }
-          for (Map.Entry<String, String> entry : description.entrySet()) {
-            put(entry.getKey(), entry.getValue());
-          }
+          materialsDescription.putAll(description);
           return this;
         }
         public MaterialsDescription build() {

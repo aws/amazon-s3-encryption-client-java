@@ -15,6 +15,12 @@ public class ContentMetadata {
 
     private final EncryptedDataKey _encryptedDataKey;
     private final String _encryptedDataKeyAlgorithm;
+
+    /**
+     * This field stores either encryption context or material description.
+     * We use a single field to store both in order to maintain backwards
+     * compatibility with V2, which treated both as the same.
+     */
     private final Map<String, String> _encryptionContextOrMatDesc;
 
     private final byte[] _contentIv;
