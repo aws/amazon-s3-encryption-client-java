@@ -309,7 +309,7 @@
       <distributionManagement>
         <snapshotRepository>
           <id>central</id>
-          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+          <url>https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots</url>
         </snapshotRepository>
       </distributionManagement>
 
@@ -342,6 +342,7 @@
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>central</publishingServerId>
+              <autoPublish>true</autoPublish>
             </configuration>
            </plugin>
         </plugins>
