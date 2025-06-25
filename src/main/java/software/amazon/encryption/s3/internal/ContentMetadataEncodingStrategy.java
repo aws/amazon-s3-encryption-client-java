@@ -80,11 +80,16 @@ public class ContentMetadataEncodingStrategy {
 
         try (JsonWriter jsonWriter = JsonWriter.create()) {
             jsonWriter.writeStartObject();
-            for (Map.Entry<String, String> entry : materials.encryptionContext().entrySet()) {
-                jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
+            if (!materials.encryptionContext().isEmpty() && materials.materialsDescription().isEmpty()) {
+                for (Map.Entry<String, String> entry : materials.encryptionContext().entrySet()) {
+                    jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
+                }
+            } else if (materials.encryptionContext().isEmpty() && !materials.materialsDescription().isEmpty()) {
+                for (Map.Entry<String, String> entry : materials.materialsDescription().entrySet()) {
+                        jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
+                }
             }
             jsonWriter.writeEndObject();
-
             String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_CONTEXT, jsonEncryptionContext);
         } catch (JsonWriter.JsonGenerationException e) {
