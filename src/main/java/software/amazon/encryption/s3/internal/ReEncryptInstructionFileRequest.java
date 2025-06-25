@@ -2,9 +2,8 @@ package software.amazon.encryption.s3.internal;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.AesKeyring;
-import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.materials.RawKeyring;
 import software.amazon.encryption.s3.materials.RsaKeyring;
-import software.amazon.encryption.s3.materials.S3Keyring;
 
 /** Request object for re-encrypting instruction files.
  * Supports both AES and RSA keyring with different instruction file suffixes.
@@ -12,7 +11,7 @@ import software.amazon.encryption.s3.materials.S3Keyring;
 public class ReEncryptInstructionFileRequest {
   private final String bucket;
   private final String key;
-  private final S3Keyring newKeyring;
+  private final RawKeyring newKeyring;
   private final String instructionFileSuffix;
 
   private ReEncryptInstructionFileRequest(Builder builder) {
@@ -21,14 +20,32 @@ public class ReEncryptInstructionFileRequest {
     newKeyring = builder.newKeyring;
     instructionFileSuffix = builder.instructionFileSuffix;
   }
+
+  public String bucket() {
+    return bucket;
+  }
+
+  public String key() {
+    return key;
+  }
+
+  public RawKeyring newKeyring() {
+    return newKeyring;
+  }
+
+  public String instructionFileSuffix() {
+    return instructionFileSuffix;
+  }
+
   public static Builder builder() {
     return new Builder();
   }
+
   public static class Builder {
     private static final String DEFAULT_INSTRUCTION_FILE_SUFFIX = ".instruction";
     private String bucket;
     private String key;
-    private S3Keyring newKeyring;
+    private RawKeyring newKeyring;
     private String instructionFileSuffix = DEFAULT_INSTRUCTION_FILE_SUFFIX;
 
     public Builder bucket(String bucket) {
@@ -41,7 +58,7 @@ public class ReEncryptInstructionFileRequest {
       return this;
     }
 
-    public Builder newKeyring(S3Keyring newKeyring) {
+    public Builder newKeyring(RawKeyring newKeyring) {
       this.newKeyring = newKeyring;
       return this;
     }
@@ -69,8 +86,6 @@ public class ReEncryptInstructionFileRequest {
         if (instructionFileSuffix.equals(DEFAULT_INSTRUCTION_FILE_SUFFIX)) {
           throw new S3EncryptionClientException("Instruction file suffix must be different than the default one for RSA keyring!");
         }
-      } else if (newKeyring instanceof KmsKeyring){
-        throw new S3EncryptionClientException("KMS keyring is not supported for re-encrypting instruction file!");
       }
       return new ReEncryptInstructionFileRequest(this);
     }
