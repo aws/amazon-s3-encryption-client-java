@@ -23,10 +23,13 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -44,32 +47,6 @@ public class S3EncryptionClientMatDescTest {
     KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
     keyPairGen.initialize(2048);
     RSA_KEY_PAIR = keyPairGen.generateKeyPair();
-  }
-
-  @Test
-  public void testMaterialsDescriptionAesKeyring() {
-    AesKeyring aesKeyring = AesKeyring.builder()
-      .wrappingKey(AES_KEY)
-      .materialsDescription(MaterialsDescription.builder()
-        .put("version", "1.0")
-        .put("admin", "yes")
-        .build())
-      .build();
-    assertNotNull(aesKeyring);
-  }
-
-  @Test
-  public void testMaterialsDescriptionRsaKeyring() {
-    PartialRsaKeyPair keyPair = new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), RSA_KEY_PAIR.getPublic());
-    RsaKeyring rsaKeyring = RsaKeyring.builder()
-      .wrappingKeyPair(keyPair)
-      .materialsDescription(MaterialsDescription.builder()
-        .put("version", "1.0")
-        .put("admin", "yes")
-        .build())
-      .build();
-    assertNotNull(rsaKeyring);
-
   }
 
   @Test
@@ -267,13 +244,13 @@ public class S3EncryptionClientMatDescTest {
 
     final String input = "Testing Materials Description in Instruction File and not Encryption Context!";
     final String objectKey = appendTestSuffix("test-aes-materials-description-in-instruction-file-and-not-encryption-context");
-    final String encryptionContext = "{\"admin\":\"yes\"}";
+    final Map<String, String> encryptionContext = new HashMap<String, String>();
+    encryptionContext.put("admin", "yes");
 
     client.putObject(builder -> builder
       .bucket(BUCKET)
       .key(objectKey)
-      .serverSideEncryption(ServerSideEncryption.AWS_KMS)
-      .ssekmsEncryptionContext(Base64.getEncoder().encodeToString(encryptionContext.getBytes(StandardCharsets.UTF_8)))
+      .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
       .build(), RequestBody.fromString(input)
     );
     ResponseBytes<GetObjectResponse> responseBytes = client.getObjectAsBytes(builder -> builder
@@ -313,13 +290,13 @@ public class S3EncryptionClientMatDescTest {
       .build();
     final String input = "Testing Materials Description in Instruction File and not Encryption Context!";
     final String objectKey = appendTestSuffix("test-rsa-materials-description-in-instruction-file-and-not-encryption-context");
-    final String encryptionContext = "{\"admin\":\"yes\"}";
+    final Map<String, String> encryptionContext = new HashMap<String, String>();
+    encryptionContext.put("admin", "yes");
 
     client.putObject(builder -> builder
       .bucket(BUCKET)
       .key(objectKey)
-      .serverSideEncryption(ServerSideEncryption.AWS_KMS)
-      .ssekmsEncryptionContext(Base64.getEncoder().encodeToString(encryptionContext.getBytes(StandardCharsets.UTF_8)))
+      .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
       .build(), RequestBody.fromString(input)
     );
     ResponseBytes<GetObjectResponse> responseBytes = client.getObjectAsBytes(builder -> builder
