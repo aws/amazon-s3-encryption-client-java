@@ -6,6 +6,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -46,22 +47,34 @@ import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.ContentMetadata;
+import software.amazon.encryption.s3.internal.ContentMetadataDecodingStrategy;
+import software.amazon.encryption.s3.internal.ContentMetadataEncodingStrategy;
 import software.amazon.encryption.s3.internal.ConvertSDKRequests;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.internal.MultiFileOutputStream;
 import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
+import software.amazon.encryption.s3.internal.ReEncryptInstructionFileRequest;
+import software.amazon.encryption.s3.internal.ReEncryptInstructionFileResponse;
 import software.amazon.encryption.s3.internal.UploadObjectObserver;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
+import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
+import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
+import software.amazon.encryption.s3.materials.EncryptedDataKey;
+import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.materials.MaterialsDescription;
 import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
+import software.amazon.encryption.s3.materials.RawKeyring;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
+import javax.crypto.DecapsulateException;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.net.URI;
@@ -69,6 +82,7 @@ import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -154,7 +168,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 builder.putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
     }
 
-
     /**
      * Attaches encryption context and multipart configuration to a request.
      * * Must be used as a parameter to
@@ -170,6 +183,52 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext)
                         .putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
+    }
+
+    public ReEncryptInstructionFileResponse reEncryptInstructionFile(ReEncryptInstructionFileRequest reEncryptInstructionFileRequest) {
+        GetObjectRequest request = GetObjectRequest.builder()
+          .bucket(reEncryptInstructionFileRequest.bucket())
+          .key(reEncryptInstructionFileRequest.key())
+          .build();
+
+        ResponseInputStream<GetObjectResponse> response = this.getObject(request);
+        ContentMetadataDecodingStrategy decodingStrategy = new ContentMetadataDecodingStrategy(_instructionFileConfig);
+        ContentMetadata contentMetadata = decodingStrategy.decode(request, response.response());
+
+        AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
+        EncryptedDataKey encryptedDataKey = contentMetadata.encryptedDataKey();
+        Map<String, String> currentKeyringMaterialsDescription = contentMetadata.encryptedDataKeyContext();
+        byte[] iv = contentMetadata.contentIv();
+
+        DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
+          DecryptMaterialsRequest.builder()
+            .algorithmSuite(algorithmSuite)
+            .encryptedDataKeys(Collections.singletonList(encryptedDataKey))
+            .build()
+        );
+        byte[] plaintextDataKey = decryptedMaterials.plaintextDataKey();
+
+        EncryptionMaterials encryptionMaterials = EncryptionMaterials.builder()
+          .algorithmSuite(algorithmSuite)
+          .plaintextDataKey(plaintextDataKey)
+          .build();
+
+        RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
+        EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
+
+        if (encryptedMaterials.materialsDescription().equals(currentKeyringMaterialsDescription)) {
+            throw new S3EncryptionClientException("New keyring must generate new materials description!");
+        }
+
+        ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
+        encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
+          .bucket(reEncryptInstructionFileRequest.bucket())
+          .key(reEncryptInstructionFileRequest.key())
+          .build());
+
+        return new ReEncryptInstructionFileResponse(reEncryptInstructionFileRequest.bucket(),
+            reEncryptInstructionFileRequest.key(), reEncryptInstructionFileRequest.instructionFileSuffix());
+
     }
 
     /**
