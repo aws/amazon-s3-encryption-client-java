@@ -6,7 +6,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -68,13 +67,11 @@ import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
-import software.amazon.encryption.s3.materials.MaterialsDescription;
 import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RawKeyring;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
-import javax.crypto.DecapsulateException;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.net.URI;
@@ -85,6 +82,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -110,6 +108,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
     public static final ExecutionAttribute<MultipartConfiguration> CONFIGURATION = new ExecutionAttribute<>("MultipartConfiguration");
+    public static final ExecutionAttribute<String> CUSTOM_INSTRUCTION_FILE_SUFFIX = new ExecutionAttribute<>("CustomInstructionFileSuffix");
 
     private final S3Client _wrappedClient;
     private final S3AsyncClient _wrappedAsyncClient;
@@ -155,6 +154,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withAdditionalConfiguration(Map<String, String> encryptionContext) {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
+    }
+
+    public static Consumer<AwsRequestOverrideConfiguration.Builder> withCustomInstructionFileSuffix(String customInstructionFileSuffix) {
+        return builder ->
+                builder.putExecutionAttribute(S3EncryptionClient.CUSTOM_INSTRUCTION_FILE_SUFFIX, customInstructionFileSuffix);
     }
 
     /**
@@ -204,6 +208,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
           DecryptMaterialsRequest.builder()
             .algorithmSuite(algorithmSuite)
             .encryptedDataKeys(Collections.singletonList(encryptedDataKey))
+            .s3Request(request)
             .build()
         );
         byte[] plaintextDataKey = decryptedMaterials.plaintextDataKey();
@@ -211,6 +216,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         EncryptionMaterials encryptionMaterials = EncryptionMaterials.builder()
           .algorithmSuite(algorithmSuite)
           .plaintextDataKey(plaintextDataKey)
+          .s3Request(request)
           .build();
 
         RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
@@ -221,11 +227,18 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
-        encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
-          .bucket(reEncryptInstructionFileRequest.bucket())
-          .key(reEncryptInstructionFileRequest.key())
-          .build());
 
+        if (reEncryptInstructionFileRequest.instructionFileSuffix().equals(INSTRUCTION_FILE_SUFFIX)) {
+            encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
+              .bucket(reEncryptInstructionFileRequest.bucket())
+              .key(reEncryptInstructionFileRequest.key())
+              .build());
+        } else {
+            encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
+              .bucket(reEncryptInstructionFileRequest.bucket())
+              .key(reEncryptInstructionFileRequest.key())
+              .build(), reEncryptInstructionFileRequest.instructionFileSuffix());
+        }
         return new ReEncryptInstructionFileResponse(reEncryptInstructionFileRequest.bucket(),
             reEncryptInstructionFileRequest.key(), reEncryptInstructionFileRequest.instructionFileSuffix());
 
