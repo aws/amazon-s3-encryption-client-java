@@ -24,16 +24,25 @@ public class ContentMetadataEncodingStrategy {
     }
 
     public PutObjectRequest encodeMetadata(EncryptionMaterials materials, byte[] iv, PutObjectRequest putObjectRequest) {
+        return encodeMetadata(materials, iv, putObjectRequest, null);
+    }
+
+    public PutObjectRequest encodeMetadata(EncryptionMaterials materials, byte[] iv, PutObjectRequest putObjectRequest, String customInstructionFileSuffix) {
         if (_instructionFileConfig.isInstructionFilePutEnabled()) {
             final String metadataString = metadataToString(materials, iv);
-            _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString);
+
+            if (customInstructionFileSuffix == null) {
+                _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString);
+            } else {
+                _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString, customInstructionFileSuffix);
+            }
             // the original request object is returned as-is
             return putObjectRequest;
         } else {
             Map<String, String> newMetadata = addMetadataToMap(putObjectRequest.metadata(), materials, iv);
             return putObjectRequest.toBuilder()
-                    .metadata(newMetadata)
-                    .build();
+              .metadata(newMetadata)
+              .build();
         }
     }
 
