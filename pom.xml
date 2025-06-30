@@ -33,7 +33,7 @@
   </developers>
 
   <scm>
-    <url>https://github.com/aws/amazon-s3-encryption-client.git</url>
+    <url>https://github.com/aws/amazon-s3-encryption-client-java.git</url>
   </scm>
 
   <properties>
