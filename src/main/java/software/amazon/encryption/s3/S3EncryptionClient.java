@@ -82,7 +82,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -108,6 +107,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
     public static final ExecutionAttribute<MultipartConfiguration> CONFIGURATION = new ExecutionAttribute<>("MultipartConfiguration");
+
     public static final ExecutionAttribute<String> CUSTOM_INSTRUCTION_FILE_SUFFIX = new ExecutionAttribute<>("CustomInstructionFileSuffix");
 
     private final S3Client _wrappedClient;

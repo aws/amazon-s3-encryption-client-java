@@ -2,7 +2,6 @@ package software.amazon.encryption.s3;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.core.Response;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
@@ -268,6 +267,16 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     assertEquals(clientEncryptedDataKeyAlgorithm, thirdPartyEncryptedDataKeyAlgorithm);
     assertNotEquals(clientEncryptedDataKey, thirdPartyEncryptedDataKey);
 
+    try {
+      ResponseBytes<GetObjectResponse> thirdPartyDecryptObject = thirdPartyClient.getObjectAsBytes(builder -> builder
+        .bucket(BUCKET)
+        .key(objectKey)
+        .build());
+      throw new RuntimeException("Expected exception");
+    } catch (S3EncryptionClientException e) {
+      assertTrue(e.getMessage().contains("Unable to RSA-OAEP-SHA1 unwrap"));
+    }
+
     ResponseBytes<GetObjectResponse> thirdPartyDecryptedObject = thirdPartyClient.getObjectAsBytes(builder -> builder
       .bucket(BUCKET)
       .key(objectKey)
@@ -285,5 +294,8 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     assertEquals(objectKey, reEncryptInstructionFileResponse.Key());
     assertEquals(".third-party-access-instruction-file", reEncryptInstructionFileResponse.InstructionFileSuffix());
 
+    deleteObject(BUCKET, objectKey, client);
+
   }
+
 }
