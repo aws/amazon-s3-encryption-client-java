@@ -64,7 +64,7 @@ public class ReEncryptInstructionFileRequest {
     }
 
     public Builder instructionFileSuffix(String instructionFileSuffix) {
-      this.instructionFileSuffix = instructionFileSuffix;
+      this.instructionFileSuffix = "." + instructionFileSuffix;
       return this;
     }
 
