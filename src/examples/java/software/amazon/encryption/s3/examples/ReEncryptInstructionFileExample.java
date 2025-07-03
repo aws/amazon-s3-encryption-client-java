@@ -31,7 +31,7 @@ import static software.amazon.encryption.s3.S3EncryptionClient.withCustomInstruc
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
-public class ReEncryptionInstructionFileExample {
+public class ReEncryptInstructionFileExample {
 
   /**
    * Generates a 256-bit AES key for encryption/decryption operations.
