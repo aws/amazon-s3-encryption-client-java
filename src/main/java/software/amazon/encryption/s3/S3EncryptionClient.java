@@ -79,6 +79,7 @@ import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -200,14 +201,14 @@ public class S3EncryptionClient extends DelegatingS3Client {
         ContentMetadata contentMetadata = decodingStrategy.decode(request, response.response());
 
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
-        EncryptedDataKey encryptedDataKey = contentMetadata.encryptedDataKey();
+        EncryptedDataKey originalEncryptedDataKeys = contentMetadata.encryptedDataKey();
         Map<String, String> currentKeyringMaterialsDescription = contentMetadata.encryptedDataKeyContext();
         byte[] iv = contentMetadata.contentIv();
 
         DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
           DecryptMaterialsRequest.builder()
             .algorithmSuite(algorithmSuite)
-            .encryptedDataKeys(Collections.singletonList(encryptedDataKey))
+            .encryptedDataKeys(Collections.singletonList(originalEncryptedDataKeys))
             .s3Request(request)
             .build()
         );
