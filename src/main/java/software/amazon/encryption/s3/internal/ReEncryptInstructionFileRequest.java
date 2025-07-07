@@ -139,7 +139,7 @@ public class ReEncryptInstructionFileRequest {
       }
       if (newKeyring instanceof AesKeyring) {
         if (!instructionFileSuffix.equals(DEFAULT_INSTRUCTION_FILE_SUFFIX)) {
-          throw new S3EncryptionClientException("Instruction file suffix is not applicable for AES keyring!");
+          throw new S3EncryptionClientException("Custom Instruction file suffix is not applicable for AES keyring!");
         }
       } else if (newKeyring instanceof RsaKeyring) {
         if (instructionFileSuffix.equals(DEFAULT_INSTRUCTION_FILE_SUFFIX)) {

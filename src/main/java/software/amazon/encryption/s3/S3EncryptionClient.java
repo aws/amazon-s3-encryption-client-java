@@ -253,7 +253,9 @@ public class S3EncryptionClient extends DelegatingS3Client {
         RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
         EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
 
-        if (encryptedMaterials.materialsDescription().equals(currentKeyringMaterialsDescription)) {
+         Map<String, String> newMaterialsDescription = encryptedMaterials.materialsDescription().getMaterialsDescription();
+
+        if (newMaterialsDescription.equals(currentKeyringMaterialsDescription)) {
             throw new S3EncryptionClientException("New keyring must have new materials description!");
         }
 
