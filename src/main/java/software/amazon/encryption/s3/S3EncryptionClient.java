@@ -204,8 +204,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * 2. Sharing encrypted objects with partners by creating new instruction files with their public keys
      * <p>
      * Key rotation scenarios:
-     * - Legacy to V3: Can rotate same key type from V1/V2 to V3's improved algorithms
-     * - Within V3: Cannot rotate to same key (must use different keyring)
+     * - Legacy to V3: Can rotate same key from V1/V2 to V3's improved algorithms
+     * - Within V3: Cannot rotate to the current key
      * <p>
      * Instruction file behavior:
      * - AES keyrings: Uses default ".instruction" suffix
@@ -253,7 +253,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
         EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
 
-         Map<String, String> newMaterialsDescription = encryptedMaterials.materialsDescription().getMaterialsDescription();
+        Map<String, String> newMaterialsDescription = encryptedMaterials.materialsDescription().getMaterialsDescription();
 
         if (newMaterialsDescription.equals(currentKeyringMaterialsDescription)) {
             throw new S3EncryptionClientException("New keyring must have new materials description!");
