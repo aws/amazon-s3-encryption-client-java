@@ -79,7 +79,6 @@ import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +108,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
     public static final ExecutionAttribute<MultipartConfiguration> CONFIGURATION = new ExecutionAttribute<>("MultipartConfiguration");
 
+    //Used for specifying custom instruction file suffix on a per-request basis
     public static final ExecutionAttribute<String> CUSTOM_INSTRUCTION_FILE_SUFFIX = new ExecutionAttribute<>("CustomInstructionFileSuffix");
 
     private final S3Client _wrappedClient;
@@ -157,6 +157,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext);
     }
 
+    /**
+     * Attaches a custom instruction file suffix to a request. Must be used as a parameter to
+     * {@link S3Request#overrideConfiguration()} in the request.
+     * This allows specifying a custom suffix for the instruction file on a per-request basis.
+     * @param customInstructionFileSuffix the custom suffix to use for the instruction file.
+     * @return Consumer for use in overrideConfiguration()
+     */
     public static Consumer<AwsRequestOverrideConfiguration.Builder> withCustomInstructionFileSuffix(String customInstructionFileSuffix) {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.CUSTOM_INSTRUCTION_FILE_SUFFIX, customInstructionFileSuffix);
@@ -190,6 +197,29 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
     }
 
+    /**
+     * Re-encrypts an instruction file with a new keyring while preserving the original encrypted object in S3.
+     * This enables:
+     * 1. Key rotation by updating instruction file metadata without re-encrypting object content
+     * 2. Sharing encrypted objects with partners by creating new instruction files with their public keys
+     * <p>
+     * Key rotation scenarios:
+     * - Legacy to V3: Can rotate same key type from V1/V2 to V3's improved algorithms
+     * - Within V3: Cannot rotate to same key (must use different keyring)
+     * <p>
+     * Instruction file behavior:
+     * - AES keyrings: Uses default ".instruction" suffix
+     * - RSA keyrings: Requires custom suffix for multiple access patterns
+     * <p>
+     * Requirements:
+     * - New keyring must have different materials description
+     * - Custom instruction file suffix required for RSA keyrings
+     * - Default instruction file suffix required for AES keyrings
+     *
+     * @param reEncryptInstructionFileRequest the request containing bucket, object key, new keyring, and optional instruction file suffix
+     * @return ReEncryptInstructionFileResponse containing the bucket, object key, and instruction file suffix used
+     * @throws S3EncryptionClientException if the new keyring has the same materials description as the current one
+     */
     public ReEncryptInstructionFileResponse reEncryptInstructionFile(ReEncryptInstructionFileRequest reEncryptInstructionFileRequest) {
         GetObjectRequest request = GetObjectRequest.builder()
           .bucket(reEncryptInstructionFileRequest.bucket())
@@ -224,7 +254,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
 
         if (encryptedMaterials.materialsDescription().equals(currentKeyringMaterialsDescription)) {
-            throw new S3EncryptionClientException("New keyring must generate new materials description!");
+            throw new S3EncryptionClientException("New keyring must have new materials description!");
         }
 
         ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
