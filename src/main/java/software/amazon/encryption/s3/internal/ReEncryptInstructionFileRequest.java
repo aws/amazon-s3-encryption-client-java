@@ -5,7 +5,6 @@ package software.amazon.encryption.s3.internal;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.RawKeyring;
-import software.amazon.encryption.s3.materials.RsaKeyring;
 
 /**
  * Request object for re-encrypting instruction files in S3.
