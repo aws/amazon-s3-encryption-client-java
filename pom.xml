@@ -135,6 +135,14 @@
     </dependency>
 
     <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3-transfer-manager</artifactId>
+      <version>2.28.28</version>
+      <optional>true</optional>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-kms</artifactId>
       <scope>test</scope>
