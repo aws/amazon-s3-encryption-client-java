@@ -293,7 +293,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         } catch (S3EncryptionClientException e) {
             return;
         }
-        throw new S3EncryptionClientException("Key rotation is not enforced! Old keyring is still able to decrypt the new encrypted data key");
+        throw new S3EncryptionClientException("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key");
     }
 
     /**
