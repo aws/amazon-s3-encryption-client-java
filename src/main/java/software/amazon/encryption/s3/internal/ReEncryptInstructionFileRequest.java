@@ -5,7 +5,6 @@ package software.amazon.encryption.s3.internal;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.RawKeyring;
-import software.amazon.encryption.s3.materials.RsaKeyring;
 
 /**
  * Request object for re-encrypting instruction files in S3.
@@ -19,12 +18,14 @@ public class ReEncryptInstructionFileRequest {
   private final String key;
   private final RawKeyring newKeyring;
   private final String instructionFileSuffix;
+  private final boolean enforceRotation;
 
   private ReEncryptInstructionFileRequest(Builder builder) {
     bucket = builder.bucket;
     key = builder.key;
     newKeyring = builder.newKeyring;
     instructionFileSuffix = builder.instructionFileSuffix;
+    enforceRotation = builder.enforceRotation;
   }
 
   /**
@@ -57,6 +58,13 @@ public class ReEncryptInstructionFileRequest {
   }
 
   /**
+   * @return whether to enforce rotation for the re-encrypted instruction file
+   */
+  public boolean enforceRotation() {
+    return enforceRotation;
+  }
+
+  /**
    * Creates a builder that can be used to configure and create a {@link ReEncryptInstructionFileRequest}
    *
    * @return a new builder
@@ -74,6 +82,7 @@ public class ReEncryptInstructionFileRequest {
     private String key;
     private RawKeyring newKeyring;
     private String instructionFileSuffix = DEFAULT_INSTRUCTION_FILE_SUFFIX;
+    private boolean enforceRotation = false;
 
     /**
      * Sets the S3 bucket name for the re-encryption of instruction file.
@@ -122,6 +131,17 @@ public class ReEncryptInstructionFileRequest {
     }
 
     /**
+     * Sets whether to enforce rotation for the re-encrypted instruction file.
+     *
+     * @param enforceRotation whether to enforce rotation
+     * @return a reference to this object so that method calls can be chained together.
+     */
+    public Builder enforceRotation(boolean enforceRotation) {
+      this.enforceRotation = enforceRotation;
+      return this;
+    }
+
+    /**
      * Validates and builds the ReEncryptInstructionFileRequest according
      * to the configuration options passed to the Builder object.
      *
@@ -140,10 +160,6 @@ public class ReEncryptInstructionFileRequest {
       if (newKeyring instanceof AesKeyring) {
         if (!instructionFileSuffix.equals(DEFAULT_INSTRUCTION_FILE_SUFFIX)) {
           throw new S3EncryptionClientException("Custom Instruction file suffix is not applicable for AES keyring!");
-        }
-      } else if (newKeyring instanceof RsaKeyring) {
-        if (instructionFileSuffix.equals(DEFAULT_INSTRUCTION_FILE_SUFFIX)) {
-          throw new S3EncryptionClientException("Instruction file suffix must be different than the default one for RSA keyring!");
         }
       }
       return new ReEncryptInstructionFileRequest(this);

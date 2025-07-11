@@ -258,6 +258,10 @@ public class S3EncryptionClient extends DelegatingS3Client {
             throw new S3EncryptionClientException("New keyring must have new materials description!");
         }
 
+        if (reEncryptInstructionFileRequest.enforceRotation()) {
+            enforceRotation(encryptedMaterials, request);
+        }
+
         ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
 
         encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
@@ -268,6 +272,21 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return new ReEncryptInstructionFileResponse(reEncryptInstructionFileRequest.bucket(),
             reEncryptInstructionFileRequest.key(), reEncryptInstructionFileRequest.instructionFileSuffix());
 
+    }
+
+    private void enforceRotation(EncryptionMaterials newEncryptionMaterials, GetObjectRequest request) {
+        try {
+            DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
+              DecryptMaterialsRequest.builder()
+                .algorithmSuite(newEncryptionMaterials.algorithmSuite())
+                .encryptedDataKeys(Collections.singletonList(newEncryptionMaterials.encryptedDataKeys()).get(0))
+                .s3Request(request)
+                .build()
+            );
+        } catch (S3EncryptionClientException e) {
+            return;
+        }
+        throw new S3EncryptionClientException("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key");
     }
 
     /**
