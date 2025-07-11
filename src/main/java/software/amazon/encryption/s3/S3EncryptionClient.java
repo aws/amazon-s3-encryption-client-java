@@ -207,6 +207,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * Key rotation scenarios:
      * - Legacy to V3: Can rotate same wrapping key from legacy wrapping algorithms to fully supported wrapping algorithms
      * - Within V3: When rotating the wrapping key, the new keyring must be different from the current keyring
+     * - Enforce Rotation: When enabled, ensures old keyring cannot decrypt data encrypted by new keyring
      *
      * @param reEncryptInstructionFileRequest the request containing bucket, object key, new keyring, and optional instruction file suffix
      * @return ReEncryptInstructionFileResponse containing the bucket, object key, and instruction file suffix used
@@ -239,6 +240,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
             .s3Request(request)
             .build()
         );
+
         //Plaintext Data Key MUST be kept the same
         final byte[] plaintextDataKey = decryptedMaterials.plaintextDataKey();
 
@@ -248,7 +250,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
           .s3Request(request)
           .build();
 
-        RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
+        //New Keyring MUST be kept the same
+        final RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
         //Encrypted Materials MUST be kept the same
         final EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
         //New Keyring's Materials Description MUST be kept the same
