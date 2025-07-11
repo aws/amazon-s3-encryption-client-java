@@ -92,7 +92,8 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_BUFFER_SIZE_BYTES;
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MAX_ALLOWED_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MIN_ALLOWED_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.instructionFileKeysToDelete;
@@ -201,27 +202,19 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * Re-encrypts an instruction file with a new keyring while preserving the original encrypted object in S3.
      * This enables:
      * 1. Key rotation by updating instruction file metadata without re-encrypting object content
-     * 2. Sharing encrypted objects with partners by creating new instruction files with their public keys
+     * 2. Sharing encrypted objects with partners by creating new instruction files with a custom suffix using their public keys
      * <p>
      * Key rotation scenarios:
-     * - Legacy to V3: Can rotate same key from V1/V2 to V3's improved algorithms
-     * - Within V3: Cannot rotate to the current key
-     * <p>
-     * Instruction file behavior:
-     * - AES keyrings: Uses default ".instruction" suffix
-     * - RSA keyrings: Requires custom suffix for multiple access patterns
-     * <p>
-     * Requirements:
-     * - New keyring must have different materials description
-     * - Custom instruction file suffix required for RSA keyrings
-     * - Default instruction file suffix required for AES keyrings
+     * - Legacy to V3: Can rotate same wrapping key from legacy wrapping algorithms to fully supported wrapping algorithms
+     * - Within V3: When rotating the wrapping key, the new keyring must be different from the current keyring
      *
      * @param reEncryptInstructionFileRequest the request containing bucket, object key, new keyring, and optional instruction file suffix
      * @return ReEncryptInstructionFileResponse containing the bucket, object key, and instruction file suffix used
      * @throws S3EncryptionClientException if the new keyring has the same materials description as the current one
      */
     public ReEncryptInstructionFileResponse reEncryptInstructionFile(ReEncryptInstructionFileRequest reEncryptInstructionFileRequest) {
-        GetObjectRequest request = GetObjectRequest.builder()
+        //GetObjectRequest MUST be kept the same
+        final GetObjectRequest request = GetObjectRequest.builder()
           .bucket(reEncryptInstructionFileRequest.bucket())
           .key(reEncryptInstructionFileRequest.key())
           .build();
@@ -230,19 +223,24 @@ public class S3EncryptionClient extends DelegatingS3Client {
         ContentMetadataDecodingStrategy decodingStrategy = new ContentMetadataDecodingStrategy(_instructionFileConfig);
         ContentMetadata contentMetadata = decodingStrategy.decode(request, response.response());
 
-        AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
-        EncryptedDataKey originalEncryptedDataKeys = contentMetadata.encryptedDataKey();
-        Map<String, String> currentKeyringMaterialsDescription = contentMetadata.encryptedDataKeyContext();
-        byte[] iv = contentMetadata.contentIv();
+        // Algorithm Suite MUST be kept the same
+        final AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
+        // Original Encrypted Data Key MUST be kept the same
+        final EncryptedDataKey originalEncryptedDataKey = contentMetadata.encryptedDataKey();
+        // Current Keyring's Materials Description MUST be kept the same
+        final Map<String, String> currentKeyringMaterialsDescription = contentMetadata.encryptedDataKeyMatDescOrContext();
+        // Content IV MUST be kept the same
+        final byte[] iv = contentMetadata.contentIv();
 
         DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
           DecryptMaterialsRequest.builder()
             .algorithmSuite(algorithmSuite)
-            .encryptedDataKeys(Collections.singletonList(originalEncryptedDataKeys))
+            .encryptedDataKeys(Collections.singletonList(originalEncryptedDataKey))
             .s3Request(request)
             .build()
         );
-        byte[] plaintextDataKey = decryptedMaterials.plaintextDataKey();
+        //Plaintext Data Key MUST be kept the same
+        final byte[] plaintextDataKey = decryptedMaterials.plaintextDataKey();
 
         EncryptionMaterials encryptionMaterials = EncryptionMaterials.builder()
           .algorithmSuite(algorithmSuite)
@@ -251,9 +249,10 @@ public class S3EncryptionClient extends DelegatingS3Client {
           .build();
 
         RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
-        EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
-
-        Map<String, String> newMaterialsDescription = encryptedMaterials.materialsDescription().getMaterialsDescription();
+        //Encrypted Materials MUST be kept the same
+        final EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
+        //New Keyring's Materials Description MUST be kept the same
+        final Map<String, String> newMaterialsDescription = encryptedMaterials.materialsDescription().getMaterialsDescription();
 
         if (newMaterialsDescription.equals(currentKeyringMaterialsDescription)) {
             throw new S3EncryptionClientException("New keyring must have new materials description!");
@@ -261,17 +260,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
 
-        if (reEncryptInstructionFileRequest.instructionFileSuffix().equals(INSTRUCTION_FILE_SUFFIX)) {
-            encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
-              .bucket(reEncryptInstructionFileRequest.bucket())
-              .key(reEncryptInstructionFileRequest.key())
-              .build());
-        } else {
-            encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
-              .bucket(reEncryptInstructionFileRequest.bucket())
-              .key(reEncryptInstructionFileRequest.key())
-              .build(), reEncryptInstructionFileRequest.instructionFileSuffix());
-        }
+        encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
+          .bucket(reEncryptInstructionFileRequest.bucket())
+          .key(reEncryptInstructionFileRequest.key())
+          .build(), reEncryptInstructionFileRequest.instructionFileSuffix());
+
         return new ReEncryptInstructionFileResponse(reEncryptInstructionFileRequest.bucket(),
             reEncryptInstructionFileRequest.key(), reEncryptInstructionFileRequest.instructionFileSuffix());
 
@@ -485,7 +478,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
             // Delete the object
             DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(actualRequest).join();
             // If Instruction file exists, delete the instruction file as well.
-            String instructionObjectKey = deleteObjectRequest.key() + INSTRUCTION_FILE_SUFFIX;
+            String instructionObjectKey = deleteObjectRequest.key() + DEFAULT_INSTRUCTION_FILE_SUFFIX;
             _wrappedAsyncClient.deleteObject(builder -> builder
                     .overrideConfiguration(API_NAME_INTERCEPTOR)
                     .bucket(deleteObjectRequest.bucket())
