@@ -5,14 +5,14 @@ package software.amazon.encryption.s3.internal;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.RawKeyring;
-import software.amazon.encryption.s3.materials.RsaKeyring;
+
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
 
 /**
  * Request object for re-encrypting instruction files in S3.
  * This request supports re-encryption operations using either AES or RSA keyrings.
  * For AES keyrings, only the default instruction file suffix is supported.
- * For RSA keyrings, a custom instruction file suffix must be provided to support
- * multiple accesses to the same encrypted object.
+ * For RSA keyrings, both the default and custom instruction file suffixes are supported.
  */
 public class ReEncryptInstructionFileRequest {
   private final String bucket;
@@ -49,8 +49,7 @@ public class ReEncryptInstructionFileRequest {
   }
 
   /**
-   * @return the suffix to use for the instruction file. The default instruction file suffix is ".instruction" for
-   * AES keyrings and the instruction file suffix must be different from the default one for RSA keyrings
+   * @return the suffix to use for the instruction file. The default instruction file suffix is ".instruction"
    */
   public String instructionFileSuffix() {
     return instructionFileSuffix;
@@ -69,7 +68,6 @@ public class ReEncryptInstructionFileRequest {
    * Builder for ReEncryptInstructionFileRequest.
    */
   public static class Builder {
-    private static final String DEFAULT_INSTRUCTION_FILE_SUFFIX = ".instruction";
     private String bucket;
     private String key;
     private RawKeyring newKeyring;
@@ -111,7 +109,7 @@ public class ReEncryptInstructionFileRequest {
     /**
      * Sets a custom instruction file suffix for the re-encrypted instruction file.
      * For AES keyrings, only the default instruction file suffix is allowed.
-     * For RSA keyrings, a custom suffix different from the default must be provided.
+     * For RSA keyrings, both the default and custom instruction file suffixes are allowed.
      *
      * @param instructionFileSuffix the instruction file suffix
      * @return a reference to this object so that method calls can be chained together.
@@ -140,10 +138,6 @@ public class ReEncryptInstructionFileRequest {
       if (newKeyring instanceof AesKeyring) {
         if (!instructionFileSuffix.equals(DEFAULT_INSTRUCTION_FILE_SUFFIX)) {
           throw new S3EncryptionClientException("Custom Instruction file suffix is not applicable for AES keyring!");
-        }
-      } else if (newKeyring instanceof RsaKeyring) {
-        if (instructionFileSuffix.equals(DEFAULT_INSTRUCTION_FILE_SUFFIX)) {
-          throw new S3EncryptionClientException("Instruction file suffix must be different than the default one for RSA keyring!");
         }
       }
       return new ReEncryptInstructionFileRequest(this);
