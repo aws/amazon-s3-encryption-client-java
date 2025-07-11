@@ -14,6 +14,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
+
 public class ContentMetadataEncodingStrategy {
 
     private static final Base64.Encoder ENCODER = Base64.getEncoder();
@@ -24,18 +26,13 @@ public class ContentMetadataEncodingStrategy {
     }
 
     public PutObjectRequest encodeMetadata(EncryptionMaterials materials, byte[] iv, PutObjectRequest putObjectRequest) {
-        return encodeMetadata(materials, iv, putObjectRequest, null);
+        return encodeMetadata(materials, iv, putObjectRequest, DEFAULT_INSTRUCTION_FILE_SUFFIX);
     }
 
-    public PutObjectRequest encodeMetadata(EncryptionMaterials materials, byte[] iv, PutObjectRequest putObjectRequest, String customInstructionFileSuffix) {
+    public PutObjectRequest encodeMetadata(EncryptionMaterials materials, byte[] iv, PutObjectRequest putObjectRequest, String instructionFileSuffix) {
         if (_instructionFileConfig.isInstructionFilePutEnabled()) {
             final String metadataString = metadataToString(materials, iv);
-
-            if (customInstructionFileSuffix == null) {
-                _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString);
-            } else {
-                _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString, customInstructionFileSuffix);
-            }
+            _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString, instructionFileSuffix);
             // the original request object is returned as-is
             return putObjectRequest;
         } else {
@@ -60,6 +57,7 @@ public class ContentMetadataEncodingStrategy {
                     .build();
         }
     }
+
     private String metadataToString(EncryptionMaterials materials, byte[] iv) {
         // this is just the metadata map serialized as JSON
         // so first get the Map
