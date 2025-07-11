@@ -42,7 +42,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -56,7 +55,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   private static SecretKey AES_KEY;
   private static SecretKey AES_KEY_TWO;
   private static KeyPair RSA_KEY_PAIR;
-  private static KeyPair THIRD_PARTY_RSA_KEY_PAIR;
+  private static KeyPair RSA_KEY_PAIR_TWO;
 
   @BeforeAll
   public static void setUp() throws NoSuchAlgorithmException {
@@ -68,14 +67,13 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
     keyPairGen.initialize(2048);
     RSA_KEY_PAIR = keyPairGen.generateKeyPair();
-    THIRD_PARTY_RSA_KEY_PAIR = keyPairGen.generateKeyPair();
+    RSA_KEY_PAIR_TWO = keyPairGen.generateKeyPair();
   }
 
   @Test
   public void testAesReEncryptInstructionFileFailsWithSameMaterialsDescription() {
     AesKeyring oldKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "no")
         .build())
@@ -90,7 +88,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         .build())
       .build();
 
-    final String objectKey = appendTestSuffix("aes-re-encrypt-instruction-file-test");
+    final String objectKey = appendTestSuffix("aes-re-encrypt-instruction-file-with-same-materials-description-test");
     final String input = "Testing re-encryption of instruction file with AES Keyring";
 
     client.putObject(builder -> builder
@@ -100,7 +98,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     AesKeyring newKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY_TWO)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "no")
         .build())
@@ -123,7 +120,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
-  public void testRsaReEncryptInstructionFileFailsWithSameMaterialsDescription() {
+  public void testRsaReEncryptInstructionFileWithCustomSuffixFailsWithSameMaterialsDescription() {
     PublicKey clientPublicKey = RSA_KEY_PAIR.getPublic();
     PrivateKey clientPrivateKey = RSA_KEY_PAIR.getPrivate();
 
@@ -134,7 +131,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring clientKeyring = RsaKeyring.builder()
       .wrappingKeyPair(clientPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "yes")
         .put("access-level", "admin")
@@ -150,7 +146,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         .build())
       .build();
 
-    final String objectKey = appendTestSuffix("rsa-re-encrypt-instruction-file-test");
+    final String objectKey = appendTestSuffix("rsa-re-encrypt-instruction-file-with-custom-suffix-and-same-materials-description-test");
     final String input = "Testing re-encryption of instruction file with RSA Keyring";
 
     client.putObject(builder -> builder
@@ -158,8 +154,8 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .key(objectKey)
       .build(), RequestBody.fromString(input));
 
-    PublicKey thirdPartyPublicKey = THIRD_PARTY_RSA_KEY_PAIR.getPublic();
-    PrivateKey thirdPartyPrivateKey = THIRD_PARTY_RSA_KEY_PAIR.getPrivate();
+    PublicKey thirdPartyPublicKey = RSA_KEY_PAIR_TWO.getPublic();
+    PrivateKey thirdPartyPrivateKey = RSA_KEY_PAIR_TWO.getPrivate();
 
     PartialRsaKeyPair thirdPartyPartialRsaKeyPair = PartialRsaKeyPair.builder()
       .publicKey(thirdPartyPublicKey)
@@ -168,7 +164,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
       .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "yes")
         .put("access-level", "admin")
@@ -193,10 +188,9 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
-  public void testReEncryptInstructionFileRejectsAesKeyringWithCustomSuffix() {
+  public void testAesReEncryptInstructionFileRejectsCustomInstructionFileSuffix() {
     AesKeyring oldKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "no")
         .build())
@@ -211,24 +205,17 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         .build())
       .build();
 
-    final String objectKey = appendTestSuffix("aes-re-encrypt-instruction-file-test");
-    final String input = "Testing re-encryption of instruction file with AES Keyring";
-
-    client.putObject(builder -> builder
-      .bucket(BUCKET)
-      .key(objectKey)
-      .build(), RequestBody.fromString(input));
+    final String objectKey = appendTestSuffix("aes-re-encrypt-instruction-file-with-custom-suffix-test");
 
     AesKeyring newKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY_TWO)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "yes")
         .build())
       .build();
 
     try {
-      ReEncryptInstructionFileRequest reEncryptInstructionFileRequest = ReEncryptInstructionFileRequest.builder()
+      ReEncryptInstructionFileRequest.builder()
         .bucket(BUCKET)
         .key(objectKey)
         .newKeyring(newKeyring)
@@ -242,77 +229,9 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
-  public void testReEncryptInstructionFileRejectsRsaKeyringWithDefaultSuffix() {
-    PublicKey clientPublicKey = RSA_KEY_PAIR.getPublic();
-    PrivateKey clientPrivateKey = RSA_KEY_PAIR.getPrivate();
-
-    PartialRsaKeyPair clientPartialRsaKeyPair = PartialRsaKeyPair.builder()
-      .publicKey(clientPublicKey)
-      .privateKey(clientPrivateKey)
-      .build();
-
-    RsaKeyring clientKeyring = RsaKeyring.builder()
-      .wrappingKeyPair(clientPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
-      .materialsDescription(MaterialsDescription.builder()
-        .put("isOwner", "yes")
-        .put("access-level", "admin")
-        .build())
-      .build();
-
-    S3Client wrappedClient = S3Client.create();
-    S3EncryptionClient client = S3EncryptionClient.builder()
-      .keyring(clientKeyring)
-      .instructionFileConfig(InstructionFileConfig.builder()
-        .instructionFileClient(wrappedClient)
-        .enableInstructionFilePutObject(true)
-        .build())
-      .build();
-
-    final String objectKey = appendTestSuffix("rsa-re-encrypt-instruction-file-test");
-    final String input = "Testing re-encryption of instruction file with RSA Keyring";
-
-    client.putObject(builder -> builder
-      .bucket(BUCKET)
-      .key(objectKey)
-      .build(), RequestBody.fromString(input));
-
-    PublicKey thirdPartyPublicKey = THIRD_PARTY_RSA_KEY_PAIR.getPublic();
-    PrivateKey thirdPartyPrivateKey = THIRD_PARTY_RSA_KEY_PAIR.getPrivate();
-
-    PartialRsaKeyPair thirdPartyPartialRsaKeyPair = PartialRsaKeyPair.builder()
-      .publicKey(thirdPartyPublicKey)
-      .privateKey(thirdPartyPrivateKey)
-      .build();
-
-    RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
-      .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
-      .materialsDescription(MaterialsDescription.builder()
-        .put("isOwner", "no")
-        .put("access-level", "user")
-        .build())
-      .build();
-
-    try {
-      ReEncryptInstructionFileRequest reEncryptInstructionFileRequest = ReEncryptInstructionFileRequest.builder()
-        .bucket(BUCKET)
-        .key(objectKey)
-        .instructionFileSuffix("instruction")
-        .newKeyring(thirdPartyKeyring)
-        .build();
-    } catch (S3EncryptionClientException e) {
-      assertTrue(e.getMessage().contains("Instruction file suffix must be different than the default one for RSA keyring!"));
-    }
-
-    deleteObject(BUCKET, objectKey, client);
-  }
-
-  @Test
   public void testAesKeyringReEncryptInstructionFile() {
     AesKeyring oldKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "no")
         .build())
@@ -352,7 +271,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     AesKeyring newKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY_TWO)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "yes")
         .build())
@@ -365,6 +283,11 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .build();
 
     ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
+
+    assertEquals(BUCKET, response.bucket());
+    assertEquals(objectKey, response.key());
+    assertEquals(".instruction", response.instructionFileSuffix());
+
     S3Client rotatedWrappedClient = S3Client.create();
 
     S3EncryptionClient rotatedClient = S3EncryptionClient.builder()
@@ -384,10 +307,12 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Unable to AES/GCM unwrap"));
     }
+
     ResponseBytes<GetObjectResponse> getResponse = rotatedClient.getObjectAsBytes(builder -> builder
       .bucket(BUCKET)
       .key(objectKey)
       .build());
+
     assertEquals(input, getResponse.asUtf8String());
 
     ResponseBytes<GetObjectResponse> reEncryptedInstructionFile = rotatedWrappedClient.getObjectAsBytes(builder -> builder
@@ -408,15 +333,135 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     assertEquals(originalEncryptedDataKeyAlgorithm, postReEncryptionEncryptedDataKeyAlgorithm);
     assertNotEquals(originalEncryptedDataKey, postReEncryptionEncryptedDataKey);
 
-    assertEquals(BUCKET, response.Bucket());
-    assertEquals(objectKey, response.Key());
-    assertEquals(".instruction", response.InstructionFileSuffix());
-
     deleteObject(BUCKET, objectKey, client);
   }
 
   @Test
   public void testRsaKeyringReEncryptInstructionFile() {
+    PublicKey originalPublicKey = RSA_KEY_PAIR.getPublic();
+    PrivateKey originalPrivateKey = RSA_KEY_PAIR.getPrivate();
+
+    PartialRsaKeyPair originalPartialRsaKeyPair = PartialRsaKeyPair.builder()
+      .publicKey(originalPublicKey)
+      .privateKey(originalPrivateKey)
+      .build();
+
+    RsaKeyring oldKeyring = RsaKeyring.builder()
+      .wrappingKeyPair(originalPartialRsaKeyPair)
+      .materialsDescription(MaterialsDescription.builder()
+        .put("rotated", "no")
+        .build())
+      .build();
+
+    S3Client wrappedClient = S3Client.create();
+    S3EncryptionClient client = S3EncryptionClient.builder()
+      .keyring(oldKeyring)
+      .instructionFileConfig(InstructionFileConfig.builder()
+        .instructionFileClient(wrappedClient)
+        .enableInstructionFilePutObject(true)
+        .build())
+      .build();
+
+    final String objectKey = appendTestSuffix("rsa-re-encrypt-instruction-file-test");
+    final String input = "Testing re-encryption of instruction file with RSA Keyring";
+
+    client.putObject(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build(), RequestBody.fromString(input));
+
+    ResponseBytes<GetObjectResponse> instructionFile = wrappedClient.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey + ".instruction")
+      .build());
+
+    String instructionFileContent = instructionFile.asUtf8String();
+    JsonNodeParser parser = JsonNodeParser.create();
+    JsonNode instructionFileNode = parser.parse(instructionFileContent);
+
+    String originalIv = instructionFileNode.asObject().get("x-amz-iv").asString();
+    String originalEncryptedDataKeyAlgorithm = instructionFileNode.asObject().get("x-amz-wrap-alg").asString();
+    String originalEncryptedDataKey = instructionFileNode.asObject().get("x-amz-key-v2").asString();
+    JsonNode originalMatDescNode = parser.parse(instructionFileNode.asObject().get("x-amz-matdesc").asString());
+    assertEquals("no", originalMatDescNode.asObject().get("rotated").asString());
+
+    PublicKey newPublicKey = RSA_KEY_PAIR_TWO.getPublic();
+    PrivateKey newPrivateKey = RSA_KEY_PAIR_TWO.getPrivate();
+
+    PartialRsaKeyPair newPartialRsaKeyPair = PartialRsaKeyPair.builder()
+      .publicKey(newPublicKey)
+      .privateKey(newPrivateKey)
+      .build();
+
+    RsaKeyring newKeyring = RsaKeyring.builder()
+      .wrappingKeyPair(newPartialRsaKeyPair)
+      .materialsDescription(MaterialsDescription.builder()
+        .put("rotated", "yes")
+        .build())
+      .build();
+
+    ReEncryptInstructionFileRequest reEncryptInstructionFileRequest = ReEncryptInstructionFileRequest.builder()
+      .bucket(BUCKET)
+      .key(objectKey)
+      .newKeyring(newKeyring)
+      .build();
+
+    ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
+
+    assertEquals(BUCKET, response.bucket());
+    assertEquals(objectKey, response.key());
+    assertEquals(".instruction", response.instructionFileSuffix());
+
+    S3Client rotatedWrappedClient = S3Client.create();
+
+    S3EncryptionClient rotatedClient = S3EncryptionClient.builder()
+      .keyring(newKeyring)
+      .instructionFileConfig(InstructionFileConfig.builder()
+        .instructionFileClient(rotatedWrappedClient)
+        .enableInstructionFilePutObject(true)
+        .build())
+      .build();
+
+    try {
+      client.getObjectAsBytes(GetObjectRequest.builder()
+        .bucket(BUCKET)
+        .key(objectKey)
+        .build());
+      throw new RuntimeException("Expected exception");
+    } catch (S3EncryptionClientException e) {
+      assertTrue(e.getMessage().contains("Unable to RSA-OAEP-SHA1 unwrap"));
+    }
+
+    ResponseBytes<GetObjectResponse> getResponse = rotatedClient.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build());
+
+    assertEquals(input, getResponse.asUtf8String());
+
+    ResponseBytes<GetObjectResponse> reEncryptedInstructionFile = rotatedWrappedClient.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey + ".instruction")
+      .build());
+
+    String newInstructionFileContent = reEncryptedInstructionFile.asUtf8String();
+    JsonNode newInstructionFileNode = parser.parse(newInstructionFileContent);
+
+    String postReEncryptionIv = newInstructionFileNode.asObject().get("x-amz-iv").asString();
+    String postReEncryptionEncryptedDataKeyAlgorithm = newInstructionFileNode.asObject().get("x-amz-wrap-alg").asString();
+    String postReEncryptionEncryptedDataKey = newInstructionFileNode.asObject().get("x-amz-key-v2").asString();
+    JsonNode postReEncryptionMatDescNode = parser.parse(newInstructionFileNode.asObject().get("x-amz-matdesc").asString());
+
+    assertEquals("yes", postReEncryptionMatDescNode.asObject().get("rotated").asString());
+    assertEquals(originalIv, postReEncryptionIv);
+    assertEquals(originalEncryptedDataKeyAlgorithm, postReEncryptionEncryptedDataKeyAlgorithm);
+    assertNotEquals(originalEncryptedDataKey, postReEncryptionEncryptedDataKey);
+
+    deleteObject(BUCKET, objectKey, client);
+  }
+
+  @Test
+  public void testRsaKeyringReEncryptInstructionFileWithCustomSuffix() {
     PublicKey clientPublicKey = RSA_KEY_PAIR.getPublic();
     PrivateKey clientPrivateKey = RSA_KEY_PAIR.getPrivate();
 
@@ -427,7 +472,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring clientKeyring = RsaKeyring.builder()
       .wrappingKeyPair(clientPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "yes")
         .put("access-level", "admin")
@@ -443,7 +487,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         .build())
       .build();
 
-    final String objectKey = appendTestSuffix("rsa-re-encrypt-instruction-file-test");
+    final String objectKey = appendTestSuffix("rsa-re-encrypt-instruction-file-with-custom-suffix-test");
     final String input = "Testing re-encryption of instruction file with RSA Keyring";
 
     client.putObject(builder -> builder
@@ -451,8 +495,8 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .key(objectKey)
       .build(), RequestBody.fromString(input));
 
-    PublicKey thirdPartyPublicKey = THIRD_PARTY_RSA_KEY_PAIR.getPublic();
-    PrivateKey thirdPartyPrivateKey = THIRD_PARTY_RSA_KEY_PAIR.getPrivate();
+    PublicKey thirdPartyPublicKey = RSA_KEY_PAIR_TWO.getPublic();
+    PrivateKey thirdPartyPrivateKey = RSA_KEY_PAIR_TWO.getPrivate();
 
     PartialRsaKeyPair thirdPartyPartialRsaKeyPair = PartialRsaKeyPair.builder()
       .publicKey(thirdPartyPublicKey)
@@ -461,7 +505,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
       .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "no")
         .put("access-level", "user")
@@ -477,7 +520,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     S3EncryptionClient thirdPartyClient = S3EncryptionClient.builder()
       .keyring(thirdPartyKeyring)
-      .secureRandom(new SecureRandom())
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
@@ -485,6 +527,10 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .build();
 
     ReEncryptInstructionFileResponse reEncryptInstructionFileResponse = client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
+
+    assertEquals(BUCKET, reEncryptInstructionFileResponse.bucket());
+    assertEquals(objectKey, reEncryptInstructionFileResponse.key());
+    assertEquals(".third-party-access-instruction-file", reEncryptInstructionFileResponse.instructionFileSuffix());
 
     ResponseBytes<GetObjectResponse> clientInstructionFile= wrappedClient.getObjectAsBytes(builder -> builder
       .bucket(BUCKET)
@@ -537,17 +583,15 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .key(objectKey)
       .overrideConfiguration(withCustomInstructionFileSuffix(".third-party-access-instruction-file"))
       .build());
+
     assertEquals(input, thirdPartyDecryptedObject.asUtf8String());
 
     ResponseBytes<GetObjectResponse> clientDecryptedObject = client.getObjectAsBytes(builder -> builder
       .bucket(BUCKET)
       .key(objectKey)
       .build());
-    assertEquals(input, clientDecryptedObject.asUtf8String());
 
-    assertEquals(BUCKET, reEncryptInstructionFileResponse.Bucket());
-    assertEquals(objectKey, reEncryptInstructionFileResponse.Key());
-    assertEquals(".third-party-access-instruction-file", reEncryptInstructionFileResponse.InstructionFileSuffix());
+    assertEquals(input, clientDecryptedObject.asUtf8String());
 
     deleteObject(BUCKET, objectKey, client);
 
@@ -578,7 +622,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     AesKeyring oldKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
       .enableLegacyWrappingAlgorithms(true)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "no")
         .put("isLegacy", "yes")
@@ -598,7 +641,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     AesKeyring newKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY_TWO)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "yes")
         .put("isLegacy", "no")
@@ -640,6 +682,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .bucket(BUCKET)
       .key(objectKey)
       .build());
+
     assertEquals(input, v3DecryptObject.asUtf8String());
 
     ResponseBytes<GetObjectResponse> instructionFile = wrappedClient.getObjectAsBytes(builder -> builder
@@ -660,9 +703,9 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
-  public void testReEncryptInstructionFileUpgradesV2RsaToV3() throws IOException {
+  public void testReEncryptInstructionFileWithCustomSuffixUpgradesV2RsaToV3() throws IOException {
     final String input = "Testing re-encryption of instruction file, upgrading legacy V2 RSA to V3";
-    final String objectKey = appendTestSuffix("v2-rsa-to-v3-re-encrypt-instruction-file-test");
+    final String objectKey = appendTestSuffix("v2-rsa-to-v3-re-encrypt-instruction-file-with-custom-suffix-test");
 
     EncryptionMaterialsProvider materialsProvider =
       new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR)
@@ -690,7 +733,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring clientKeyring = RsaKeyring.builder()
       .wrappingKeyPair(clientPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "yes")
@@ -709,8 +751,8 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         .build())
       .build();
 
-    PublicKey thirdPartyPublicKey = THIRD_PARTY_RSA_KEY_PAIR.getPublic();
-    PrivateKey thirdPartyPrivateKey = THIRD_PARTY_RSA_KEY_PAIR.getPrivate();
+    PublicKey thirdPartyPublicKey = RSA_KEY_PAIR_TWO.getPublic();
+    PrivateKey thirdPartyPrivateKey = RSA_KEY_PAIR_TWO.getPrivate();
 
     PartialRsaKeyPair thirdPartyPartialRsaKeyPair = PartialRsaKeyPair.builder()
       .publicKey(thirdPartyPublicKey)
@@ -719,7 +761,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
       .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "no")
@@ -731,7 +772,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .keyring(thirdPartyKeyring)
       .enableLegacyWrappingAlgorithms(true)
       .enableLegacyUnauthenticatedModes(true)
-      .secureRandom(new SecureRandom())
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
@@ -739,7 +779,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .build();
 
     EncryptionMaterialsProvider thirdPartyMaterialsProvider =
-      new StaticEncryptionMaterialsProvider(new EncryptionMaterials(THIRD_PARTY_RSA_KEY_PAIR)
+      new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR_TWO)
         .addDescription("isOwner", "no")
         .addDescription("access-level", "user")
       );
@@ -766,6 +806,134 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .bucket(BUCKET)
       .key(objectKey)
       .build());
+
+    assertEquals(input, v3DecryptObject.asUtf8String());
+
+    String v2DecryptObject = v2OriginalClient.getObjectAsString(BUCKET, objectKey);
+    assertEquals(input, v2DecryptObject);
+
+    ResponseBytes<GetObjectResponse> thirdPartyDecryptedObject = v3ThirdPartyClient.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .overrideConfiguration(withCustomInstructionFileSuffix(".third-party-access-instruction-file"))
+      .build());
+
+    assertEquals(input, thirdPartyDecryptedObject.asUtf8String());
+
+    EncryptedGetObjectRequest request = new EncryptedGetObjectRequest(BUCKET, objectKey)
+      .withInstructionFileSuffix("third-party-access-instruction-file");
+
+    String v2ThirdPartyDecryptObject = IOUtils.toString(v2ThirdPartyRotatedClient.getObject(request).getObjectContent(), StandardCharsets.UTF_8);
+    assertEquals(input, v2ThirdPartyDecryptObject);
+
+    deleteObject(BUCKET, objectKey, v3OriginalClient);
+
+  }
+
+  @Test
+  public void testReEncryptInstructionFileUpgradesV2RsaToV3() throws IOException {
+    final String input = "Testing re-encryption of instruction file, upgrading legacy V2 RSA to V3";
+    final String objectKey = appendTestSuffix("v2-rsa-to-v3-re-encrypt-instruction-file-test");
+
+    EncryptionMaterialsProvider materialsProvider =
+      new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR)
+        .addDescription("rotated", "no")
+      );
+    CryptoConfigurationV2 cryptoConfig =
+      new CryptoConfigurationV2(CryptoMode.AuthenticatedEncryption)
+        .withStorageMode(CryptoStorageMode.InstructionFile);
+
+    AmazonS3EncryptionV2 v2OriginalClient = AmazonS3EncryptionClientV2.encryptionBuilder()
+      .withCryptoConfiguration(cryptoConfig)
+      .withEncryptionMaterialsProvider(materialsProvider)
+      .build();
+
+    v2OriginalClient.putObject(BUCKET, objectKey, input);
+
+    PublicKey originalPublicKey = RSA_KEY_PAIR.getPublic();
+    PrivateKey originalPrivateKey = RSA_KEY_PAIR.getPrivate();
+
+    PartialRsaKeyPair originalPartialRsaKeyPair = PartialRsaKeyPair.builder()
+      .publicKey(originalPublicKey)
+      .privateKey(originalPrivateKey)
+      .build();
+
+    RsaKeyring clientKeyring = RsaKeyring.builder()
+      .wrappingKeyPair(originalPartialRsaKeyPair)
+      .enableLegacyWrappingAlgorithms(true)
+      .materialsDescription(MaterialsDescription.builder()
+        .put("isOwner", "yes")
+        .put("access-level", "admin")
+        .build())
+      .build();
+
+    S3Client wrappedClient = S3Client.create();
+    S3EncryptionClient v3OriginalClient = S3EncryptionClient.builder()
+      .keyring(clientKeyring)
+      .enableLegacyWrappingAlgorithms(true)
+      .enableLegacyUnauthenticatedModes(true)
+      .instructionFileConfig(InstructionFileConfig.builder()
+        .instructionFileClient(wrappedClient)
+        .enableInstructionFilePutObject(true)
+        .build())
+      .build();
+
+    PublicKey thirdPartyPublicKey = RSA_KEY_PAIR_TWO.getPublic();
+    PrivateKey thirdPartyPrivateKey = RSA_KEY_PAIR_TWO.getPrivate();
+
+    PartialRsaKeyPair thirdPartyPartialRsaKeyPair = PartialRsaKeyPair.builder()
+      .publicKey(thirdPartyPublicKey)
+      .privateKey(thirdPartyPrivateKey)
+      .build();
+
+    RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
+      .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
+      .enableLegacyWrappingAlgorithms(true)
+      .materialsDescription(MaterialsDescription.builder()
+        .put("isOwner", "no")
+        .put("access-level", "user")
+        .build())
+      .build();
+
+    S3EncryptionClient v3ThirdPartyClient = S3EncryptionClient.builder()
+      .keyring(thirdPartyKeyring)
+      .enableLegacyWrappingAlgorithms(true)
+      .enableLegacyUnauthenticatedModes(true)
+      .instructionFileConfig(InstructionFileConfig.builder()
+        .instructionFileClient(wrappedClient)
+        .enableInstructionFilePutObject(true)
+        .build())
+      .build();
+
+    EncryptionMaterialsProvider thirdPartyMaterialsProvider =
+      new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR_TWO)
+        .addDescription("isOwner", "no")
+        .addDescription("access-level", "user")
+      );
+
+    CryptoConfigurationV2 thirdPartyCryptoConfig =
+      new CryptoConfigurationV2(CryptoMode.AuthenticatedEncryption)
+        .withStorageMode(CryptoStorageMode.InstructionFile);
+
+    AmazonS3EncryptionV2 v2ThirdPartyRotatedClient = AmazonS3EncryptionClientV2.encryptionBuilder()
+      .withCryptoConfiguration(thirdPartyCryptoConfig)
+      .withEncryptionMaterialsProvider(thirdPartyMaterialsProvider)
+      .build();
+
+    ReEncryptInstructionFileRequest reEncryptInstructionFileRequest = ReEncryptInstructionFileRequest.builder()
+      .bucket(BUCKET)
+      .key(objectKey)
+      .newKeyring(thirdPartyKeyring)
+      .instructionFileSuffix("third-party-access-instruction-file")
+      .build();
+
+    ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
+
+    ResponseBytes<GetObjectResponse> v3DecryptObject = v3OriginalClient.getObjectAsBytes(builder -> builder
+      .bucket(BUCKET)
+      .key(objectKey)
+      .build());
+
     assertEquals(input, v3DecryptObject.asUtf8String());
 
     String v2DecryptObject = v2OriginalClient.getObjectAsString(BUCKET, objectKey);
@@ -813,7 +981,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     AesKeyring oldKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
       .enableLegacyWrappingAlgorithms(true)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "no")
         .put("isLegacy", "yes")
@@ -833,7 +1000,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     AesKeyring newKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY_TWO)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "yes")
         .put("isLegacy", "no")
@@ -925,7 +1091,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring clientKeyring = RsaKeyring.builder()
       .wrappingKeyPair(clientPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "yes")
@@ -944,8 +1109,8 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         .build())
       .build();
 
-    PublicKey thirdPartyPublicKey = THIRD_PARTY_RSA_KEY_PAIR.getPublic();
-    PrivateKey thirdPartyPrivateKey = THIRD_PARTY_RSA_KEY_PAIR.getPrivate();
+    PublicKey thirdPartyPublicKey = RSA_KEY_PAIR_TWO.getPublic();
+    PrivateKey thirdPartyPrivateKey = RSA_KEY_PAIR_TWO.getPrivate();
 
     PartialRsaKeyPair thirdPartyPartialRsaKeyPair = PartialRsaKeyPair.builder()
       .publicKey(thirdPartyPublicKey)
@@ -954,7 +1119,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
       .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "no")
@@ -966,7 +1130,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .keyring(thirdPartyKeyring)
       .enableLegacyWrappingAlgorithms(true)
       .enableLegacyUnauthenticatedModes(true)
-      .secureRandom(new SecureRandom())
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
@@ -974,7 +1137,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .build();
 
     EncryptionMaterialsProvider thirdPartyMaterialsProvider =
-      new StaticEncryptionMaterialsProvider(new EncryptionMaterials(THIRD_PARTY_RSA_KEY_PAIR)
+      new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR_TWO)
         .addDescription("isOwner", "no")
         .addDescription("access-level", "user")
       );
@@ -1049,7 +1212,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     AesKeyring oldKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
       .enableLegacyWrappingAlgorithms(true)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "no")
         .put("isLegacy", "yes")
@@ -1069,7 +1231,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     AesKeyring newKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY_TWO)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "yes")
         .put("isLegacy", "no")
@@ -1166,7 +1327,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring clientKeyring = RsaKeyring.builder()
       .wrappingKeyPair(clientPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "yes")
@@ -1185,8 +1345,8 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         .build())
       .build();
 
-    PublicKey thirdPartyPublicKey = THIRD_PARTY_RSA_KEY_PAIR.getPublic();
-    PrivateKey thirdPartyPrivateKey = THIRD_PARTY_RSA_KEY_PAIR.getPrivate();
+    PublicKey thirdPartyPublicKey = RSA_KEY_PAIR_TWO.getPublic();
+    PrivateKey thirdPartyPrivateKey = RSA_KEY_PAIR_TWO.getPrivate();
 
     PartialRsaKeyPair thirdPartyPartialRsaKeyPair = PartialRsaKeyPair.builder()
       .publicKey(thirdPartyPublicKey)
@@ -1195,7 +1355,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
       .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "no")
@@ -1207,7 +1366,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .keyring(thirdPartyKeyring)
       .enableLegacyWrappingAlgorithms(true)
       .enableLegacyUnauthenticatedModes(true)
-      .secureRandom(new SecureRandom())
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
@@ -1215,7 +1373,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .build();
 
     EncryptionMaterialsProvider thirdPartyMaterialsProvider =
-      new StaticEncryptionMaterialsProvider(new EncryptionMaterials(THIRD_PARTY_RSA_KEY_PAIR)
+      new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR_TWO)
         .addDescription("isOwner", "no")
         .addDescription("access-level", "user")
       );
@@ -1267,4 +1425,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     deleteObject(BUCKET, objectKey, v3OriginalClient);
 
   }
+
+
 }
