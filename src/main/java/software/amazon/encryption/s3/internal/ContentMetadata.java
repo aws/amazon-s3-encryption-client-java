@@ -64,7 +64,7 @@ public class ContentMetadata {
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
         + " implementation is immutable")
-    public Map<String, String> encryptedDataKeyContext() {
+    public Map<String, String> encryptedDataKeyMatDescOrContext() {
         return _encryptionContextOrMatDesc;
     }
 
