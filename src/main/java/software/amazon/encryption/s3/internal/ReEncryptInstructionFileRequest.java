@@ -110,6 +110,7 @@ public class ReEncryptInstructionFileRequest {
      * Sets a custom instruction file suffix for the re-encrypted instruction file.
      * For AES keyrings, only the default instruction file suffix is allowed.
      * For RSA keyrings, both the default and custom instruction file suffixes are allowed.
+     * Note: The "." prefix is automatically added to the suffix
      *
      * @param instructionFileSuffix the instruction file suffix
      * @return a reference to this object so that method calls can be chained together.

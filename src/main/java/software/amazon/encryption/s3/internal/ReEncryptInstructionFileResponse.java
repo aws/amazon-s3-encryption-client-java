@@ -21,7 +21,7 @@ public class ReEncryptInstructionFileResponse {
   public ReEncryptInstructionFileResponse(String bucket, String key, String instructionFileSuffix) {
     this.bucket = bucket;
     this.key = key;
-    this.instructionFileSuffix = instructionFileSuffix;
+    this.instructionFileSuffix = instructionFileSuffix.substring(1);
   }
 
   /**

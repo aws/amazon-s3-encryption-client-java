@@ -286,7 +286,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     assertEquals(BUCKET, response.bucket());
     assertEquals(objectKey, response.key());
-    assertEquals(".instruction", response.instructionFileSuffix());
+    assertEquals("instruction", response.instructionFileSuffix());
 
     S3Client rotatedWrappedClient = S3Client.create();
 
@@ -410,7 +410,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     assertEquals(BUCKET, response.bucket());
     assertEquals(objectKey, response.key());
-    assertEquals(".instruction", response.instructionFileSuffix());
+    assertEquals("instruction", response.instructionFileSuffix());
 
     S3Client rotatedWrappedClient = S3Client.create();
 
@@ -530,7 +530,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     assertEquals(BUCKET, reEncryptInstructionFileResponse.bucket());
     assertEquals(objectKey, reEncryptInstructionFileResponse.key());
-    assertEquals(".third-party-access-instruction-file", reEncryptInstructionFileResponse.instructionFileSuffix());
+    assertEquals("third-party-access-instruction-file", reEncryptInstructionFileResponse.instructionFileSuffix());
 
     ResponseBytes<GetObjectResponse> clientInstructionFile= wrappedClient.getObjectAsBytes(builder -> builder
       .bucket(BUCKET)
@@ -1670,8 +1670,5 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     deleteObject(BUCKET, objectKey, v3OriginalClient);
   }
-
-
-
 
 }
