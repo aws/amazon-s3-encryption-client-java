@@ -23,7 +23,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,6 +60,7 @@ public class ReEncryptInstructionFileExample {
     final String bucket = args[0];
     simpleAesKeyringReEncryptInstructionFile(bucket);
     simpleRsaKeyringReEncryptInstructionFile(bucket);
+    simpleRsaKeyringReEncryptInstructionFileWithCustomSuffix(bucket);
   }
 
   /**
@@ -81,7 +81,6 @@ public class ReEncryptInstructionFileExample {
     // Create the original AES keyring with materials description
     AesKeyring oldKeyring = AesKeyring.builder()
       .wrappingKey(originalAesKey)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("version", "1.0")
         .put("rotated", "no")
@@ -113,7 +112,6 @@ public class ReEncryptInstructionFileExample {
     // Create a new keyring with the new AES key and updated materials description
     AesKeyring newKeyring = AesKeyring.builder()
       .wrappingKey(newAesKey)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("version", "2.0")
         .put("rotated", "yes")
@@ -167,8 +165,8 @@ public class ReEncryptInstructionFileExample {
   }
 
   /**
-   * This example demonstrates generating a custom instruction file to enable access to encrypted object by a third party.
-   * This enables secure sharing of encrypted objects without sharing private keys.
+   * This example demonstrates re-encrypting the encrypted data key in an instruction file with a new RSA wrapping key.
+   * The other cryptographic parameters in the instruction file such as the IV and wrapping algorithm remain unchanged.
    *
    * @param bucket The name of the Amazon S3 bucket to perform operations on.
    * @throws NoSuchAlgorithmException if RSA algorithm is not available
@@ -176,6 +174,123 @@ public class ReEncryptInstructionFileExample {
   public static void simpleRsaKeyringReEncryptInstructionFile(final String bucket) throws NoSuchAlgorithmException {
     // Set up the S3 object key and content to be encrypted
     final String objectKey = appendTestSuffix("rsa-re-encrypt-instruction-file-test");
+    final String input = "Testing re-encryption of instruction file with RSA Keyring";
+
+    // Generate the original RSA key pair for initial encryption
+    KeyPair originalRsaKeyPair = generateRsaKeyPair();
+    PublicKey originalPublicKey = originalRsaKeyPair.getPublic();
+    PrivateKey originalPrivateKey = originalRsaKeyPair.getPrivate();
+
+    // Create a partial RSA key pair for the original keyring
+    PartialRsaKeyPair originalPartialRsaKeyPair = PartialRsaKeyPair.builder()
+      .publicKey(originalPublicKey)
+      .privateKey(originalPrivateKey)
+      .build();
+
+    // Create the original RSA keyring with materials description
+    RsaKeyring originalKeyring = RsaKeyring.builder()
+      .wrappingKeyPair(originalPartialRsaKeyPair)
+      .materialsDescription(MaterialsDescription.builder()
+        .put("version", "1.0")
+        .put("rotated", "no")
+        .build())
+      .build();
+
+    // Create a default S3 client for instruction file operations
+    S3Client wrappedClient = S3Client.create();
+
+    // Create the S3 Encryption Client with instruction file support enabled
+    // The client can perform both putObject and getObject operations using RSA keyring
+    S3EncryptionClient originalClient = S3EncryptionClient.builder()
+      .keyring(originalKeyring)
+      .instructionFileConfig(InstructionFileConfig.builder()
+        .instructionFileClient(wrappedClient)
+        .enableInstructionFilePutObject(true)
+        .build())
+      .build();
+
+    // Upload both the encrypted object and instruction file to the specified bucket in S3
+    originalClient.putObject(builder -> builder
+      .bucket(bucket)
+      .key(objectKey)
+      .build(), RequestBody.fromString(input));
+
+    // Generate a new RSA key pair for the new RSA keyring
+    KeyPair newKeyPair = generateRsaKeyPair();
+    PublicKey newPublicKey = newKeyPair.getPublic();
+    PrivateKey newPrivateKey = newKeyPair.getPrivate();
+
+    // Create a partial RSA key pair for the new RSA keyring
+    PartialRsaKeyPair newPartialRsaKeyPair = PartialRsaKeyPair.builder()
+      .publicKey(newPublicKey)
+      .privateKey(newPrivateKey)
+      .build();
+
+    // Create the new RSA keyring with updated materials description
+    RsaKeyring newKeyring = RsaKeyring.builder()
+      .wrappingKeyPair(newPartialRsaKeyPair)
+      .materialsDescription(MaterialsDescription.builder()
+        .put("version", "2.0")
+        .put("rotated", "yes")
+        .build())
+      .build();
+
+    // Create the re-encryption of instruction file request to re-encrypt the encrypted data key with the new wrapping key
+    // This updates the instruction file without touching the encrypted object
+    ReEncryptInstructionFileRequest reEncryptInstructionFileRequest = ReEncryptInstructionFileRequest.builder()
+      .bucket(bucket)
+      .key(objectKey)
+      .newKeyring(newKeyring)
+      .build();
+
+    // Perform the re-encryption of the instruction file
+    ReEncryptInstructionFileResponse reEncryptInstructionFileResponse = originalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
+
+    // Verify that the original client can no longer decrypt the object
+    // This proves that the instruction file has been successfully re-encrypted
+    try {
+      originalClient.getObjectAsBytes(builder -> builder
+        .bucket(bucket)
+        .key(objectKey)
+        .build());
+      throw new RuntimeException("Original client should not be able to decrypt the object in S3 post re-encryption of instruction file!");
+    } catch (S3EncryptionClientException e) {
+      assertTrue(e.getMessage().contains("Unable to RSA-OAEP-SHA1 unwrap"));
+    }
+
+    // Create a new client with the rotated AES key
+    S3EncryptionClient newClient = S3EncryptionClient.builder()
+      .keyring(newKeyring)
+      .instructionFileConfig(InstructionFileConfig.builder()
+        .instructionFileClient(wrappedClient)
+        .enableInstructionFilePutObject(true)
+        .build())
+      .build();
+
+    // Verify that the new client can successfully decrypt the object
+    // This proves that the instruction file has been successfully re-encrypted
+    ResponseBytes<GetObjectResponse> decryptedObject = newClient.getObjectAsBytes(builder -> builder
+      .bucket(bucket)
+      .key(objectKey)
+      .build());
+
+    // Assert that the decrypted object's content matches the original input
+    assertEquals(input, decryptedObject.asUtf8String());
+
+    // Call deleteObject to delete the object from given S3 Bucket
+    deleteObject(bucket, objectKey, originalClient);
+  }
+
+  /**
+   * This example demonstrates generating a custom instruction file to enable access to encrypted object by a third party.
+   * This enables secure sharing of encrypted objects without sharing private keys.
+   *
+   * @param bucket The name of the Amazon S3 bucket to perform operations on.
+   * @throws NoSuchAlgorithmException if RSA algorithm is not available
+   */
+  public static void simpleRsaKeyringReEncryptInstructionFileWithCustomSuffix(final String bucket) throws NoSuchAlgorithmException {
+    // Set up the S3 object key and content to be encrypted
+    final String objectKey = appendTestSuffix("rsa-re-encrypt-instruction-file-test-with-custom-suffix");
     final String input = "Testing re-encryption of instruction file with RSA Keyring";
 
     // Generate RSA key pair for the original client
@@ -192,7 +307,6 @@ public class ReEncryptInstructionFileExample {
     // Create the client's RSA keyring with materials description
     RsaKeyring clientKeyring = RsaKeyring.builder()
       .wrappingKeyPair(clientPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "yes")
         .put("access-level", "admin")
@@ -232,7 +346,6 @@ public class ReEncryptInstructionFileExample {
     // Create the third party's RSA keyring with updated materials description
     RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
       .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
-      .secureRandom(new SecureRandom())
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "no")
         .put("access-level", "user")
@@ -255,7 +368,6 @@ public class ReEncryptInstructionFileExample {
     // Create the third party's S3 Encryption Client
     S3EncryptionClient thirdPartyClient = S3EncryptionClient.builder()
       .keyring(thirdPartyKeyring)
-      .secureRandom(new SecureRandom())
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
