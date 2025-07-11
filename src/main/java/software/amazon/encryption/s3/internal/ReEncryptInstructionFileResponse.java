@@ -27,21 +27,21 @@ public class ReEncryptInstructionFileResponse {
   /**
    * @return the S3 bucket containing the re-encrypted instruction file
    */
-  public String Bucket() {
+  public String bucket() {
     return bucket;
   }
 
   /**
    * @return the S3 object key of the encrypted object in S3
    */
-  public String Key() {
+  public String key() {
     return key;
   }
 
   /**
    * @return the instruction file suffix used for the instruction file
    */
-  public String InstructionFileSuffix() {
+  public String instructionFileSuffix() {
     return instructionFileSuffix;
   }
 }
