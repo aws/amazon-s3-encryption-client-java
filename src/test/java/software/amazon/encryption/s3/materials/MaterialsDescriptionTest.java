@@ -52,6 +52,7 @@ public class MaterialsDescriptionTest {
       assertNull(e.getMessage());
     }
   }
+
   @Test
   public void testMaterialsDescriptionPutAll() {
     Map<String, String> description = new HashMap<>();
