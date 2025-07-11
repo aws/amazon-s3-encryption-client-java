@@ -9,6 +9,7 @@ import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
@@ -24,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
 
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
 
 public class ContentMetadataDecodingStrategy {
 
@@ -224,9 +225,13 @@ public class ContentMetadataDecodingStrategy {
     }
 
     private ContentMetadata decodeFromInstructionFile(GetObjectRequest request, GetObjectResponse response) {
+       String instructionFileSuffix = request.overrideConfiguration()
+         .flatMap(config -> config.executionAttributes().getOptionalAttribute(S3EncryptionClient.CUSTOM_INSTRUCTION_FILE_SUFFIX))
+         .orElse(DEFAULT_INSTRUCTION_FILE_SUFFIX);
+
         GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
                 .bucket(request.bucket())
-                .key(request.key() + INSTRUCTION_FILE_SUFFIX)
+                .key(request.key() + instructionFileSuffix)
                 .build();
 
         ResponseInputStream<GetObjectResponse> instruction;

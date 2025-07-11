@@ -53,7 +53,7 @@ public class S3EncryptionClientMatDescTest {
   public void testAesMaterialsDescriptionInObjectMetadata() {
     AesKeyring aesKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
-      .secureRandom(new SecureRandom())
+      
       .materialsDescription(MaterialsDescription.builder()
         .put("version", "1.0")
         .build())
@@ -123,7 +123,7 @@ public class S3EncryptionClientMatDescTest {
   public void testAesMaterialsDescriptionInInstructionFile() {
     AesKeyring aesKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
-      .secureRandom(new SecureRandom())
+      
       .materialsDescription(MaterialsDescription.builder()
         .put("version", "1.0")
         .build())
@@ -227,7 +227,7 @@ public class S3EncryptionClientMatDescTest {
   public void testAesKeyringMatDescOverridesPutObjectEncryptionContext() {
     AesKeyring aesKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
-      .secureRandom(new SecureRandom())
+      
       .materialsDescription(MaterialsDescription.builder()
         .put("version", "1.0")
         .build())

@@ -126,7 +126,7 @@ abstract public class S3Keyring implements Keyring {
 
     abstract public static class Builder<KeyringT extends S3Keyring, BuilderT extends Builder<KeyringT, BuilderT>> {
         private boolean _enableLegacyWrappingAlgorithms = false;
-        private SecureRandom _secureRandom;
+        private SecureRandom _secureRandom = new SecureRandom();
         private DataKeyGenerator _dataKeyGenerator = new DefaultDataKeyGenerator();
 
         protected Builder() {}
