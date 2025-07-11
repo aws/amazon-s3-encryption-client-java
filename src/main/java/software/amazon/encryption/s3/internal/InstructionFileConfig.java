@@ -15,7 +15,8 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
 import static software.amazon.encryption.s3.internal.MetadataKeyConstants.INSTRUCTION_FILE;
 
 /**
@@ -49,7 +50,7 @@ public class InstructionFileConfig {
     }
 
     PutObjectResponse putInstructionFile(PutObjectRequest request, String instructionFileContent) {
-       return putInstructionFile(request, instructionFileContent, INSTRUCTION_FILE_SUFFIX);
+       return putInstructionFile(request, instructionFileContent, DEFAULT_INSTRUCTION_FILE_SUFFIX);
     }
 
     PutObjectResponse putInstructionFile(PutObjectRequest request, String instructionFileContent, String instructionFileSuffix) {
