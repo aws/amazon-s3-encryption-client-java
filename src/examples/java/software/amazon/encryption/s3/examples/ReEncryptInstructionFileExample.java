@@ -65,7 +65,6 @@ public class ReEncryptInstructionFileExample {
 
   /**
    * This example demonstrates re-encrypting the encrypted data key in an instruction file with a new AES wrapping key.
-   * The other cryptographic parameters in the instruction file such as the IV and wrapping algorithm remain unchanged.
    *
    * @param bucket The name of the Amazon S3 bucket to perform operations on.
    * @throws NoSuchAlgorithmException if AES algorithm is not available
@@ -166,7 +165,6 @@ public class ReEncryptInstructionFileExample {
 
   /**
    * This example demonstrates re-encrypting the encrypted data key in an instruction file with a new RSA wrapping key.
-   * The other cryptographic parameters in the instruction file such as the IV and wrapping algorithm remain unchanged.
    *
    * @param bucket The name of the Amazon S3 bucket to perform operations on.
    * @throws NoSuchAlgorithmException if RSA algorithm is not available
@@ -258,7 +256,7 @@ public class ReEncryptInstructionFileExample {
       assertTrue(e.getMessage().contains("Unable to RSA-OAEP-SHA1 unwrap"));
     }
 
-    // Create a new client with the rotated AES key
+    // Create a new client with the rotated RSA key
     S3EncryptionClient newClient = S3EncryptionClient.builder()
       .keyring(newKeyring)
       .instructionFileConfig(InstructionFileConfig.builder()

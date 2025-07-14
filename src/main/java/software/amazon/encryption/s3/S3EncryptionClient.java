@@ -207,14 +207,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * Key rotation scenarios:
      * - Legacy to V3: Can rotate same wrapping key from legacy wrapping algorithms to fully supported wrapping algorithms
      * - Within V3: When rotating the wrapping key, the new keyring must be different from the current keyring
-     * - Enforce Rotation: When enabled, ensures old keyring cannot decrypt data encrypted by new keyring
      *
      * @param reEncryptInstructionFileRequest the request containing bucket, object key, new keyring, and optional instruction file suffix
      * @return ReEncryptInstructionFileResponse containing the bucket, object key, and instruction file suffix used
      * @throws S3EncryptionClientException if the new keyring has the same materials description as the current one
      */
     public ReEncryptInstructionFileResponse reEncryptInstructionFile(ReEncryptInstructionFileRequest reEncryptInstructionFileRequest) {
-        //GetObjectRequest MUST be kept the same
+        //Build request to retrieve the encrypted object and its associated instruction file
         final GetObjectRequest request = GetObjectRequest.builder()
           .bucket(reEncryptInstructionFileRequest.bucket())
           .key(reEncryptInstructionFileRequest.key())
@@ -224,15 +223,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
         ContentMetadataDecodingStrategy decodingStrategy = new ContentMetadataDecodingStrategy(_instructionFileConfig);
         ContentMetadata contentMetadata = decodingStrategy.decode(request, response.response());
 
-        // Algorithm Suite MUST be kept the same
+        //Extract cryptographic parameters from the current instruction file that MUST be preserved during re-encryption
         final AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
-        // Original Encrypted Data Key MUST be kept the same
         final EncryptedDataKey originalEncryptedDataKey = contentMetadata.encryptedDataKey();
-        // Current Keyring's Materials Description MUST be kept the same
         final Map<String, String> currentKeyringMaterialsDescription = contentMetadata.encryptedDataKeyMatDescOrContext();
-        // Content IV MUST be kept the same
         final byte[] iv = contentMetadata.contentIv();
 
+        //Decrypt the data key using the current keyring
         DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
           DecryptMaterialsRequest.builder()
             .algorithmSuite(algorithmSuite)
@@ -241,28 +238,27 @@ public class S3EncryptionClient extends DelegatingS3Client {
             .build()
         );
 
-        //Plaintext Data Key MUST be kept the same
         final byte[] plaintextDataKey = decryptedMaterials.plaintextDataKey();
 
+        //Prepare encryption materials with the decrypted data key
         EncryptionMaterials encryptionMaterials = EncryptionMaterials.builder()
           .algorithmSuite(algorithmSuite)
           .plaintextDataKey(plaintextDataKey)
           .s3Request(request)
           .build();
 
-        //New Keyring MUST be kept the same
-        final RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
-        //Encrypted Materials MUST be kept the same
-        final EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
-        //New Keyring's Materials Description MUST be kept the same
-        final Map<String, String> newMaterialsDescription = encryptedMaterials.materialsDescription().getMaterialsDescription();
+        //Re-encrypt the data key with the new keyring while preserving other cryptographic parameters
+        RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
+        EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
 
+        final Map<String, String> newMaterialsDescription = encryptedMaterials.materialsDescription().getMaterialsDescription();
+        //Validate that the new keyring has different materials description than the old keyring
         if (newMaterialsDescription.equals(currentKeyringMaterialsDescription)) {
             throw new S3EncryptionClientException("New keyring must have new materials description!");
         }
 
+        //Create or update instruction file with the re-encrypted metadata while preserving IV
         ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
-
         encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
           .bucket(reEncryptInstructionFileRequest.bucket())
           .key(reEncryptInstructionFileRequest.key())
