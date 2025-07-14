@@ -598,14 +598,13 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
-  public void testReEncryptInstructionFileUpgradesV2AesToV3() {
-    final String input = "Testing re-encryption of instruction file, upgrading legacy V2 AES to V3";
+  public void testReEncryptInstructionFileV2AesToV3() {
+    final String input = "Testing re-encryption of instruction file with AES keyrings from V2 to V3";
     final String objectKey = appendTestSuffix("v2-aes-to-v3-re-encrypt-instruction-file-test");
 
     EncryptionMaterialsProvider materialsProvider =
       new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY)
         .addDescription("rotated", "no")
-        .addDescription("isLegacy", "yes")
       );
 
     CryptoConfigurationV2 cryptoConfig =
@@ -621,18 +620,14 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     AesKeyring oldKeyring = AesKeyring.builder()
       .wrappingKey(AES_KEY)
-      .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "no")
-        .put("isLegacy", "yes")
         .build())
       .build();
 
     S3Client wrappedClient = S3Client.create();
     S3EncryptionClient v3OriginalClient = S3EncryptionClient.builder()
       .keyring(oldKeyring)
-      .enableLegacyUnauthenticatedModes(true)
-      .enableLegacyWrappingAlgorithms(true)
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
@@ -643,7 +638,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .wrappingKey(AES_KEY_TWO)
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "yes")
-        .put("isLegacy", "no")
         .build())
       .build();
 
@@ -658,7 +652,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     EncryptionMaterialsProvider newMaterialsProvider =
       new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY_TWO)
         .addDescription("rotated", "yes")
-        .addDescription("isLegacy", "no")
       );
 
     CryptoConfigurationV2 newCryptoConfig =
@@ -685,16 +678,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     assertEquals(input, v3DecryptObject.asUtf8String());
 
-    ResponseBytes<GetObjectResponse> instructionFile = wrappedClient.getObjectAsBytes(builder -> builder
-      .bucket(BUCKET)
-      .key(objectKey + ".instruction")
-      .build());
-
-    JsonNodeParser parser = JsonNodeParser.create();
-    JsonNode instructionFileNode = parser.parse(instructionFile.asUtf8String());
-    String wrappingAlgorithm = instructionFileNode.asObject().get("x-amz-wrap-alg").asString();
-    assertEquals("AES/GCM", wrappingAlgorithm);
-
     String v2DecryptObject = v2RotatedClient.getObjectAsString(BUCKET, objectKey);
     assertEquals(input, v2DecryptObject);
 
@@ -704,7 +687,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
   @Test
   public void testReEncryptInstructionFileWithCustomSuffixUpgradesV2RsaToV3() throws IOException {
-    final String input = "Testing re-encryption of instruction file, upgrading legacy V2 RSA to V3";
+    final String input = "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
     final String objectKey = appendTestSuffix("v2-rsa-to-v3-re-encrypt-instruction-file-with-custom-suffix-test");
 
     EncryptionMaterialsProvider materialsProvider =
@@ -733,7 +716,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring clientKeyring = RsaKeyring.builder()
       .wrappingKeyPair(clientPartialRsaKeyPair)
-      .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "yes")
         .put("access-level", "admin")
@@ -743,8 +725,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     S3Client wrappedClient = S3Client.create();
     S3EncryptionClient v3OriginalClient = S3EncryptionClient.builder()
       .keyring(clientKeyring)
-      .enableLegacyWrappingAlgorithms(true)
-      .enableLegacyUnauthenticatedModes(true)
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
@@ -761,7 +741,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
       .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
-      .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("isOwner", "no")
         .put("access-level", "user")
@@ -770,8 +749,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     S3EncryptionClient v3ThirdPartyClient = S3EncryptionClient.builder()
       .keyring(thirdPartyKeyring)
-      .enableLegacyWrappingAlgorithms(true)
-      .enableLegacyUnauthenticatedModes(true)
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
@@ -832,13 +809,12 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
   @Test
   public void testReEncryptInstructionFileUpgradesV2RsaToV3() throws IOException {
-    final String input = "Testing re-encryption of instruction file, upgrading legacy V2 RSA to V3";
+    final String input = "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
     final String objectKey = appendTestSuffix("v2-rsa-to-v3-re-encrypt-instruction-file-test");
 
     EncryptionMaterialsProvider materialsProvider =
       new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR)
         .addDescription("rotated", "no")
-        .addDescription("isLegacy", "yes")
       );
     CryptoConfigurationV2 cryptoConfig =
       new CryptoConfigurationV2(CryptoMode.AuthenticatedEncryption)
@@ -861,18 +837,14 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring clientKeyring = RsaKeyring.builder()
       .wrappingKeyPair(originalPartialRsaKeyPair)
-      .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "no")
-        .put("isLegacy", "yes")
         .build())
       .build();
 
     S3Client wrappedClient = S3Client.create();
     S3EncryptionClient v3OriginalClient = S3EncryptionClient.builder()
       .keyring(clientKeyring)
-      .enableLegacyWrappingAlgorithms(true)
-      .enableLegacyUnauthenticatedModes(true)
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
@@ -889,7 +861,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     RsaKeyring newKeyring = RsaKeyring.builder()
       .wrappingKeyPair(newPartialRsaKeyPair)
-      .enableLegacyWrappingAlgorithms(true)
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "yes")
         .put("isLegacy", "no")
@@ -898,8 +869,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     S3EncryptionClient v3RotatedClient = S3EncryptionClient.builder()
       .keyring(newKeyring)
-      .enableLegacyWrappingAlgorithms(true)
-      .enableLegacyUnauthenticatedModes(true)
       .instructionFileConfig(InstructionFileConfig.builder()
         .instructionFileClient(wrappedClient)
         .enableInstructionFilePutObject(true)
@@ -909,7 +878,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     EncryptionMaterialsProvider newMaterialsProvider =
       new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR_TWO)
         .addDescription("rotated", "yes")
-        .addDescription("isLegacy", "no")
       );
 
     CryptoConfigurationV2 newCryptoConfig =
@@ -938,16 +906,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     String v2DecryptObject = v2RotatedClient.getObjectAsString(BUCKET, objectKey);
     assertEquals(input, v2DecryptObject);
-
-    ResponseBytes<GetObjectResponse> instructionFile = wrappedClient.getObjectAsBytes(builder -> builder
-      .bucket(BUCKET)
-      .key(objectKey + ".instruction")
-      .build());
-
-    JsonNodeParser parser = JsonNodeParser.create();
-    JsonNode instructionFileNode = parser.parse(instructionFile.asUtf8String());
-    String wrappingAlgorithm = instructionFileNode.asObject().get("x-amz-wrap-alg").asString();
-    assertEquals("RSA-OAEP-SHA1", wrappingAlgorithm);
 
     deleteObject(BUCKET, objectKey, v3OriginalClient);
 
