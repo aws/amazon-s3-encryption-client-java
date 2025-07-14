@@ -686,7 +686,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
-  public void testReEncryptInstructionFileWithCustomSuffixUpgradesV2RsaToV3() throws IOException {
+  public void testReEncryptInstructionFileWithCustomSuffixV2RsaToV3() throws IOException {
     final String input = "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
     final String objectKey = appendTestSuffix("v2-rsa-to-v3-re-encrypt-instruction-file-with-custom-suffix-test");
 
@@ -808,7 +808,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
-  public void testReEncryptInstructionFileUpgradesV2RsaToV3() throws IOException {
+  public void testReEncryptInstructionFileV2RsaToV3() throws IOException {
     final String input = "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
     final String objectKey = appendTestSuffix("v2-rsa-to-v3-re-encrypt-instruction-file-test");
 
@@ -863,7 +863,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       .wrappingKeyPair(newPartialRsaKeyPair)
       .materialsDescription(MaterialsDescription.builder()
         .put("rotated", "yes")
-        .put("isLegacy", "no")
         .build())
       .build();
 
