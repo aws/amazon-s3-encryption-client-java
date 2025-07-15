@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
-import software.amazon.awssdk.services.s3.model.ChecksumType;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -12,8 +11,149 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 public class ConvertSDKRequests {
 
+  /**
+   * Converts a CreateMultipartUploadRequest to a PutObjectRequest. This conversion is necessary when
+   * Instruction File PutObject is enabled and a multipart upload is performed.The method copies all the
+   * relevant fields from the CreateMultipartUploadRequest to the PutObjectRequest.
+   * @param request The CreateMultipartUploadRequest to convert
+   * @return The converted PutObjectRequest
+   * @throws IllegalArgumentException  if the request contains an invalid field
+   */
+  public static PutObjectRequest convertRequest(CreateMultipartUploadRequest request) {
+    final PutObjectRequest.Builder output = PutObjectRequest.builder();
+    request
+            .toBuilder()
+            .sdkFields()
+            .forEach(f -> {
+              final Object value = f.getValueOrDefault(request);
+              if (value != null) {
+                switch (f.memberName()) {
+                  case "ACL":
+                    output.acl((String) value);
+                    break;
+                  case "Bucket":
+                    output.bucket((String) value);
+                    break;
+                  case "BucketKeyEnabled":
+                    output.bucketKeyEnabled((Boolean) value);
+                    break;
+                  case "CacheControl":
+                    output.cacheControl((String) value);
+                    break;
+                  case "ChecksumAlgorithm":
+                    output.checksumAlgorithm((String) value);
+                    break;
+                  case "ContentDisposition":
+                    assert value instanceof String;
+                    output.contentDisposition((String) value);
+                    break;
+                  case "ContentEncoding":
+                    output.contentEncoding((String) value);
+                    break;
+                  case "ContentLanguage":
+                    output.contentLanguage((String) value);
+                    break;
+                  case "ContentType":
+                    output.contentType((String) value);
+                    break;
+                  case "ExpectedBucketOwner":
+                    output.expectedBucketOwner((String) value);
+                    break;
+                  case "Expires":
+                    output.expires((Instant) value);
+                    break;
+                  case "GrantFullControl":
+                    output.grantFullControl((String) value);
+                    break;
+                  case "GrantRead":
+                    output.grantRead((String) value);
+                    break;
+                  case "GrantReadACP":
+                    output.grantReadACP((String) value);
+                    break;
+                  case "GrantWriteACP":
+                    output.grantWriteACP((String) value);
+                    break;
+                  case "Key":
+                    output.key((String) value);
+                    break;
+                  case "Metadata":
+                    if (!isStringStringMap(value)) {
+                      throw new IllegalArgumentException("Metadata must be a Map<String, String>");
+                    }
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> metadata = (Map<String, String>) value;
+                    output.metadata(metadata);
+                    break;
+                  case "ObjectLockLegalHoldStatus":
+                    output.objectLockLegalHoldStatus((String) value);
+                    break;
+                  case "ObjectLockMode":
+                    output.objectLockMode((String) value);
+                    break;
+                  case "ObjectLockRetainUntilDate":
+                    output.objectLockRetainUntilDate((Instant) value);
+                    break;
+                  case "RequestPayer":
+                    output.requestPayer((String) value);
+                    break;
+                  case "ServerSideEncryption":
+                    output.serverSideEncryption((String) value);
+                    break;
+                  case "SSECustomerAlgorithm":
+                    output.sseCustomerAlgorithm((String) value);
+                    break;
+                  case "SSECustomerKey":
+                    output.sseCustomerKey((String) value);
+                    break;
+                  case "SSECustomerKeyMD5":
+                    output.sseCustomerKeyMD5((String) value);
+                    break;
+                  case "SSEKMSEncryptionContext":
+                    output.ssekmsEncryptionContext((String) value);
+                    break;
+                  case "SSEKMSKeyId":
+                    output.ssekmsKeyId((String) value);
+                    break;
+                  case "StorageClass":
+                    output.storageClass((String) value);
+                    break;
+                  case "Tagging":
+                    output.tagging((String) value);
+                    break;
+                  case "WebsiteRedirectLocation":
+                    output.websiteRedirectLocation((String) value);
+                    break;
+                  default:
+                    // Rather than silently dropping the value,
+                    // we loudly signal that we don't know how to handle this field.
+                    throw new IllegalArgumentException(
+                            f.memberName() + " is an unknown field. " +
+                                    "The S3 Encryption Client does not recognize this option and cannot set it on the PutObjectRequest." +
+                                    "This may be a new S3 feature." +
+                                    "Please report this to the Amazon S3 Encryption Client for Java: " +
+                                    "https://github.com/aws/amazon-s3-encryption-client-java/issues." +
+                                    "To work around this issue, you can disable Instruction File on PutObject or disable" +
+                                    "multi part upload, or use the Async client, or not set this value on PutObject." +
+                                    "You may be able to update this value after the PutObject request completes."
+                    );
+                }
+              }
+            });
+    return output
+            // OverrideConfiguration is not as SDKField but still needs to be supported
+            .overrideConfiguration(request.overrideConfiguration().orElse(null))
+            .build();
+  }
+  /**
+   * Converts a PutObjectRequest to CreateMultipartUploadRequest.This conversion is necessary to convert an
+   * original PutObjectRequest into a CreateMultipartUploadRequest to initiate the
+   * multipart upload while maintaining the original request's configuration.
+   * @param request The PutObjectRequest to convert
+   * @return The converted CreateMultipartUploadRequest
+   * @throws IllegalArgumentException if the request contains an invalid field
+   */
   public static CreateMultipartUploadRequest convertRequest(PutObjectRequest request) {
-
     final CreateMultipartUploadRequest.Builder output = CreateMultipartUploadRequest.builder();
     request
       .toBuilder()
@@ -37,8 +177,6 @@ public class ConvertSDKRequests {
             case "ChecksumAlgorithm":
               output.checksumAlgorithm((String) value);
               break;
-            case "ChecksumType":
-              output.checksumType((ChecksumType) value);
             case "ContentDisposition":
               assert value instanceof String;
               output.contentDisposition((String) value);
@@ -107,6 +245,9 @@ public class ConvertSDKRequests {
             case "SSECustomerKey":
               output.sseCustomerKey((String) value);
               break;
+            case "SSECustomerKeyMD5":
+              output.sseCustomerKeyMD5((String) value);
+              break;
             case "SSEKMSEncryptionContext":
               output.ssekmsEncryptionContext((String) value);
               break;
@@ -126,7 +267,7 @@ public class ConvertSDKRequests {
               // Rather than silently dropping the value,
               // we loudly signal that we don't know how to handle this field.
               throw new IllegalArgumentException(
-                f.locationName() + " is an unknown field. " +
+                f.memberName() + " is an unknown field. " +
                   "The S3 Encryption Client does not recognize this option and cannot set it on the CreateMultipartUploadRequest." +
                   "This may be a new S3 feature." +
                   "Please report this to the Amazon S3 Encryption Client for Java: " +

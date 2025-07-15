@@ -14,8 +14,6 @@ import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
 
 import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
@@ -26,7 +24,7 @@ public class PutEncryptedObjectPipeline {
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
-
+    final private InstructionFileConfig _instructionFileConfig;
     public static Builder builder() {
         return new Builder();
     }
@@ -36,6 +34,7 @@ public class PutEncryptedObjectPipeline {
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._asyncContentEncryptionStrategy = builder._asyncContentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
+        this._instructionFileConfig = builder._instructionFileConfig;
     }
 
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {
@@ -70,12 +69,10 @@ public class PutEncryptedObjectPipeline {
 
         EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
 
-        Map<String, String> metadata = new HashMap<>(request.metadata());
-        metadata = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), metadata);
-        PutObjectRequest encryptedPutRequest = request.toBuilder()
+        PutObjectRequest modifiedRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), request);
+        PutObjectRequest encryptedPutRequest = modifiedRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .contentLength(encryptedContent.getCiphertextLength())
-                .metadata(metadata)
                 .build();
         return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
     }
@@ -85,7 +82,8 @@ public class PutEncryptedObjectPipeline {
         private CryptographicMaterialsManager _cryptoMaterialsManager;
         private SecureRandom _secureRandom;
         private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
-        private final ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy = new ObjectMetadataEncodingStrategy();
+        private InstructionFileConfig _instructionFileConfig;
+        private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
 
         private Builder() {
         }
@@ -110,6 +108,11 @@ public class PutEncryptedObjectPipeline {
             return this;
         }
 
+        public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
+            this._instructionFileConfig = instructionFileConfig;
+            return this;
+        }
+
         public PutEncryptedObjectPipeline build() {
             // Default to AesGcm since it is the only active (non-legacy) content encryption strategy
             if (_asyncContentEncryptionStrategy == null) {
@@ -118,6 +121,11 @@ public class PutEncryptedObjectPipeline {
                         .secureRandom(_secureRandom)
                         .build();
             }
+            if(_instructionFileConfig == null) {
+                _instructionFileConfig = InstructionFileConfig.builder().build();
+            }
+            _contentMetadataEncodingStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
+
             return new PutEncryptedObjectPipeline(this);
         }
     }

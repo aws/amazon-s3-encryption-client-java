@@ -79,7 +79,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     private final boolean _enableDelayedAuthenticationMode;
     private final boolean _enableMultipartPutObject;
     private final long _bufferSize;
-    private InstructionFileConfig _instructionFileConfig;
+    private final InstructionFileConfig _instructionFileConfig;
 
     private S3AsyncEncryptionClient(Builder builder) {
         super(builder._wrappedClient);
@@ -151,6 +151,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .s3AsyncClient(_wrappedClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
+                .instructionFileConfig(_instructionFileConfig)
                 .build();
 
         return pipeline.putObject(putObjectRequest, requestBody);
@@ -169,6 +170,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .s3AsyncClient(mpuClient)
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
+                .instructionFileConfig(_instructionFileConfig)
                 .build();
         // Ensures parts are not retried to avoid corrupting ciphertext
         AsyncRequestBody noRetryBody = new NoRetriesAsyncRequestBody(requestBody);
@@ -288,6 +290,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _wrappedClient.close();
         _instructionFileConfig.closeClient();
     }
+
 
     // This is very similar to the S3EncryptionClient builder
     // Make sure to keep both clients in mind when adding new builder options

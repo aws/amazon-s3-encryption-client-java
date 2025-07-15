@@ -1,4 +1,5 @@
 package software.amazon.encryption.s3.internal;
+
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.services.s3.model.*;
@@ -7,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConvertSDKRequestsTest {
@@ -427,24 +429,24 @@ class ConvertSDKRequestsTest {
   public void testConvertResponse() {
     // Create a CompleteMultipartUploadResponse with various fields set
     CompleteMultipartUploadResponse completeResponse = CompleteMultipartUploadResponse.builder()
-            .eTag("test-etag")
-            .expiration("test-expiration")
-            .checksumCRC32("test-crc32")
-            .checksumCRC32C("test-crc32c")
-            .checksumCRC64NVME("test-crc64")
-            .checksumSHA1("test-sha1")
-            .checksumSHA256("test-sha256")
-            .checksumType(ChecksumType.COMPOSITE)
-            .serverSideEncryption(ServerSideEncryption.AWS_KMS)
-            .versionId("test-version-id")
-            .ssekmsKeyId("test-kms-key-id")
-            .bucketKeyEnabled(true)
-            .requestCharged("requester")
-            // Fields that should be ignored
-            .location("test-location")
-            .bucket("test-bucket")
-            .key("test-key")
-            .build();
+      .eTag("test-etag")
+      .expiration("test-expiration")
+      .checksumCRC32("test-crc32")
+      .checksumCRC32C("test-crc32c")
+      .checksumCRC64NVME("test-crc64")
+      .checksumSHA1("test-sha1")
+      .checksumSHA256("test-sha256")
+      .checksumType(ChecksumType.COMPOSITE)
+      .serverSideEncryption(ServerSideEncryption.AWS_KMS)
+      .versionId("test-version-id")
+      .ssekmsKeyId("test-kms-key-id")
+      .bucketKeyEnabled(true)
+      .requestCharged("requester")
+      // Fields that should be ignored
+      .location("test-location")
+      .bucket("test-bucket")
+      .key("test-key")
+      .build();
 
     // Convert the response
     PutObjectResponse putResponse = ConvertSDKRequests.convertResponse(completeResponse);
@@ -470,4 +472,120 @@ class ConvertSDKRequestsTest {
     assertNull(putResponse.ssekmsEncryptionContext());
     assertNull(putResponse.size());
   }
+
+  @Test
+  public void testBasicConvertMultipartUploadRequest() {
+    // Create a MultipartUploadRequest with various fields set
+    CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
+      .bucket("test-bucket")
+      .key("test-key")
+      .build();
+    PutObjectRequest result = ConvertSDKRequests.convertRequest(request);
+    assertEquals("test-bucket", result.bucket());
+    assertEquals("test-key", result.key());
+    assertNotNull(result);
+  }
+
+  @Test
+  public void testConversionAllFieldsMultipartUploadRequestToPutObjectRequest() {
+    Map<String, String> metadata = new HashMap<String, String>();
+    metadata.put("test-key-1", "test-value-1");
+    metadata.put("test-key-2", "test-value-2");
+    metadata.put("test-key-3", "test-value-3");
+
+    Instant expires = Instant.now();
+    Instant retainUntilDate = Instant.now();
+
+    CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
+      .acl("test-acl")
+      .bucket("test-bucket")
+      .bucketKeyEnabled(true)
+      .cacheControl("test-cache-control")
+      .checksumAlgorithm("test-checksum-algorithm")
+      .contentDisposition("test-content-disposition")
+      .contentEncoding("test-content-encoding")
+      .contentLanguage("test-content-language")
+      .contentType("test-content-type")
+      .expectedBucketOwner("test-bucket-owner")
+      .expires(expires)
+      .grantFullControl("test-grant-full-control")
+      .grantRead("test-grant-read")
+      .grantReadACP("test-grant-read-acp")
+      .grantWriteACP("test-grant-write-acp")
+      .key("test-key")
+      .metadata(metadata)
+      .objectLockLegalHoldStatus(ObjectLockLegalHoldStatus.OFF)
+      .objectLockMode(ObjectLockMode.COMPLIANCE)
+      .objectLockRetainUntilDate(retainUntilDate)
+      .requestPayer(RequestPayer.REQUESTER)
+      .serverSideEncryption(ServerSideEncryption.AWS_KMS_DSSE)
+      .sseCustomerAlgorithm("test-sse-customer-algorithm")
+      .sseCustomerKey("test-sse-customer-key")
+      .ssekmsEncryptionContext("test-ssekms-encryption-context")
+      .ssekmsKeyId("test-ssekms-key-id")
+      .storageClass(StorageClass.SNOW)
+      .tagging("test-tagging")
+      .websiteRedirectLocation("test-website-redirect-location")
+      .build();
+    PutObjectRequest result = ConvertSDKRequests.convertRequest(request);
+    assertEquals("test-acl", result.aclAsString());
+    assertEquals("test-bucket", result.bucket());
+    assertEquals(true, result.bucketKeyEnabled());
+    assertEquals("test-cache-control", result.cacheControl());
+    assertEquals("test-checksum-algorithm", result.checksumAlgorithmAsString());
+    assertEquals("test-content-disposition", result.contentDisposition());
+    assertEquals("test-content-encoding", result.contentEncoding());
+    assertEquals("test-content-language", result.contentLanguage());
+    assertEquals("test-content-type", result.contentType());
+    assertEquals("test-bucket-owner", result.expectedBucketOwner());
+    assertEquals(expires, result.expires());
+    assertEquals("test-grant-full-control", result.grantFullControl());
+    assertEquals("test-grant-read", result.grantRead());
+    assertEquals("test-grant-read-acp", result.grantReadACP());
+    assertEquals("test-grant-write-acp", result.grantWriteACP());
+    assertEquals("test-key", result.key());
+    assertEquals(metadata, result.metadata());
+    assertEquals(ObjectLockLegalHoldStatus.OFF.toString(), result.objectLockLegalHoldStatusAsString());
+    assertEquals(ObjectLockMode.COMPLIANCE.toString(), result.objectLockModeAsString());
+    assertEquals(retainUntilDate, result.objectLockRetainUntilDate());
+    assertEquals(RequestPayer.REQUESTER.toString(), result.requestPayerAsString());
+    assertEquals(ServerSideEncryption.AWS_KMS_DSSE.toString(), result.serverSideEncryptionAsString());
+    assertEquals("test-sse-customer-algorithm", result.sseCustomerAlgorithm());
+    assertEquals("test-sse-customer-key", result.sseCustomerKey());
+    assertEquals("test-ssekms-encryption-context", result.ssekmsEncryptionContext());
+    assertEquals("test-ssekms-key-id", result.ssekmsKeyId());
+    assertEquals(StorageClass.SNOW.toString(), result.storageClassAsString());
+    assertEquals("test-tagging", result.tagging());
+    assertEquals("test-website-redirect-location", result.websiteRedirectLocation());
+  }
+
+  @Test
+  public void testConvertMultipartUploadRequestWithNullValues() {
+    CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
+      .bucket("test-bucket")
+      .key("test-key")
+      .tagging("test-tagging")
+      .objectLockMode(ObjectLockMode.COMPLIANCE)
+      .contentLanguage("test-content-language")
+      .grantReadACP("test-grant-read-acp")
+      .build();
+    PutObjectRequest result = ConvertSDKRequests.convertRequest(request);
+    assertEquals("test-bucket", result.bucket());
+    assertEquals("test-key", result.key());
+    assertEquals("test-tagging", result.tagging());
+    assertEquals(ObjectLockMode.COMPLIANCE.toString(), result.objectLockModeAsString());
+    assertEquals("test-content-language", result.contentLanguage());
+    assertEquals("test-grant-read-acp", result.grantReadACP());
+
+    assertNull(result.aclAsString());
+    assertNull(result.grantFullControl());
+    assertNull(result.grantRead());
+    assertNull(result.storageClass());
+    assertNull(result.websiteRedirectLocation());
+    assertTrue(result.metadata().isEmpty());
+
+  }
 }
+
+
+
