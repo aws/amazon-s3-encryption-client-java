@@ -1029,6 +1029,7 @@ public class S3EncryptionClientCompatibilityTest {
               .enableLegacyWrappingAlgorithms(true)
               .enableLegacyUnauthenticatedModes(true)
               .build();
+            throw new RuntimeException("Expected failure");
         } catch (S3EncryptionClientException e) {
             assertTrue(e.getMessage().contains("Legacy wrapping algorithms are not enabled for this keyring"));
         }
