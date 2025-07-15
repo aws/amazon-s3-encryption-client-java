@@ -85,7 +85,7 @@ public class GetEncryptedObjectPipeline {
                 .s3Request(getObjectRequest)
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKeys(encryptedDataKeys)
-                .encryptionContext(contentMetadata.encryptedDataKeyContext())
+                .encryptionContext(contentMetadata.encryptedDataKeyMatDescOrContext())
                 .ciphertextLength(getObjectResponse.contentLength())
                 .contentRange(getObjectRequest.range())
                 .build();

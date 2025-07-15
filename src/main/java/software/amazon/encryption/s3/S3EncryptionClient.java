@@ -46,20 +46,30 @@ import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.ContentMetadata;
+import software.amazon.encryption.s3.internal.ContentMetadataDecodingStrategy;
+import software.amazon.encryption.s3.internal.ContentMetadataEncodingStrategy;
 import software.amazon.encryption.s3.internal.ConvertSDKRequests;
 import software.amazon.encryption.s3.internal.GetEncryptedObjectPipeline;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.internal.MultiFileOutputStream;
 import software.amazon.encryption.s3.internal.MultipartUploadObjectPipeline;
 import software.amazon.encryption.s3.internal.PutEncryptedObjectPipeline;
+import software.amazon.encryption.s3.internal.ReEncryptInstructionFileRequest;
+import software.amazon.encryption.s3.internal.ReEncryptInstructionFileResponse;
 import software.amazon.encryption.s3.internal.UploadObjectObserver;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
+import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
+import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
+import software.amazon.encryption.s3.materials.EncryptedDataKey;
+import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
+import software.amazon.encryption.s3.materials.RawKeyring;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
 import javax.crypto.SecretKey;
@@ -69,6 +79,7 @@ import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,7 +92,8 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_BUFFER_SIZE_BYTES;
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MAX_ALLOWED_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MIN_ALLOWED_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.instructionFileKeysToDelete;
@@ -96,6 +108,9 @@ public class S3EncryptionClient extends DelegatingS3Client {
     // Used for request-scoped encryption contexts for supporting keys
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
     public static final ExecutionAttribute<MultipartConfiguration> CONFIGURATION = new ExecutionAttribute<>("MultipartConfiguration");
+
+    //Used for specifying custom instruction file suffix on a per-request basis
+    public static final ExecutionAttribute<String> CUSTOM_INSTRUCTION_FILE_SUFFIX = new ExecutionAttribute<>("CustomInstructionFileSuffix");
 
     private final S3Client _wrappedClient;
     private final S3AsyncClient _wrappedAsyncClient;
@@ -144,6 +159,18 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     /**
+     * Attaches a custom instruction file suffix to a request. Must be used as a parameter to
+     * {@link S3Request#overrideConfiguration()} in the request.
+     * This allows specifying a custom suffix for the instruction file on a per-request basis.
+     * @param customInstructionFileSuffix the custom suffix to use for the instruction file.
+     * @return Consumer for use in overrideConfiguration()
+     */
+    public static Consumer<AwsRequestOverrideConfiguration.Builder> withCustomInstructionFileSuffix(String customInstructionFileSuffix) {
+        return builder ->
+                builder.putExecutionAttribute(S3EncryptionClient.CUSTOM_INSTRUCTION_FILE_SUFFIX, customInstructionFileSuffix);
+    }
+
+    /**
      * Attaches multipart configuration to a request. Must be used as a parameter to
      * {@link S3Request#overrideConfiguration()} in the request.
      * @param multipartConfiguration the {@link MultipartConfiguration} instance to use
@@ -153,7 +180,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
     }
-
 
     /**
      * Attaches encryption context and multipart configuration to a request.
@@ -170,6 +196,77 @@ public class S3EncryptionClient extends DelegatingS3Client {
         return builder ->
                 builder.putExecutionAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT, encryptionContext)
                         .putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
+    }
+
+    /**
+     * Re-encrypts an instruction file with a new keyring while preserving the original encrypted object in S3.
+     * This enables:
+     * 1. Key rotation by updating instruction file metadata without re-encrypting object content
+     * 2. Sharing encrypted objects with partners by creating new instruction files with a custom suffix using their public keys
+     * <p>
+     * Key rotation scenarios:
+     * - Legacy to V3: Can rotate same wrapping key from legacy wrapping algorithms to fully supported wrapping algorithms
+     * - Within V3: When rotating the wrapping key, the new keyring must be different from the current keyring
+     *
+     * @param reEncryptInstructionFileRequest the request containing bucket, object key, new keyring, and optional instruction file suffix
+     * @return ReEncryptInstructionFileResponse containing the bucket, object key, and instruction file suffix used
+     * @throws S3EncryptionClientException if the new keyring has the same materials description as the current one
+     */
+    public ReEncryptInstructionFileResponse reEncryptInstructionFile(ReEncryptInstructionFileRequest reEncryptInstructionFileRequest) {
+        //Build request to retrieve the encrypted object and its associated instruction file
+        final GetObjectRequest request = GetObjectRequest.builder()
+          .bucket(reEncryptInstructionFileRequest.bucket())
+          .key(reEncryptInstructionFileRequest.key())
+          .build();
+
+        ResponseInputStream<GetObjectResponse> response = this.getObject(request);
+        ContentMetadataDecodingStrategy decodingStrategy = new ContentMetadataDecodingStrategy(_instructionFileConfig);
+        ContentMetadata contentMetadata = decodingStrategy.decode(request, response.response());
+
+        //Extract cryptographic parameters from the current instruction file that MUST be preserved during re-encryption
+        final AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
+        final EncryptedDataKey originalEncryptedDataKey = contentMetadata.encryptedDataKey();
+        final Map<String, String> currentKeyringMaterialsDescription = contentMetadata.encryptedDataKeyMatDescOrContext();
+        final byte[] iv = contentMetadata.contentIv();
+
+        //Decrypt the data key using the current keyring
+        DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
+          DecryptMaterialsRequest.builder()
+            .algorithmSuite(algorithmSuite)
+            .encryptedDataKeys(Collections.singletonList(originalEncryptedDataKey))
+            .s3Request(request)
+            .build()
+        );
+
+        final byte[] plaintextDataKey = decryptedMaterials.plaintextDataKey();
+
+        //Prepare encryption materials with the decrypted data key
+        EncryptionMaterials encryptionMaterials = EncryptionMaterials.builder()
+          .algorithmSuite(algorithmSuite)
+          .plaintextDataKey(plaintextDataKey)
+          .s3Request(request)
+          .build();
+
+        //Re-encrypt the data key with the new keyring while preserving other cryptographic parameters
+        RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
+        EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
+
+        final Map<String, String> newMaterialsDescription = encryptedMaterials.materialsDescription().getMaterialsDescription();
+        //Validate that the new keyring has different materials description than the old keyring
+        if (newMaterialsDescription.equals(currentKeyringMaterialsDescription)) {
+            throw new S3EncryptionClientException("New keyring must have new materials description!");
+        }
+
+        //Create or update instruction file with the re-encrypted metadata while preserving IV
+        ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
+        encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
+          .bucket(reEncryptInstructionFileRequest.bucket())
+          .key(reEncryptInstructionFileRequest.key())
+          .build(), reEncryptInstructionFileRequest.instructionFileSuffix());
+
+        return new ReEncryptInstructionFileResponse(reEncryptInstructionFileRequest.bucket(),
+            reEncryptInstructionFileRequest.key(), reEncryptInstructionFileRequest.instructionFileSuffix());
+
     }
 
     /**
@@ -380,7 +477,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
             // Delete the object
             DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(actualRequest).join();
             // If Instruction file exists, delete the instruction file as well.
-            String instructionObjectKey = deleteObjectRequest.key() + INSTRUCTION_FILE_SUFFIX;
+            String instructionObjectKey = deleteObjectRequest.key() + DEFAULT_INSTRUCTION_FILE_SUFFIX;
             _wrappedAsyncClient.deleteObject(builder -> builder
                     .overrideConfiguration(API_NAME_INTERCEPTOR)
                     .bucket(deleteObjectRequest.bucket())

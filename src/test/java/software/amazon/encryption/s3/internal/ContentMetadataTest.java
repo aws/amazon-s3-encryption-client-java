@@ -57,7 +57,7 @@ public class ContentMetadataTest {
 
     @Test
     public void testEncryptedDataKeyContext() {
-        assertEquals(encryptedDataKeyContext, actualContentMetadata.encryptedDataKeyContext());
+        assertEquals(encryptedDataKeyContext, actualContentMetadata.encryptedDataKeyMatDescOrContext());
     }
 
     @Test
