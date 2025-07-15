@@ -61,6 +61,7 @@ import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RsaKeyring;
+import software.amazon.encryption.s3.materials.S3Keyring;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
@@ -1066,6 +1067,12 @@ public class S3EncryptionClient extends DelegatingS3Client {
         public S3EncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
+            }
+            if (_enableLegacyWrappingAlgorithms && _keyring !=null && _keyring instanceof S3Keyring) {
+                S3Keyring keyring = (S3Keyring) _keyring;
+                if (!keyring.enableLegacyWrappingAlgorithms()) {
+                    throw new S3EncryptionClientException("Legacy wrapping algorithms are not enabled for this keyring");
+                }
             }
 
             if (_bufferSize >= 0) {

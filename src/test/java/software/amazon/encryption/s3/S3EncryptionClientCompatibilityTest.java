@@ -971,251 +971,66 @@ public class S3EncryptionClientCompatibilityTest {
 
     @Test
     public void validateAgainstSettingLegacyWrappingOnClientWithAesKeyringPassedV1toV3() {
-        final String objectKey = appendTestSuffix("validate-against-setting-legacy-wrapping-on-client-with-aes-keyring-v1-to-v3");
-        final String input = "Validate Against Setting Legacy Wrapping On Client With AES Keyring V1 to V3";
-
-        EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
-        CryptoConfiguration v1CryptoConfig =
-                new CryptoConfiguration(CryptoMode.AuthenticatedEncryption);
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-                .withCryptoConfiguration(v1CryptoConfig)
-                .withEncryptionMaterials(materialsProvider)
-                .build();
-
-        v1Client.putObject(BUCKET, objectKey, input);
-
-        AesKeyring aesKeyring = AesKeyring.builder()
-          .wrappingKey(AES_KEY)
-          .build();
-
-        S3Client wrappedClient = S3Client.create();
-        S3Client v3Client = S3EncryptionClient.builder()
-          .keyring(aesKeyring)
-          .wrappedClient(wrappedClient)
-          .enableLegacyUnauthenticatedModes(true)
-          .enableLegacyWrappingAlgorithms(true)
-          .build();
-
         try {
-            ResponseBytes<GetObjectResponse> output = v3Client.getObjectAsBytes(builder -> builder
-              .bucket(BUCKET)
-              .key(objectKey));
+            AesKeyring aesKeyring = AesKeyring.builder()
+              .wrappingKey(AES_KEY)
+              .build();
+
+            S3Client wrappedClient = S3Client.create();
+            S3Client v3Client = S3EncryptionClient.builder()
+              .keyring(aesKeyring)
+              .wrappedClient(wrappedClient)
+              .enableLegacyWrappingAlgorithms(true)
+              .enableLegacyUnauthenticatedModes(true)
+              .build();
             throw new RuntimeException("Expected failure");
-        } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Enable legacy wrapping algorithms to use legacy key wrapping algorithm: AESWrap"));
+        } catch (S3EncryptionClientException e) {
+            assertTrue(e.getMessage().contains("Legacy wrapping algorithms are not enabled for this keyring"));
         }
 
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-    @Test
-    public void validateAgainstSettingLegacyWrappingOnClientWithAesKeyringPassedV1toV3EncryptionOnly() {
-        final String objectKey = appendTestSuffix("validate-against-setting-legacy-wrapping-on-client-with-aes-keyring-v1-to-v3-encryption-only");
-        final String input = "Validate Against Setting Legacy Wrapping On Client With AES Keyring V1 to V3";
-
-        EncryptionMaterialsProvider materialsProvider =
-          new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
-        CryptoConfiguration v1CryptoConfig =
-          new CryptoConfiguration(CryptoMode.EncryptionOnly);
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-          .withCryptoConfiguration(v1CryptoConfig)
-          .withEncryptionMaterials(materialsProvider)
-          .build();
-
-        v1Client.putObject(BUCKET, objectKey, input);
-
-        AesKeyring aesKeyring = AesKeyring.builder()
-          .wrappingKey(AES_KEY)
-          .build();
-
-        S3Client wrappedClient = S3Client.create();
-        S3Client v3Client = S3EncryptionClient.builder()
-          .keyring(aesKeyring)
-          .wrappedClient(wrappedClient)
-          .enableLegacyUnauthenticatedModes(true)
-          .enableLegacyWrappingAlgorithms(true)
-          .build();
-
-        try {
-            ResponseBytes<GetObjectResponse> output = v3Client.getObjectAsBytes(builder -> builder
-              .bucket(BUCKET)
-              .key(objectKey));
-            throw new RuntimeException("Expected failure");
-        } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Enable legacy wrapping algorithms to use legacy key wrapping algorithm: AES"));
-        }
-
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
     }
 
     @Test
     public void validateAgainstSettingLegacyWrappingOnClientWithRsaKeyringPassedV1toV3() {
-        final String objectKey = appendTestSuffix("validate-against-setting-legacy-wrapping-on-client-with-rsa-keyring-v1-to-v3");
-        final String input = "Validate Against Setting Legacy Wrapping On Client With RSA Keyring V1 to V3";
-
-        EncryptionMaterialsProvider materialsProvider =
-          new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
-        CryptoConfiguration v1CryptoConfig =
-          new CryptoConfiguration(CryptoMode.StrictAuthenticatedEncryption);
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-          .withCryptoConfiguration(v1CryptoConfig)
-          .withEncryptionMaterials(materialsProvider)
-          .build();
-
-        v1Client.putObject(BUCKET, objectKey, input);
-
-        PartialRsaKeyPair partialRsaKeyPair = PartialRsaKeyPair.builder()
-          .publicKey(RSA_KEY_PAIR.getPublic())
-          .privateKey(RSA_KEY_PAIR.getPrivate())
-          .build();
-
-        RsaKeyring rsaKeyring = RsaKeyring.builder()
-          .wrappingKeyPair(partialRsaKeyPair)
-          .build();
-
-        S3Client wrappedClient = S3Client.create();
-        S3Client v3Client = S3EncryptionClient.builder()
-          .keyring(rsaKeyring)
-          .wrappedClient(wrappedClient)
-          .enableLegacyUnauthenticatedModes(true)
-          .enableLegacyWrappingAlgorithms(true)
-          .build();
-
         try {
-            ResponseBytes<GetObjectResponse> output = v3Client.getObjectAsBytes(builder -> builder
-              .bucket(BUCKET)
-              .key(objectKey));
+            PartialRsaKeyPair partialRsaKeyPair = PartialRsaKeyPair.builder()
+              .publicKey(RSA_KEY_PAIR.getPublic())
+              .privateKey(RSA_KEY_PAIR.getPrivate())
+              .build();
+
+            RsaKeyring rsaKeyring = RsaKeyring.builder()
+              .wrappingKeyPair(partialRsaKeyPair)
+              .build();
+
+            S3Client wrappedClient = S3Client.create();
+            S3Client v3Client = S3EncryptionClient.builder()
+              .keyring(rsaKeyring)
+              .wrappedClient(wrappedClient)
+              .enableLegacyWrappingAlgorithms(true)
+              .enableLegacyUnauthenticatedModes(true)
+              .build();
             throw new RuntimeException("Expected failure");
-        } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Enable legacy wrapping algorithms to use legacy key wrapping algorithm: RSA/ECB/OAEPWithSHA-256AndMGF1Padding"));
-        }
-
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-    @Test
-    public void validateAgainstSettingLegacyWrappingOnClientWithRsaKeyringPassedV1toV3EncryptionOnly() {
-        final String objectKey = appendTestSuffix("validate-against-setting-legacy-wrapping-on-client-with-rsa-keyring-v1-to-v3-encryption-only");
-        final String input = "Validate Against Setting Legacy Wrapping On Client With RSA Keyring V1 to V3";
-
-        EncryptionMaterialsProvider materialsProvider =
-          new StaticEncryptionMaterialsProvider(new EncryptionMaterials(RSA_KEY_PAIR));
-        CryptoConfiguration v1CryptoConfig =
-          new CryptoConfiguration(CryptoMode.EncryptionOnly);
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-          .withCryptoConfiguration(v1CryptoConfig)
-          .withEncryptionMaterials(materialsProvider)
-          .build();
-
-        v1Client.putObject(BUCKET, objectKey, input);
-
-        PartialRsaKeyPair partialRsaKeyPair = PartialRsaKeyPair.builder()
-          .publicKey(RSA_KEY_PAIR.getPublic())
-          .privateKey(RSA_KEY_PAIR.getPrivate())
-          .build();
-
-        RsaKeyring rsaKeyring = RsaKeyring.builder()
-          .wrappingKeyPair(partialRsaKeyPair)
-          .build();
-
-        S3Client wrappedClient = S3Client.create();
-        S3Client v3Client = S3EncryptionClient.builder()
-          .keyring(rsaKeyring)
-          .wrappedClient(wrappedClient)
-          .enableLegacyUnauthenticatedModes(true)
-          .enableLegacyWrappingAlgorithms(true)
-          .build();
-
-        try {
-            ResponseBytes<GetObjectResponse> output = v3Client.getObjectAsBytes(builder -> builder
-              .bucket(BUCKET)
-              .key(objectKey));
-            throw new RuntimeException("Expected failure");
-        } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Enable legacy wrapping algorithms to use legacy key wrapping algorithm: RSA"));
-        }
-
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-    }
-
-    @Test
-    public void validateAgainstSettingLegacyWrappingOnClientWithKmsKeyringPassedV1toV3EncryptionOnly() {
-        final String objectKey = appendTestSuffix("validate-against-setting-legacy-wrapping-on-client-with-kms-keyring-v1-to-v3-encryption-only");
-        final String input = "Validate Against Setting Legacy Wrapping On Client With KMS Keyring V1 to V3";
-
-        KMSEncryptionMaterials kmsMaterials = new KMSEncryptionMaterials(KMS_KEY_ID);
-        kmsMaterials.addDescription("user-metadata-key", "user-metadata-value-v1-to-v3");
-        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(kmsMaterials);
-
-        CryptoConfiguration v1CryptoConfig =
-          new CryptoConfiguration(CryptoMode.EncryptionOnly);
-
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-          .withCryptoConfiguration(v1CryptoConfig)
-          .withEncryptionMaterials(materialsProvider)
-          .build();
-
-        v1Client.putObject(BUCKET, objectKey, input);
-        S3Client wrappedClient = S3Client.create();
-        S3Client v3Client = S3EncryptionClient.builder()
-          .keyring(KmsKeyring.builder()
-            .wrappingKeyId(KMS_KEY_ID)
-            .build())
-          .wrappedClient(wrappedClient)
-          .enableLegacyUnauthenticatedModes(true)
-          .enableLegacyWrappingAlgorithms(true)
-          .build();
-
-        try {
-            ResponseBytes<GetObjectResponse> output = v3Client.getObjectAsBytes(builder -> builder
-              .bucket(BUCKET)
-              .key(objectKey));
-            throw new RuntimeException("Expected failure");
-        } catch (Exception e) {
-           assertTrue(e.getMessage().contains("Enable legacy wrapping algorithms to use legacy key wrapping algorithm: kms"));
+        } catch (S3EncryptionClientException e) {
+            assertTrue(e.getMessage().contains("Legacy wrapping algorithms are not enabled for this keyring"));
         }
     }
 
     @Test
     public void validateAgainstSettingLegacyWrappingOnClientWithKmsKeyringPassedV1toV3() {
-        final String objectKey = appendTestSuffix("validate-against-setting-legacy-wrapping-on-client-with-kms-keyring-v1-to-v3");
-        final String input = "Validate Against Setting Legacy Wrapping On Client With KMS Keyring V1 to V3";
-
-        KMSEncryptionMaterials kmsMaterials = new KMSEncryptionMaterials(KMS_KEY_ID);
-        kmsMaterials.addDescription("user-metadata-key", "user-metadata-value-v1-to-v3");
-        EncryptionMaterialsProvider materialsProvider = new KMSEncryptionMaterialsProvider(kmsMaterials);
-
-        CryptoConfiguration v1CryptoConfig =
-          new CryptoConfiguration(CryptoMode.AuthenticatedEncryption);
-
-        AmazonS3Encryption v1Client = AmazonS3EncryptionClient.encryptionBuilder()
-          .withCryptoConfiguration(v1CryptoConfig)
-          .withEncryptionMaterials(materialsProvider)
-          .build();
-
-        v1Client.putObject(BUCKET, objectKey, input);
-        S3Client wrappedClient = S3Client.create();
-        S3Client v3Client = S3EncryptionClient.builder()
-          .keyring(KmsKeyring.builder()
-            .wrappingKeyId(KMS_KEY_ID)
-            .build())
-          .wrappedClient(wrappedClient)
-          .enableLegacyUnauthenticatedModes(true)
-          .enableLegacyWrappingAlgorithms(true)
-          .build();
-
         try {
-            ResponseBytes<GetObjectResponse> output = v3Client.getObjectAsBytes(builder -> builder
-              .bucket(BUCKET)
-              .key(objectKey));
-            throw new RuntimeException("Expected failure");
-        } catch (Exception e) {
-           assertTrue(e.getMessage().contains("Enable legacy wrapping algorithms to use legacy key wrapping algorithm: kms"));
+            KmsKeyring kmsKeyring = KmsKeyring.builder()
+              .wrappingKeyId(KMS_KEY_ID)
+              .build();
+
+            S3Client wrappedClient = S3Client.create();
+            S3Client v3Client = S3EncryptionClient.builder()
+              .keyring(kmsKeyring)
+              .wrappedClient(wrappedClient)
+              .enableLegacyWrappingAlgorithms(true)
+              .enableLegacyUnauthenticatedModes(true)
+              .build();
+        } catch (S3EncryptionClientException e) {
+            assertTrue(e.getMessage().contains("Legacy wrapping algorithms are not enabled for this keyring"));
         }
     }
 
