@@ -27,6 +27,7 @@ import java.security.PublicKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static software.amazon.encryption.s3.S3EncryptionClient.withCustomInstructionFileSuffix;
+import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
@@ -335,13 +336,24 @@ public class ReEncryptInstructionFileExample {
     PublicKey thirdPartyPublicKey = thirdPartyKeyPair.getPublic();
     PrivateKey thirdPartyPrivateKey = thirdPartyKeyPair.getPrivate();
 
-    // Create a partial RSA key pair for the third party's keyring
+    // Create a partial RSA key pair for the third party's decryption keyring
     PartialRsaKeyPair thirdPartyPartialRsaKeyPair = PartialRsaKeyPair.builder()
       .publicKey(thirdPartyPublicKey)
       .privateKey(thirdPartyPrivateKey)
       .build();
 
-    // Create the third party's RSA keyring with updated materials description
+    // Create RSA keyring with third party's public key and updated materials description for re-encryption request
+    RsaKeyring sharedKeyring = RsaKeyring.builder()
+      .wrappingKeyPair(PartialRsaKeyPair.builder()
+        .publicKey(thirdPartyPublicKey)
+        .build())
+      .materialsDescription(MaterialsDescription.builder()
+        .put("isOwner", "no")
+        .put("access-level", "user")
+        .build())
+      .build();
+
+    // Create RSA keyring with third party's public and private keys for decryption purposes with updated materials description
     RsaKeyring thirdPartyKeyring = RsaKeyring.builder()
       .wrappingKeyPair(thirdPartyPartialRsaKeyPair)
       .materialsDescription(MaterialsDescription.builder()
@@ -356,7 +368,7 @@ public class ReEncryptInstructionFileExample {
       .bucket(bucket)
       .key(objectKey)
       .instructionFileSuffix("third-party-access-instruction-file")  // Custom instruction file suffix for third party
-      .newKeyring(thirdPartyKeyring)
+      .newKeyring(sharedKeyring)
       .build();
 
     // Perform the re-encryption operation to create the new instruction file
