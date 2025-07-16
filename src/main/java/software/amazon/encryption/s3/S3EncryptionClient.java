@@ -207,6 +207,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * Key rotation scenarios:
      * - Legacy to V3: Can rotate same wrapping key from legacy wrapping algorithms to fully supported wrapping algorithms
      * - Within V3: When rotating the wrapping key, the new keyring must be different from the current keyring
+     * - Enforce Rotation: When enabled, ensures old keyring cannot decrypt data encrypted by new keyring
      *
      * @param reEncryptInstructionFileRequest the request containing bucket, object key, new keyring, and optional instruction file suffix
      * @return ReEncryptInstructionFileResponse containing the bucket, object key, and instruction file suffix used
@@ -257,6 +258,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
             throw new S3EncryptionClientException("New keyring must have new materials description!");
         }
 
+        // If enforceRotation is set to true, ensure that the old keyring cannot decrypt the newly encrypted data key
+        if (reEncryptInstructionFileRequest.enforceRotation()) {
+            enforceRotation(encryptedMaterials, request);
+        }
+
         //Create or update instruction file with the re-encrypted metadata while preserving IV
         ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
         encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
@@ -265,8 +271,23 @@ public class S3EncryptionClient extends DelegatingS3Client {
           .build(), reEncryptInstructionFileRequest.instructionFileSuffix());
 
         return new ReEncryptInstructionFileResponse(reEncryptInstructionFileRequest.bucket(),
-            reEncryptInstructionFileRequest.key(), reEncryptInstructionFileRequest.instructionFileSuffix());
+            reEncryptInstructionFileRequest.key(), reEncryptInstructionFileRequest.instructionFileSuffix(), reEncryptInstructionFileRequest.enforceRotation());
 
+    }
+
+    private void enforceRotation(EncryptionMaterials newEncryptionMaterials, GetObjectRequest request) {
+        try {
+            DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
+              DecryptMaterialsRequest.builder()
+                .algorithmSuite(newEncryptionMaterials.algorithmSuite())
+                .encryptedDataKeys(Collections.singletonList(newEncryptionMaterials.encryptedDataKeys()).get(0))
+                .s3Request(request)
+                .build()
+            );
+        } catch (S3EncryptionClientException e) {
+            return;
+        }
+        throw new S3EncryptionClientException("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key");
     }
 
     /**
