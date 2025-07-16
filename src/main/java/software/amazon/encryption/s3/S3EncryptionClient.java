@@ -262,7 +262,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         if (reEncryptInstructionFileRequest.enforceRotation()) {
             enforceRotation(encryptedMaterials, request);
         }
-
+      
         //Create or update instruction file with the re-encrypted metadata while preserving IV
         ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
         encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()

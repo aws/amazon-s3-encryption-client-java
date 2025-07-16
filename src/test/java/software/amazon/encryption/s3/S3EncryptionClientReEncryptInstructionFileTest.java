@@ -3356,12 +3356,5 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     deleteObject(BUCKET, objectKey, v3RotatedClient);
   }
-
-
-
-
-
-
-
-
+  
 }

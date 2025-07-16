@@ -27,7 +27,6 @@ public class ReEncryptInstructionFileRequest {
     newKeyring = builder.newKeyring;
     instructionFileSuffix = builder.instructionFileSuffix;
     enforceRotation = builder.enforceRotation;
-
   }
 
   /**
