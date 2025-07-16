@@ -690,7 +690,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
-  public void testReEncryptInstructionFileWithCustomSuffixV2RsaToV3() throws IOException {
+  public void testReEncryptInstructionFileWithCustomSuffixV2RsaToV3() throws IOException{
     final String input = "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
     final String objectKey = appendTestSuffix("v2-rsa-to-v3-re-encrypt-instruction-file-with-custom-suffix-test");
 
@@ -1145,7 +1145,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
-  public void testReEncryptInstructionFileUpgradesV1RsaToV3() throws IOException {
+  public void testReEncryptInstructionFileUpgradesV1RsaToV3() {
     final String input = "Testing re-encryption of instruction file, upgrading legacy V1 RSA to V3";
     final String objectKey = appendTestSuffix("v1-rsa-to-v3-re-encrypt-instruction-file-test");
 
