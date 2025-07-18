@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3Encryption;
@@ -15,17 +18,12 @@ import com.amazonaws.services.s3.model.CryptoStorageMode;
 import com.amazonaws.services.s3.model.EncryptedPutObjectRequest;
 import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
-import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
-import com.amazonaws.services.s3.model.StorageClass;
-import com.amazonaws.services.s3.model.UploadObjectRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -44,17 +42,15 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -983,69 +979,158 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
     @Test
-    public void validateAgainstSettingLegacyWrappingOnClientWithAesKeyringPassedV1toV3() {
-        try {
-            AesKeyring aesKeyring = AesKeyring.builder()
-              .wrappingKey(AES_KEY)
-              .build();
+    public void LegacyWrappingEnabledOnClientButNotOnAesKeyring() {
+        Logger logger = (Logger) LoggerFactory.getLogger(S3EncryptionClient.class);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
 
-            S3Client wrappedClient = S3Client.create();
-            S3Client v3Client = S3EncryptionClient.builder()
-              .keyring(aesKeyring)
-              .wrappedClient(wrappedClient)
-              .enableLegacyWrappingAlgorithms(true)
-              .enableLegacyUnauthenticatedModes(true)
-              .build();
-            throw new RuntimeException("Expected failure");
-        } catch (S3EncryptionClientException e) {
-            assertTrue(e.getMessage().contains("Legacy wrapping algorithms are not enabled for this keyring"));
-        }
+        AesKeyring aesKeyring = AesKeyring.builder()
+          .wrappingKey(AES_KEY)
+          .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3Client v3Client = S3EncryptionClient.builder()
+          .keyring(aesKeyring)
+          .wrappedClient(wrappedClient)
+          .enableLegacyWrappingAlgorithms(true)
+          .enableLegacyUnauthenticatedModes(true)
+          .build();
+
+        assertTrue(listAppender.list.stream().anyMatch(event -> event.getMessage().contains("enableLegacyWrappingAlgorithms is set on the client, but is not set on the keyring provided. In order to enable legacy wrapping algorithms, set enableLegacyWrappingAlgorithms to true in the keyring's builder.")));
+        logger.detachAppender(listAppender);
+    }
+
+    @Test
+    public void LegacyWrappingEnabledOnClientButNotOnRsaKeyring() {
+        Logger logger = (Logger) LoggerFactory.getLogger(S3EncryptionClient.class);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        PartialRsaKeyPair partialRsaKeyPair = PartialRsaKeyPair.builder()
+          .publicKey(RSA_KEY_PAIR.getPublic())
+          .privateKey(RSA_KEY_PAIR.getPrivate())
+          .build();
+
+        RsaKeyring rsaKeyring = RsaKeyring.builder()
+          .wrappingKeyPair(partialRsaKeyPair)
+          .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3Client v3Client = S3EncryptionClient.builder()
+          .keyring(rsaKeyring)
+          .wrappedClient(wrappedClient)
+          .enableLegacyWrappingAlgorithms(true)
+          .enableLegacyUnauthenticatedModes(true)
+          .build();
+
+        assertTrue(listAppender.list.stream().anyMatch(event -> event.getMessage().contains("enableLegacyWrappingAlgorithms is set on the client, but is not set on the keyring provided. In order to enable legacy wrapping algorithms, set enableLegacyWrappingAlgorithms to true in the keyring's builder.")));
+        logger.detachAppender(listAppender);
 
     }
 
     @Test
-    public void validateAgainstSettingLegacyWrappingOnClientWithRsaKeyringPassedV1toV3() {
-        try {
-            PartialRsaKeyPair partialRsaKeyPair = PartialRsaKeyPair.builder()
-              .publicKey(RSA_KEY_PAIR.getPublic())
-              .privateKey(RSA_KEY_PAIR.getPrivate())
-              .build();
+    public void LegacyWrappingEnabledOnClientButNotOnKmsKeyring() {
+        Logger logger = (Logger) LoggerFactory.getLogger(S3EncryptionClient.class);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
 
-            RsaKeyring rsaKeyring = RsaKeyring.builder()
-              .wrappingKeyPair(partialRsaKeyPair)
-              .build();
+        KmsKeyring kmsKeyring = KmsKeyring.builder()
+          .wrappingKeyId(KMS_KEY_ID)
+          .build();
 
-            S3Client wrappedClient = S3Client.create();
-            S3Client v3Client = S3EncryptionClient.builder()
-              .keyring(rsaKeyring)
-              .wrappedClient(wrappedClient)
-              .enableLegacyWrappingAlgorithms(true)
-              .enableLegacyUnauthenticatedModes(true)
-              .build();
-            throw new RuntimeException("Expected failure");
-        } catch (S3EncryptionClientException e) {
-            assertTrue(e.getMessage().contains("Legacy wrapping algorithms are not enabled for this keyring"));
+        S3Client wrappedClient = S3Client.create();
+        S3Client v3Client = S3EncryptionClient.builder()
+          .keyring(kmsKeyring)
+          .wrappedClient(wrappedClient)
+          .enableLegacyWrappingAlgorithms(true)
+          .enableLegacyUnauthenticatedModes(true)
+          .build();
+
+        assertTrue(listAppender.list.stream().anyMatch(event -> event.getMessage().contains("enableLegacyWrappingAlgorithms is set on the client, but is not set on the keyring provided. In order to enable legacy wrapping algorithms, set enableLegacyWrappingAlgorithms to true in the keyring's builder.")));
+        logger.detachAppender(listAppender);
+
         }
+
+    @Test
+    public void LegacyWrappingEnabledOnBothClientAndAesKeyring() {
+        Logger logger = (Logger) LoggerFactory.getLogger(S3EncryptionClient.class);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        AesKeyring aesKeyring = AesKeyring.builder()
+          .wrappingKey(AES_KEY)
+          .enableLegacyWrappingAlgorithms(true)
+          .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3Client v3Client = S3EncryptionClient.builder()
+          .keyring(aesKeyring)
+          .wrappedClient(wrappedClient)
+          .enableLegacyWrappingAlgorithms(true)
+          .enableLegacyUnauthenticatedModes(true)
+          .build();
+
+        assertFalse(listAppender.list.stream()
+          .anyMatch(event -> event.getMessage().contains("enableLegacyWrappingAlgorithms is set on the client, but is not set on the keyring provided. In order to enable legacy wrapping algorithms, set enableLegacyWrappingAlgorithms to true in the keyring's builder.")));
+        logger.detachAppender(listAppender);
     }
 
     @Test
-    public void validateAgainstSettingLegacyWrappingOnClientWithKmsKeyringPassedV1toV3() {
-        try {
-            KmsKeyring kmsKeyring = KmsKeyring.builder()
-              .wrappingKeyId(KMS_KEY_ID)
-              .build();
+    public void LegacyWrappingEnabledOnBothClientAndRsaKeyring() {
+        Logger logger = (Logger) LoggerFactory.getLogger(S3EncryptionClient.class);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
 
-            S3Client wrappedClient = S3Client.create();
-            S3Client v3Client = S3EncryptionClient.builder()
-              .keyring(kmsKeyring)
-              .wrappedClient(wrappedClient)
-              .enableLegacyWrappingAlgorithms(true)
-              .enableLegacyUnauthenticatedModes(true)
-              .build();
-            throw new RuntimeException("Expected failure");
-        } catch (S3EncryptionClientException e) {
-            assertTrue(e.getMessage().contains("Legacy wrapping algorithms are not enabled for this keyring"));
-        }
+        PartialRsaKeyPair partialRsaKeyPair = PartialRsaKeyPair.builder()
+          .publicKey(RSA_KEY_PAIR.getPublic())
+          .privateKey(RSA_KEY_PAIR.getPrivate())
+          .build();
+
+        RsaKeyring rsaKeyring = RsaKeyring.builder()
+          .wrappingKeyPair(partialRsaKeyPair)
+          .enableLegacyWrappingAlgorithms(true)
+          .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3Client v3Client = S3EncryptionClient.builder()
+          .keyring(rsaKeyring)
+          .wrappedClient(wrappedClient)
+          .enableLegacyWrappingAlgorithms(true)
+          .enableLegacyUnauthenticatedModes(true)
+          .build();
+
+        assertFalse(listAppender.list.stream()
+          .anyMatch(event -> event.getMessage().contains("enableLegacyWrappingAlgorithms is set on the client, but is not set on the keyring provided. In order to enable legacy wrapping algorithms, set enableLegacyWrappingAlgorithms to true in the keyring's builder.")));
+        logger.detachAppender(listAppender);
     }
 
+    @Test
+    public void LegacyWrappingEnabledOnBothClientAndKmsKeyring() {
+        Logger logger = (Logger) LoggerFactory.getLogger(S3EncryptionClient.class);
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+
+        KmsKeyring kmsKeyring = KmsKeyring.builder()
+          .wrappingKeyId(KMS_KEY_ID)
+          .enableLegacyWrappingAlgorithms(true)
+          .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3Client v3Client = S3EncryptionClient.builder()
+          .keyring(kmsKeyring)
+          .wrappedClient(wrappedClient)
+          .enableLegacyWrappingAlgorithms(true)
+          .enableLegacyUnauthenticatedModes(true)
+          .build();
+
+        assertFalse(listAppender.list.stream()
+          .anyMatch(event -> event.getMessage().contains("enableLegacyWrappingAlgorithms is set on the client, but is not set on the keyring provided. In order to enable legacy wrapping algorithms, set enableLegacyWrappingAlgorithms to true in the keyring's builder.")));
+        logger.detachAppender(listAppender);
+    }
 }

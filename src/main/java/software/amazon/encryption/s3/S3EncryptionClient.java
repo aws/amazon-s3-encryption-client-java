@@ -3,6 +3,7 @@
 package software.amazon.encryption.s3;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.logging.LogFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
@@ -1069,10 +1070,10 @@ public class S3EncryptionClient extends DelegatingS3Client {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
             }
-            if (_enableLegacyWrappingAlgorithms && _keyring !=null && _keyring instanceof S3Keyring) {
+            if (_enableLegacyWrappingAlgorithms && _keyring !=null) {
                 S3Keyring keyring = (S3Keyring) _keyring;
-                if (!keyring.enableLegacyWrappingAlgorithms()) {
-                    throw new S3EncryptionClientException("Legacy wrapping algorithms are not enabled for this keyring");
+                if (!keyring.areLegacyWrappingAlgorithmsEnabled()) {
+                    LogFactory.getLog(getClass()).warn("enableLegacyWrappingAlgorithms is set on the client, but is not set on the keyring provided. In order to enable legacy wrapping algorithms, set enableLegacyWrappingAlgorithms to true in the keyring's builder.");
                 }
             }
 
