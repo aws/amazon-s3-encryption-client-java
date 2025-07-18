@@ -47,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static software.amazon.encryption.s3.S3EncryptionClient.withCustomInstructionFileSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
@@ -1676,7 +1677,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, client);
@@ -1724,7 +1725,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -1792,7 +1793,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, client);
@@ -1848,7 +1849,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -1919,7 +1920,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, client);
@@ -1978,7 +1979,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -2054,7 +2055,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, v3RotatedClient);
@@ -2126,7 +2127,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -2195,7 +2196,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -2266,7 +2267,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, v3RotatedClient);
@@ -2346,7 +2347,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, v3OriginalClient);
@@ -2417,7 +2418,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -2496,7 +2497,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, v3OriginalClient);
@@ -2562,7 +2563,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -2647,7 +2648,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, v3OriginalClient);
@@ -2720,7 +2721,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -2807,7 +2808,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, v3OriginalClient);
@@ -2881,7 +2882,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -2968,7 +2969,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+     fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, v3OriginalClient);
@@ -3042,7 +3043,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -3128,7 +3129,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, v3OriginalClient);
@@ -3201,7 +3202,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }
@@ -3277,7 +3278,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
       assertTrue(response.enforceRotation());
     } catch (S3EncryptionClientException e) {
-      throw new RuntimeException("Enforce rotation should not throw exception");
+      fail("Enforce rotation should not throw exception");
     }
 
     deleteObject(BUCKET, objectKey, v3RotatedClient);
@@ -3349,7 +3350,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
 
     try {
       ReEncryptInstructionFileResponse response = v3OriginalClient.reEncryptInstructionFile(reEncryptInstructionFileRequest);
-      throw new RuntimeException("Enforce rotation should throw exception");
+      fail("Enforce rotation should throw exception");
     } catch (S3EncryptionClientException e) {
       assertTrue(e.getMessage().contains("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key"));
     }

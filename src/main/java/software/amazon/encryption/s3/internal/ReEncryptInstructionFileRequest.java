@@ -130,6 +130,9 @@ public class ReEncryptInstructionFileRequest {
 
     /**
      * Sets whether to enforce rotation for the re-encrypted instruction file.
+     * When enabled, the client will attempt to decrypt the re-encrypted instruction file with the old key material and
+     * throw an exception when decryption succeeds. This is a stronger level of validation that the wrapping key has been
+     * rotated than the standard assertion that the materials descriptions are different.
      *
      * @param enforceRotation whether to enforce rotation
      * @return a reference to this object so that method calls can be chained together.

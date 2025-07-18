@@ -280,14 +280,14 @@ public class S3EncryptionClient extends DelegatingS3Client {
             DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
               DecryptMaterialsRequest.builder()
                 .algorithmSuite(newEncryptionMaterials.algorithmSuite())
-                .encryptedDataKeys(Collections.singletonList(newEncryptionMaterials.encryptedDataKeys()).get(0))
+                .encryptedDataKeys(newEncryptionMaterials.encryptedDataKeys())
                 .s3Request(request)
                 .build()
             );
         } catch (S3EncryptionClientException e) {
             return;
         }
-        throw new S3EncryptionClientException("Key rotation is not enforced! Old keyring is still able to decrypt the newly encrypted data key");
+        throw new S3EncryptionClientException("Re-encryption failed due to enforced rotation! Old keyring is still able to decrypt the newly encrypted data key");
     }
 
     /**
