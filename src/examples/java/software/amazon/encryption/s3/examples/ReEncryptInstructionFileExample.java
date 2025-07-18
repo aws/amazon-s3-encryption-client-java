@@ -123,6 +123,7 @@ public class ReEncryptInstructionFileExample {
       .bucket(bucket)
       .key(objectKey)
       .newKeyring(newKeyring)
+      .enforceRotation(true)
       .build();
 
     // Perform the re-encryption of the instruction file
@@ -239,6 +240,7 @@ public class ReEncryptInstructionFileExample {
       .bucket(bucket)
       .key(objectKey)
       .newKeyring(newKeyring)
+      .enforceRotation(true)
       .build();
 
     // Perform the re-encryption of the instruction file
