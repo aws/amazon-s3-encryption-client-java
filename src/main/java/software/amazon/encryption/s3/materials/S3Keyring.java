@@ -34,6 +34,11 @@ abstract public class S3Keyring implements Keyring {
     }
 
     /**
+     * @return true if legacy wrapping algorithms are enabled, false otherwise
+     */
+    public boolean areLegacyWrappingAlgorithmsEnabled() { return _enableLegacyWrappingAlgorithms;}
+
+    /**
      * Generates a data key using the provided EncryptionMaterials and the configured DataKeyGenerator.
      * <p>
      * This method is intended for extension by customers who need to customize key generation within their Keyring
