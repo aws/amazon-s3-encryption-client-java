@@ -33,7 +33,7 @@
   </developers>
 
   <scm>
-    <url>https://github.com/aws/amazon-s3-encryption-client.git</url>
+    <url>https://github.com/aws/amazon-s3-encryption-client-java.git</url>
   </scm>
 
   <properties>
@@ -308,8 +308,8 @@
 
       <distributionManagement>
         <snapshotRepository>
-          <id>sonatype-nexus-staging</id>
-          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+          <id>central</id>
+          <url>https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots</url>
         </snapshotRepository>
       </distributionManagement>
 
@@ -336,13 +336,13 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.13</version>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.7.0</version>
             <extensions>true</extensions>
             <configuration>
-              <serverId>sonatype-nexus-staging</serverId>
-                <nexusUrl>https://aws.oss.sonatype.org</nexusUrl>
+              <publishingServerId>central</publishingServerId>
+              <autoPublish>true</autoPublish>
             </configuration>
            </plugin>
         </plugins>
