@@ -5,7 +5,6 @@ package software.amazon.encryption.s3.internal;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.RawKeyring;
 import software.amazon.encryption.s3.materials.RsaKeyring;
 
