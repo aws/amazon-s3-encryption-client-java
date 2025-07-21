@@ -216,15 +216,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * @throws S3EncryptionClientException if the new keyring has the same materials description as the current one
      */
     public ReEncryptInstructionFileResponse reEncryptInstructionFile(ReEncryptInstructionFileRequest reEncryptInstructionFileRequest) {
+        if (!_instructionFileConfig.isInstructionFilePutEnabled()) {
+            throw new S3EncryptionClientException("Instruction file put operations must be enabled to re-encrypt instruction files");
+        }
+
         //Build request to retrieve the encrypted object and its associated instruction file
         final GetObjectRequest request = GetObjectRequest.builder()
           .bucket(reEncryptInstructionFileRequest.bucket())
           .key(reEncryptInstructionFileRequest.key())
           .build();
-
-        if (!_instructionFileConfig.isInstructionFilePutEnabled()) {
-            throw new S3EncryptionClientException("Instruction file put operations must be enabled to re-encrypt instruction files");
-        }
 
         ResponseInputStream<GetObjectResponse> response = this.getObject(request);
         ContentMetadataDecodingStrategy decodingStrategy = new ContentMetadataDecodingStrategy(_instructionFileConfig);
