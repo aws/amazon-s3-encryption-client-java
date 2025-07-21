@@ -9,6 +9,7 @@ import software.amazon.encryption.s3.S3EncryptionClient;
  * This is an abstract base class for keyrings that use raw cryptographic keys (AES + RSA)
  */
 public abstract class RawKeyring extends S3Keyring {
+
   protected final MaterialsDescription _materialsDescription;
 
   protected RawKeyring(Builder<?, ?> builder) {
@@ -23,12 +24,16 @@ public abstract class RawKeyring extends S3Keyring {
    * @param materials the encryption materials to modify
    * @return modified encryption materials with the keyring's materials description or original encryption materials if no materials description is set
    */
-  public EncryptionMaterials modifyMaterialsForRawKeyring(EncryptionMaterials materials) {
+  public EncryptionMaterials modifyMaterialsForRawKeyring(
+    EncryptionMaterials materials
+  ) {
     warnIfEncryptionContextIsPresent(materials);
     if (_materialsDescription != null && !_materialsDescription.isEmpty()) {
-      materials = materials.toBuilder()
-        .materialsDescription(_materialsDescription)
-        .build();
+      materials =
+        materials
+          .toBuilder()
+          .materialsDescription(_materialsDescription)
+          .build();
     }
     return materials;
   }
@@ -44,24 +49,38 @@ public abstract class RawKeyring extends S3Keyring {
    */
 
   public void warnIfEncryptionContextIsPresent(EncryptionMaterials materials) {
-    materials.s3Request().overrideConfiguration()
+    materials
+      .s3Request()
+      .overrideConfiguration()
       .flatMap(overrideConfiguration ->
-        overrideConfiguration.executionAttributes()
-          .getOptionalAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT))
-      .ifPresent(ctx -> LogFactory.getLog(getClass()).warn("Usage of Encryption Context provides no " +
-        "security benefit in " + getClass().getSimpleName() + ".Additionally, this Encryption Context WILL NOT be " +
-        "stored in the material description. Provide a MaterialDescription in the Keyring's builder instead."));
+        overrideConfiguration
+          .executionAttributes()
+          .getOptionalAttribute(S3EncryptionClient.ENCRYPTION_CONTEXT)
+      )
+      .ifPresent(ctx ->
+        LogFactory
+          .getLog(getClass())
+          .warn(
+            "Usage of Encryption Context provides no " +
+            "security benefit in " +
+            getClass().getSimpleName() +
+            ".Additionally, this Encryption Context WILL NOT be " +
+            "stored in the material description. Provide a MaterialDescription in the Keyring's builder instead."
+          )
+      );
   }
 
   /**
    * Abstract builder for RawKeyring implementations.
    * Provides common functionality for setting materials description on raw keyrings.
-   * 
+   *
    * @param <KeyringT> the type of keyring being built
    * @param <BuilderT> the type of builder
    */
-  public static abstract class Builder<KeyringT extends RawKeyring, BuilderT extends Builder<KeyringT, BuilderT>>
-      extends S3Keyring.Builder<KeyringT, BuilderT> {
+  public abstract static class Builder<
+    KeyringT extends RawKeyring, BuilderT extends Builder<KeyringT, BuilderT>
+  >
+    extends S3Keyring.Builder<KeyringT, BuilderT> {
 
     protected MaterialsDescription _materialsDescription;
 
@@ -72,11 +91,13 @@ public abstract class RawKeyring extends S3Keyring {
     /**
      * Sets the materials description for this keyring.
      * Materials description provides additional metadata for raw keyrings.
-     * 
+     *
      * @param materialsDescription the materials description to associate with this keyring.
      * @return a reference to this object so that method calls can be chained together.
      */
-    public BuilderT materialsDescription(MaterialsDescription materialsDescription) {
+    public BuilderT materialsDescription(
+      MaterialsDescription materialsDescription
+    ) {
       _materialsDescription = materialsDescription;
       return builder();
     }

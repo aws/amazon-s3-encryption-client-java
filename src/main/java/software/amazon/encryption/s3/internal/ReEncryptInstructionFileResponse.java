@@ -7,6 +7,7 @@ package software.amazon.encryption.s3.internal;
  * Contains the S3 bucket name, object key, instruction file suffix, and rotation enforcement status for the re-encrypted instruction file
  */
 public class ReEncryptInstructionFileResponse {
+
   private final String bucket;
   private final String key;
   private final String instructionFileSuffix;
@@ -20,7 +21,12 @@ public class ReEncryptInstructionFileResponse {
    * @param instructionFileSuffix the suffix used for the instruction file
    * @param enforceRotation whether rotation was enforced for the re-encrypted instruction file
    */
-  public ReEncryptInstructionFileResponse(String bucket, String key, String instructionFileSuffix, boolean enforceRotation) {
+  public ReEncryptInstructionFileResponse(
+    String bucket,
+    String key,
+    String instructionFileSuffix,
+    boolean enforceRotation
+  ) {
     this.bucket = bucket;
     this.key = key;
     this.instructionFileSuffix = instructionFileSuffix.substring(1);
@@ -55,4 +61,3 @@ public class ReEncryptInstructionFileResponse {
     return instructionFileSuffix;
   }
 }
-

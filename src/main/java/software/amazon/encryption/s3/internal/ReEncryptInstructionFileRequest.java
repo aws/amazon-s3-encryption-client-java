@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
+
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.RawKeyring;
-
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
 
 /**
  * Request object for re-encrypting instruction files in S3.
@@ -15,6 +15,7 @@ import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_
  * For RSA keyrings, both the default and custom instruction file suffixes are supported.
  */
 public class ReEncryptInstructionFileRequest {
+
   private final String bucket;
   private final String key;
   private final RawKeyring newKeyring;
@@ -60,7 +61,9 @@ public class ReEncryptInstructionFileRequest {
   /**
    * @return whether to enforce rotation for the re-encrypted instruction file
    */
-  public boolean enforceRotation() { return enforceRotation; }
+  public boolean enforceRotation() {
+    return enforceRotation;
+  }
 
   /**
    * Creates a builder that can be used to configure and create a {@link ReEncryptInstructionFileRequest}
@@ -75,6 +78,7 @@ public class ReEncryptInstructionFileRequest {
    * Builder for ReEncryptInstructionFileRequest.
    */
   public static class Builder {
+
     private String bucket;
     private String key;
     private RawKeyring newKeyring;
@@ -160,12 +164,12 @@ public class ReEncryptInstructionFileRequest {
       }
       if (newKeyring instanceof AesKeyring) {
         if (!instructionFileSuffix.equals(DEFAULT_INSTRUCTION_FILE_SUFFIX)) {
-          throw new S3EncryptionClientException("Custom Instruction file suffix is not applicable for AES keyring!");
+          throw new S3EncryptionClientException(
+            "Custom Instruction file suffix is not applicable for AES keyring!"
+          );
         }
       }
       return new ReEncryptInstructionFileRequest(this);
     }
-
   }
-
 }
