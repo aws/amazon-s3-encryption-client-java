@@ -347,7 +347,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
       ReEncryptInstructionFileResponse response =
         client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
     } catch (S3EncryptionClientException e) {
-      System.out.println(e.getMessage());
       assertTrue(
         e
           .getMessage()
