@@ -275,7 +275,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         e
           .getMessage()
           .contains(
-            "Custom Instruction file suffix is not applicable for AES keyring!"
+            "Custom Instruction file suffix is only applicable for RSA keyring!"
           )
       );
     }
