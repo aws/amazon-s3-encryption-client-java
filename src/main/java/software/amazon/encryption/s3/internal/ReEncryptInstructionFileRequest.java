@@ -7,6 +7,7 @@ import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.RawKeyring;
+import software.amazon.encryption.s3.materials.RsaKeyring;
 
 /**
  * Request object for re-encrypting instruction files in S3.
@@ -162,10 +163,10 @@ public class ReEncryptInstructionFileRequest {
       if (newKeyring == null) {
         throw new S3EncryptionClientException("New keyring must be provided!");
       }
-      if (newKeyring instanceof AesKeyring) {
+      if (!(newKeyring instanceof RsaKeyring)) {
         if (!instructionFileSuffix.equals(DEFAULT_INSTRUCTION_FILE_SUFFIX)) {
           throw new S3EncryptionClientException(
-            "Custom Instruction file suffix is not applicable for AES keyring!"
+            "Custom Instruction file suffix is only applicable for RSA keyring!"
           );
         }
       }

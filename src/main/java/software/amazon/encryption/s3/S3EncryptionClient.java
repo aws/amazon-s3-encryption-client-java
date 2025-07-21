@@ -222,6 +222,10 @@ public class S3EncryptionClient extends DelegatingS3Client {
           .key(reEncryptInstructionFileRequest.key())
           .build();
 
+        if (!_instructionFileConfig.isInstructionFilePutEnabled()) {
+            throw new S3EncryptionClientException("Instruction file put operations must be enabled to re-encrypt instruction files");
+        }
+
         ResponseInputStream<GetObjectResponse> response = this.getObject(request);
         ContentMetadataDecodingStrategy decodingStrategy = new ContentMetadataDecodingStrategy(_instructionFileConfig);
         ContentMetadata contentMetadata = decodingStrategy.decode(request, response.response());

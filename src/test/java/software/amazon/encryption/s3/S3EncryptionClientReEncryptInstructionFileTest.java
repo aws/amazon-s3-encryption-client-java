@@ -284,6 +284,81 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
   }
 
   @Test
+  public void testReEncryptInstructionFileFailsWhenInstructionFilePutNotEnabled() {
+    PublicKey originalPublicKey = RSA_KEY_PAIR.getPublic();
+    PrivateKey originalPrivateKey = RSA_KEY_PAIR.getPrivate();
+
+    PartialRsaKeyPair originalPartialRsaKeyPair = PartialRsaKeyPair
+      .builder()
+      .publicKey(originalPublicKey)
+      .privateKey(originalPrivateKey)
+      .build();
+
+    RsaKeyring oldKeyring = RsaKeyring
+      .builder()
+      .wrappingKeyPair(originalPartialRsaKeyPair)
+      .materialsDescription(
+        MaterialsDescription.builder().put("rotated", "no").build()
+      )
+      .build();
+
+    S3Client wrappedClient = S3Client.create();
+    S3EncryptionClient client = S3EncryptionClient
+      .builder()
+      .keyring(oldKeyring)
+      .instructionFileConfig(
+        InstructionFileConfig
+          .builder()
+          .instructionFileClient(wrappedClient)
+          .build()
+      )
+      .build();
+
+    final String objectKey = appendTestSuffix(
+      "rsa-re-encrypt-instruction-file"
+    );
+
+    PublicKey newPublicKey = RSA_KEY_PAIR_TWO.getPublic();
+    PrivateKey newPrivateKey = RSA_KEY_PAIR_TWO.getPrivate();
+
+    PartialRsaKeyPair newPartialRsaKeyPair = PartialRsaKeyPair
+      .builder()
+      .publicKey(newPublicKey)
+      .privateKey(newPrivateKey)
+      .build();
+
+    RsaKeyring newKeyring = RsaKeyring
+      .builder()
+      .wrappingKeyPair(newPartialRsaKeyPair)
+      .materialsDescription(
+        MaterialsDescription.builder().put("rotated", "yes").build()
+      )
+      .build();
+
+    ReEncryptInstructionFileRequest reEncryptInstructionFileRequest =
+      ReEncryptInstructionFileRequest
+        .builder()
+        .bucket(BUCKET)
+        .key(objectKey)
+        .newKeyring(newKeyring)
+        .build();
+
+    try {
+      ReEncryptInstructionFileResponse response =
+        client.reEncryptInstructionFile(reEncryptInstructionFileRequest);
+    } catch (S3EncryptionClientException e) {
+      System.out.println(e.getMessage());
+      assertTrue(
+        e
+          .getMessage()
+          .contains(
+            "Instruction file put operations must be enabled to re-encrypt instruction files"
+          )
+      );
+    }
+  }
+
+  @Test
   public void testAesKeyringReEncryptInstructionFile() {
     AesKeyring oldKeyring = AesKeyring
       .builder()

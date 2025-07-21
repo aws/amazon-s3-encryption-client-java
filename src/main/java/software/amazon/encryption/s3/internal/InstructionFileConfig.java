@@ -45,7 +45,7 @@ public class InstructionFileConfig {
         ASYNC
     }
 
-    boolean isInstructionFilePutEnabled() {
+    public boolean isInstructionFilePutEnabled() {
         return _enableInstructionFilePut;
     }
 
