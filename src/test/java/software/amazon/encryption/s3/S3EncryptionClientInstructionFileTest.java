@@ -10,8 +10,9 @@ import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -52,6 +53,12 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 public class S3EncryptionClientInstructionFileTest {
+    private static boolean testCasePassed = false;
+
+    @BeforeEach
+    public void resetTestCasePassedFlag() {
+        testCasePassed = false;
+    }
 
     @Test
     public void testInstructionFileExists() {
@@ -310,7 +317,7 @@ public class S3EncryptionClientInstructionFileTest {
         s3Client.close();
     }
 
-    @RetryingTest(maxAttempts = 3)
+    @RepeatedTest(3)
     public void testMultipartPutWithInstructionFile() throws IOException {
         final String object_key = appendTestSuffix("test-multipart-put-instruction-file");
 

@@ -12,8 +12,9 @@ import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -61,6 +62,7 @@ public class S3EncryptionClientStreamTest {
 
     private static final String BUCKET = S3EncryptionClientTestResources.BUCKET;
     private static final int DEFAULT_TEST_STREAM_LENGTH = (int) (Math.random() * 10000);
+    private static boolean testCasePassed = false;
 
     private static SecretKey AES_KEY;
 
@@ -69,6 +71,11 @@ public class S3EncryptionClientStreamTest {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         AES_KEY = keyGen.generateKey();
+    }
+
+    @BeforeEach
+    public void resetTestCasePassedFlag() {
+        testCasePassed = false;
     }
 
     @Test
@@ -307,8 +314,12 @@ public class S3EncryptionClientStreamTest {
                 .build());
     }
 
-    @RetryingTest(maxAttempts = 3)
+    @RepeatedTest(3)
     public void customSetBufferSizeWithLargeObject() throws IOException {
+        if (testCasePassed) {
+            return;
+        }
+
         final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size");
 
         Security.addProvider(new BouncyCastleProvider());
@@ -357,10 +368,16 @@ public class S3EncryptionClientStreamTest {
         deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
         v3ClientWithBuffer32MiB.close();
         v3ClientWithDelayedAuth.close();
+
+        testCasePassed = true;
     }
 
-    @RetryingTest(maxAttempts = 3)
+    @RepeatedTest(3)
     public void customSetBufferSizeWithLargeObjectAsyncClient() throws IOException {
+        if (testCasePassed) {
+            return;
+        }
+
         final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size-async");
 
         Security.addProvider(new BouncyCastleProvider());
@@ -417,10 +434,15 @@ public class S3EncryptionClientStreamTest {
         deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
         v3ClientWithBuffer32MiB.close();
         v3ClientWithDelayedAuth.close();
+
+        testCasePassed = true;
     }
 
-    @RetryingTest(maxAttempts = 3)
+    @RepeatedTest(3)
     public void delayedAuthModeWithLargeObject() throws IOException {
+        if(testCasePassed) {
+            return;
+        }
         final String objectKey = appendTestSuffix("large-object-test");
 
         Security.addProvider(new BouncyCastleProvider());
@@ -464,6 +486,8 @@ public class S3EncryptionClientStreamTest {
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+
+        testCasePassed = true;
     }
 
     @Test
