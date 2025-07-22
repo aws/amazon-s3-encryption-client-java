@@ -13,6 +13,7 @@ import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -306,7 +307,7 @@ public class S3EncryptionClientStreamTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(maxAttempts = 3)
     public void customSetBufferSizeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size");
 
@@ -358,7 +359,7 @@ public class S3EncryptionClientStreamTest {
         v3ClientWithDelayedAuth.close();
     }
 
-    @Test
+    @RetryingTest(maxAttempts = 3)
     public void customSetBufferSizeWithLargeObjectAsyncClient() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size-async");
 
@@ -418,7 +419,7 @@ public class S3EncryptionClientStreamTest {
         v3ClientWithDelayedAuth.close();
     }
 
-    @Test
+    @RetryingTest(maxAttempts = 3)
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test");
 

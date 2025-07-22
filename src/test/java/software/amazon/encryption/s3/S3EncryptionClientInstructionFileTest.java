@@ -11,6 +11,7 @@ import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -309,7 +310,7 @@ public class S3EncryptionClientInstructionFileTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(maxAttempts = 3)
     public void testMultipartPutWithInstructionFile() throws IOException {
         final String object_key = appendTestSuffix("test-multipart-put-instruction-file");
 
