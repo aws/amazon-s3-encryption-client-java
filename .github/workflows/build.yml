@@ -53,7 +53,10 @@ jobs:
           export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/${{ vars.CI_KMS_KEY_ID }}
           export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:alias/${{ vars.CI_KMS_KEY_ALIAS }}
           export AWS_REGION=${{ vars.CI_AWS_REGION }}
-          mvn -B -ntp test -DskipCompile
+          echo "Running S3EncryptionClientStreamTest with 5 repetitions..."
+              mvn -B -ntp test -DskipCompile \
+                  -Dtest=S3EncryptionClientStreamTest \
+                  -Dci.test.repeat=5
         shell: bash
 
       - name: Package JAR
