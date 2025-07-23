@@ -20,6 +20,8 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.retry.RetryMode;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -42,6 +44,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -315,64 +318,66 @@ public class S3EncryptionClientStreamTest {
                 .build());
     }
 
-    @RepeatedTest(3)
+    @Test
     public void customSetBufferSizeWithLargeObject() throws IOException {
-        if (testCasePassed) {
-            return;
+        for(int i=0; i < 5; i++) {
+            final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size");
+
+            Security.addProvider(new BouncyCastleProvider());
+            Provider provider = Security.getProvider("BC");
+
+            // V3 Client with custom max buffer size 32 MiB.
+            S3Client v3ClientWithBuffer32MiB = S3EncryptionClient.builder()
+              .aesKey(AES_KEY)
+              .cryptoProvider(provider)
+              .setBufferSize(32 * 1024 * 1024)
+              .overrideConfiguration(ClientOverrideConfiguration.builder()
+                .apiCallTimeout(Duration.ofMinutes(3))
+                .apiCallAttemptTimeout(Duration.ofSeconds(55))
+                .retryStrategy(RetryMode.STANDARD)
+                .build())
+              .build();
+
+            // V3 Client with default buffer size (i.e. 64MiB)
+            // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
+            S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
+              .aesKey(AES_KEY)
+              .cryptoProvider(provider)
+              .enableDelayedAuthenticationMode(true)
+              .build();
+
+            // Tight bound on the custom buffer size limit of 32MiB
+            final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
+            final InputStream rawStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
+            final BufferedInputStream largeObjectStream = new BufferedInputStream(rawStream);
+
+            v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
+              .bucket(BUCKET)
+              .key(objectKey)
+              .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
+
+            largeObjectStream.close();
+
+            // Object is larger than Buffer, so getObject fails
+            assertThrows(S3EncryptionClientException.class, () -> v3ClientWithBuffer32MiB.getObjectAsBytes(builder -> builder
+              .bucket(BUCKET)
+              .key(objectKey)));
+
+            // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
+            ResponseInputStream<GetObjectResponse> response = v3ClientWithDelayedAuth.getObject(builder -> builder
+              .bucket(BUCKET)
+              .key(objectKey));
+
+
+            assertTrue(IOUtils.contentEquals(new BufferedInputStream(new BoundedInputStream(fileSizeExceedingDefaultLimit)), response));
+            response.close();
+
+            // Cleanup
+            deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
+            v3ClientWithBuffer32MiB.close();
+            v3ClientWithDelayedAuth.close();
         }
 
-        final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size");
-
-        Security.addProvider(new BouncyCastleProvider());
-        Provider provider = Security.getProvider("BC");
-
-        // V3 Client with custom max buffer size 32 MiB.
-        S3Client v3ClientWithBuffer32MiB = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .cryptoProvider(provider)
-                .setBufferSize(32 * 1024 * 1024)
-                .build();
-
-        // V3 Client with default buffer size (i.e. 64MiB)
-        // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
-        S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
-                .aesKey(AES_KEY)
-                .cryptoProvider(provider)
-                .enableDelayedAuthenticationMode(true)
-                .build();
-
-        // Tight bound on the custom buffer size limit of 32MiB
-        final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
-        final InputStream rawStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
-        final BufferedInputStream largeObjectStream = new BufferedInputStream(rawStream);
-
-        v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
-
-        largeObjectStream.close();
-
-        // Object is larger than Buffer, so getObject fails
-        assertThrows(S3EncryptionClientException.class, () -> v3ClientWithBuffer32MiB.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)));
-
-        // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
-        ResponseInputStream<GetObjectResponse> response = v3ClientWithDelayedAuth.getObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey));
-
-
-        assertTrue(IOUtils.contentEquals(new BufferedInputStream(new BoundedInputStream(fileSizeExceedingDefaultLimit)), response));
-        response.close();
-
-        // Cleanup
-        deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
-        v3ClientWithBuffer32MiB.close();
-        v3ClientWithDelayedAuth.close();
-
-        testCasePassed = true;
     }
 
     @RepeatedTest(3)
