@@ -403,7 +403,8 @@ public class S3EncryptionClientStreamTest {
 
         // Tight bound on the custom buffer size limit of 32MiB
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
-        final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
+        final InputStream rawStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
+        final BufferedInputStream largeObjectStream = new BufferedInputStream(rawStream);
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
         CompletableFuture<PutObjectResponse> futurePut = v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -430,7 +431,7 @@ public class S3EncryptionClientStreamTest {
                 .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
         ResponseInputStream<GetObjectResponse> output = futureGet.join();
 
-        assertTrue(IOUtils.contentEquals(new BoundedInputStream(fileSizeExceedingDefaultLimit), output));
+        assertTrue(IOUtils.contentEquals(new BufferedInputStream(new BoundedInputStream(fileSizeExceedingDefaultLimit)), output));
         output.close();
 
         // Cleanup
