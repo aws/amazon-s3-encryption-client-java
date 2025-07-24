@@ -14,8 +14,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
-
 public class ContentMetadataEncodingStrategy {
 
     private static final Base64.Encoder ENCODER = Base64.getEncoder();
@@ -26,20 +24,16 @@ public class ContentMetadataEncodingStrategy {
     }
 
     public PutObjectRequest encodeMetadata(EncryptionMaterials materials, byte[] iv, PutObjectRequest putObjectRequest) {
-        return encodeMetadata(materials, iv, putObjectRequest, DEFAULT_INSTRUCTION_FILE_SUFFIX);
-    }
-
-    public PutObjectRequest encodeMetadata(EncryptionMaterials materials, byte[] iv, PutObjectRequest putObjectRequest, String instructionFileSuffix) {
         if (_instructionFileConfig.isInstructionFilePutEnabled()) {
             final String metadataString = metadataToString(materials, iv);
-            _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString, instructionFileSuffix);
+            _instructionFileConfig.putInstructionFile(putObjectRequest, metadataString);
             // the original request object is returned as-is
             return putObjectRequest;
         } else {
             Map<String, String> newMetadata = addMetadataToMap(putObjectRequest.metadata(), materials, iv);
             return putObjectRequest.toBuilder()
-              .metadata(newMetadata)
-              .build();
+                    .metadata(newMetadata)
+                    .build();
         }
     }
 
@@ -57,7 +51,6 @@ public class ContentMetadataEncodingStrategy {
                     .build();
         }
     }
-
     private String metadataToString(EncryptionMaterials materials, byte[] iv) {
         // this is just the metadata map serialized as JSON
         // so first get the Map
@@ -87,16 +80,11 @@ public class ContentMetadataEncodingStrategy {
 
         try (JsonWriter jsonWriter = JsonWriter.create()) {
             jsonWriter.writeStartObject();
-            if (!materials.encryptionContext().isEmpty() && materials.materialsDescription().isEmpty()) {
-                for (Map.Entry<String, String> entry : materials.encryptionContext().entrySet()) {
-                    jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
-                }
-            } else if (materials.encryptionContext().isEmpty() && !materials.materialsDescription().isEmpty()) {
-                for (Map.Entry<String, String> entry : materials.materialsDescription().entrySet()) {
-                        jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
-                }
+            for (Map.Entry<String, String> entry : materials.encryptionContext().entrySet()) {
+                jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
             }
             jsonWriter.writeEndObject();
+
             String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_CONTEXT, jsonEncryptionContext);
         } catch (JsonWriter.JsonGenerationException e) {

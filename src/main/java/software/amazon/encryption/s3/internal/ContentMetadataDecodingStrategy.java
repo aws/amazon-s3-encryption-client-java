@@ -9,7 +9,6 @@ import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
@@ -25,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
 
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
 
 public class ContentMetadataDecodingStrategy {
 
@@ -137,8 +136,8 @@ public class ContentMetadataDecodingStrategy {
                 .keyProviderInfo(keyProviderInfo.getBytes(StandardCharsets.UTF_8))
                 .build();
 
-        // Get encrypted data key encryption context or materials description (depending on the keyring)
-        final Map<String, String> encryptionContextOrMatDesc = new HashMap<>();
+        // Get encrypted data key encryption context
+        final Map<String, String> encryptionContext = new HashMap<>();
         // The V2 client treats null value here as empty, do the same to avoid incompatibility
         String jsonEncryptionContext = metadata.getOrDefault(MetadataKeyConstants.ENCRYPTED_DATA_KEY_CONTEXT, "{}");
         // When the encryption context contains non-US-ASCII characters,
@@ -150,7 +149,7 @@ public class ContentMetadataDecodingStrategy {
             JsonNode objectNode = parser.parse(decodedJsonEncryptionContext);
 
             for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
-                encryptionContextOrMatDesc.put(entry.getKey(), entry.getValue().asString());
+                encryptionContext.put(entry.getKey(), entry.getValue().asString());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -162,7 +161,7 @@ public class ContentMetadataDecodingStrategy {
         return ContentMetadata.builder()
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKey(edk)
-                .encryptionContextOrMatDesc(encryptionContextOrMatDesc)
+                .encryptedDataKeyContext(encryptionContext)
                 .contentIv(iv)
                 .contentRange(contentRange)
                 .build();
@@ -225,13 +224,9 @@ public class ContentMetadataDecodingStrategy {
     }
 
     private ContentMetadata decodeFromInstructionFile(GetObjectRequest request, GetObjectResponse response) {
-       String instructionFileSuffix = request.overrideConfiguration()
-         .flatMap(config -> config.executionAttributes().getOptionalAttribute(S3EncryptionClient.CUSTOM_INSTRUCTION_FILE_SUFFIX))
-         .orElse(DEFAULT_INSTRUCTION_FILE_SUFFIX);
-
         GetObjectRequest instructionGetObjectRequest = GetObjectRequest.builder()
                 .bucket(request.bucket())
-                .key(request.key() + instructionFileSuffix)
+                .key(request.key() + INSTRUCTION_FILE_SUFFIX)
                 .build();
 
         ResponseInputStream<GetObjectResponse> instruction;
