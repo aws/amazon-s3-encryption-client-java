@@ -15,7 +15,13 @@ public class ContentMetadata {
 
     private final EncryptedDataKey _encryptedDataKey;
     private final String _encryptedDataKeyAlgorithm;
-    private final Map<String, String> _encryptedDataKeyContext;
+
+    /**
+     * This field stores either encryption context or material description.
+     * We use a single field to store both in order to maintain backwards
+     * compatibility with V2, which treated both as the same.
+     */
+    private final Map<String, String> _encryptionContextOrMatDesc;
 
     private final byte[] _contentIv;
     private final String _contentCipher;
@@ -27,7 +33,7 @@ public class ContentMetadata {
 
         _encryptedDataKey = builder._encryptedDataKey;
         _encryptedDataKeyAlgorithm = builder._encryptedDataKeyAlgorithm;
-        _encryptedDataKeyContext = builder._encryptedDataKeyContext;
+        _encryptionContextOrMatDesc = builder._encryptionContextOrMatDesc;
 
         _contentIv = builder._contentIv;
         _contentCipher = builder._contentCipher;
@@ -51,14 +57,15 @@ public class ContentMetadata {
         return _encryptedDataKeyAlgorithm;
     }
 
+
     /**
      * Note that the underlying implementation uses a Collections.unmodifiableMap which is
      * immutable.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
         + " implementation is immutable")
-    public Map<String, String> encryptedDataKeyContext() {
-        return _encryptedDataKeyContext;
+    public Map<String, String> encryptedDataKeyMatDescOrContext() {
+        return _encryptionContextOrMatDesc;
     }
 
     public byte[] contentIv() {
@@ -85,7 +92,7 @@ public class ContentMetadata {
 
         private EncryptedDataKey _encryptedDataKey;
         private String _encryptedDataKeyAlgorithm;
-        private Map<String, String> _encryptedDataKeyContext;
+        private Map<String, String> _encryptionContextOrMatDesc;
 
         private byte[] _contentIv;
         private String _contentCipher;
@@ -111,8 +118,8 @@ public class ContentMetadata {
             return this;
         }
 
-        public Builder encryptedDataKeyContext(Map<String, String> encryptedDataKeyContext) {
-            _encryptedDataKeyContext = Collections.unmodifiableMap(encryptedDataKeyContext);
+        public Builder encryptionContextOrMatDesc(Map<String, String> encryptionContextOrMatDesc) {
+            _encryptionContextOrMatDesc = Collections.unmodifiableMap(encryptionContextOrMatDesc);
             return this;
         }
 
