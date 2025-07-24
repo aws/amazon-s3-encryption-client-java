@@ -20,7 +20,7 @@ import java.util.Map;
  * This keyring can wrap keys with the active keywrap algorithm and
  * unwrap with the active and legacy algorithms for AES keys.
  */
-public class AesKeyring extends RawKeyring {
+public class AesKeyring extends S3Keyring {
 
     private static final String KEY_ALGORITHM = "AES";
 
@@ -89,11 +89,6 @@ public class AesKeyring extends RawKeyring {
         }
 
         @Override
-        public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
-            return modifyMaterialsForRawKeyring(materials);
-        }
-
-        @Override
         public String keyProviderInfo() {
             return KEY_PROVIDER_INFO;
         }
@@ -101,6 +96,13 @@ public class AesKeyring extends RawKeyring {
         @Override
         public EncryptionMaterials generateDataKey(EncryptionMaterials materials) {
             return defaultGenerateDataKey(materials);
+        }
+
+        @Override
+        public EncryptionMaterials modifyMaterials(EncryptionMaterials materials) {
+            warnIfEncryptionContextIsPresent(materials);
+
+            return materials;
         }
 
         @Override
@@ -175,7 +177,7 @@ public class AesKeyring extends RawKeyring {
         return decryptDataKeyStrategies;
     }
 
-  public static class Builder extends RawKeyring.Builder<AesKeyring, Builder> {
+    public static class Builder extends S3Keyring.Builder<AesKeyring, Builder> {
         private SecretKey _wrappingKey;
 
         private Builder() {
@@ -197,6 +199,7 @@ public class AesKeyring extends RawKeyring {
             _wrappingKey = wrappingKey;
             return builder();
         }
+
         public AesKeyring build() {
             return new AesKeyring(this);
         }

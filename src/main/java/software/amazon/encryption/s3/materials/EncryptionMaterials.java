@@ -4,7 +4,6 @@ package software.amazon.encryption.s3.materials;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.services.s3.model.S3Request;
-import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.CipherMode;
 import software.amazon.encryption.s3.internal.CipherProvider;
@@ -28,7 +27,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     // Additional information passed into encrypted that is required on decryption as well
     // Should NOT contain sensitive information
     private final Map<String, String> _encryptionContext;
-    private final MaterialsDescription _materialsDescription;
 
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final byte[] _plaintextDataKey;
@@ -45,7 +43,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         this._cryptoProvider = builder._cryptoProvider;
         this._plaintextLength = builder._plaintextLength;
         this._ciphertextLength = _plaintextLength + _algorithmSuite.cipherTagLengthBytes();
-        this._materialsDescription = builder._materialsDescription;
     }
 
     static public Builder builder() {
@@ -104,9 +101,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         return _cryptoProvider;
     }
 
-    public MaterialsDescription materialsDescription() {
-        return _materialsDescription;
-    }
     @Override
     public CipherMode cipherMode() {
         return CipherMode.ENCRYPT;
@@ -125,7 +119,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
                 .encryptedDataKeys(_encryptedDataKeys)
                 .plaintextDataKey(_plaintextDataKey)
                 .cryptoProvider(_cryptoProvider)
-                .materialsDescription(_materialsDescription)
                 .plaintextLength(_plaintextLength);
     }
 
@@ -139,7 +132,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         private byte[] _plaintextDataKey = null;
         private long _plaintextLength = -1;
         private Provider _cryptoProvider = null;
-        private MaterialsDescription _materialsDescription = MaterialsDescription.builder().build();
 
         private Builder() {
         }
@@ -153,12 +145,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
             _algorithmSuite = algorithmSuite;
             return this;
         }
-        public Builder materialsDescription(MaterialsDescription materialsDescription) {
-            _materialsDescription = materialsDescription == null
-                    ? MaterialsDescription.builder().build()
-                    : materialsDescription;
-            return this;
-        }
+
         public Builder encryptionContext(Map<String, String> encryptionContext) {
             _encryptionContext = encryptionContext == null
                     ? Collections.emptyMap()
@@ -188,9 +175,6 @@ final public class EncryptionMaterials implements CryptographicMaterials {
         }
 
         public EncryptionMaterials build() {
-            if (!_materialsDescription.isEmpty() && !_encryptionContext.isEmpty()) {
-                throw new S3EncryptionClientException("MaterialsDescription and EncryptionContext cannot both be set!");
-            }
             return new EncryptionMaterials(this);
         }
     }
