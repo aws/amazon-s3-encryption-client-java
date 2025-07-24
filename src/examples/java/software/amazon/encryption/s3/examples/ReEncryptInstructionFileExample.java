@@ -81,17 +81,19 @@ public class ReEncryptInstructionFileExample {
     // Generate the original AES key for initial encryption
     SecretKey originalAesKey = generateAesKey();
 
+    // Sample metadata for AES keyring identification and context - not used for encryption/decryption purposes
+    // Helps distinguish between the old and new AES keyrings during the reEncryptInstructionFile operation
+    MaterialsDescription originalMaterialsDescription = MaterialsDescription
+      .builder()
+      .put("version", "1.0")
+      .put("rotated", "no")
+      .build();
+
     // Create the original AES keyring with materials description
     AesKeyring oldKeyring = AesKeyring
       .builder()
       .wrappingKey(originalAesKey)
-      .materialsDescription(
-        MaterialsDescription
-          .builder()
-          .put("version", "1.0")
-          .put("rotated", "no")
-          .build()
-      )
+      .materialsDescription(originalMaterialsDescription)
       .build();
 
     // Create a default S3 client for instruction file operations
@@ -120,17 +122,19 @@ public class ReEncryptInstructionFileExample {
     // Generate a new AES key for re-encryption (rotating wrapping key)
     SecretKey newAesKey = generateAesKey();
 
+    // Sample metadata for rotated AES keyring identification and context - not used for encryption/decryption purposes
+    // Helps distinguish between the old and new AES keyrings during the reEncryptInstructionFile operation
+    MaterialsDescription newMaterialsDescription = MaterialsDescription
+      .builder()
+      .put("version", "2.0")
+      .put("rotated", "yes")
+      .build();
+
     // Create a new keyring with the new AES key and updated materials description
     AesKeyring newKeyring = AesKeyring
       .builder()
       .wrappingKey(newAesKey)
-      .materialsDescription(
-        MaterialsDescription
-          .builder()
-          .put("version", "2.0")
-          .put("rotated", "yes")
-          .build()
-      )
+      .materialsDescription(newMaterialsDescription)
       .build();
 
     // Create the re-encryption of instruction file request to re-encrypt the encrypted data key with the new wrapping key
@@ -216,17 +220,19 @@ public class ReEncryptInstructionFileExample {
       .privateKey(originalPrivateKey)
       .build();
 
+    // Sample metadata for RSA keyring identification and context - not used for encryption/decryption purposes
+    // Helps distinguish between the old and new RSA keyrings during the reEncryptInstructionFile operation
+    MaterialsDescription originalMaterialsDescription = MaterialsDescription
+      .builder()
+      .put("version", "1.0")
+      .put("rotated", "no")
+      .build();
+
     // Create the original RSA keyring with materials description
     RsaKeyring originalKeyring = RsaKeyring
       .builder()
       .wrappingKeyPair(originalPartialRsaKeyPair)
-      .materialsDescription(
-        MaterialsDescription
-          .builder()
-          .put("version", "1.0")
-          .put("rotated", "no")
-          .build()
-      )
+      .materialsDescription(originalMaterialsDescription)
       .build();
 
     // Create a default S3 client for instruction file operations
@@ -264,17 +270,19 @@ public class ReEncryptInstructionFileExample {
       .privateKey(newPrivateKey)
       .build();
 
+    // Sample metadata for rotated RSA keyring identification and context - not used for encryption/decryption purposes
+    // Helps distinguish between the old and new RSA keyrings during the reEncryptInstructionFile operation
+    MaterialsDescription newMaterialsDescription = MaterialsDescription
+      .builder()
+      .put("version", "2.0")
+      .put("rotated", "yes")
+      .build();
+
     // Create the new RSA keyring with updated materials description
     RsaKeyring newKeyring = RsaKeyring
       .builder()
       .wrappingKeyPair(newPartialRsaKeyPair)
-      .materialsDescription(
-        MaterialsDescription
-          .builder()
-          .put("version", "2.0")
-          .put("rotated", "yes")
-          .build()
-      )
+      .materialsDescription(newMaterialsDescription)
       .build();
 
     // Create the re-encryption of instruction file request to re-encrypt the encrypted data key with the new wrapping key
@@ -334,7 +342,12 @@ public class ReEncryptInstructionFileExample {
 
   /**
    * This example demonstrates generating a custom instruction file to enable access to encrypted object by a third party.
-   * This enables secure sharing of encrypted objects without sharing private keys.
+   * It showcases a scenario where:
+   *  1. The original client encrypts and uploads an object to S3.
+   *  2. The original client wants to share this encrypted object with a third party client without sharing their private key.
+   *  3. A new instruction file is created specifically for the third party client, containing the data key encrypted with the third party's public key.
+   *  4. The third party client can then access and decrypt the object using their own private key and custom instruction file.
+   *  5. The original client can still access and decrypt the object using their own private key and instruction file.
    *
    * @param bucket The name of the Amazon S3 bucket to perform operations on.
    * @throws NoSuchAlgorithmException if RSA algorithm is not available
@@ -361,17 +374,19 @@ public class ReEncryptInstructionFileExample {
       .privateKey(clientPrivateKey)
       .build();
 
+    // Sample metadata for client keyring identification and context - not used for encryption/decryption purposes
+    // Helps distinguish between the client and third party RSA keyrings during the reEncryptInstructionFile operation
+    MaterialsDescription clientMaterialsDescription = MaterialsDescription
+      .builder()
+      .put("isOwner", "yes")
+      .put("access-level", "admin")
+      .build();
+
     // Create the client's RSA keyring with materials description
     RsaKeyring clientKeyring = RsaKeyring
       .builder()
       .wrappingKeyPair(clientPartialRsaKeyPair)
-      .materialsDescription(
-        MaterialsDescription
-          .builder()
-          .put("isOwner", "yes")
-          .put("access-level", "admin")
-          .build()
-      )
+      .materialsDescription(clientMaterialsDescription)
       .build();
 
     // Create a default S3 client for instruction file operations
@@ -409,19 +424,21 @@ public class ReEncryptInstructionFileExample {
       .privateKey(thirdPartyPrivateKey)
       .build();
 
+    // Sample metadata for third party keyring identification and context - not used for encryption/decryption purposes
+    // Helps distinguish between the client and third party RSA keyrings during the reEncryptInstructionFile operation
+    MaterialsDescription thirdPartyMaterialsDescription = MaterialsDescription
+      .builder()
+      .put("isOwner", "no")
+      .put("access-level", "user")
+      .build();
+
     // Create RSA keyring with third party's public key and updated materials description for re-encryption request
     RsaKeyring sharedKeyring = RsaKeyring
       .builder()
       .wrappingKeyPair(
         PartialRsaKeyPair.builder().publicKey(thirdPartyPublicKey).build()
       )
-      .materialsDescription(
-        MaterialsDescription
-          .builder()
-          .put("isOwner", "no")
-          .put("access-level", "user")
-          .build()
-      )
+      .materialsDescription(thirdPartyMaterialsDescription)
       .build();
 
     // Create RSA keyring with third party's public and private keys for decryption purposes with updated materials description
