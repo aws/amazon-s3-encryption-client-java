@@ -5,6 +5,8 @@ package software.amazon.encryption.s3;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -52,6 +54,7 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 
 public class S3EncryptionClientMultipartUploadTest {
     private static Provider PROVIDER;
+    private static boolean testCasePassed = false;
 
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
@@ -59,15 +62,21 @@ public class S3EncryptionClientMultipartUploadTest {
         PROVIDER = Security.getProvider("BC");
     }
 
-    @Test
+    @BeforeEach
+    public void resetTestCasePassedFlag() {
+        testCasePassed = false;
+    }
+
+    @RepeatedTest(3)
     public void multipartPutObjectAsync() throws IOException {
+        if(testCasePassed) {
+            return;
+        }
         final String objectKey = appendTestSuffix("multipart-put-object-async");
 
         final long fileSizeLimit = 1024 * 1024 * 100;
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
-
-
 
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
                 .kmsKeyId(KMS_KEY_ID)
@@ -100,6 +109,8 @@ public class S3EncryptionClientMultipartUploadTest {
 
         deleteObject(BUCKET, objectKey, v3Client);
         v3Client.close();
+
+        testCasePassed = true;
     }
 
     @Test
@@ -131,8 +142,11 @@ public class S3EncryptionClientMultipartUploadTest {
         singleThreadExecutor.shutdown();
     }
 
-    @Test
+    @RepeatedTest(3)
     public void multipartPutObject() throws IOException {
+        if(testCasePassed) {
+            return;
+        }
         final String objectKey = appendTestSuffix("multipart-put-object");
 
         final long fileSizeLimit = 1024 * 1024 * 100;
@@ -164,6 +178,8 @@ public class S3EncryptionClientMultipartUploadTest {
 
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
         v3Client.close();
+
+        testCasePassed = true;
     }
 
     /*
