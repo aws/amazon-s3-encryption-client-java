@@ -15,7 +15,8 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.INSTRUCTION_FILE_SUFFIX;
+
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
 import static software.amazon.encryption.s3.internal.MetadataKeyConstants.INSTRUCTION_FILE;
 
 /**
@@ -44,11 +45,15 @@ public class InstructionFileConfig {
         ASYNC
     }
 
-    boolean isInstructionFilePutEnabled() {
+    public boolean isInstructionFilePutEnabled() {
         return _enableInstructionFilePut;
     }
 
     PutObjectResponse putInstructionFile(PutObjectRequest request, String instructionFileContent) {
+       return putInstructionFile(request, instructionFileContent, DEFAULT_INSTRUCTION_FILE_SUFFIX);
+    }
+
+    PutObjectResponse putInstructionFile(PutObjectRequest request, String instructionFileContent, String instructionFileSuffix) {
         // This shouldn't happen in practice because the metadata strategy will evaluate
         // if instruction file Puts are enabled before calling this method; check again anyway for robustness
         if (!_enableInstructionFilePut) {
@@ -60,12 +65,11 @@ public class InstructionFileConfig {
         // It contains a key with no value identifying it as an instruction file
         instFileMetadata.put(INSTRUCTION_FILE, "");
 
-        // In a future release, non-default suffixes will be supported.
         // Use toBuilder to keep all other fields the same as the actual request
         final PutObjectRequest instPutRequest = request.toBuilder()
-                .key(request.key() + INSTRUCTION_FILE_SUFFIX)
-                .metadata(instFileMetadata)
-                .build();
+          .key(request.key() + instructionFileSuffix)
+          .metadata(instFileMetadata)
+          .build();
         switch (_clientType) {
             case SYNCHRONOUS:
                 return _s3Client.putObject(instPutRequest, RequestBody.fromString(instructionFileContent));
