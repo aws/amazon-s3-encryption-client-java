@@ -48,6 +48,7 @@ jobs:
         env:
           AWS_DEFAULTS_MODE: mobile
         run: |
+          echo "AWS_DEFAULTS_MODE is set to: $AWS_DEFAULTS_MODE"
           export AWS_S3EC_TEST_ALT_KMS_KEY_ARN=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/${{ vars.CI_ALT_KMS_KEY_ID }}
           export AWS_S3EC_TEST_ALT_ROLE_ARN=arn:aws:iam::${{ secrets.CI_AWS_ACCOUNT_ID }}:role/service-role/${{ vars.CI_ALT_ROLE }}
           export AWS_S3EC_TEST_BUCKET=${{ vars.CI_S3_BUCKET }}
