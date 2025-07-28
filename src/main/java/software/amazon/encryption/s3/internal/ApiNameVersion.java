@@ -7,7 +7,8 @@ import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.core.ApiName;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.Properties;
 import java.util.function.Consumer;
 
@@ -35,15 +36,27 @@ public class ApiNameVersion {
             final Properties properties = new Properties();
             final ClassLoader loader = ApiNameVersion.class.getClassLoader();
 
-            final InputStream inputStream = loader.getResourceAsStream("project.properties");
-            // In some cases, e.g. native images, there is no way to load files,
-            // and the inputStream returned is null.
-            if (inputStream == null) {
+            // Other JARs on the classpath may also define project.properties
+            // Enumerate through and find the one for S3EC
+            Enumeration<URL> urls = loader.getResources("project.properties");
+            if (urls == null) {
                 return API_VERSION_UNKNOWN;
             }
-
-            properties.load(inputStream);
-            return properties.getProperty("version");
+            while (urls.hasMoreElements()) {
+                URL thisURL = urls.nextElement();
+                if (thisURL.getPath().contains("amazon-s3-encryption-client-java")) {
+                    properties.load(thisURL.openStream());
+                    break;
+                }
+            }
+            String maybeVersion = properties.getProperty("s3ecVersion");
+            if (maybeVersion == null) {
+                // This should never happen in practice,
+                // but is included for robustness.
+                return API_VERSION_UNKNOWN;
+            } else {
+                return maybeVersion;
+            }
         } catch (final IOException ex) {
             return API_VERSION_UNKNOWN;
         }
