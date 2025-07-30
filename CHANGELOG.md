@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.4.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.5...v3.4.0) (2025-07-30)
+
+### Features
+
+* put object with instruction file configured  ([#466](https://github.com/aws/aws-s3-encryption-client-java/issues/466)) ([99077dc](https://github.com/aws/aws-s3-encryption-client-java/commit/99077dc699b286022080a5934a2d89a32d777e3a))
+* reEncryptInstructionFile Implementation  ([#475](https://github.com/aws/aws-s3-encryption-client-java/issues/475)) ([ff66e72](https://github.com/aws/aws-s3-encryption-client-java/commit/ff66e724f8b384077d538c1b6dc08da9cc4deb06))
+* reEncryptInstructionFile Implementation ([#478](https://github.com/aws/aws-s3-encryption-client-java/issues/478)) ([f7e6fa5](https://github.com/aws/aws-s3-encryption-client-java/commit/f7e6fa5c490acd0d859713132fd604263e6aa457))
+
+### Fixes
+
+* Revert "feat: reEncryptInstructionFile Implementation  ([#475](https://github.com/aws/aws-s3-encryption-client-java/issues/475))" ([#477](https://github.com/aws/aws-s3-encryption-client-java/issues/477)) ([6d45ec5](https://github.com/aws/aws-s3-encryption-client-java/commit/6d45ec53fbdb507d3191f676016056dd30d5d90e))
+
+### Maintenance
+
+* guard against properties conflicts ([#479](https://github.com/aws/aws-s3-encryption-client-java/issues/479)) ([793c73b](https://github.com/aws/aws-s3-encryption-client-java/commit/793c73b284bda5a40ad855a270a328ca322bff13))
+* **pom:** fix scm url ([#469](https://github.com/aws/aws-s3-encryption-client-java/issues/469)) ([1bc2ca3](https://github.com/aws/aws-s3-encryption-client-java/commit/1bc2ca399cac16de926b019296fbb30393a915db))
+* **release:** Migrate release to Central Portal ([#468](https://github.com/aws/aws-s3-encryption-client-java/issues/468)) ([da71231](https://github.com/aws/aws-s3-encryption-client-java/commit/da712318557ae6d934aced8d04af18889a8ce043))
+* validate against legacy wrapping on client but customer passes keyring with no legacy wrapping ([#473](https://github.com/aws/aws-s3-encryption-client-java/issues/473)) ([bb898d1](https://github.com/aws/aws-s3-encryption-client-java/commit/bb898d142cffea91c37b7e01a94aa86795c3c970))
+
 ## [3.3.5](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.4...v3.3.5) (2025-05-21)
 
 ### Fixes
