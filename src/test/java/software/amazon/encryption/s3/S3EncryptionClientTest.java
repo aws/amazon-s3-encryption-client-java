@@ -41,6 +41,8 @@ import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
+import software.amazon.encryption.s3.materials.RsaKeyring;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
@@ -98,6 +100,9 @@ public class S3EncryptionClientTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
+    //= specification/s3-encryption/client.md#aws-sdk-compatibility
+    //= type=test
+    //# The S3EC SHOULD support invoking operations unrelated to client-side encryption e.g. CopyObject as the conventional AWS SDK S3 client would.
     @Test
     public void copyObjectTransparently() {
         final String objectKey = appendTestSuffix("copy-object-from-here");
@@ -161,10 +166,15 @@ public class S3EncryptionClientTest {
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
 
         S3Client s3Client = S3Client.builder().build();
-        // Assert throw NoSuchKeyException when getObject for objectKey
+        //= specification/s3-encryption/client.md#api-operations
+        //= type=test
+        //# DeleteObject MUST delete the given object key.
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
+        //= specification/s3-encryption/client.md#api-operations
+        //= type=test
+        //# DeleteObject MUST delete the associated instruction file using the default instruction file suffix.
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey + ".instruction")));
@@ -208,10 +218,15 @@ public class S3EncryptionClientTest {
                 .delete(builder1 -> builder1.objects(objects)));
 
         S3Client s3Client = S3Client.builder().build();
-        // Assert throw NoSuchKeyException when getObject for any of objectKeys
+        //= specification/s3-encryption/client.md#api-operations
+        //= type=test
+        //# DeleteObjects MUST delete each of the given objects.
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKeys[0])));
+        //= specification/s3-encryption/client.md#api-operations
+        //= type=test
+        //# DeleteObjects MUST delete each of the corresponding instruction files using the default instruction file suffix.
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKeys[0] + ".instruction")));
@@ -292,11 +307,30 @@ public class S3EncryptionClientTest {
         v3Client.close();
     }
 
+    //= specification/s3-encryption/client.md#cryptographic-materials
+    //= type=test
+    //# The S3EC MUST accept either one CMM or one Keyring instance upon initialization.
     @Test
     public void s3EncryptionClientWithMultipleKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
                 .aesKey(AES_KEY)
                 .rsaKeyPair(RSA_KEY_PAIR)
+                .build());
+    }
+
+    //= specification/s3-encryption/client.md#cryptographic-materials
+    //= type=test
+    //# If both a CMM and a Keyring are provided, the S3EC MUST throw an exception.
+    @Test
+    public void s3EncryptionClientWithCMMAndKeyringFails() {
+        CryptographicMaterialsManager defaultCMM = DefaultCryptoMaterialsManager.builder()
+                        .keyring(RsaKeyring.builder()
+                                .wrappingKeyPair(new PartialRsaKeyPair(RSA_KEY_PAIR))
+                                .build())
+                                .build();
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+                .aesKey(AES_KEY)
+                .cryptoMaterialsManager(defaultCMM)
                 .build());
     }
 
@@ -440,6 +474,9 @@ public class S3EncryptionClientTest {
         v3Client.close();
     }
 
+    //= specification/s3-encryption/client.md#wrapped-s3-client-s
+    //= type=test
+    //# The S3EC MUST support the option to provide an SDK S3 client instance during its initialization.
     @Test
     public void s3EncryptionClientWithWrappedS3ClientSucceeds() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-kms-key-id");
@@ -462,6 +499,9 @@ public class S3EncryptionClientTest {
         wrappingClient.close();
     }
 
+    //= specification/s3-encryption/client.md#wrapped-s3-client-s
+    //= type=test
+    //# The S3EC MUST NOT support use of S3EC as the provided S3 client during its initialization; it MUST throw an exception in this case.
     /**
      * S3EncryptionClient implements S3Client, so it can be passed into the builder as a wrappedClient.
      * However, is not a supported use case, and the builder should throw an exception if this happens.
@@ -854,6 +894,9 @@ public class S3EncryptionClientTest {
         }
     }
 
+    //= specification/s3-encryption/client.md#inherited-sdk-configuration
+    //= type=test
+    //# If the S3EC accepts SDK client configuration, the configuration MUST be applied to all wrapped SDK clients including the KMS client.
     @Test
     public void s3EncryptionClientTopLevelAlternateCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials");

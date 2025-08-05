@@ -74,6 +74,9 @@ public class MultipartUploadObjectPipeline {
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
 
+        //= specification/s3-encryption/client.md#api-operations
+        //= type=implication
+        //# If implemented, CreateMultipartUpload MUST initiate a multipart upload.
         CreateMultipartUploadResponse response = _s3AsyncClient.createMultipartUpload(request).join();
 
         MultipartUploadMaterials mpuMaterials = MultipartUploadMaterials.builder()
@@ -133,13 +136,21 @@ public class MultipartUploadObjectPipeline {
             throw new S3EncryptionClientException("No client-side information available on upload ID " + uploadId);
         }
         final UploadPartResponse response;
-        // Checks the parts are uploaded in series
+        //= specification/s3-encryption/client.md#api-operations
+        //= type=implication
+        //# Each part MUST be encrypted in sequence.
         materials.beginPartUpload(actualRequest.partNumber(), partContentLength);
+        //= specification/s3-encryption/client.md#api-operations
+        //= type=implication
+        //# Each part MUST be encrypted using the same cipher instance for each part.
         Cipher cipher = materials.getCipher(materials.getIv());
 
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 
         try {
+            //= specification/s3-encryption/client.md#api-operations
+            //= type=implication
+            //# UploadPart MUST encrypt each part.
             final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(
                 AsyncRequestBody.fromInputStream(
                     requestBody.contentStreamProvider().newStream(),
@@ -159,6 +170,8 @@ public class MultipartUploadObjectPipeline {
             }
             // Ensures parts are not retried to avoid corrupting ciphertext
             AsyncRequestBody noRetryBody = new NoRetriesAsyncRequestBody(cipherAsyncRequestBody);
+            //= specification/s3-encryption/client.md#api-operations
+            //= type=implication
             response =  _s3AsyncClient.uploadPart(actualRequest, noRetryBody).join();
         } finally {
             materials.endPartUpload();
@@ -187,6 +200,9 @@ public class MultipartUploadObjectPipeline {
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
 
+        //= specification/s3-encryption/client.md#api-operations
+        //= type=implication
+        //# CompleteMultipartUpload MUST complete the multipart upload.
         CompleteMultipartUploadResponse response = _s3AsyncClient.completeMultipartUpload(actualRequest).join();
 
         _multipartUploadMaterials.remove(uploadId);
@@ -198,6 +214,9 @@ public class MultipartUploadObjectPipeline {
         AbortMultipartUploadRequest actualRequest = request.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
+        //= specification/s3-encryption/client.md#api-operations
+        //= type=implication
+        //# AbortMultipartUpload MUST abort the multipart upload.
         return _s3AsyncClient.abortMultipartUpload(actualRequest).join();
     }
 

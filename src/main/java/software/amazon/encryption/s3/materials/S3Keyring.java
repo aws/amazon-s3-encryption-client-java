@@ -5,13 +5,13 @@ package software.amazon.encryption.s3.materials;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.crypto.SecretKey;
 
 /**
  * This serves as the base class for all the keyrings in the S3 encryption client.
@@ -115,7 +115,13 @@ abstract public class S3Keyring implements Keyring {
             throw new S3EncryptionClientException("The keyring does not support the object's key wrapping algorithm: " + keyProviderInfo);
         }
 
+        //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
+        //= type=implication
+        //# When enabled, the S3EC MUST be able to decrypt objects encrypted with all supported wrapping algorithms (both legacy and fully supported).
         if (decryptStrategy.isLegacy() && !_enableLegacyWrappingAlgorithms) {
+            //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
+            //= type=exception
+            //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy wrapping algorithms; it MUST throw an exception when attempting to decrypt an object encrypted with a legacy wrapping algorithm.
             throw new S3EncryptionClientException("Enable legacy wrapping algorithms to use legacy key wrapping algorithm: " + keyProviderInfo);
         }
 
