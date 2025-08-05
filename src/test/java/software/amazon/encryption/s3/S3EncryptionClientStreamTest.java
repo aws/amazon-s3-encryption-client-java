@@ -33,6 +33,7 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 import javax.crypto.AEADBadTagException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -331,7 +332,9 @@ public class S3EncryptionClientStreamTest {
 
             // Tight bound on the custom buffer size limit of 32MiB
             final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
-            final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
+            final InputStream largeObjectStream = new BufferedInputStream(
+              new BoundedInputStream(fileSizeExceedingDefaultLimit)
+            );
             v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
               .bucket(BUCKET)
               .key(objectKey)
@@ -385,7 +388,9 @@ public class S3EncryptionClientStreamTest {
 
             // Tight bound on the custom buffer size limit of 32MiB
             final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
-            final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
+            final InputStream largeObjectStream = new BufferedInputStream(
+              new BoundedInputStream(fileSizeExceedingDefaultLimit)
+            );
             ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
             CompletableFuture<PutObjectResponse> futurePut = v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
               .bucket(BUCKET)
@@ -438,7 +443,9 @@ public class S3EncryptionClientStreamTest {
 
             // Tight bound on the default limit of 64MiB
             final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
-            final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
+            final InputStream largeObjectStream = new BufferedInputStream(
+              new BoundedInputStream(fileSizeExceedingDefaultLimit)
+            );
             v3Client.putObject(PutObjectRequest.builder()
               .bucket(BUCKET)
               .key(objectKey)
