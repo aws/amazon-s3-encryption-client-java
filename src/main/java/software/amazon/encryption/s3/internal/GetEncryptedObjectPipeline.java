@@ -76,10 +76,12 @@ public class GetEncryptedObjectPipeline {
 
         AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         //= specification/s3-encryption/client.md#enable-legacy-unauthenticated-modes
+        //= type=implication
         //# When enabled, the S3EC MUST be able to decrypt objects encrypted with all content encryption algorithms (both legacy and fully supported).
         if (!_enableLegacyUnauthenticatedModes && algorithmSuite.isLegacy()) {
             //= specification/s3-encryption/client.md#enable-legacy-unauthenticated-modes
-            //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy content encryption algorithms.
+            //= type=exception
+            //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy content encryption algorithms; it MUST throw an exception when attempting to decrypt an object encrypted with a legacy content encryption algorithm.
             throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
         }
 
@@ -151,6 +153,7 @@ public class GetEncryptedObjectPipeline {
                     || algorithmSuite.equals(AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF)
                     || _enableDelayedAuthentication) {
                 //= specification/s3-encryption/client.md#enable-delayed-authentication
+                //= type=implication
                 //# When enabled, the S3EC MAY release plaintext from a stream which has not been authenticated.
                 // CBC and GCM with delayed auth enabled use a standard publisher
                 CipherPublisher plaintextPublisher = new CipherPublisher(ciphertextPublisher,
@@ -158,6 +161,7 @@ public class GetEncryptedObjectPipeline {
                 wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
             } else {
                 //= specification/s3-encryption/client.md#enable-delayed-authentication
+                //= type=implication
                 //# When disabled the S3EC MUST NOT release plaintext from a stream which has not been authenticated.
                 // Use buffered publisher for GCM when delayed auth is not enabled
                 BufferedCipherPublisher plaintextPublisher = new BufferedCipherPublisher(ciphertextPublisher,

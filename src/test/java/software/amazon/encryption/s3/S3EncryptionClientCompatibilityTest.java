@@ -836,6 +836,9 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesCbcV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
+        //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
+        //= type=test
+        //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy wrapping algorithms; it MUST throw an exception when attempting to decrypt an object encrypted with a legacy wrapping algorithm.
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
@@ -870,6 +873,9 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesCbcV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
+        //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
+        //= type=test
+        //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy wrapping algorithms; it MUST throw an exception when attempting to decrypt an object encrypted with a legacy wrapping algorithm.
         assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));

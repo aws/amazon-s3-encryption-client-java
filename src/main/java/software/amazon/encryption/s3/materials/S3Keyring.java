@@ -116,10 +116,12 @@ abstract public class S3Keyring implements Keyring {
         }
 
         //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
+        //= type=implication
         //# When enabled, the S3EC MUST be able to decrypt objects encrypted with all supported wrapping algorithms (both legacy and fully supported).
         if (decryptStrategy.isLegacy() && !_enableLegacyWrappingAlgorithms) {
             //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
-            //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy wrapping algorithms.
+            //= type=exception
+            //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy wrapping algorithms; it MUST throw an exception when attempting to decrypt an object encrypted with a legacy wrapping algorithm.
             throw new S3EncryptionClientException("Enable legacy wrapping algorithms to use legacy key wrapping algorithm: " + keyProviderInfo);
         }
 
