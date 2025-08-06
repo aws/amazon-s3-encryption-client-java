@@ -6,21 +6,21 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class MultipartUploadExampleTest {
-    private static boolean testCasePassed = false;
 
     @Test
     public void testMultipartUploadExamples() {
-        if(testCasePassed) {
-            return;
+        int success = 0, failures = 0;
+        for(int i=0; i < 100; i++) {
+            final String bucket = S3EncryptionClientTestResources.BUCKET;
+            try {
+                MultipartUploadExample.main(new String[]{bucket});
+                success++;
+            } catch (Throwable exception) {
+                exception.printStackTrace();
+                fail("Multipart Example Test Failed!!", exception);
+                failures++;
+            }
         }
-
-        final String bucket = S3EncryptionClientTestResources.BUCKET;
-        try {
-            MultipartUploadExample.main(new String[]{bucket});
-            testCasePassed = true;
-        } catch (Throwable exception) {
-            exception.printStackTrace();
-            fail("Multipart Example Test Failed!!", exception);
-        }
+        System.out.println("testMultipartUploadExamples: Success: "+success+" Failures: "+failures);
     }
 }

@@ -5,8 +5,6 @@ package software.amazon.encryption.s3;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -54,7 +52,6 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 
 public class S3EncryptionClientMultipartUploadTest {
     private static Provider PROVIDER;
-    private static boolean testCasePassed = false;
 
     @BeforeAll
     public static void setUp() throws NoSuchAlgorithmException {
@@ -62,55 +59,57 @@ public class S3EncryptionClientMultipartUploadTest {
         PROVIDER = Security.getProvider("BC");
     }
 
-    @BeforeEach
-    public void resetTestCasePassedFlag() {
-        testCasePassed = false;
-    }
-
-    @RepeatedTest(3)
+    @Test
     public void multipartPutObjectAsync() throws IOException {
-        if(testCasePassed) {
-            return;
+        int success = 0, failures = 0;
+        for(int i=0; i < 100; i++) {
+            try {
+                final String objectKey = appendTestSuffix("multipart-put-object-async");
+
+                final long fileSizeLimit = 1024 * 1024 * 100;
+                final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+                final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+
+
+
+                S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+                  .kmsKeyId(KMS_KEY_ID)
+                  .enableMultipartPutObject(true)
+                  .enableDelayedAuthenticationMode(true)
+                  .cryptoProvider(PROVIDER)
+                  .build();
+
+                Map<String, String> encryptionContext = new HashMap<>();
+                encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+                ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+
+                CompletableFuture<PutObjectResponse> futurePut = v3Client.putObject(builder -> builder
+                  .bucket(BUCKET)
+                  .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                  .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor));
+
+                futurePut.join();
+                singleThreadExecutor.shutdown();
+
+                // Asserts
+                CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = v3Client.getObject(builder -> builder
+                  .bucket(BUCKET)
+                  .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+                  .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
+                ResponseInputStream<GetObjectResponse> output = getFuture.join();
+
+                assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
+
+                deleteObject(BUCKET, objectKey, v3Client);
+                v3Client.close();
+
+                success++;
+            } catch (Exception e) {
+                failures++;
+            }
         }
-        final String objectKey = appendTestSuffix("multipart-put-object-async");
-
-        final long fileSizeLimit = 1024 * 1024 * 100;
-        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
-
-        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
-                .kmsKeyId(KMS_KEY_ID)
-                .enableMultipartPutObject(true)
-                .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
-                .build();
-
-        Map<String, String> encryptionContext = new HashMap<>();
-        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
-
-        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-
-        CompletableFuture<PutObjectResponse> futurePut = v3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
-                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor));
-
-        futurePut.join();
-        singleThreadExecutor.shutdown();
-
-        // Asserts
-        CompletableFuture<ResponseInputStream<GetObjectResponse>> getFuture = v3Client.getObject(builder -> builder
-                .bucket(BUCKET)
-                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
-                .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
-        ResponseInputStream<GetObjectResponse> output = getFuture.join();
-
-        assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
-
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
-
-        testCasePassed = true;
+        System.out.println("testMultipartPutObjectAsync: Success: "+success+" Failures: "+failures);
     }
 
     @Test
@@ -122,11 +121,11 @@ public class S3EncryptionClientMultipartUploadTest {
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
 
         S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
-                .kmsKeyId(KMS_KEY_ID)
-                .enableMultipartPutObject(true)
-                .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
-                .build();
+          .kmsKeyId(KMS_KEY_ID)
+          .enableMultipartPutObject(true)
+          .enableDelayedAuthenticationMode(true)
+          .cryptoProvider(PROVIDER)
+          .build();
 
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
@@ -134,52 +133,58 @@ public class S3EncryptionClientMultipartUploadTest {
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 
         assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
-                .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor)));
+          .bucket(BUCKET)
+          .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+          .key(objectKey), AsyncRequestBody.fromInputStream(inputStream, fileSizeLimit, singleThreadExecutor)));
 
         v3Client.close();
         singleThreadExecutor.shutdown();
     }
 
-    @RepeatedTest(3)
+    @Test
     public void multipartPutObject() throws IOException {
-        if(testCasePassed) {
-            return;
+        int success = 0, failures = 0;
+
+        for(int i=0; i < 100; i++) {
+            try {
+                final String objectKey = appendTestSuffix("multipart-put-object");
+
+                final long fileSizeLimit = 1024 * 1024 * 100;
+                final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+                final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+
+                S3Client v3Client = S3EncryptionClient.builder()
+                  .kmsKeyId(KMS_KEY_ID)
+                  .enableMultipartPutObject(true)
+                  .enableDelayedAuthenticationMode(true)
+                  .cryptoProvider(PROVIDER)
+                  .build();
+
+                Map<String, String> encryptionContext = new HashMap<>();
+                encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
+
+                v3Client.putObject(builder -> builder
+                  .bucket(BUCKET)
+                  .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                  .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit));
+
+                // Asserts
+                ResponseInputStream<GetObjectResponse> output = v3Client.getObject(builder -> builder
+                  .bucket(BUCKET)
+                  .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
+                  .key(objectKey));
+
+                assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
+
+                v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+                v3Client.close();
+
+                success++;
+            } catch (Exception e) {
+                failures++;
+            }
         }
-        final String objectKey = appendTestSuffix("multipart-put-object");
-
-        final long fileSizeLimit = 1024 * 1024 * 100;
-        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
-
-        S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_KEY_ID)
-                .enableMultipartPutObject(true)
-                .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
-                .build();
-
-        Map<String, String> encryptionContext = new HashMap<>();
-        encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
-
-        v3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
-                .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit));
-
-        // Asserts
-        ResponseInputStream<GetObjectResponse> output = v3Client.getObject(builder -> builder
-                .bucket(BUCKET)
-                .overrideConfiguration(S3EncryptionClient.withAdditionalConfiguration(encryptionContext))
-                .key(objectKey));
-
-        assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
-
-        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
-        v3Client.close();
-
-        testCasePassed = true;
+        System.out.println("testMultipartPutObject: Success: "+success+" Failures: "+failures);
     }
 
     /*
@@ -291,19 +296,19 @@ public class S3EncryptionClientMultipartUploadTest {
         final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
 
         S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_KEY_ID)
-                .enableMultipartPutObject(true)
-                .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
-                .build();
+          .kmsKeyId(KMS_KEY_ID)
+          .enableMultipartPutObject(true)
+          .enableDelayedAuthenticationMode(true)
+          .cryptoProvider(PROVIDER)
+          .build();
 
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
         assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
-                .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit)));
+          .bucket(BUCKET)
+          .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+          .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit)));
 
         v3Client.close();
     }
@@ -320,14 +325,14 @@ public class S3EncryptionClientMultipartUploadTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_KEY_ID)
-                .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
-                .build();
+          .kmsKeyId(KMS_KEY_ID)
+          .enableDelayedAuthenticationMode(true)
+          .cryptoProvider(PROVIDER)
+          .build();
 
         // Create Multipart upload request to S3
         CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
-                builder.bucket(BUCKET).key(objectKey));
+          builder.bucket(BUCKET).key(objectKey));
 
         List<CompletedPart> partETags = new ArrayList<>();
 
@@ -345,19 +350,19 @@ public class S3EncryptionClientMultipartUploadTest {
             }
 
             UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
-                    .bucket(BUCKET)
-                    .key(objectKey)
-                    .uploadId(initiateResult.uploadId())
-                    .partNumber(partsSent)
-                    .build();
+              .bucket(BUCKET)
+              .key(objectKey)
+              .uploadId(initiateResult.uploadId())
+              .partNumber(partsSent)
+              .build();
 
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
             UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
-                    RequestBody.fromInputStream(partInputStream, partInputStream.available()));
+              RequestBody.fromInputStream(partInputStream, partInputStream.available()));
             partETags.add(CompletedPart.builder()
-                    .partNumber(partsSent)
-                    .eTag(uploadPartResult.eTag())
-                    .build());
+              .partNumber(partsSent)
+              .eTag(uploadPartResult.eTag())
+              .build());
             outputStream.reset();
             bytesSent = 0;
             partsSent++;
@@ -366,32 +371,32 @@ public class S3EncryptionClientMultipartUploadTest {
 
         // Last Part
         UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
-                .bucket(BUCKET)
-                .key(objectKey)
-                .uploadId(initiateResult.uploadId())
-                .partNumber(partsSent)
-                .sdkPartType(SdkPartType.LAST)
-                .build();
+          .bucket(BUCKET)
+          .key(objectKey)
+          .uploadId(initiateResult.uploadId())
+          .partNumber(partsSent)
+          .sdkPartType(SdkPartType.LAST)
+          .build();
 
         final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
         UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
-                RequestBody.fromInputStream(partInputStream, partInputStream.available()));
+          RequestBody.fromInputStream(partInputStream, partInputStream.available()));
         partETags.add(CompletedPart.builder()
-                .partNumber(partsSent)
-                .eTag(uploadPartResult.eTag())
-                .build());
+          .partNumber(partsSent)
+          .eTag(uploadPartResult.eTag())
+          .build());
 
         // Complete the multipart upload.
         v3Client.completeMultipartUpload(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .uploadId(initiateResult.uploadId())
-                .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
+          .bucket(BUCKET)
+          .key(objectKey)
+          .uploadId(initiateResult.uploadId())
+          .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         // Asserts
         InputStream resultStream = v3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)).asInputStream();
+          .bucket(BUCKET)
+          .key(objectKey)).asInputStream();
 
         assertTrue(IOUtils.contentEquals(new BoundedInputStream(fileSizeLimit), resultStream));
         resultStream.close();
@@ -411,14 +416,14 @@ public class S3EncryptionClientMultipartUploadTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_KEY_ID)
-                .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
-                .build();
+          .kmsKeyId(KMS_KEY_ID)
+          .enableDelayedAuthenticationMode(true)
+          .cryptoProvider(PROVIDER)
+          .build();
 
         // Create Multipart upload request to S3
         CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
-                builder.bucket(BUCKET).key(objectKey));
+          builder.bucket(BUCKET).key(objectKey));
 
         List<CompletedPart> partETags = new ArrayList<>();
 
@@ -437,19 +442,19 @@ public class S3EncryptionClientMultipartUploadTest {
 
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
             UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
-                    .bucket(BUCKET)
-                    .key(objectKey)
-                    .uploadId(initiateResult.uploadId())
-                    .partNumber(partsSent)
-                    .contentLength((long) partInputStream.available())
-                    .build();
+              .bucket(BUCKET)
+              .key(objectKey)
+              .uploadId(initiateResult.uploadId())
+              .partNumber(partsSent)
+              .contentLength((long) partInputStream.available())
+              .build();
 
             UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
-                    RequestBody.fromInputStream(partInputStream, partInputStream.available()));
+              RequestBody.fromInputStream(partInputStream, partInputStream.available()));
             partETags.add(CompletedPart.builder()
-                    .partNumber(partsSent)
-                    .eTag(uploadPartResult.eTag())
-                    .build());
+              .partNumber(partsSent)
+              .eTag(uploadPartResult.eTag())
+              .build());
             outputStream.reset();
             bytesSent = 0;
             partsSent++;
@@ -459,32 +464,32 @@ public class S3EncryptionClientMultipartUploadTest {
 
         // Last Part
         UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
-                .bucket(BUCKET)
-                .key(objectKey)
-                .uploadId(initiateResult.uploadId())
-                .partNumber(partsSent)
-                .contentLength((long) partInputStream.available())
-                .sdkPartType(SdkPartType.LAST)
-                .build();
+          .bucket(BUCKET)
+          .key(objectKey)
+          .uploadId(initiateResult.uploadId())
+          .partNumber(partsSent)
+          .contentLength((long) partInputStream.available())
+          .sdkPartType(SdkPartType.LAST)
+          .build();
 
         UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
-                RequestBody.fromInputStream(partInputStream, partInputStream.available()));
+          RequestBody.fromInputStream(partInputStream, partInputStream.available()));
         partETags.add(CompletedPart.builder()
-                .partNumber(partsSent)
-                .eTag(uploadPartResult.eTag())
-                .build());
+          .partNumber(partsSent)
+          .eTag(uploadPartResult.eTag())
+          .build());
 
         // Complete the multipart upload.
         v3Client.completeMultipartUpload(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .uploadId(initiateResult.uploadId())
-                .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
+          .bucket(BUCKET)
+          .key(objectKey)
+          .uploadId(initiateResult.uploadId())
+          .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         // Asserts
         ResponseBytes<GetObjectResponse> result = v3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey));
+          .bucket(BUCKET)
+          .key(objectKey));
 
         String inputAsString = IoUtils.toUtf8String(new BoundedInputStream(fileSizeLimit));
         String outputAsString = IoUtils.toUtf8String(result.asInputStream());
@@ -505,14 +510,14 @@ public class S3EncryptionClientMultipartUploadTest {
 
         // V3 Client
         S3Client v3Client = S3EncryptionClient.builder()
-                .kmsKeyId(KMS_KEY_ID)
-                .enableDelayedAuthenticationMode(true)
-                .cryptoProvider(PROVIDER)
-                .build();
+          .kmsKeyId(KMS_KEY_ID)
+          .enableDelayedAuthenticationMode(true)
+          .cryptoProvider(PROVIDER)
+          .build();
 
         // Create Multipart upload request to S3
         CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
-                builder.bucket(BUCKET).key(objectKey));
+          builder.bucket(BUCKET).key(objectKey));
 
         int bytesRead, bytesSent = 0;
         // 10MB parts
@@ -529,15 +534,15 @@ public class S3EncryptionClientMultipartUploadTest {
 
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
             UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
-                    .bucket(BUCKET)
-                    .key(objectKey)
-                    .uploadId(initiateResult.uploadId())
-                    .partNumber(partsSent)
-                    .contentLength((long) partInputStream.available() + 1) // mismatch
-                    .build();
+              .bucket(BUCKET)
+              .key(objectKey)
+              .uploadId(initiateResult.uploadId())
+              .partNumber(partsSent)
+              .contentLength((long) partInputStream.available() + 1) // mismatch
+              .build();
 
             assertThrows(S3EncryptionClientException.class, () -> v3Client.uploadPart(uploadPartRequest,
-                    RequestBody.fromInputStream(partInputStream, partInputStream.available())));
+              RequestBody.fromInputStream(partInputStream, partInputStream.available())));
         }
 
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));

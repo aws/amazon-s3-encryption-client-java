@@ -58,7 +58,7 @@ jobs:
           export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/${{ vars.CI_KMS_KEY_ID }}
           export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:alias/${{ vars.CI_KMS_KEY_ALIAS }}
           export AWS_REGION=${{ vars.CI_AWS_REGION }}
-          mvn -B -ntp test -DskipCompile -Dtest=S3EncryptionClientStreamTest#customSetBufferSizeWithLargeObject,S3EncryptionClientStreamTest#customSetBufferSizeWithLargeObjectAsyncClient
+          mvn -B -ntp test -DskipCompile -Dtest=S3EncryptionClientStreamTest#customSetBufferSizeWithLargeObject,S3EncryptionClientStreamTest#customSetBufferSizeWithLargeObjectAsyncClient,S3EncryptionClientStreamTest#delayedAuthModeWithLargeObject,S3EncryptionClientInstructionFileTest#testMultipartPutWithInstructionFile,S3EncryptionClientMultipartUploadTest#multipartPutObject,S3EncryptionClientMultipartUploadTest#multipartPutObjectAsync,MultipartUploadExampleTest#testMultipartUploadExamples
         shell: bash
 
       - name: Package JAR
