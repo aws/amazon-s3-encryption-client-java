@@ -46,7 +46,9 @@ jobs:
 
       - name: Test
         env:
-          AWS_DEFAULTS_MODE: mobile
+          AWS_DEFAULTS_MODE: standard
+          AWS_RETRY_MODE: adaptive
+          AWS_MAX_ATTEMPTS: '10'
           AWS_SDK_CLIENT_LOGGING: debug
         run: |
           export AWS_S3EC_TEST_ALT_KMS_KEY_ARN=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/${{ vars.CI_ALT_KMS_KEY_ID }}

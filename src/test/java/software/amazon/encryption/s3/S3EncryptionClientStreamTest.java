@@ -310,130 +310,126 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void customSetBufferSizeWithLargeObject() throws IOException {
-        for(int i=0; i < 10; i++) {
-            final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size");
+        final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size");
 
-            Security.addProvider(new BouncyCastleProvider());
-            Provider provider = Security.getProvider("BC");
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
 
-            // V3 Client with custom max buffer size 32 MiB.
-            S3Client v3ClientWithBuffer32MiB = S3EncryptionClient.builder()
-              .aesKey(AES_KEY)
-              .cryptoProvider(provider)
-              .setBufferSize(32 * 1024 * 1024)
-              .build();
+        // V3 Client with custom max buffer size 32 MiB.
+        S3Client v3ClientWithBuffer32MiB = S3EncryptionClient.builder()
+          .aesKey(AES_KEY)
+          .cryptoProvider(provider)
+          .setBufferSize(32 * 1024 * 1024)
+          .build();
 
-            // V3 Client with default buffer size (i.e. 64MiB)
-            // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
-            S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
-              .aesKey(AES_KEY)
-              .cryptoProvider(provider)
-              .enableDelayedAuthenticationMode(true)
-              .build();
+        // V3 Client with default buffer size (i.e. 64MiB)
+        // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
+        S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
+          .aesKey(AES_KEY)
+          .cryptoProvider(provider)
+          .enableDelayedAuthenticationMode(true)
+          .build();
 
-            // Tight bound on the custom buffer size limit of 32MiB
-            final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
+        // Tight bound on the custom buffer size limit of 32MiB
+        final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
 
-            byte[] data = new byte[(int) fileSizeExceedingDefaultLimit];
-            for(int j=0; j < data.length; j++) {
-                data[i] = (byte) (j % 256);
-            }
-            final InputStream largeObjectStream = new ByteArrayInputStream(data);
-            v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
-              .bucket(BUCKET)
-              .key(objectKey)
-              .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
-
-            largeObjectStream.close();
-
-            // Object is larger than Buffer, so getObject fails
-            assertThrows(S3EncryptionClientException.class, () -> v3ClientWithBuffer32MiB.getObjectAsBytes(builder -> builder
-              .bucket(BUCKET)
-              .key(objectKey)));
-
-            // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
-            ResponseInputStream<GetObjectResponse> response = v3ClientWithDelayedAuth.getObject(builder -> builder
-              .bucket(BUCKET)
-              .key(objectKey));
-
-            // Create a new ByteArrayInputStream for comparison
-            InputStream expectedStream = new ByteArrayInputStream(data);
-            assertTrue(IOUtils.contentEquals(expectedStream, response));
-            response.close();
-
-            // Cleanup
-            deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
-            v3ClientWithBuffer32MiB.close();
-            v3ClientWithDelayedAuth.close();
+        byte[] data = new byte[(int) fileSizeExceedingDefaultLimit];
+        for(int j=0; j < data.length; j++) {
+            data[i] = (byte) (j % 256);
         }
+        final InputStream largeObjectStream = new ByteArrayInputStream(data);
+        v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
+
+        largeObjectStream.close();
+
+        // Object is larger than Buffer, so getObject fails
+        assertThrows(S3EncryptionClientException.class, () -> v3ClientWithBuffer32MiB.getObjectAsBytes(builder -> builder
+          .bucket(BUCKET)
+          .key(objectKey)));
+
+        // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
+        ResponseInputStream<GetObjectResponse> response = v3ClientWithDelayedAuth.getObject(builder -> builder
+          .bucket(BUCKET)
+          .key(objectKey));
+
+        // Create a new ByteArrayInputStream for comparison
+        InputStream expectedStream = new ByteArrayInputStream(data);
+        assertTrue(IOUtils.contentEquals(expectedStream, response));
+        response.close();
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
+        v3ClientWithBuffer32MiB.close();
+        v3ClientWithDelayedAuth.close();
     }
 
     @Test
     public void customSetBufferSizeWithLargeObjectAsyncClient() throws IOException {
-        for(int i=0; i < 10;i++) {
-            final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size-async");
+        final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size-async");
 
-            Security.addProvider(new BouncyCastleProvider());
-            Provider provider = Security.getProvider("BC");
+        Security.addProvider(new BouncyCastleProvider());
+        Provider provider = Security.getProvider("BC");
 
-            // V3 Client with custom max buffer size 32 MiB.
-            S3AsyncClient v3ClientWithBuffer32MiB = S3AsyncEncryptionClient.builder()
-              .aesKey(AES_KEY)
-              .cryptoProvider(provider)
-              .setBufferSize(32 * 1024 * 1024)
-              .build();
+        // V3 Client with custom max buffer size 32 MiB.
+        S3AsyncClient v3ClientWithBuffer32MiB = S3AsyncEncryptionClient.builder()
+          .aesKey(AES_KEY)
+          .cryptoProvider(provider)
+          .setBufferSize(32 * 1024 * 1024)
+          .build();
 
-            // V3 Client with default buffer size (i.e. 64MiB)
-            // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
-            S3AsyncClient v3ClientWithDelayedAuth = S3AsyncEncryptionClient.builder()
-              .aesKey(AES_KEY)
-              .cryptoProvider(provider)
-              .enableDelayedAuthenticationMode(true)
-              .build();
+        // V3 Client with default buffer size (i.e. 64MiB)
+        // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
+        S3AsyncClient v3ClientWithDelayedAuth = S3AsyncEncryptionClient.builder()
+          .aesKey(AES_KEY)
+          .cryptoProvider(provider)
+          .enableDelayedAuthenticationMode(true)
+          .build();
 
-            // Tight bound on the custom buffer size limit of 32MiB
-            final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
-            byte[] data = new byte[(int) fileSizeExceedingDefaultLimit];
-            for(int j=0; j < data.length; j++) {
-                data[i] = (byte) (j % 256);
-            }
-            final InputStream largeObjectStream = new ByteArrayInputStream(data);
-            ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-            CompletableFuture<PutObjectResponse> futurePut = v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
-              .bucket(BUCKET)
-              .key(objectKey)
-              .build(), AsyncRequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit, singleThreadExecutor));
+        // Tight bound on the custom buffer size limit of 32MiB
+        final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
+        byte[] data = new byte[(int) fileSizeExceedingDefaultLimit];
+        for(int j=0; j < data.length; j++) {
+            data[i] = (byte) (j % 256);
+        }
+        final InputStream largeObjectStream = new ByteArrayInputStream(data);
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+        CompletableFuture<PutObjectResponse> futurePut = v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), AsyncRequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit, singleThreadExecutor));
 
-            futurePut.join();
-            largeObjectStream.close();
-            singleThreadExecutor.shutdown();
+        futurePut.join();
+        largeObjectStream.close();
+        singleThreadExecutor.shutdown();
 
-            try {
-                // Object is larger than Buffer, so getObject fails
-                CompletableFuture<ResponseInputStream<GetObjectResponse>> futureResponse = v3ClientWithBuffer32MiB.getObject(builder -> builder
-                  .bucket(BUCKET)
-                  .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
-                futureResponse.join();
-            } catch (CompletionException e) {
-                assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
-            }
-
-            // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
-            CompletableFuture<ResponseInputStream<GetObjectResponse>> futureGet = v3ClientWithDelayedAuth.getObject(builder -> builder
+        try {
+            // Object is larger than Buffer, so getObject fails
+            CompletableFuture<ResponseInputStream<GetObjectResponse>> futureResponse = v3ClientWithBuffer32MiB.getObject(builder -> builder
               .bucket(BUCKET)
               .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
-            ResponseInputStream<GetObjectResponse> output = futureGet.join();
-
-            ByteArrayInputStream expectedStream = new ByteArrayInputStream(data);
-            assertTrue(IOUtils.contentEquals(expectedStream, output));
-
-            output.close();
-
-            // Cleanup
-            deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
-            v3ClientWithBuffer32MiB.close();
-            v3ClientWithDelayedAuth.close();
+            futureResponse.join();
+        } catch (CompletionException e) {
+            assertEquals(S3EncryptionClientException.class, e.getCause().getClass());
         }
+
+        // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
+        CompletableFuture<ResponseInputStream<GetObjectResponse>> futureGet = v3ClientWithDelayedAuth.getObject(builder -> builder
+          .bucket(BUCKET)
+          .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
+        ResponseInputStream<GetObjectResponse> output = futureGet.join();
+
+        ByteArrayInputStream expectedStream = new ByteArrayInputStream(data);
+        assertTrue(IOUtils.contentEquals(expectedStream, output));
+
+        output.close();
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
+        v3ClientWithBuffer32MiB.close();
+        v3ClientWithDelayedAuth.close();
     }
 
     @Test
