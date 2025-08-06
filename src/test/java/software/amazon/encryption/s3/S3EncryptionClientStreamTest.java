@@ -310,7 +310,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void customSetBufferSizeWithLargeObject() throws IOException {
-        for(int i=0; i < 10; i++) {
+        for(int i=0; i < 100; i++) {
             final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size");
 
             Security.addProvider(new BouncyCastleProvider());
@@ -370,7 +370,7 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void customSetBufferSizeWithLargeObjectAsyncClient() throws IOException {
-        for(int i=0; i < 10; i++) {
+        for(int i=0; i < 100; i++) {
             final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size-async");
 
             Security.addProvider(new BouncyCastleProvider());
