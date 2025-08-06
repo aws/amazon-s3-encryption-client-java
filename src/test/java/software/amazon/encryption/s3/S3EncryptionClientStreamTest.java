@@ -376,7 +376,7 @@ public class S3EncryptionClientStreamTest {
     public void customSetBufferSizeWithLargeObjectAsyncClient() throws IOException {
         ArrayList<Exception> failures = new ArrayList<>();
         int success=0, fails = 0;
-        for(int i=0; i < 50; i++) {
+        for(int i=0; i < 100; i++) {
             try {
                 final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size-async");
 
