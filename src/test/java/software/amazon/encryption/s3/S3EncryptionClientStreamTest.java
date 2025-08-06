@@ -34,6 +34,7 @@ import javax.crypto.AEADBadTagException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -332,9 +333,12 @@ public class S3EncryptionClientStreamTest {
 
             // Tight bound on the custom buffer size limit of 32MiB
             final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
-            final InputStream largeObjectStream = new BufferedInputStream(
-              new BoundedInputStream(fileSizeExceedingDefaultLimit)
-            );
+
+            byte[] data = new byte[(int) fileSizeExceedingDefaultLimit];
+            for(int j=0; j < data.length; j++) {
+                data[i] = (byte) (j % 256);
+            }
+            final InputStream largeObjectStream = new ByteArrayInputStream(data);
             v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
               .bucket(BUCKET)
               .key(objectKey)
@@ -352,8 +356,9 @@ public class S3EncryptionClientStreamTest {
               .bucket(BUCKET)
               .key(objectKey));
 
-
-            assertTrue(IOUtils.contentEquals(new BoundedInputStream(fileSizeExceedingDefaultLimit), response));
+            // Create a new ByteArrayInputStream for comparison
+            InputStream expectedStream = new ByteArrayInputStream(data);
+            assertTrue(IOUtils.contentEquals(expectedStream, response));
             response.close();
 
             // Cleanup
