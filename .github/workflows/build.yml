@@ -48,7 +48,7 @@ jobs:
         env:
           AWS_DEFAULTS_MODE: standard
           AWS_RETRY_MODE: adaptive
-          AWS_MAX_ATTEMPTS: '10'
+          AWS_MAX_ATTEMPTS: '20'
           AWS_SDK_CLIENT_LOGGING: debug
         run: |
           export AWS_S3EC_TEST_ALT_KMS_KEY_ARN=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/${{ vars.CI_ALT_KMS_KEY_ID }}
@@ -58,7 +58,7 @@ jobs:
           export AWS_S3EC_TEST_KMS_KEY_ID=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:key/${{ vars.CI_KMS_KEY_ID }}
           export AWS_S3EC_TEST_KMS_KEY_ALIAS=arn:aws:kms:${{ vars.CI_AWS_REGION }}:${{ secrets.CI_AWS_ACCOUNT_ID }}:alias/${{ vars.CI_KMS_KEY_ALIAS }}
           export AWS_REGION=${{ vars.CI_AWS_REGION }}
-           mvn -B -ntp test -DskipCompile -Dtest=S3EncryptionClientStreamTest#customSetBufferSizeWithLargeObject,S3EncryptionClientStreamTest#customSetBufferSizeWithLargeObjectAsyncClient
+          mvn -B -ntp test -DskipCompile -Dtest=S3EncryptionClientStreamTest#customSetBufferSizeWithLargeObject,S3EncryptionClientStreamTest#customSetBufferSizeWithLargeObjectAsyncClient
         shell: bash
 
       - name: Package JAR
