@@ -367,10 +367,9 @@ public class S3EncryptionClientStreamTest {
                 fails++;
                 failures.add(e);
             }
-            System.out.println("Success: " + success + " Fails: " + fails);
-            failures.forEach(e -> e.printStackTrace());
-
         }
+        System.out.println("Success: " + success + " Fails: " + fails);
+        failures.forEach(e -> e.printStackTrace());
     }
 
     @Test
@@ -441,9 +440,10 @@ public class S3EncryptionClientStreamTest {
                 fails++;
                 failures.add(e);
             }
-            System.out.println("Success: " + success + " Fails: " + fails);
-            failures.forEach(e -> e.printStackTrace());
+
         }
+        System.out.println("Success: " + success + " Fails: " + fails);
+        failures.forEach(e -> e.printStackTrace());
     }
 
     @Test
