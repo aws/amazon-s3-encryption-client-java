@@ -335,7 +335,7 @@ public class S3EncryptionClientStreamTest {
 
         byte[] data = new byte[(int) fileSizeExceedingDefaultLimit];
         for(int j=0; j < data.length; j++) {
-            data[i] = (byte) (j % 256);
+            data[j] = (byte) (j % 256);
         }
         final InputStream largeObjectStream = new ByteArrayInputStream(data);
         v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
@@ -392,7 +392,7 @@ public class S3EncryptionClientStreamTest {
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
         byte[] data = new byte[(int) fileSizeExceedingDefaultLimit];
         for(int j=0; j < data.length; j++) {
-            data[i] = (byte) (j % 256);
+            data[j] = (byte) (j % 256);
         }
         final InputStream largeObjectStream = new ByteArrayInputStream(data);
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
