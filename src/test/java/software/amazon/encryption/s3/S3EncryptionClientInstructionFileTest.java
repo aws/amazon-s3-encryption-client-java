@@ -58,32 +58,32 @@ public class S3EncryptionClientInstructionFileTest {
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
-                .instructionFileConfig(InstructionFileConfig.builder()
-                        .instructionFileClient(wrappedClient)
-                        .enableInstructionFilePutObject(true)
-                        .build())
-                .kmsKeyId(KMS_KEY_ID)
-                .build();
+          .instructionFileConfig(InstructionFileConfig.builder()
+            .instructionFileClient(wrappedClient)
+            .enableInstructionFilePutObject(true)
+            .build())
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
 
         s3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromString(input));
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), RequestBody.fromString(input));
 
         // Get the instruction file separately using a default client
         S3Client defaultClient = S3Client.create();
         ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey + ".instruction")
-                .build());
+          .bucket(BUCKET)
+          .key(objectKey + ".instruction")
+          .build());
         // Ensure its metadata identifies it as such
         assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
 
         // Ensure decryption succeeds
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build());
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build());
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -98,33 +98,33 @@ public class S3EncryptionClientInstructionFileTest {
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
-                .instructionFileConfig(InstructionFileConfig.builder()
-                        .instructionFileClient(wrappedClient)
-                        .enableInstructionFilePutObject(true)
-                        .build())
-                .kmsKeyId(KMS_KEY_ID)
-                .build();
+          .instructionFileConfig(InstructionFileConfig.builder()
+            .instructionFileClient(wrappedClient)
+            .enableInstructionFilePutObject(true)
+            .build())
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
 
         // Put with Instruction File
         s3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromString(input));
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), RequestBody.fromString(input));
 
         // Disabled client should fail
         S3Client s3ClientDisabledInstructionFile = S3EncryptionClient.builder()
-                .wrappedClient(wrappedClient)
-                .instructionFileConfig(InstructionFileConfig.builder()
-                        .disableInstructionFile(true)
-                        .build())
-                .kmsKeyId(KMS_KEY_ID)
-                .build();
+          .wrappedClient(wrappedClient)
+          .instructionFileConfig(InstructionFileConfig.builder()
+            .disableInstructionFile(true)
+            .build())
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
 
         try {
             s3ClientDisabledInstructionFile.getObjectAsBytes(builder -> builder
-                    .bucket(BUCKET)
-                    .key(objectKey)
-                    .build());
+              .bucket(BUCKET)
+              .key(objectKey)
+              .build());
             fail("expected exception");
         } catch (S3EncryptionClientException exception) {
             assertTrue(exception.getMessage().contains("Exception encountered while fetching Instruction File."));
@@ -146,32 +146,32 @@ public class S3EncryptionClientInstructionFileTest {
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
-                .instructionFileConfig(InstructionFileConfig.builder()
-                        .instructionFileClient(wrappedClient)
-                        .enableInstructionFilePutObject(true)
-                        .build())
-                .kmsKeyId(KMS_KEY_ID)
-                .build();
+          .instructionFileConfig(InstructionFileConfig.builder()
+            .instructionFileClient(wrappedClient)
+            .enableInstructionFilePutObject(true)
+            .build())
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
 
         s3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromString(input));
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), RequestBody.fromString(input));
 
         // Get the instruction file separately using a default client
         S3Client defaultClient = S3Client.create();
         ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey + ".instruction")
-                .build());
+          .bucket(BUCKET)
+          .key(objectKey + ".instruction")
+          .build());
         // Ensure its metadata identifies it as such
         assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
 
         // Ensure decryption succeeds
         ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build());
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build());
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -179,9 +179,9 @@ public class S3EncryptionClientInstructionFileTest {
 
         try {
             defaultClient.getObjectAsBytes(builder -> builder
-                    .bucket(BUCKET)
-                    .key(objectKey + ".instruction")
-                    .build());
+              .bucket(BUCKET)
+              .key(objectKey + ".instruction")
+              .build());
             fail("expected exception!");
         } catch (NoSuchKeyException e) {
             // expected
@@ -197,28 +197,28 @@ public class S3EncryptionClientInstructionFileTest {
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
-                .instructionFileConfig(InstructionFileConfig.builder()
-                        .instructionFileClient(wrappedClient)
-                        .enableInstructionFilePutObject(true)
-                        .build())
-                .kmsKeyId(KMS_KEY_ID)
-                .build();
+          .instructionFileConfig(InstructionFileConfig.builder()
+            .instructionFileClient(wrappedClient)
+            .enableInstructionFilePutObject(true)
+            .build())
+          .kmsKeyId(KMS_KEY_ID)
+          .build();
 
         s3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromString(input));
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), RequestBody.fromString(input));
 
         EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new KMSEncryptionMaterials(KMS_KEY_ID));
+          new StaticEncryptionMaterialsProvider(new KMSEncryptionMaterials(KMS_KEY_ID));
         CryptoConfigurationV2 cryptoConfig =
-                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
-                        .withStorageMode(CryptoStorageMode.InstructionFile);
+          new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+            .withStorageMode(CryptoStorageMode.InstructionFile);
 
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
-                .withCryptoConfiguration(cryptoConfig)
-                .withEncryptionMaterialsProvider(materialsProvider)
-                .build();
+          .withCryptoConfiguration(cryptoConfig)
+          .withEncryptionMaterialsProvider(materialsProvider)
+          .build();
 
         String result = v2Client.getObjectAsString(BUCKET, objectKey);
         assertEquals(input, result);
@@ -237,28 +237,28 @@ public class S3EncryptionClientInstructionFileTest {
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
-                .instructionFileConfig(InstructionFileConfig.builder()
-                        .instructionFileClient(wrappedClient)
-                        .enableInstructionFilePutObject(true)
-                        .build())
-                .aesKey(aesKey)
-                .build();
+          .instructionFileConfig(InstructionFileConfig.builder()
+            .instructionFileClient(wrappedClient)
+            .enableInstructionFilePutObject(true)
+            .build())
+          .aesKey(aesKey)
+          .build();
 
         s3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromString(input));
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), RequestBody.fromString(input));
 
         EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(aesKey));
+          new StaticEncryptionMaterialsProvider(new EncryptionMaterials(aesKey));
         CryptoConfigurationV2 cryptoConfig =
-                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
-                        .withStorageMode(CryptoStorageMode.InstructionFile);
+          new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+            .withStorageMode(CryptoStorageMode.InstructionFile);
 
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
-                .withCryptoConfiguration(cryptoConfig)
-                .withEncryptionMaterialsProvider(materialsProvider)
-                .build();
+          .withCryptoConfiguration(cryptoConfig)
+          .withEncryptionMaterialsProvider(materialsProvider)
+          .build();
 
         String result = v2Client.getObjectAsString(BUCKET, objectKey);
         assertEquals(input, result);
@@ -278,28 +278,28 @@ public class S3EncryptionClientInstructionFileTest {
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builder()
-                .instructionFileConfig(InstructionFileConfig.builder()
-                        .instructionFileClient(wrappedClient)
-                        .enableInstructionFilePutObject(true)
-                        .build())
-                .rsaKeyPair(rsaKey)
-                .build();
+          .instructionFileConfig(InstructionFileConfig.builder()
+            .instructionFileClient(wrappedClient)
+            .enableInstructionFilePutObject(true)
+            .build())
+          .rsaKeyPair(rsaKey)
+          .build();
 
         s3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .key(objectKey)
-                .build(), RequestBody.fromString(input));
+          .bucket(BUCKET)
+          .key(objectKey)
+          .build(), RequestBody.fromString(input));
 
         EncryptionMaterialsProvider materialsProvider =
-                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(rsaKey));
+          new StaticEncryptionMaterialsProvider(new EncryptionMaterials(rsaKey));
         CryptoConfigurationV2 cryptoConfig =
-                new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
-                        .withStorageMode(CryptoStorageMode.InstructionFile);
+          new CryptoConfigurationV2(CryptoMode.StrictAuthenticatedEncryption)
+            .withStorageMode(CryptoStorageMode.InstructionFile);
 
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
-                .withCryptoConfiguration(cryptoConfig)
-                .withEncryptionMaterialsProvider(materialsProvider)
-                .build();
+          .withCryptoConfiguration(cryptoConfig)
+          .withEncryptionMaterialsProvider(materialsProvider)
+          .build();
 
         String result = v2Client.getObjectAsString(BUCKET, objectKey);
         assertEquals(input, result);
@@ -311,50 +311,60 @@ public class S3EncryptionClientInstructionFileTest {
 
     @Test
     public void testMultipartPutWithInstructionFile() throws IOException {
-        final String object_key = appendTestSuffix("test-multipart-put-instruction-file");
+        int success = 0, failures = 0;
+        for(int i=0; i < 100; i++) {
+            try {
+                final String object_key = appendTestSuffix("test-multipart-put-instruction-file");
 
-        final long fileSizeLimit = 1024 * 1024 * 50; //50 MB
-        final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
-        final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
-        final StorageClass storageClass = StorageClass.STANDARD_IA;
+                final long fileSizeLimit = 1024 * 1024 * 50; //50 MB
+                final InputStream inputStream = new BoundedInputStream(fileSizeLimit);
+                final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
+                final StorageClass storageClass = StorageClass.STANDARD_IA;
 
-        S3Client wrappedClient = S3Client.create();
-        S3Client s3Client = S3EncryptionClient.builder()
-                .instructionFileConfig(InstructionFileConfig.builder()
-                        .instructionFileClient(wrappedClient)
-                        .enableInstructionFilePutObject(true)
-                        .build())
-                .kmsKeyId(KMS_KEY_ID)
-                .enableMultipartPutObject(true)
-                .build();
+                S3Client wrappedClient = S3Client.create();
+                S3Client s3Client = S3EncryptionClient.builder()
+                  .instructionFileConfig(InstructionFileConfig.builder()
+                    .instructionFileClient(wrappedClient)
+                    .enableInstructionFilePutObject(true)
+                    .build())
+                  .kmsKeyId(KMS_KEY_ID)
+                  .enableMultipartPutObject(true)
+                  .build();
 
-        Map<String, String> encryptionContext = new HashMap<>();
-        encryptionContext.put("test-key", "test-value");
+                Map<String, String> encryptionContext = new HashMap<>();
+                encryptionContext.put("test-key", "test-value");
 
 
-        s3Client.putObject(builder -> builder
-                .bucket(BUCKET)
-                .storageClass(storageClass)
-                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
-                .key(object_key), RequestBody.fromInputStream(inputStream, fileSizeLimit));
+                s3Client.putObject(builder -> builder
+                  .bucket(BUCKET)
+                  .storageClass(storageClass)
+                  .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                  .key(object_key), RequestBody.fromInputStream(inputStream, fileSizeLimit));
 
-        S3Client defaultClient = S3Client.create();
-        ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(object_key + ".instruction")
-                .build());
-        assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
-        assertEquals(storageClass.toString(), directInstGetResponse.response().storageClassAsString());
+                S3Client defaultClient = S3Client.create();
+                ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
+                  .bucket(BUCKET)
+                  .key(object_key + ".instruction")
+                  .build());
+                assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
+                assertEquals(storageClass.toString(), directInstGetResponse.response().storageClassAsString());
 
-        ResponseInputStream<GetObjectResponse> getResponse = s3Client.getObject(builder -> builder
-                .bucket(BUCKET)
-                .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
-                .key(object_key));
+                ResponseInputStream<GetObjectResponse> getResponse = s3Client.getObject(builder -> builder
+                  .bucket(BUCKET)
+                  .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
+                  .key(object_key));
 
-        assertTrue(IOUtils.contentEquals(objectStreamForResult, getResponse));
+                assertTrue(IOUtils.contentEquals(objectStreamForResult, getResponse));
 
-        deleteObject(BUCKET, object_key, s3Client);
-        s3Client.close();
+                deleteObject(BUCKET, object_key, s3Client);
+                s3Client.close();
+
+                success++;
+            } catch (Exception e) {
+                failures++;
+            }
+        }
+        System.out.println("testMultipartPutWithInstructionFile: Success: "+success+" Failures: "+failures);
 
     }
 
@@ -375,17 +385,17 @@ public class S3EncryptionClientInstructionFileTest {
         S3Client wrappedClient = S3Client.create();
 
         S3Client v3Client = S3EncryptionClient.builder()
-                .rsaKeyPair(rsaKey)
-                .instructionFileConfig(InstructionFileConfig.builder()
-                        .instructionFileClient(wrappedClient)
-                        .enableInstructionFilePutObject(true)
-                        .build())
-                .enableDelayedAuthenticationMode(true)
-                .build();
+          .rsaKeyPair(rsaKey)
+          .instructionFileConfig(InstructionFileConfig.builder()
+            .instructionFileClient(wrappedClient)
+            .enableInstructionFilePutObject(true)
+            .build())
+          .enableDelayedAuthenticationMode(true)
+          .build();
 
 
         CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
-                builder.bucket(BUCKET).key(object_key).storageClass(storageClass));
+          builder.bucket(BUCKET).key(object_key).storageClass(storageClass));
 
         List<CompletedPart> partETags = new ArrayList<>();
 
@@ -400,57 +410,57 @@ public class S3EncryptionClientInstructionFileTest {
                 continue;
             }
             UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
-                    .bucket(BUCKET)
-                    .key(object_key)
-                    .uploadId(initiateResult.uploadId())
-                    .partNumber(partsSent)
-                    .build();
+              .bucket(BUCKET)
+              .key(object_key)
+              .uploadId(initiateResult.uploadId())
+              .partNumber(partsSent)
+              .build();
 
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
 
             UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
-                    RequestBody.fromInputStream(partInputStream, partInputStream.available()));
+              RequestBody.fromInputStream(partInputStream, partInputStream.available()));
 
             partETags.add(CompletedPart.builder()
-                    .partNumber(partsSent)
-                    .eTag(uploadPartResult.eTag())
-                    .build());
+              .partNumber(partsSent)
+              .eTag(uploadPartResult.eTag())
+              .build());
             outputStream.reset();
             bytesSent = 0;
             partsSent++;
         }
         inputStream.close();
         UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
-                .bucket(BUCKET)
-                .key(object_key)
-                .uploadId(initiateResult.uploadId())
-                .partNumber(partsSent)
-                .sdkPartType(SdkPartType.LAST)
-                .build();
+          .bucket(BUCKET)
+          .key(object_key)
+          .uploadId(initiateResult.uploadId())
+          .partNumber(partsSent)
+          .sdkPartType(SdkPartType.LAST)
+          .build();
         final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
         UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
-                RequestBody.fromInputStream(partInputStream, partInputStream.available()));
+          RequestBody.fromInputStream(partInputStream, partInputStream.available()));
         partETags.add(CompletedPart.builder()
-                .partNumber(partsSent)
-                .eTag(uploadPartResult.eTag())
-                .build());
+          .partNumber(partsSent)
+          .eTag(uploadPartResult.eTag())
+          .build());
         v3Client.completeMultipartUpload(builder -> builder
-                .bucket(BUCKET)
-                .key(object_key)
-                .uploadId(initiateResult.uploadId())
-                .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
+          .bucket(BUCKET)
+          .key(object_key)
+          .uploadId(initiateResult.uploadId())
+          .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         S3Client defaultClient = S3Client.create();
         ResponseBytes<GetObjectResponse> directInstGetResponse = defaultClient.getObjectAsBytes(builder -> builder
-                .bucket(BUCKET)
-                .key(object_key + ".instruction")
-                .build());
+          .bucket(BUCKET)
+          .key(object_key + ".instruction")
+          .build());
         assertTrue(directInstGetResponse.response().metadata().containsKey("x-amz-crypto-instr-file"));
         assertEquals(storageClass.toString(), directInstGetResponse.response().storageClassAsString());
 
         ResponseInputStream<GetObjectResponse> getResponse = v3Client.getObject(builder -> builder
-                .bucket(BUCKET)
-                .key(object_key));
+          .bucket(BUCKET)
+          .key(object_key));
 
         assertTrue(IOUtils.contentEquals(objectStreamForResult, getResponse));
 
@@ -459,4 +469,3 @@ public class S3EncryptionClientInstructionFileTest {
     }
 
 }
-

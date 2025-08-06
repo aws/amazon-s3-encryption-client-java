@@ -9,12 +9,18 @@ public class MultipartUploadExampleTest {
 
     @Test
     public void testMultipartUploadExamples() {
-        final String bucket = S3EncryptionClientTestResources.BUCKET;
-        try {
-            MultipartUploadExample.main(new String[]{bucket});
-        } catch (Throwable exception) {
-            exception.printStackTrace();
-            fail("Multipart Example Test Failed!!", exception);
+        int success = 0, failures = 0;
+        for(int i=0; i < 100; i++) {
+            final String bucket = S3EncryptionClientTestResources.BUCKET;
+            try {
+                MultipartUploadExample.main(new String[]{bucket});
+                success++;
+            } catch (Throwable exception) {
+                exception.printStackTrace();
+                fail("Multipart Example Test Failed!!", exception);
+                failures++;
+            }
         }
+        System.out.println("testMultipartUploadExamples: Success: "+success+" Failures: "+failures);
     }
 }
