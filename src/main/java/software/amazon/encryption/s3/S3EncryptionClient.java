@@ -210,7 +210,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                         .putExecutionAttribute(S3EncryptionClient.CONFIGURATION, multipartConfiguration);
     }
 
-    //= specification/s3-encryption/client.md#api-operations
+    //= specification/s3-encryption/client.md#optional-api-operations
     //= type=implication
     //# ReEncryptInstructionFile MAY be implemented by the S3EC.
     /**
@@ -250,7 +250,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         final byte[] iv = contentMetadata.contentIv();
 
         //Decrypt the data key using the current keyring
-        //= specification/s3-encryption/client.md#api-operations
+        //= specification/s3-encryption/client.md#optional-api-operations
         //= type=implication
         //# ReEncryptInstructionFile MUST decrypt the instruction file's encrypted data key for the given object using the client's CMM.
         DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
@@ -271,7 +271,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
           .build();
 
         //Re-encrypt the data key with the new keyring while preserving other cryptographic parameters
-        //= specification/s3-encryption/client.md#api-operations
+        //= specification/s3-encryption/client.md#optional-api-operations
         //= type=implication
         //# ReEncryptInstructionFile MUST re-encrypt the plaintext data key with a provided keyring.
         RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
@@ -315,7 +315,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         throw new S3EncryptionClientException("Re-encryption failed due to enforced rotation! Old keyring is still able to decrypt the newly encrypted data key");
     }
 
-    //= specification/s3-encryption/client.md#api-operations
+    //= specification/s3-encryption/client.md#required-api-operations
     //= type=implication
     //# PutObject MUST be implemented by the S3EC.
     /**
@@ -355,7 +355,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 
         try {
-            //= specification/s3-encryption/client.md#api-operations
+            //= specification/s3-encryption/client.md#required-api-operations
             //= type=implication
             //# PutObject MUST encrypt its input data before it is uploaded to S3.
             CompletableFuture<PutObjectResponse> futurePut = pipeline.putObject(putObjectRequest,
@@ -382,7 +382,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
     }
 
-    //= specification/s3-encryption/client.md#api-operations
+    //= specification/s3-encryption/client.md#required-api-operations
     //= type=implication
     //# GetObject MUST be implemented by the S3EC.
     /**
@@ -406,7 +406,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                            ResponseTransformer<GetObjectResponse, T> responseTransformer)
             throws AwsServiceException, SdkClientException {
 
-        //= specification/s3-encryption/client.md#api-operations
+        //= specification/s3-encryption/client.md#required-api-operations
         //= type=implication
         //# GetObject MUST decrypt data received from the S3 server and return it as plaintext.
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
@@ -516,7 +516,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         throw new S3EncryptionClientException(t.getMessage(), t);
     }
 
-    //= specification/s3-encryption/client.md#api-operations
+    //= specification/s3-encryption/client.md#required-api-operations
     //= type=implication
     //# DeleteObject MUST be implemented by the S3EC.
     /**
@@ -536,11 +536,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .build();
 
         try {
-            //= specification/s3-encryption/client.md#api-operations
+            //= specification/s3-encryption/client.md#required-api-operations
             //= type=implementation
             //# DeleteObject MUST delete the given object key.
             DeleteObjectResponse deleteObjectResponse = _wrappedAsyncClient.deleteObject(actualRequest).join();
-            //= specification/s3-encryption/client.md#api-operations
+            //= specification/s3-encryption/client.md#required-api-operations
             //= type=implementation
             //# DeleteObject MUST delete the associated instruction file using the default instruction file suffix.
             String instructionObjectKey = deleteObjectRequest.key() + DEFAULT_INSTRUCTION_FILE_SUFFIX;
@@ -557,7 +557,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
     }
 
-    //= specification/s3-encryption/client.md#api-operations
+    //= specification/s3-encryption/client.md#required-api-operations
     //= type=implication
     //# DeleteObjects MUST be implemented by the S3EC.
     /**
@@ -576,11 +576,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
         try {
-            //= specification/s3-encryption/client.md#api-operations
+            //= specification/s3-encryption/client.md#required-api-operations
             //= type=implementation
             //# DeleteObjects MUST delete each of the given objects.
             DeleteObjectsResponse deleteObjectsResponse = _wrappedAsyncClient.deleteObjects(actualRequest).join();
-            //= specification/s3-encryption/client.md#api-operations
+            //= specification/s3-encryption/client.md#required-api-operations
             //= type=implementation
             //# DeleteObjects MUST delete each of the corresponding instruction files using the default instruction file suffix.
             List<ObjectIdentifier> deleteObjects = instructionFileKeysToDelete(deleteObjectsRequest);
@@ -597,7 +597,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
     }
 
-    //= specification/s3-encryption/client.md#api-operations
+    //= specification/s3-encryption/client.md#optional-api-operations
     //= type=implication
     //# CreateMultipartUpload MAY be implemented by the S3EC.
     /**
@@ -621,7 +621,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
     }
 
-    //= specification/s3-encryption/client.md#api-operations
+    //= specification/s3-encryption/client.md#optional-api-operations
     //= type=implication
     //# UploadPart MAY be implemented by the S3EC.
     /**
@@ -647,7 +647,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
     }
 
-    //= specification/s3-encryption/client.md#api-operations
+    //= specification/s3-encryption/client.md#optional-api-operations
     //= type=implication
     //# CompleteMultipartUpload MAY be implemented by the S3EC.
     /**
@@ -667,7 +667,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
     }
 
-    //= specification/s3-encryption/client.md#api-operations
+    //= specification/s3-encryption/client.md#optional-api-operations
     //= type=implication
     //# AbortMultipartUpload MAY be implemented by the S3EC.
     /**
@@ -965,7 +965,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         //= specification/s3-encryption/client.md#set-buffer-size
         //= type=implication
-        //# The S3EC SHOULD accept a configurable buffer size which refers to the maximum ciphertext length to store in memory when delayed authentication mode is disabled.
+        //# The S3EC SHOULD accept a configurable buffer size which refers to the maximum ciphertext length in bytes to store in memory when Delayed Authentication mode is disabled.
         /**
          * Sets the buffer size for safe authentication used when delayed authentication mode is disabled.
          * If buffer size is not given during client configuration, default buffer size is set to 64MiB.

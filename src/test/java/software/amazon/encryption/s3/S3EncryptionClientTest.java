@@ -166,13 +166,13 @@ public class S3EncryptionClientTest {
         v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
 
         S3Client s3Client = S3Client.builder().build();
-        //= specification/s3-encryption/client.md#api-operations
+        //= specification/s3-encryption/client.md#required-api-operations
         //= type=test
         //# DeleteObject MUST delete the given object key.
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
-        //= specification/s3-encryption/client.md#api-operations
+        //= specification/s3-encryption/client.md#required-api-operations
         //= type=test
         //# DeleteObject MUST delete the associated instruction file using the default instruction file suffix.
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
@@ -218,13 +218,13 @@ public class S3EncryptionClientTest {
                 .delete(builder1 -> builder1.objects(objects)));
 
         S3Client s3Client = S3Client.builder().build();
-        //= specification/s3-encryption/client.md#api-operations
+        //= specification/s3-encryption/client.md#required-api-operations
         //= type=test
         //# DeleteObjects MUST delete each of the given objects.
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKeys[0])));
-        //= specification/s3-encryption/client.md#api-operations
+        //= specification/s3-encryption/client.md#required-api-operations
         //= type=test
         //# DeleteObjects MUST delete each of the corresponding instruction files using the default instruction file suffix.
         assertThrows(S3Exception.class, () -> s3Client.getObject(builder -> builder
