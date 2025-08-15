@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+//= specification/s3-encryption/materials/s3-kms-keyring.md#interface
+//= type=implication
+//# The KmsKeyring MUST implement the [Keyring interface](keyring-interface.md#interface) and include the behavior described in the [S3 Keyring](s3-keyring.md).
 /**
  * This keyring can wrap keys with the active keywrap algorithm and
  * unwrap with the active and legacy algorithms for KMS keys.
@@ -41,10 +44,19 @@ public class KmsKeyring extends S3Keyring {
     private final KmsClient _kmsClient;
     private final String _wrappingKeyId;
 
+    //= specification/s3-encryption/materials/s3-kms-keyring.md#supported-wrapping-algorithm-modes
+    //= type=implication
+    //# The KmsKeyring MUST NOT support encryption using KmsV1 mode.
     private final DecryptDataKeyStrategy _kmsStrategy = new DecryptDataKeyStrategy() {
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#decryptdatakey
+        //= type=implication
+        //# If the Key Provider Info of the Encrypted Data Key is "kms", the KmsKeyring MUST attempt to decrypt using KmsV1 mode.
         private static final String KEY_PROVIDER_INFO = "kms";
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#supported-wrapping-algorithm-modes
+        //= type=implication
+        //# The KmsV1 mode MUST be only enabled when legacy wrapping algorithms are enabled.
         @Override
         public boolean isLegacy() {
             return true;
@@ -55,25 +67,58 @@ public class KmsKeyring extends S3Keyring {
             return KEY_PROVIDER_INFO;
         }
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#supported-wrapping-algorithm-modes
+        //= type=implication
+        //# The KmsKeyring MUST support decryption using KmsV1 mode.
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) {
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#kmsv1
+            //= type=implication
+            //# To attempt to decrypt a particular [encrypted data key](../structures.md#encrypted-data-key), the
+            //# KmsKeyring MUST call [AWS KMS Decrypt](https://docs.aws.amazon.com/kms/latest/APIReference/API_Decrypt.html) with the configured AWS KMS client.
             DecryptRequest request = DecryptRequest.builder()
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#kmsv1
+                    //= type=implication
+                    //# - `KeyId` MUST be the configured AWS KMS key identifier.
                     .keyId(_wrappingKeyId)
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#kmsv1
+                    //= type=implication
+                    //# - `EncryptionContext` MUST be the [encryption context](../structures.md#encryption-context)
+                    //# included in the input [decryption materials](../structures.md#decryption-materials).
                     .encryptionContext(materials.encryptionContext())
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#kmsv1
+                    //= type=implication
+                    //# - `CiphertextBlob` MUST be the [encrypted data key ciphertext](../structures.md#ciphertext).
                     .ciphertextBlob(SdkBytes.fromByteArray(encryptedDataKey))
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#kmsv1
+                    //= type=implication
+                    //# - A custom API Name or User Agent string SHOULD be provided in order to provide metrics on KMS
+                    //# calls associated with the S3 Encryption Client.
                     .overrideConfiguration(builder -> builder.addApiName(API_NAME))
                     .build();
 
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#kmsv1
+            //= type=implication
+            //# If the KmsKeyring fails to successfully decrypt the [encrypted data key](../structures.md#encrypted-data-key), then it MUST throw an exception.
             DecryptResponse response = _kmsClient.decrypt(request);
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#kmsv1
+            //= type=implication
+            //# The KmsKeyring MUST immediately return the plaintext as a collection of bytes.
             return response.plaintext().asByteArray();
         }
     };
 
     private final DataKeyStrategy _kmsContextStrategy = new DataKeyStrategy() {
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#decryptdatakey
+        //= type=implication
+        //# If the Key Provider Info of the Encrypted Data Key is "kms+context", the KmsKeyring MUST attempt to decrypt using Kms+Context mode.
         private static final String KEY_PROVIDER_INFO = "kms+context";
         private static final String ENCRYPTION_CONTEXT_ALGORITHM_KEY = "aws:x-amz-cek-alg";
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#supported-wrapping-algorithm-modes
+        //= type=implication
+        //# The Kms+Context mode MUST be enabled as a fully-supported (non-legacy) wrapping algorithm.
         @Override
         public boolean isLegacy() {
             return false;
@@ -149,20 +194,51 @@ public class KmsKeyring extends S3Keyring {
                     .build();
         }
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#encryptdatakey
+        //= type=implication
+        //# The KmsKeyring MUST implement the EncryptDataKey method.
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#supported-wrapping-algorithm-modes
+        //= type=implication
+        //# The KmsKeyring MUST support encryption using Kms+Context mode.
         @Override
         public byte[] encryptDataKey(SecureRandom secureRandom, EncryptionMaterials materials) {
             HashMap<String, String> encryptionContext = new HashMap<>(materials.encryptionContext());
             EncryptRequest request = EncryptRequest.builder()
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#encryptdatakey
+                    //= type=implication
+                    //# - `KeyId` MUST be the configured AWS KMS key identifier.
                     .keyId(_wrappingKeyId)
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#encryptdatakey
+                    //= type=implication
+                    //# - `EncryptionContext` MUST be the [encryption context](../structures.md#encryption-context) included
+                    //# in the input [encryption materials](../structures.md#encryption-materials).
                     .encryptionContext(encryptionContext)
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#encryptdatakey
+                    //= type=implication
+                    //# - `PlaintextDataKey` MUST be the plaintext data key in the [encryption materials](../structures.md#encryption-materials).
                     .plaintext(SdkBytes.fromByteArray(materials.plaintextDataKey()))
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#encryptdatakey
+                    //= type=implication
+                    //# - A custom API Name or User Agent string SHOULD be provided in order to provide metrics on KMS calls associated with the S3 Encryption Client.
                     .overrideConfiguration(builder -> builder.addApiName(API_NAME))
                     .build();
 
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#encryptdatakey
+            //= type=implication
+            //# The keyring MUST call [AWS KMS Encrypt](https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html) using the configured AWS KMS client.
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#encryptdatakey
+            //= type=implication
+            //# If the call to [AWS KMS Encrypt](https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html) does not succeed, OnEncrypt MUST fail.
             EncryptResponse response = _kmsClient.encrypt(request);
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#encryptdatakey
+            //= type=implication
+            //# If the call to AWS KMS Encrypt is successful, OnEncrypt MUST return the `CiphertextBlob` as a collection of bytes.
             return response.ciphertextBlob().asByteArray();
         }
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#supported-wrapping-algorithm-modes
+        //= type=implication
+        //# The KmsKeyring MUST support decryption using Kms+Context mode.
         @Override
         public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) {
             Map<String, String> requestEncryptionContext = new HashMap<>();
@@ -177,23 +253,56 @@ public class KmsKeyring extends S3Keyring {
                 }
             }
 
+
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+            //= type=implication
+            //# When decrypting using Kms+Context mode, the KmsKeyring MUST validate the provided (request) encryption context with the stored (materials) encryption context.
             // We are validating the encryption context to match S3EC V2 behavior
             // Refer to KMSMaterialsHandler in the V2 client for details
             Map<String, String> materialsEncryptionContextCopy = new HashMap<>(materials.encryptionContext());
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+            //= type=implication
+            //# The stored encryption context with the two reserved keys removed MUST match the provided encryption context.
             materialsEncryptionContextCopy.remove(KEY_ID_CONTEXT_KEY);
             materialsEncryptionContextCopy.remove(ENCRYPTION_CONTEXT_ALGORITHM_KEY);
             if (!materialsEncryptionContextCopy.equals(requestEncryptionContext)) {
+                //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+                //= type=implication
+                //# If the stored encryption context with the two reserved keys removed does not match the provided encryption context, the KmsKeyring MUST throw an exception.
                 throw new S3EncryptionClientException("Provided encryption context does not match information retrieved from S3");
             }
 
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+            //= type=implication
+            //# To attempt to decrypt a particular [encrypted data key](../structures.md#encrypted-data-key), the KmsKeyring
+            //# MUST call [AWS KMS Decrypt](https://docs.aws.amazon.com/kms/latest/APIReference/API_Decrypt.html) with the configured AWS KMS client.
             DecryptRequest request = DecryptRequest.builder()
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+                    //= type=implication
+                    //# - `KeyId` MUST be the configured AWS KMS key identifier.
                     .keyId(_wrappingKeyId)
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+                    //= type=implication
+                    //# - `EncryptionContext` MUST be the [encryption context](../structures.md#encryption-context)
+                    //#  included in the input [decryption materials](../structures.md#decryption-materials).
                     .encryptionContext(materials.encryptionContext())
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+                    //= type=implication
+                    //# - `CiphertextBlob` MUST be the [encrypted data key ciphertext](../structures.md#ciphertext).
                     .ciphertextBlob(SdkBytes.fromByteArray(encryptedDataKey))
+                    //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+                    //= type=implication
+                    //# - A custom API Name or User Agent string SHOULD be provided in order to provide metrics on KMS calls associated with the S3 Encryption Client.
                     .overrideConfiguration(builder -> builder.addApiName(API_NAME))
                     .build();
 
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+            //= type=implication
+            //# If the KmsKeyring fails to successfully decrypt the [encrypted data key](../structures.md#encrypted-data-key), then it MUST throw an exception.
             DecryptResponse response = _kmsClient.decrypt(request);
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
+            //= type=implication
+            //# The KmsKeyring MUST immediately return the plaintext as a collection of bytes.
             return response.plaintext().asByteArray();
         }
 
@@ -207,6 +316,9 @@ public class KmsKeyring extends S3Keyring {
         _kmsClient = builder._kmsClient;
         _wrappingKeyId = builder._wrappingKeyId;
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#decryptdatakey
+        //= type=implication
+        //# The KmsKeyring MUST determine whether to decrypt using KmsV1 mode or Kms+Context mode.
         decryptDataKeyStrategies.put(_kmsStrategy.keyProviderInfo(), _kmsStrategy);
         decryptDataKeyStrategies.put(_kmsContextStrategy.keyProviderInfo(), _kmsContextStrategy);
     }
@@ -243,6 +355,9 @@ public class KmsKeyring extends S3Keyring {
             return this;
         }
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#initialization
+        //= type=implication
+        //# On initialization, the caller MAY provide an AWS KMS SDK client instance.
         /**
          * Note that this does NOT create a defensive clone of KmsClient. Any modifications made to the wrapped
          * client will be reflected in this Builder.
@@ -253,12 +368,18 @@ public class KmsKeyring extends S3Keyring {
             return this;
         }
 
+        //= specification/s3-encryption/materials/s3-kms-keyring.md#initialization
+        //= type=implication
+        //# On initialization, the caller MUST provide an AWS KMS key identifier.
         public Builder wrappingKeyId(String wrappingKeyId) {
             _wrappingKeyId = wrappingKeyId;
             return this;
         }
 
         public KmsKeyring build() {
+            //= specification/s3-encryption/materials/s3-kms-keyring.md#initialization
+            //= type=implication
+            //# If the caller does not provide an AWS KMS SDK client instance or provides a null value, the KmsKeyring MUST create a default KMS client instance.
             if (_kmsClient == null) {
                 _kmsClient = KmsClient.create();
             }
