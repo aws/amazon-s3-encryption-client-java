@@ -11,4 +11,5 @@ duvet_report:
 		report \
 		--spec-pattern "compliance/**/*.toml" \
 		--source-pattern "src/**/*.java" \
+		--source-pattern "compliance_exceptions/*.txt" \
 		--html specification_compliance_report.html
