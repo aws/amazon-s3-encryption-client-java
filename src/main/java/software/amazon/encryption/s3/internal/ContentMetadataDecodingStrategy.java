@@ -13,6 +13,7 @@ import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
+import software.amazon.encryption.s3.materials.MaterialsDescription;
 import software.amazon.encryption.s3.materials.S3Keyring;
 
 import java.io.ByteArrayOutputStream;
@@ -137,8 +138,8 @@ public class ContentMetadataDecodingStrategy {
                 .keyProviderInfo(keyProviderInfo.getBytes(StandardCharsets.UTF_8))
                 .build();
 
-        // Get encrypted data key encryption context or materials description (depending on the keyring)
-        final Map<String, String> encryptionContextOrMatDesc = new HashMap<>();
+        // Parse the JSON materials description or encryption context
+        final Map<String, String> matDescMap = new HashMap<>();
         // The V2 client treats null value here as empty, do the same to avoid incompatibility
         String jsonEncryptionContext = metadata.getOrDefault(MetadataKeyConstants.ENCRYPTED_DATA_KEY_CONTEXT, "{}");
         // When the encryption context contains non-US-ASCII characters,
@@ -150,10 +151,27 @@ public class ContentMetadataDecodingStrategy {
             JsonNode objectNode = parser.parse(decodedJsonEncryptionContext);
 
             for (Map.Entry<String, JsonNode> entry : objectNode.asObject().entrySet()) {
-                encryptionContextOrMatDesc.put(entry.getKey(), entry.getValue().asString());
+                matDescMap.put(entry.getKey(), entry.getValue().asString());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+
+        // By default, assume the context is a materials description unless it's a KMS keyring
+        Map<String, String> encryptionContext;
+        MaterialsDescription materialsDescription;
+
+        if (keyProviderInfo.contains("kms")) {
+            // For KMS keyrings, use the map as encryption context
+            encryptionContext = matDescMap;
+            materialsDescription = MaterialsDescription.builder().build();
+        } else {
+            // For all other keyrings (AES, RSA), use the map as materials description
+            materialsDescription = MaterialsDescription.builder()
+                .putAll(matDescMap)
+                .build();
+            // Set an empty encryption context
+            encryptionContext = new HashMap<>();
         }
 
         // Get content iv
@@ -162,7 +180,8 @@ public class ContentMetadataDecodingStrategy {
         return ContentMetadata.builder()
                 .algorithmSuite(algorithmSuite)
                 .encryptedDataKey(edk)
-                .encryptionContextOrMatDesc(encryptionContextOrMatDesc)
+                .encryptionContext(encryptionContext)
+                .materialsDescription(materialsDescription)
                 .contentIv(iv)
                 .contentRange(contentRange)
                 .build();

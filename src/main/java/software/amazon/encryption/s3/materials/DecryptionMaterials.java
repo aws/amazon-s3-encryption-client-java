@@ -27,6 +27,9 @@ final public class DecryptionMaterials implements CryptographicMaterials {
     // Should NOT contain sensitive information
     private final Map<String, String> _encryptionContext;
 
+    // Materials description used for RSA and AES keyrings
+    private final MaterialsDescription _materialsDescription;
+
     private final byte[] _plaintextDataKey;
 
     private long _ciphertextLength;
@@ -37,6 +40,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         this._s3Request = builder._s3Request;
         this._algorithmSuite = builder._algorithmSuite;
         this._encryptionContext = builder._encryptionContext;
+        this._materialsDescription = builder._materialsDescription;
         this._plaintextDataKey = builder._plaintextDataKey;
         this._ciphertextLength = builder._ciphertextLength;
         this._cryptoProvider = builder._cryptoProvider;
@@ -63,6 +67,14 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         + " implementation is immutable")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
+    }
+
+    /**
+     * Returns the materials description used for RSA and AES keyrings.
+     * @return the materials description
+     */
+    public MaterialsDescription materialsDescription() {
+        return _materialsDescription;
     }
 
     public byte[] plaintextDataKey() {
@@ -103,6 +115,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
                 .s3Request(_s3Request)
                 .algorithmSuite(_algorithmSuite)
                 .encryptionContext(_encryptionContext)
+                .materialsDescription(_materialsDescription)
                 .plaintextDataKey(_plaintextDataKey)
                 .ciphertextLength(_ciphertextLength)
                 .cryptoProvider(_cryptoProvider)
@@ -115,6 +128,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         private Provider _cryptoProvider = null;
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
+        private MaterialsDescription _materialsDescription = MaterialsDescription.builder().build();
         private byte[] _plaintextDataKey = null;
         private long _ciphertextLength = -1;
         private String _contentRange = null;
@@ -136,6 +150,13 @@ final public class DecryptionMaterials implements CryptographicMaterials {
             _encryptionContext = encryptionContext == null
                     ? Collections.emptyMap()
                     : Collections.unmodifiableMap(encryptionContext);
+            return this;
+        }
+
+        public Builder materialsDescription(MaterialsDescription materialsDescription) {
+            _materialsDescription = materialsDescription == null
+                    ? MaterialsDescription.builder().build()
+                    : materialsDescription;
             return this;
         }
 

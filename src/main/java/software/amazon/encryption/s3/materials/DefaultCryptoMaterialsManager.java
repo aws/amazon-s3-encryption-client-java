@@ -36,6 +36,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
                 .s3Request(request.s3Request())
                 .algorithmSuite(request.algorithmSuite())
                 .encryptionContext(request.encryptionContext())
+                .materialsDescription(request.materialsDescription())
                 .ciphertextLength(request.ciphertextLength())
                 .cryptoProvider(_cryptoProvider)
                 .contentRange(request.contentRange())

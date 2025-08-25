@@ -68,6 +68,7 @@ import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.Keyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
+import software.amazon.encryption.s3.materials.MaterialsDescription;
 import software.amazon.encryption.s3.materials.MultipartConfiguration;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RawKeyring;
@@ -246,7 +247,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         //Extract cryptographic parameters from the current instruction file that MUST be preserved during re-encryption
         final AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         final EncryptedDataKey originalEncryptedDataKey = contentMetadata.encryptedDataKey();
-        final Map<String, String> currentKeyringMaterialsDescription = contentMetadata.encryptedDataKeyMatDescOrContext();
+        final MaterialsDescription currentKeyringMaterialsDescription = contentMetadata.materialsDescription();
         final byte[] iv = contentMetadata.contentIv();
 
         //Decrypt the data key using the current keyring
@@ -277,7 +278,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
         EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
 
-        final Map<String, String> newMaterialsDescription = encryptedMaterials.materialsDescription().getMaterialsDescription();
+        final MaterialsDescription newMaterialsDescription = encryptedMaterials.materialsDescription();
         //Validate that the new keyring has different materials description than the old keyring
         if (newMaterialsDescription.equals(currentKeyringMaterialsDescription)) {
             throw new S3EncryptionClientException("New keyring must have new materials description!");

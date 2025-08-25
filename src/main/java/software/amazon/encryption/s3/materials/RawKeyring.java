@@ -5,16 +5,46 @@ package software.amazon.encryption.s3.materials;
 import org.apache.commons.logging.LogFactory;
 import software.amazon.encryption.s3.S3EncryptionClient;
 
+import java.util.Map;
+
 /**
  * This is an abstract base class for keyrings that use raw cryptographic keys (AES + RSA)
+ *
+ * @param <T> the type of key material used by this keyring
  */
-public abstract class RawKeyring extends S3Keyring {
+public abstract class RawKeyring<T> extends S3Keyring {
 
   protected final MaterialsDescription _materialsDescription;
+  protected final Map<MaterialsDescription, RawKeyMaterial<T>> _additionalDecryptionKeyMaterial;
 
-  protected RawKeyring(Builder<?, ?> builder) {
+  protected RawKeyring(Builder<?, ?, T> builder) {
     super(builder);
     _materialsDescription = builder._materialsDescription;
+    _additionalDecryptionKeyMaterial = builder._additionalDecryptionKeyMaterial;
+  }
+
+  /**
+   * Finds the appropriate key material to use for decryption based on the materials description.
+   * If a matching key material is found in the additionalDecryptionKeyMaterial map, it is returned.
+   * Otherwise, the default key material is returned.
+   *
+   * @param materials the decryption materials containing the materials description
+   * @param defaultKeyMaterial the default key material to use if no matching key material is found
+   * @return the key material to use for decryption
+   */
+  protected T findKeyMaterialForDecryption(DecryptionMaterials materials, T defaultKeyMaterial) {
+    if (_additionalDecryptionKeyMaterial != null && !_additionalDecryptionKeyMaterial.isEmpty()) {
+      // Get the materials description from the decryption materials
+      MaterialsDescription materialsDescription = materials.materialsDescription();
+
+      // Check if there's a matching entry in the additionalDecryptionKeyMaterial map
+      RawKeyMaterial<T> matchingKeyMaterial = _additionalDecryptionKeyMaterial.get(materialsDescription);
+      if (matchingKeyMaterial != null) {
+        return matchingKeyMaterial.getKeyMaterial();
+      }
+    }
+
+    return defaultKeyMaterial;
   }
 
   /**
@@ -76,13 +106,17 @@ public abstract class RawKeyring extends S3Keyring {
    *
    * @param <KeyringT> the type of keyring being built
    * @param <BuilderT> the type of builder
+   * @param <T> the type of key material used by this keyring
    */
   public abstract static class Builder<
-    KeyringT extends RawKeyring, BuilderT extends Builder<KeyringT, BuilderT>
+    KeyringT extends RawKeyring<T>,
+    BuilderT extends Builder<KeyringT, BuilderT, T>,
+    T
   >
     extends S3Keyring.Builder<KeyringT, BuilderT> {
 
     protected MaterialsDescription _materialsDescription;
+    protected Map<MaterialsDescription, RawKeyMaterial<T>> _additionalDecryptionKeyMaterial;
 
     protected Builder() {
       super();
@@ -99,6 +133,20 @@ public abstract class RawKeyring extends S3Keyring {
       MaterialsDescription materialsDescription
     ) {
       _materialsDescription = materialsDescription;
+      return builder();
+    }
+
+    /**
+     * Sets the map of keys for which to use for decryption.
+     *
+     * @param additionalDecryptionKeyMaterial the map of additional key material for decryption,
+     *                                        where the key is the materials description and the value is the key material
+     * @return a reference to this object so that method calls can be chained together.
+     */
+    public BuilderT additionalDecryptionKeyMaterial(
+            Map<MaterialsDescription, RawKeyMaterial<T>> additionalDecryptionKeyMaterial
+    ) {
+      _additionalDecryptionKeyMaterial = additionalDecryptionKeyMaterial;
       return builder();
     }
   }

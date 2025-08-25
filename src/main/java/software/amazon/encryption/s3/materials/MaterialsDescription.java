@@ -96,6 +96,24 @@ public class MaterialsDescription implements Map<String, String> {
     return materialsDescription.entrySet();
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null || getClass() != obj.getClass()) {
+      return false;
+    }
+
+    MaterialsDescription other = (MaterialsDescription) obj;
+    return getMaterialsDescription().equals(other.getMaterialsDescription());
+  }
+
+  @Override
+  public int hashCode() {
+    return materialsDescription.hashCode();
+  }
+
   /**
    * Builder for MaterialsDescription.
    */

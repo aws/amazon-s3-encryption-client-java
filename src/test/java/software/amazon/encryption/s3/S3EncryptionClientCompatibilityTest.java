@@ -17,6 +17,7 @@ import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.SimpleMaterialProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
+import software.amazon.encryption.s3.materials.AesKeyring;
+import software.amazon.encryption.s3.materials.MaterialsDescription;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -42,7 +45,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.KMS_KEY_ID;
@@ -269,6 +271,219 @@ public class S3EncryptionClientCompatibilityTest {
 
         String output = v2Client.getObjectAsString(BUCKET, objectKey);
         assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+    @Test
+    public void AesGcmV2toV3MatDescValidation() {
+        final String objectKey = appendTestSuffix("aes-gcm-v2-to-v3-matdesc-validation");
+
+        // V2 Client
+        EncryptionMaterials aesKeyOneMats = new EncryptionMaterials(AES_KEY);
+        aesKeyOneMats.addDescription("key", "one-or-is-it???");
+        SimpleMaterialProvider materialsProvider = new SimpleMaterialProvider();
+        materialsProvider.addMaterial(aesKeyOneMats);
+        // Encrypt with this one
+        materialsProvider.withLatest(aesKeyOneMats);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Client
+        AesKeyring aesKeyring = AesKeyring.builder()
+                .wrappingKey(AES_KEY)
+                // Same key, different MatDesc
+                .materialsDescription(MaterialsDescription.builder().put("key", "one").build())
+                .build();
+        S3Client v3Client = S3EncryptionClient.builder()
+                .keyring(aesKeyring)
+                .build();
+        final String input = "AesGcmV3toV2";
+
+        // V2 encrypt, V3 decrypt
+        v2Client.putObject(BUCKET, objectKey, input);
+        ResponseBytes<GetObjectResponse> v3resp = v3Client.getObjectAsBytes(GetObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+        assertEquals(input, v3resp.asUtf8String());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void AesGcmV2toV3MatDescValidationNoMatDesc() {
+        final String objectKey = appendTestSuffix("aes-gcm-v2-to-v3-matdesc-validation-no-mat-desc");
+
+        // V2 Client
+        EncryptionMaterials aesKeyOneMats = new EncryptionMaterials(AES_KEY);
+        aesKeyOneMats.addDescription("key", "one-or-is-it???");
+        SimpleMaterialProvider materialsProvider = new SimpleMaterialProvider();
+        materialsProvider.addMaterial(aesKeyOneMats);
+        // Encrypt with this one
+        materialsProvider.withLatest(aesKeyOneMats);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Client
+        AesKeyring aesKeyring = AesKeyring.builder()
+                .wrappingKey(AES_KEY)
+                .build();
+        S3Client v3Client = S3EncryptionClient.builder()
+                .keyring(aesKeyring)
+                .build();
+        final String input = "AesGcmV3toV2";
+
+        // V2 encrypt, V3 decrypt
+        v2Client.putObject(BUCKET, objectKey, input);
+        ResponseBytes<GetObjectResponse> v3resp = v3Client.getObjectAsBytes(GetObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+        assertEquals(input, v3resp.asUtf8String());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+    @Test
+    public void AesGcmV3toV2MatDescValidation() {
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v2-matdesc-validation");
+
+        // V2 Client
+        EncryptionMaterials aesKeyOneMats = new EncryptionMaterials(AES_KEY);
+        aesKeyOneMats.addDescription("key", "one-or-is-it???");
+        SimpleMaterialProvider materialsProvider = new SimpleMaterialProvider();
+        materialsProvider.addMaterial(aesKeyOneMats);
+        // Encrypt with this one
+        materialsProvider.withLatest(aesKeyOneMats);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Client
+        AesKeyring aesKeyring = AesKeyring.builder()
+                .wrappingKey(AES_KEY)
+                // Same key, different MatDesc
+                .materialsDescription(MaterialsDescription.builder().put("key", "one").build())
+                .build();
+        S3Client v3Client = S3EncryptionClient.builder()
+                .keyring(aesKeyring)
+                .build();
+        final String input = "AesGcmV2toV3";
+
+        // V3 encrypt, V2 decrypt
+        v3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey), RequestBody.fromString(input));
+
+        String output = v2Client.getObjectAsString(BUCKET, objectKey);
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+
+
+    @Test
+    public void AesGcmV3toV2MatDescValidationNoMatDesc() {
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v2-matdesc-validation-no-mat-desc");
+
+        // V2 Client
+        EncryptionMaterials aesKeyOneMats = new EncryptionMaterials(AES_KEY);
+        aesKeyOneMats.addDescription("key", "one-or-is-it???");
+        SimpleMaterialProvider materialsProvider = new SimpleMaterialProvider();
+        materialsProvider.addMaterial(aesKeyOneMats);
+        // Encrypt with this one
+        materialsProvider.withLatest(aesKeyOneMats);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Client
+        AesKeyring aesKeyring = AesKeyring.builder()
+                .wrappingKey(AES_KEY)
+                .build();
+        S3Client v3Client = S3EncryptionClient.builder()
+                .keyring(aesKeyring)
+                .build();
+        final String input = "AesGcmV3toV2";
+        v3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey), RequestBody.fromString(input));
+
+        String output = v2Client.getObjectAsString(BUCKET, objectKey);
+        assertEquals(input, output);
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, v3Client);
+        v3Client.close();
+    }
+    @Test
+    public void AesGcmV3toV2ManyKeys() throws NoSuchAlgorithmException {
+        final String objectKey = appendTestSuffix("aes-gcm-v3-to-v2-many-keys");
+
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(256);
+        SecretKey aesKeyTwo = keyGen.generateKey();
+        SecretKey aesKeyThree = keyGen.generateKey();
+
+        // V2 Client
+        EncryptionMaterials aesKeyOneMats = new EncryptionMaterials(AES_KEY);
+        aesKeyOneMats.addDescription("key", "one-or-is-it???");
+//        EncryptionMaterials aesKeyTwoMats = new EncryptionMaterials(aesKeyTwo);
+//        aesKeyTwoMats.addDescription("key", "two");
+//        EncryptionMaterials aesKeyThreeMats = new EncryptionMaterials(aesKeyThree);
+//        aesKeyThreeMats.addDescription("key", "three");
+        SimpleMaterialProvider materialsProvider = new SimpleMaterialProvider();
+        materialsProvider.addMaterial(aesKeyOneMats);
+//        materialsProvider.addMaterial(aesKeyTwoMats);
+//        materialsProvider.addMaterial(aesKeyThreeMats);
+        // Specify latest
+        materialsProvider.withLatest(aesKeyOneMats);
+//        materialsProvider.withLatest(aesKeyTwoMats);
+
+        AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
+
+        // V3 Client
+        AesKeyring aesKeyring = AesKeyring.builder()
+                .wrappingKey(AES_KEY)
+                .materialsDescription(MaterialsDescription.builder().put("key", "one").build())
+                .build();
+        S3Client v3Client = S3EncryptionClient.builder()
+                .keyring(aesKeyring)
+                .build();
+        final String input = "AesGcmV3toV2";
+
+//         V3 encrypt, V2 decrypt
+//        v3Client.putObject(builder -> builder
+//                .bucket(BUCKET)
+//                .key(objectKey), RequestBody.fromString(input));
+//
+//        String output = v2Client.getObjectAsString(BUCKET, objectKey);
+//        assertEquals(input, output);
+
+        // V2 encrypt, V3 decrypt
+        String objectKey2 = appendTestSuffix("v2-many-mats");
+        v2Client.putObject(BUCKET, objectKey2, input);
+        ResponseBytes<GetObjectResponse> v3resp = v3Client.getObjectAsBytes(GetObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey2)
+                .build());
+        assertEquals(input, v3resp.asUtf8String());
 
         // Cleanup
         deleteObject(BUCKET, objectKey, v3Client);
