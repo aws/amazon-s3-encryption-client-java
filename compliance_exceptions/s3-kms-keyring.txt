@@ -1,0 +1,15 @@
+// The KMS Keyring in S3EC Java v3 does not validate KMS Key IDs. 
+// Passing an invalid key ID will eventually lead to KMS Request failures.
+
+//= specification/s3-encryption/materials/s3-kms-keyring.md#initialization
+//= type=exception
+//# The KmsKeyring MAY validate that the AWS KMS key identifier is not null or empty.
+//= specification/s3-encryption/materials/s3-kms-keyring.md#initialization
+//= type=exception
+//# If the KmsKeyring validates that the AWS KMS key identifier is not null or empty, then it MUST throw an exception.
+//= specification/s3-encryption/materials/s3-kms-keyring.md#initialization
+//= type=exception
+//# The KmsKeyring MAY validate that the AWS KMS key identifier is [a valid AWS KMS Key identifier](../../framework/aws-kms/aws-kms-key-arn.md#a-valid-aws-kms-identifier).
+//= specification/s3-encryption/materials/s3-kms-keyring.md#initialization
+//= type=exception
+//# If the KmsKeyring validates that the AWS KMS key identifier is not a valid AWS KMS Key identifier, then it MUST throw an exception.
