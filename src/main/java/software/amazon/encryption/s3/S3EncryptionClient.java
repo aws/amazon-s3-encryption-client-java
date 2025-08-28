@@ -258,6 +258,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
           DecryptMaterialsRequest.builder()
             .algorithmSuite(algorithmSuite)
             .encryptedDataKeys(Collections.singletonList(originalEncryptedDataKey))
+            .materialsDescription(contentMetadata.materialsDescription())
             .s3Request(request)
             .build()
         );
