@@ -23,7 +23,7 @@ import java.util.Map;
  * This keyring can wrap keys with the active keywrap algorithm and
  * unwrap with the active and legacy algorithms for RSA keys.
  */
-public class RsaKeyring extends RawKeyring {
+public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
 
     private final PartialRsaKeyPair _partialRsaKeyPair;
 
@@ -42,13 +42,16 @@ public class RsaKeyring extends RawKeyring {
             return KEY_PROVIDER_INFO;
         }
 
-        @Override
-        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-            cipher.init(Cipher.DECRYPT_MODE, _partialRsaKeyPair.getPrivateKey());
+    @Override
+    public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+        // Find the appropriate key material to use for decryption
+        PartialRsaKeyPair keyPairToUse = findKeyMaterialForDecryption(materials, _partialRsaKeyPair);
 
-            return cipher.doFinal(encryptedDataKey);
-        }
+        final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+        cipher.init(Cipher.DECRYPT_MODE, keyPairToUse.getPrivateKey());
+
+        return cipher.doFinal(encryptedDataKey);
+    }
     };
 
     private final DecryptDataKeyStrategy _rsaEcbStrategy = new DecryptDataKeyStrategy() {
@@ -65,15 +68,18 @@ public class RsaKeyring extends RawKeyring {
             return KEY_PROVIDER_INFO;
         }
 
-        @Override
-        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-            cipher.init(Cipher.UNWRAP_MODE, _partialRsaKeyPair.getPrivateKey());
+    @Override
+    public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+        // Find the appropriate key material to use for decryption
+        PartialRsaKeyPair keyPairToUse = findKeyMaterialForDecryption(materials, _partialRsaKeyPair);
 
-            Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
+        final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+        cipher.init(Cipher.UNWRAP_MODE, keyPairToUse.getPrivateKey());
 
-            return plaintextKey.getEncoded();
-        }
+        Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
+
+        return plaintextKey.getEncoded();
+    }
     };
 
     private final DataKeyStrategy _rsaOaepStrategy = new DataKeyStrategy() {
@@ -127,16 +133,19 @@ public class RsaKeyring extends RawKeyring {
             return ciphertext;
         }
 
-        @Override
-        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-            cipher.init(Cipher.UNWRAP_MODE, _partialRsaKeyPair.getPrivateKey(), OAEP_PARAMETER_SPEC);
+    @Override
+    public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+        // Find the appropriate key material to use for decryption
+        PartialRsaKeyPair keyPairToUse = findKeyMaterialForDecryption(materials, _partialRsaKeyPair);
 
-            String dataKeyAlgorithm = materials.algorithmSuite().dataKeyAlgorithm();
-            Key pseudoDataKey = cipher.unwrap(encryptedDataKey, dataKeyAlgorithm, Cipher.SECRET_KEY);
+        final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+        cipher.init(Cipher.UNWRAP_MODE, keyPairToUse.getPrivateKey(), OAEP_PARAMETER_SPEC);
 
-            return parsePseudoDataKey(materials, pseudoDataKey.getEncoded());
-        }
+        String dataKeyAlgorithm = materials.algorithmSuite().dataKeyAlgorithm();
+        Key pseudoDataKey = cipher.unwrap(encryptedDataKey, dataKeyAlgorithm, Cipher.SECRET_KEY);
+
+        return parsePseudoDataKey(materials, pseudoDataKey.getEncoded());
+    }
 
         private byte[] parsePseudoDataKey(DecryptionMaterials materials, byte[] pseudoDataKey) {
             int dataKeyLengthBytes = pseudoDataKey[0];
@@ -195,7 +204,7 @@ public class RsaKeyring extends RawKeyring {
         return decryptDataKeyStrategies;
     }
 
-  public static class Builder extends RawKeyring.Builder<RsaKeyring, RsaKeyring.Builder> {
+  public static class Builder extends RawKeyring.Builder<RsaKeyring, RsaKeyring.Builder, PartialRsaKeyPair> {
         private PartialRsaKeyPair _partialRsaKeyPair;
 
         private Builder() {

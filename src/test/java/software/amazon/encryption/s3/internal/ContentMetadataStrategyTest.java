@@ -49,7 +49,7 @@ public class ContentMetadataStrategyTest {
         expectedContentMetadata = ContentMetadata.builder()
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .encryptedDataKeyAlgorithm(null)
-                .encryptionContextOrMatDesc(new HashMap())
+                .encryptionContext(new HashMap())
                 .contentIv(bytes)
                 .build();
 

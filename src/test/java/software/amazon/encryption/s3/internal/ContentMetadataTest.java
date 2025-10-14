@@ -35,7 +35,7 @@ public class ContentMetadataTest {
                 .encryptedDataKey(encryptedDataKey)
                 .contentIv(contentIv)
                 .encryptedDataKeyAlgorithm(encryptedDataKeyAlgorithm)
-                .encryptionContextOrMatDesc(encryptedDataKeyContext)
+                .encryptionContext(encryptedDataKeyContext)
                 .build();
     }
 
@@ -57,7 +57,7 @@ public class ContentMetadataTest {
 
     @Test
     public void testEncryptedDataKeyContext() {
-        assertEquals(encryptedDataKeyContext, actualContentMetadata.encryptedDataKeyMatDescOrContext());
+        assertEquals(encryptedDataKeyContext, actualContentMetadata.encryptionContext());
     }
 
     @Test

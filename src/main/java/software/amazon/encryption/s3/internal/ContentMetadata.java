@@ -5,6 +5,7 @@ package software.amazon.encryption.s3.internal;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
+import software.amazon.encryption.s3.materials.MaterialsDescription;
 
 import java.util.Collections;
 import java.util.Map;
@@ -17,11 +18,14 @@ public class ContentMetadata {
     private final String _encryptedDataKeyAlgorithm;
 
     /**
-     * This field stores either encryption context or material description.
-     * We use a single field to store both in order to maintain backwards
-     * compatibility with V2, which treated both as the same.
+     * This field stores the encryption context.
      */
-    private final Map<String, String> _encryptionContextOrMatDesc;
+    private final Map<String, String> _encryptionContext;
+
+    /**
+     * This field stores the materials description used for RSA and AES keyrings.
+     */
+    private final MaterialsDescription _materialsDescription;
 
     private final byte[] _contentIv;
     private final String _contentCipher;
@@ -33,7 +37,8 @@ public class ContentMetadata {
 
         _encryptedDataKey = builder._encryptedDataKey;
         _encryptedDataKeyAlgorithm = builder._encryptedDataKeyAlgorithm;
-        _encryptionContextOrMatDesc = builder._encryptionContextOrMatDesc;
+        _encryptionContext = builder._encryptionContext;
+        _materialsDescription = builder._materialsDescription;
 
         _contentIv = builder._contentIv;
         _contentCipher = builder._contentCipher;
@@ -64,8 +69,16 @@ public class ContentMetadata {
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
         + " implementation is immutable")
-    public Map<String, String> encryptedDataKeyMatDescOrContext() {
-        return _encryptionContextOrMatDesc;
+    public Map<String, String> encryptionContext() {
+        return _encryptionContext;
+    }
+
+    /**
+     * Returns the materials description used for RSA and AES keyrings.
+     * @return the materials description
+     */
+    public MaterialsDescription materialsDescription() {
+        return _materialsDescription;
     }
 
     public byte[] contentIv() {
@@ -92,7 +105,8 @@ public class ContentMetadata {
 
         private EncryptedDataKey _encryptedDataKey;
         private String _encryptedDataKeyAlgorithm;
-        private Map<String, String> _encryptionContextOrMatDesc;
+        private Map<String, String> _encryptionContext;
+        private MaterialsDescription _materialsDescription = MaterialsDescription.builder().build();
 
         private byte[] _contentIv;
         private String _contentCipher;
@@ -118,8 +132,15 @@ public class ContentMetadata {
             return this;
         }
 
-        public Builder encryptionContextOrMatDesc(Map<String, String> encryptionContextOrMatDesc) {
-            _encryptionContextOrMatDesc = Collections.unmodifiableMap(encryptionContextOrMatDesc);
+        public Builder encryptionContext(Map<String, String> encryptionContext) {
+            _encryptionContext = Collections.unmodifiableMap(encryptionContext);
+            return this;
+        }
+
+        public Builder materialsDescription(MaterialsDescription materialsDescription) {
+            _materialsDescription = materialsDescription == null
+                    ? MaterialsDescription.builder().build()
+                    : materialsDescription;
             return this;
         }
 

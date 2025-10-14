@@ -16,6 +16,7 @@ public class DecryptMaterialsRequest {
     private final AlgorithmSuite _algorithmSuite;
     private final List<EncryptedDataKey> _encryptedDataKeys;
     private final Map<String, String> _encryptionContext;
+    private final MaterialsDescription _materialsDescription;
     private final long _ciphertextLength;
     private final String _contentRange;
 
@@ -24,6 +25,7 @@ public class DecryptMaterialsRequest {
         this._algorithmSuite = builder._algorithmSuite;
         this._encryptedDataKeys = builder._encryptedDataKeys;
         this._encryptionContext = builder._encryptionContext;
+        this._materialsDescription = builder._materialsDescription;
         this._ciphertextLength = builder._ciphertextLength;
         this._contentRange = builder._contentRange;
     }
@@ -60,6 +62,14 @@ public class DecryptMaterialsRequest {
         return _encryptionContext;
     }
 
+    /**
+     * Returns the materials description used for RSA and AES keyrings.
+     * @return the materials description
+     */
+    public MaterialsDescription materialsDescription() {
+        return _materialsDescription;
+    }
+
     public long ciphertextLength() {
         return _ciphertextLength;
     }
@@ -73,6 +83,7 @@ public class DecryptMaterialsRequest {
         public GetObjectRequest _s3Request = null;
         private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
+        private MaterialsDescription _materialsDescription = MaterialsDescription.builder().build();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private long _ciphertextLength = -1;
         private String _contentRange = null;
@@ -94,6 +105,13 @@ public class DecryptMaterialsRequest {
             _encryptionContext = encryptionContext == null
                     ? Collections.emptyMap()
                     : Collections.unmodifiableMap(encryptionContext);
+            return this;
+        }
+
+        public Builder materialsDescription(MaterialsDescription materialsDescription) {
+            _materialsDescription = materialsDescription == null
+                    ? MaterialsDescription.builder().build()
+                    : materialsDescription;
             return this;
         }
 

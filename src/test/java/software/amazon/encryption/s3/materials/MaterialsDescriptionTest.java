@@ -1,6 +1,7 @@
 package software.amazon.encryption.s3.materials;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -117,5 +118,61 @@ public class MaterialsDescriptionTest {
       )
       .build();
     assertNotNull(rsaKeyring);
+  }
+
+  @Test
+  public void testEquals() {
+    // Create two identical MaterialsDescription objects
+    MaterialsDescription desc1 = MaterialsDescription.builder()
+        .put("key1", "value1")
+        .put("key2", "value2")
+        .build();
+
+    MaterialsDescription desc2 = MaterialsDescription.builder()
+        .put("key1", "value1")
+        .put("key2", "value2")
+        .build();
+
+    // Create a MaterialsDescription with different values
+    MaterialsDescription desc3 = MaterialsDescription.builder()
+        .put("key1", "value1")
+        .put("key2", "different")
+        .build();
+
+    // Create a MaterialsDescription with different keys
+    MaterialsDescription desc4 = MaterialsDescription.builder()
+        .put("key1", "value1")
+        .put("different", "value2")
+        .build();
+
+    // Create a MaterialsDescription with different number of entries
+    MaterialsDescription desc5 = MaterialsDescription.builder()
+        .put("key1", "value1")
+        .build();
+
+    // Test reflexivity
+    assertEquals(desc1, desc1);
+
+    // Test symmetry
+    assertEquals(desc1, desc2);
+    assertEquals(desc2, desc1);
+
+    // Test with different values
+    assertNotEquals(desc1, desc3);
+
+    // Test with different keys
+    assertNotEquals(desc1, desc4);
+
+    // Test with different number of entries
+    assertNotEquals(desc1, desc5);
+
+    // Test with null
+    assertNotEquals(desc1, null);
+
+    // Test with different type
+    assertNotEquals(desc1, "not a MaterialsDescription");
+
+    // Test hashCode
+    assertEquals(desc1.hashCode(), desc2.hashCode());
   }
 }
