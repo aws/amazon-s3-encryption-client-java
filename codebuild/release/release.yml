@@ -24,7 +24,7 @@ batch:
 
   - identifier: validate_staging_release_openjdk11
     depend-on:
-      - validate_staging_release_openjdk8
+      - release_staging
     buildspec: codebuild/release/validate-staging.yml
     env:
       variables:
@@ -34,7 +34,7 @@ batch:
 
   - identifier: validate_staging_release_corretto8
     depend-on:
-      - validate_staging_release_openjdk11
+      - release_staging
     buildspec: codebuild/release/validate-staging.yml
     env:
       variables:
@@ -44,7 +44,7 @@ batch:
 
   - identifier: validate_staging_release_corretto11
     depend-on:
-      - validate_staging_release_corretto8
+      - release_staging
     buildspec: codebuild/release/validate-staging.yml
     env:
       variables:
@@ -54,7 +54,7 @@ batch:
 
   - identifier: validate_staging_release_corretto17
     depend-on:
-      - validate_staging_release_corretto11
+      - release_staging
     buildspec: codebuild/release/validate-staging.yml
     env:
       variables:
@@ -66,6 +66,11 @@ batch:
   # Version Project
   - identifier: version
     depend-on:
+      - release_staging
+      - validate_staging_release_openjdk8
+      - validate_staging_release_openjdk11
+      - validate_staging_release_corretto8
+      - validate_staging_release_corretto11
       - validate_staging_release_corretto17
     buildspec: codebuild/release/version.yml
     env:
