@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.5.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.4.0...v3.5.0) (2025-10-27)
+
+### Features
+
+* allow raw keyrings to decrypt with multiple wrapping keys ([#485](https://github.com/aws/aws-s3-encryption-client-java/issues/485)) ([a78cb52](https://github.com/aws/aws-s3-encryption-client-java/commit/a78cb522489af90c65dba0e83e2c3803aefacb3f))
+
+### Maintenance
+
+* add client specification and Duvet annotations ([#481](https://github.com/aws/aws-s3-encryption-client-java/issues/481)) ([1bd8b7a](https://github.com/aws/aws-s3-encryption-client-java/commit/1bd8b7a61500080735d90bbff0ab19af35ff0a6a))
+* move spec submodule to master, update annotations ([#482](https://github.com/aws/aws-s3-encryption-client-java/issues/482)) ([cc9eafc](https://github.com/aws/aws-s3-encryption-client-java/commit/cc9eafc9649ded342ee2536d77d949469c9066ad))
+* **release:** skip openjdk11 during release validation ([#487](https://github.com/aws/aws-s3-encryption-client-java/issues/487)) ([a210653](https://github.com/aws/aws-s3-encryption-client-java/commit/a210653476c2628e0cd2f04e7370187c08c8b1ec))
+* **spec:** add spec and Duvet annotations for KmsKeyring ([#483](https://github.com/aws/aws-s3-encryption-client-java/issues/483)) ([ab41a57](https://github.com/aws/aws-s3-encryption-client-java/commit/ab41a57882f674768c4f528a9069cf69aeb9a53f))
+
 ## [3.4.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.3.5...v3.4.0) (2025-07-30)
 
 ### Features
