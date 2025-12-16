@@ -6,6 +6,10 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import java.security.Provider;
 
+/**
+ * Default implementation of {@link CryptographicMaterialsManager} that uses a Keyring to obtain cryptographic materials.
+ * This CMM calls the keyring's onEncrypt and onDecrypt operations to prepare the cryptographic materials for each request.
+ */
 public class DefaultCryptoMaterialsManager implements CryptographicMaterialsManager {
     private final Keyring _keyring;
     private final Provider _cryptoProvider;
@@ -49,7 +53,8 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
         private Keyring _keyring;
         private Provider _cryptoProvider;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         public Builder keyring(Keyring keyring) {
             this._keyring = keyring;

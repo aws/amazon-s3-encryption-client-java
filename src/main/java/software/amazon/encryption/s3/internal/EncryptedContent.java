@@ -6,18 +6,29 @@ import software.amazon.awssdk.core.async.AsyncRequestBody;
 
 public class EncryptedContent {
 
+
     private AsyncRequestBody _encryptedRequestBody;
     private long _ciphertextLength = -1;
     protected byte[] _iv;
+    protected byte[] _messageId;
 
-    public EncryptedContent(final byte[] iv, final AsyncRequestBody encryptedRequestBody, final long ciphertextLength) {
+    public EncryptedContent(final byte[] iv, final byte[] messageId,final AsyncRequestBody encryptedRequestBody, final long ciphertextLength) {
         _iv = iv;
+        _messageId = messageId;
         _encryptedRequestBody = encryptedRequestBody;
         _ciphertextLength = ciphertextLength;
     }
 
-    public byte[] getIv() {
-        return _iv;
+    //= specification/s3-encryption/encryption.md#content-encryption
+    //# The generated IV or Message ID MUST be set or returned from the encryption process such that it can be included in the content metadata.
+    public byte[] messageId() {
+        return _messageId != null ? _messageId.clone() : null;
+    }
+
+    //= specification/s3-encryption/encryption.md#content-encryption
+    //# The generated IV or Message ID MUST be set or returned from the encryption process such that it can be included in the content metadata.
+    public byte[] iv() {
+        return _iv != null ? _iv.clone() : null;
     }
 
     public long getCiphertextLength() {

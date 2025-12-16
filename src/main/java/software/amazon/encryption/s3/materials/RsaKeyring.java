@@ -13,9 +13,9 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.spec.MGF1ParameterSpec;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,16 +42,16 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
             return KEY_PROVIDER_INFO;
         }
 
-    @Override
-    public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-        // Find the appropriate key material to use for decryption
-        PartialRsaKeyPair keyPairToUse = findKeyMaterialForDecryption(materials, _partialRsaKeyPair);
+        @Override
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+            // Find the appropriate key material to use for decryption
+            PartialRsaKeyPair keyPairToUse = findKeyMaterialForDecryption(materials, _partialRsaKeyPair);
 
-        final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-        cipher.init(Cipher.DECRYPT_MODE, keyPairToUse.getPrivateKey());
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+            cipher.init(Cipher.DECRYPT_MODE, keyPairToUse.getPrivateKey());
 
-        return cipher.doFinal(encryptedDataKey);
-    }
+            return cipher.doFinal(encryptedDataKey);
+        }
     };
 
     private final DecryptDataKeyStrategy _rsaEcbStrategy = new DecryptDataKeyStrategy() {
@@ -68,18 +68,18 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
             return KEY_PROVIDER_INFO;
         }
 
-    @Override
-    public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-        // Find the appropriate key material to use for decryption
-        PartialRsaKeyPair keyPairToUse = findKeyMaterialForDecryption(materials, _partialRsaKeyPair);
+        @Override
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+            // Find the appropriate key material to use for decryption
+            PartialRsaKeyPair keyPairToUse = findKeyMaterialForDecryption(materials, _partialRsaKeyPair);
 
-        final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-        cipher.init(Cipher.UNWRAP_MODE, keyPairToUse.getPrivateKey());
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+            cipher.init(Cipher.UNWRAP_MODE, keyPairToUse.getPrivateKey());
 
-        Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
+            Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
 
-        return plaintextKey.getEncoded();
-    }
+            return plaintextKey.getEncoded();
+        }
     };
 
     private final DataKeyStrategy _rsaOaepStrategy = new DataKeyStrategy() {
@@ -125,7 +125,7 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
             byte[] dataCipherName = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
             byte[] pseudoDataKey = new byte[1 + dataKey.length + dataCipherName.length];
 
-            pseudoDataKey[0] = (byte)dataKey.length;
+            pseudoDataKey[0] = (byte) dataKey.length;
             System.arraycopy(dataKey, 0, pseudoDataKey, 1, dataKey.length);
             System.arraycopy(dataCipherName, 0, pseudoDataKey, 1 + dataKey.length, dataCipherName.length);
 
@@ -133,19 +133,19 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
             return ciphertext;
         }
 
-    @Override
-    public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-        // Find the appropriate key material to use for decryption
-        PartialRsaKeyPair keyPairToUse = findKeyMaterialForDecryption(materials, _partialRsaKeyPair);
+        @Override
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+            // Find the appropriate key material to use for decryption
+            PartialRsaKeyPair keyPairToUse = findKeyMaterialForDecryption(materials, _partialRsaKeyPair);
 
-        final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-        cipher.init(Cipher.UNWRAP_MODE, keyPairToUse.getPrivateKey(), OAEP_PARAMETER_SPEC);
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+            cipher.init(Cipher.UNWRAP_MODE, keyPairToUse.getPrivateKey(), OAEP_PARAMETER_SPEC);
 
-        String dataKeyAlgorithm = materials.algorithmSuite().dataKeyAlgorithm();
-        Key pseudoDataKey = cipher.unwrap(encryptedDataKey, dataKeyAlgorithm, Cipher.SECRET_KEY);
+            String dataKeyAlgorithm = materials.algorithmSuite().dataKeyAlgorithm();
+            Key pseudoDataKey = cipher.unwrap(encryptedDataKey, dataKeyAlgorithm, Cipher.SECRET_KEY);
 
-        return parsePseudoDataKey(materials, pseudoDataKey.getEncoded());
-    }
+            return parsePseudoDataKey(materials, pseudoDataKey.getEncoded());
+        }
 
         private byte[] parsePseudoDataKey(DecryptionMaterials materials, byte[] pseudoDataKey) {
             int dataKeyLengthBytes = pseudoDataKey[0];
@@ -153,8 +153,16 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
                 throw new S3EncryptionClientException("Invalid key length (" + dataKeyLengthBytes + ") in encrypted data key");
             }
 
-//            int dataCipherNameLength = pseudoDataKey.length - dataKeyLengthBytes - 1;
-            int dataCipherNameLength = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8).length;
+            byte[] expectedDataCipherAlg;
+            // For V3 committed algorithms (both GCM 115 and CTR 116), use GCM's suite ID string (115/0x0073)
+            if (materials.algorithmSuite().id() == AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.id() ||
+                    materials.algorithmSuite().id() == AlgorithmSuite.ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY.id()) {
+                expectedDataCipherAlg = AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString().getBytes(StandardCharsets.UTF_8);
+            } else {
+                expectedDataCipherAlg = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+            }
+
+            int dataCipherNameLength = expectedDataCipherAlg.length;
             if (dataCipherNameLength <= 0) {
                 throw new S3EncryptionClientException("Invalid data cipher name length (" + dataCipherNameLength + ") in encrypted data key");
             }
@@ -164,8 +172,7 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
             System.arraycopy(pseudoDataKey, 1, dataKey, 0, dataKeyLengthBytes);
             System.arraycopy(pseudoDataKey, 1 + dataKeyLengthBytes, dataCipherName, 0, dataCipherNameLength);
 
-            byte[] expectedDataCipherName = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
-            if (!Arrays.equals(expectedDataCipherName, dataCipherName)) {
+            if (!MessageDigest.isEqual(expectedDataCipherAlg, dataCipherName)) {
                 throw new S3EncryptionClientException("The data cipher does not match the data cipher used for encryption. The object may be altered or corrupted");
             }
 
@@ -204,7 +211,7 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
         return decryptDataKeyStrategies;
     }
 
-  public static class Builder extends RawKeyring.Builder<RsaKeyring, RsaKeyring.Builder, PartialRsaKeyPair> {
+    public static class Builder extends RawKeyring.Builder<RsaKeyring, RsaKeyring.Builder, PartialRsaKeyPair> {
         private PartialRsaKeyPair _partialRsaKeyPair;
 
         private Builder() {
@@ -222,9 +229,12 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
         }
 
         public RsaKeyring build() {
+            if (_partialRsaKeyPair == null) {
+                throw new S3EncryptionClientException("No key pair provided for RSA Keyring");
+            }
             return new RsaKeyring(this);
         }
 
-  }
+    }
 
 }

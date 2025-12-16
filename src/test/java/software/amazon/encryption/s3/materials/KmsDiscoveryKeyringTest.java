@@ -16,8 +16,10 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.encryption.s3.CommitmentPolicy;
 import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -66,7 +68,9 @@ public class KmsDiscoveryKeyringTest {
         // V3 Client
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(kmsDiscoveryKeyring)
                 .build();
 
@@ -74,15 +78,15 @@ public class KmsDiscoveryKeyringTest {
         final String input = "KMS Discovery Keyring";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -99,7 +103,9 @@ public class KmsDiscoveryKeyringTest {
         // V3 Client
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .keyring(kmsDiscoveryKeyring)
           .build();
 
@@ -115,7 +121,7 @@ public class KmsDiscoveryKeyringTest {
         ).withMaterialsDescription(encryptionContext);
         v2Client.putObject(putObjectRequest);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
           .bucket(BUCKET)
           .key(objectKey)
           .overrideConfiguration(withAdditionalConfiguration(encryptionContext)));
@@ -123,8 +129,8 @@ public class KmsDiscoveryKeyringTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -132,7 +138,9 @@ public class KmsDiscoveryKeyringTest {
         final String objectKey = appendTestSuffix("kms-v3-to-v3-discovery-context");
 
         // V3 Client - KmsKeyring
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .kmsKeyId(KMS_KEY_ID)
           .build();
 
@@ -140,7 +148,7 @@ public class KmsDiscoveryKeyringTest {
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3-context");
 
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
           .bucket(BUCKET)
           .key(objectKey)
           .overrideConfiguration(withAdditionalConfiguration(encryptionContext)), RequestBody.fromString(input));
@@ -148,11 +156,13 @@ public class KmsDiscoveryKeyringTest {
         // V3 Client - KmsDiscoveryContext
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
-        S3Client v3ClientDiscovery = S3EncryptionClient.builder()
+        S3Client s3ClientDiscovery = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .keyring(kmsDiscoveryKeyring)
           .build();
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3ClientDiscovery.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3ClientDiscovery.getObjectAsBytes(builder -> builder
           .bucket(BUCKET)
           .key(objectKey)
           .overrideConfiguration(withAdditionalConfiguration(encryptionContext)));
@@ -160,8 +170,8 @@ public class KmsDiscoveryKeyringTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -169,7 +179,9 @@ public class KmsDiscoveryKeyringTest {
         final String objectKey = appendTestSuffix("kms-v3-to-v3-discovery-context-wrong-ec");
 
         // V3 Client - KmsKeyring
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .kmsKeyId(KMS_KEY_ID)
           .build();
 
@@ -177,7 +189,7 @@ public class KmsDiscoveryKeyringTest {
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3-context");
 
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
           .bucket(BUCKET)
           .key(objectKey)
           .overrideConfiguration(withAdditionalConfiguration(encryptionContext)), RequestBody.fromString(input));
@@ -185,14 +197,16 @@ public class KmsDiscoveryKeyringTest {
         // V3 Client - KmsDiscoveryContext
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
-        S3Client v3ClientDiscovery = S3EncryptionClient.builder()
+        S3Client s3ClientDiscovery = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .keyring(kmsDiscoveryKeyring)
           .build();
 
         Map<String, String> wrongEncryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3-wrong");
         try {
-            ResponseBytes<GetObjectResponse> objectResponse = v3ClientDiscovery.getObjectAsBytes(builder -> builder
+            s3ClientDiscovery.getObjectAsBytes(builder -> builder
               .bucket(BUCKET)
               .key(objectKey)
               .overrideConfiguration(withAdditionalConfiguration(wrongEncryptionContext)));
@@ -203,8 +217,8 @@ public class KmsDiscoveryKeyringTest {
         }
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -214,7 +228,9 @@ public class KmsDiscoveryKeyringTest {
         // V3 Client - KmsDiscoveryKeyring
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
-        S3Client v3ClientDiscovery = S3EncryptionClient.builder()
+        S3Client s3ClientDiscovery = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .keyring(kmsDiscoveryKeyring)
           .build();
 
@@ -223,7 +239,7 @@ public class KmsDiscoveryKeyringTest {
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3-context");
 
         try {
-            v3ClientDiscovery.putObject(builder -> builder
+            s3ClientDiscovery.putObject(builder -> builder
               .bucket(BUCKET)
               .key(objectKey)
               .overrideConfiguration(withAdditionalConfiguration(encryptionContext)), RequestBody.fromString(input));

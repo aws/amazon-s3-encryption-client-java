@@ -12,9 +12,9 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.MaterialsDescription;
+import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 import software.amazon.encryption.s3.materials.RawKeyMaterial;
 import software.amazon.encryption.s3.materials.RsaKeyring;
-import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;

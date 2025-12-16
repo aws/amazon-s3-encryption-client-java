@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.IoUtils;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.BoundedStreamBufferer;
 import software.amazon.encryption.s3.utils.MarkResetBoundedZerosInputStream;
@@ -45,6 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -74,7 +76,9 @@ public class S3EncryptionClientStreamTest {
     public void markResetInputStreamV3Encrypt() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3Encrypt");
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
@@ -84,13 +88,13 @@ public class S3EncryptionClientStreamTest {
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStream);
         inputStream.reset();
 
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromInputStream(inputStream, inputLength));
         inputStream.close();
 
-        final String actualObject = v3Client.getObjectAsBytes(builder -> builder
+        final String actualObject = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build()).asUtf8String();
@@ -98,8 +102,8 @@ public class S3EncryptionClientStreamTest {
         assertEquals(inputStreamAsUtf8String, actualObject);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -107,7 +111,9 @@ public class S3EncryptionClientStreamTest {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Encrypt");
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
@@ -118,13 +124,13 @@ public class S3EncryptionClientStreamTest {
         final InputStream inputStreamForString = new BoundedInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromInputStream(inputStream, inputLength));
         inputStream.close();
 
-        final String actualObject = v3Client.getObjectAsBytes(builder -> builder
+        final String actualObject = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build()).asUtf8String();
@@ -132,13 +138,16 @@ public class S3EncryptionClientStreamTest {
         assertEquals(inputStreamAsUtf8String, actualObject);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
     public void ordinaryInputStreamV3UnboundedAsync() {
-        try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder().aesKey(AES_KEY).build()) {
+        try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .aesKey(AES_KEY).build()) {
             final String objectKey = appendTestSuffix("ordinaryInputStreamV3UnboundedAsync");
             BlockingInputStreamAsyncRequestBody body =
                     AsyncRequestBody.forBlockingInputStream(null);
@@ -154,7 +163,9 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void ordinaryInputStreamV3UnboundedMultipartAsync() {
-        try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder()
+        try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableMultipartPutObject(true)
                 .build()) {
@@ -174,7 +185,9 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void ordinaryInputStreamV3UnboundedCrt() {
         try (S3AsyncClient s3CrtAsyncClient = S3AsyncClient.crtCreate()) {
-            try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builder()
+            try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builderV4()
+                    .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                    .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                     .aesKey(AES_KEY)
                     .enableMultipartPutObject(true)
                     .wrappedClient(s3CrtAsyncClient)
@@ -198,7 +211,9 @@ public class S3EncryptionClientStreamTest {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Decrypt");
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
@@ -209,13 +224,13 @@ public class S3EncryptionClientStreamTest {
         final InputStream inputStreamForString = new BoundedInputStream(inputLength);
         final String inputStreamAsUtf8String = IoUtils.toUtf8String(inputStreamForString);
 
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromInputStream(inputStream, inputLength));
         inputStream.close();
 
-        final ResponseInputStream<GetObjectResponse> responseInputStream = v3Client.getObject(builder -> builder
+        final ResponseInputStream<GetObjectResponse> responseInputStream = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build());
@@ -225,8 +240,8 @@ public class S3EncryptionClientStreamTest {
         assertEquals(inputStreamAsUtf8String, actualObject);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -244,7 +259,9 @@ public class S3EncryptionClientStreamTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
@@ -256,7 +273,7 @@ public class S3EncryptionClientStreamTest {
 
         v1Client.putObject(BUCKET, objectKey, inputStreamAsUtf8String);
 
-        final ResponseInputStream<GetObjectResponse> responseInputStream = v3Client.getObject(builder -> builder
+        final ResponseInputStream<GetObjectResponse> responseInputStream = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build());
@@ -266,26 +283,35 @@ public class S3EncryptionClientStreamTest {
         assertEquals(inputStreamAsUtf8String, actualObject);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
     public void invalidBufferSize() {
-        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
+
                 .setBufferSize(15L)
                 .build());
-        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(68719476705L)
                 .build());
 
-        assertThrows(S3EncryptionClientException.class, () -> S3AsyncEncryptionClient.builder()
+        assertThrows(S3EncryptionClientException.class, () -> S3AsyncEncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(15L)
                 .build());
-        assertThrows(S3EncryptionClientException.class, () -> S3AsyncEncryptionClient.builder()
+        assertThrows(S3EncryptionClientException.class, () -> S3AsyncEncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(68719476705L)
                 .build());
@@ -293,13 +319,17 @@ public class S3EncryptionClientStreamTest {
 
     @Test
     public void failsWhenBothBufferSizeAndDelayedAuthModeEnabled() {
-        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builder()
+        assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(16)
                 .enableDelayedAuthenticationMode(true)
                 .build());
 
-        assertThrows(S3EncryptionClientException.class, () -> S3AsyncEncryptionClient.builder()
+        assertThrows(S3EncryptionClientException.class, () -> S3AsyncEncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(16)
                 .enableDelayedAuthenticationMode(true)
@@ -314,15 +344,23 @@ public class S3EncryptionClientStreamTest {
         Provider provider = Security.getProvider("BC");
 
         // V3 Client with custom max buffer size 32 MiB.
-        S3Client v3ClientWithBuffer32MiB = S3EncryptionClient.builder()
+        S3Client s3ClientWithBuffer32MiB = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
+                //= specification/s3-encryption/client.md#set-buffer-size
+                //= type=test
+                //# The S3EC SHOULD accept a configurable buffer size which refers to the maximum ciphertext length in bytes to store in memory when Delayed Authentication mode is disabled.
                 .setBufferSize(32 * 1024 * 1024)
                 .build();
 
+
         // V3 Client with default buffer size (i.e. 64MiB)
         // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
-        S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
+        S3Client s3ClientWithDelayedAuth = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
                 .enableDelayedAuthenticationMode(true)
@@ -331,7 +369,7 @@ public class S3EncryptionClientStreamTest {
         // Tight bound on the custom buffer size limit of 32MiB
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
         final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
-        v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
+        s3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
@@ -339,12 +377,12 @@ public class S3EncryptionClientStreamTest {
         largeObjectStream.close();
 
         // Object is larger than Buffer, so getObject fails
-        assertThrows(S3EncryptionClientException.class, () -> v3ClientWithBuffer32MiB.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> s3ClientWithBuffer32MiB.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
 
         // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
-        ResponseInputStream<GetObjectResponse> response = v3ClientWithDelayedAuth.getObject(builder -> builder
+        ResponseInputStream<GetObjectResponse> response = s3ClientWithDelayedAuth.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
 
@@ -353,9 +391,9 @@ public class S3EncryptionClientStreamTest {
         response.close();
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
-        v3ClientWithBuffer32MiB.close();
-        v3ClientWithDelayedAuth.close();
+        deleteObject(BUCKET, objectKey, s3ClientWithBuffer32MiB);
+        s3ClientWithBuffer32MiB.close();
+        s3ClientWithDelayedAuth.close();
     }
 
     @Test
@@ -366,7 +404,9 @@ public class S3EncryptionClientStreamTest {
         Provider provider = Security.getProvider("BC");
 
         // V3 Client with custom max buffer size 32 MiB.
-        S3AsyncClient v3ClientWithBuffer32MiB = S3AsyncEncryptionClient.builder()
+        S3AsyncClient s3ClientWithBuffer32MiB = S3AsyncEncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
                 .setBufferSize(32 * 1024 * 1024)
@@ -374,7 +414,9 @@ public class S3EncryptionClientStreamTest {
 
         // V3 Client with default buffer size (i.e. 64MiB)
         // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
-        S3AsyncClient v3ClientWithDelayedAuth = S3AsyncEncryptionClient.builder()
+        S3AsyncClient s3ClientWithDelayedAuth = S3AsyncEncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
                 .enableDelayedAuthenticationMode(true)
@@ -384,7 +426,7 @@ public class S3EncryptionClientStreamTest {
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 32 + 1;
         final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-        CompletableFuture<PutObjectResponse> futurePut = v3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
+        CompletableFuture<PutObjectResponse> futurePut = s3ClientWithBuffer32MiB.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), AsyncRequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit, singleThreadExecutor));
@@ -395,7 +437,7 @@ public class S3EncryptionClientStreamTest {
 
         try {
             // Object is larger than Buffer, so getObject fails
-            CompletableFuture<ResponseInputStream<GetObjectResponse>> futureResponse = v3ClientWithBuffer32MiB.getObject(builder -> builder
+            CompletableFuture<ResponseInputStream<GetObjectResponse>> futureResponse = s3ClientWithBuffer32MiB.getObject(builder -> builder
                     .bucket(BUCKET)
                     .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
             futureResponse.join();
@@ -404,7 +446,7 @@ public class S3EncryptionClientStreamTest {
         }
 
         // You have to either enable the delayed auth mode or increase max buffer size (but in allowed bounds)
-        CompletableFuture<ResponseInputStream<GetObjectResponse>> futureGet = v3ClientWithDelayedAuth.getObject(builder -> builder
+        CompletableFuture<ResponseInputStream<GetObjectResponse>> futureGet = s3ClientWithDelayedAuth.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey), AsyncResponseTransformer.toBlockingInputStream());
         ResponseInputStream<GetObjectResponse> output = futureGet.join();
@@ -413,9 +455,9 @@ public class S3EncryptionClientStreamTest {
         output.close();
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3ClientWithBuffer32MiB);
-        v3ClientWithBuffer32MiB.close();
-        v3ClientWithDelayedAuth.close();
+        deleteObject(BUCKET, objectKey, s3ClientWithBuffer32MiB);
+        s3ClientWithBuffer32MiB.close();
+        s3ClientWithDelayedAuth.close();
     }
 
     @Test
@@ -426,15 +468,20 @@ public class S3EncryptionClientStreamTest {
         Provider provider = Security.getProvider("BC");
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
+                //= specification/s3-encryption/client.md#enable-delayed-authentication
+                //= type=test
+                //# Delayed Authentication mode MUST be set to false by default.
                 .cryptoProvider(provider)
                 .build();
 
         // Tight bound on the default limit of 64MiB
         final long fileSizeExceedingDefaultLimit = 1024 * 1024 * 64 + 1;
         final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingDefaultLimit);
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingDefaultLimit));
@@ -442,17 +489,28 @@ public class S3EncryptionClientStreamTest {
         largeObjectStream.close();
 
         // Delayed Authentication is not enabled, so getObject fails
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        //= specification/s3-encryption/client.md#enable-delayed-authentication
+        //= type=test
+        //# When disabled the S3EC MUST NOT release plaintext from a stream which has not been authenticated.
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
 
-        S3Client v3ClientWithDelayedAuth = S3EncryptionClient.builder()
+        S3Client s3ClientWithDelayedAuth = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
+                //= specification/s3-encryption/client.md#enable-delayed-authentication
+                //= type=test
+                //# The S3EC MUST support the option to enable or disable Delayed Authentication mode.
                 .enableDelayedAuthenticationMode(true)
                 .build();
 
         // Once enabled, the getObject request passes
-        ResponseInputStream<GetObjectResponse> response = v3ClientWithDelayedAuth.getObject(builder -> builder
+        //= specification/s3-encryption/client.md#enable-delayed-authentication
+        //= type=test
+        //# When enabled, the S3EC MAY release plaintext from a stream which has not been authenticated.
+        ResponseInputStream<GetObjectResponse> response = s3ClientWithDelayedAuth.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
 
@@ -461,8 +519,8 @@ public class S3EncryptionClientStreamTest {
         response.close();
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -470,14 +528,19 @@ public class S3EncryptionClientStreamTest {
         final String objectKey = appendTestSuffix("larger-than-max-object-delayed-auth-mode");
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableDelayedAuthenticationMode(true)
                 .build();
 
         final long fileSizeExceedingGCMLimit = (1L << 39) - 256 / 8;
         final InputStream largeObjectStream = new BoundedInputStream(fileSizeExceedingGCMLimit);
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.putObject(PutObjectRequest.builder()
+        //= specification/s3-encryption/encryption.md#content-encryption
+        //= type=test
+        //# The client MUST validate that the length of the plaintext bytes does not exceed the algorithm suite's cipher's maximum content length in bytes.
+        S3EncryptionClientException ex = assertThrows(S3EncryptionClientException.class, () -> s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromInputStream(largeObjectStream, fileSizeExceedingGCMLimit)));
@@ -485,7 +548,7 @@ public class S3EncryptionClientStreamTest {
         largeObjectStream.close();
 
         // Cleanup
-        v3Client.close();
+        s3Client.close();
     }
 
     @Test
@@ -493,7 +556,9 @@ public class S3EncryptionClientStreamTest {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-stream-tamper-tag");
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
@@ -509,7 +574,7 @@ public class S3EncryptionClientStreamTest {
                 + "9esAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo"
                 + "10sAAAYoAesAAAEndOfChunkAesAAAYoAesAAAYoAesAAAYoAesAAAYoAesAAAYo";
         final int inputLength = input.length();
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
@@ -544,7 +609,7 @@ public class S3EncryptionClientStreamTest {
         plaintextS3Client.putObject(tamperedPut, RequestBody.fromBytes(tamperedBytes));
 
         // Get (and decrypt) the (modified) object from S3
-        ResponseInputStream<GetObjectResponse> dataStream = v3Client.getObject(builder -> builder
+        ResponseInputStream<GetObjectResponse> dataStream = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
 
@@ -555,14 +620,14 @@ public class S3EncryptionClientStreamTest {
         try {
             dataStream.read(chunk1, 0, chunkSize);
         } catch (RuntimeException outerEx) {
-            assertTrue(outerEx.getCause() instanceof AEADBadTagException);
+            assertInstanceOf(AEADBadTagException.class, outerEx.getCause());
         } catch (IOException unexpected) {
             // Not expected, but fail the test anyway
             fail(unexpected);
         }
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 }

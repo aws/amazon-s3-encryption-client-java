@@ -33,6 +33,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static software.amazon.encryption.s3.S3EncryptionClient.withCustomInstructionFileSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.BUCKET;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
@@ -222,7 +223,7 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
             originalClient.getObjectAsBytes(
                     GetObjectRequest.builder().bucket(BUCKET).key(objectKey).build()
             );
-            assertTrue(false, "Original client should not be able to decrypt the re-encrypted object");
+            fail("Original client should not be able to decrypt the re-encrypted object");
         } catch (S3EncryptionClientException e) {
             // Expected exception
             assertTrue(e.getMessage().contains("Unable to AES/GCM unwrap"));
@@ -403,7 +404,7 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
             originalClient.getObjectAsBytes(
                     GetObjectRequest.builder().bucket(BUCKET).key(objectKey).build()
             );
-            assertTrue(false, "Original client should not be able to decrypt the re-encrypted object");
+            fail("Original client should not be able to decrypt the re-encrypted object");
         } catch (S3EncryptionClientException e) {
             // Expected exception
             assertTrue(e.getMessage().contains("Unable to RSA-OAEP-SHA1 unwrap"));

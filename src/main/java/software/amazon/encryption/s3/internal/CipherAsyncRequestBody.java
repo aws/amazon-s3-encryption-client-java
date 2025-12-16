@@ -20,27 +20,29 @@ public class CipherAsyncRequestBody implements AsyncRequestBody {
     private final Long ciphertextLength;
     private final CryptographicMaterials materials;
     private final byte[] iv;
+    private final byte[] messageId;
     private final boolean isLastPart;
 
-    public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv, final boolean isLastPart) {
+    public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv, final byte[] messageId, final boolean isLastPart) {
         this.wrappedAsyncRequestBody = wrappedAsyncRequestBody;
         this.ciphertextLength = ciphertextLength;
         this.materials = materials;
         this.iv = iv;
+        this.messageId = messageId;
         this.isLastPart = isLastPart;
     }
 
-    public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv) {
+    public CipherAsyncRequestBody(final AsyncRequestBody wrappedAsyncRequestBody, final Long ciphertextLength, final CryptographicMaterials materials, final byte[] iv, final byte[] messageId) {
         // When no partType is specified, it's not multipart,
         // so there's one part, which must be the last
-        this(wrappedAsyncRequestBody, ciphertextLength, materials, iv, true);
+        this(wrappedAsyncRequestBody, ciphertextLength, materials, iv, messageId, true);
     }
 
     @Override
     public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
         wrappedAsyncRequestBody.subscribe(new CipherSubscriber(subscriber,
                 contentLength().orElseThrow(() -> new S3EncryptionClientException("Unbounded streams are currently not supported.")),
-                materials, iv, isLastPart));
+                materials, iv, messageId, isLastPart));
     }
 
     @Override

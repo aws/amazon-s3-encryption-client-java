@@ -3,6 +3,7 @@
 package software.amazon.encryption.s3.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
@@ -12,11 +13,16 @@ import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.MessageDigest;
 import java.security.Provider;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Contains the cryptographic materials needed for multipart upload operations.
+ *
+ * @see MultipartUploadObjectPipeline#createMultipartUpload(CreateMultipartUploadRequest) 
+ */
 public class MultipartUploadMaterials implements CryptographicMaterials {
 
     // Original request
@@ -73,7 +79,7 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
      */
     @Override
     public Cipher getCipher(byte[] iv) {
-        if (!Arrays.equals(iv, _cipher.getIV())) {
+        if (!MessageDigest.isEqual(iv, _cipher.getIV())) {
             throw new S3EncryptionClientException("IVs in MultipartUploadMaterials do not match!");
         }
         return _cipher;
@@ -188,33 +194,6 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
         private Cipher _cipher = null;
 
         private Builder() {
-        }
-
-        public Builder s3Request(S3Request s3Request) {
-            _s3Request = s3Request;
-            return this;
-        }
-
-        public Builder algorithmSuite(AlgorithmSuite algorithmSuite) {
-            _algorithmSuite = algorithmSuite;
-            return this;
-        }
-
-        public Builder encryptionContext(Map<String, String> encryptionContext) {
-            _encryptionContext = encryptionContext == null
-                    ? Collections.emptyMap()
-                    : Collections.unmodifiableMap(encryptionContext);
-            return this;
-        }
-
-        public Builder plaintextDataKey(byte[] plaintextDataKey) {
-            _plaintextDataKey = plaintextDataKey == null ? null : plaintextDataKey.clone();
-            return this;
-        }
-
-        public Builder cryptoProvider(Provider cryptoProvider) {
-            _cryptoProvider = cryptoProvider;
-            return this;
         }
 
         public Builder cipher(Cipher cipher) {

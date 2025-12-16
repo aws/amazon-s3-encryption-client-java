@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
+import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
+
+import java.security.SecureRandom;
+import java.util.concurrent.CompletableFuture;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -13,18 +18,13 @@ import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
 
-import java.security.SecureRandom;
-import java.util.concurrent.CompletableFuture;
-
-import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
-
 public class PutEncryptedObjectPipeline {
 
     final private S3AsyncClient _s3AsyncClient;
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
-    final private InstructionFileConfig _instructionFileConfig;
+
     public static Builder builder() {
         return new Builder();
     }
@@ -34,7 +34,6 @@ public class PutEncryptedObjectPipeline {
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._asyncContentEncryptionStrategy = builder._asyncContentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
-        this._instructionFileConfig = builder._instructionFileConfig;
     }
 
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {
@@ -66,10 +65,15 @@ public class PutEncryptedObjectPipeline {
                 .build();
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(encryptionMaterialsRequest);
+        if (materials == null) {
+            throw new S3EncryptionClientException("Encryption materials cannot be null during content encryption. " +
+                    "This may be caused by a misconfigured custom CMM implementation, or " +
+                    "a suppressed exception from CMM invocation due to a network failure.");
+        }
 
         EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
 
-        PutObjectRequest modifiedRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), request);
+        PutObjectRequest modifiedRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.iv(), request);
         PutObjectRequest encryptedPutRequest = modifiedRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .contentLength(encryptedContent.getCiphertextLength())
@@ -84,6 +88,7 @@ public class PutEncryptedObjectPipeline {
         private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
         private InstructionFileConfig _instructionFileConfig;
         private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
+        private AlgorithmSuite _encryptionAlgorithm;
 
         private Builder() {
         }

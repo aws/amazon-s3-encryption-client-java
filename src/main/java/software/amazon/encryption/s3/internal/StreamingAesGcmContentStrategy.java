@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
+import java.security.SecureRandom;
+
+import javax.crypto.Cipher;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
-
-import javax.crypto.Cipher;
-import java.security.SecureRandom;
 
 public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStrategy, MultipartContentEncryptionStrategy {
 
@@ -25,30 +25,39 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
 
     @Override
     public MultipartEncryptedContent initMultipartEncryption(EncryptionMaterials materials) {
-        if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+        //= specification/s3-encryption/encryption.md#content-encryption
+        //# The client MUST validate that the length of the plaintext bytes does not exceed the algorithm suite's cipher's maximum content length in bytes.
+        if (materials.getPlaintextLength() > materials.algorithmSuite().cipherMaxContentLengthBytes()) {
             throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
                     "the maximum length allowed for GCM encryption.");
         }
 
+
+        //= specification/s3-encryption/encryption.md#content-encryption
+        //# The client MUST generate an IV or Message ID using the length of the IV or Message ID defined in the algorithm suite.
         final byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
         _secureRandom.nextBytes(iv);
 
-        final Cipher cipher = CipherProvider.createAndInitCipher(materials, iv);
-        return new MultipartEncryptedContent(iv, cipher, materials.getCiphertextLength());
+        final Cipher cipher = CipherProvider.createAndInitCipher(materials, iv, null);
+        return new MultipartEncryptedContent(iv, null, cipher, materials.getCiphertextLength());
     }
 
     @Override
     public EncryptedContent encryptContent(EncryptionMaterials materials, AsyncRequestBody content) {
-        if (materials.getPlaintextLength() > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+        //= specification/s3-encryption/encryption.md#content-encryption
+        //# The client MUST validate that the length of the plaintext bytes does not exceed the algorithm suite's cipher's maximum content length in bytes.
+        if (materials.getPlaintextLength() > materials.algorithmSuite().cipherMaxContentLengthBytes()) {
             throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
                     "the maximum length allowed for GCM encryption.");
         }
 
+        //= specification/s3-encryption/encryption.md#content-encryption
+        //# The client MUST generate an IV or Message ID using the length of the IV or Message ID defined in the algorithm suite.
         final byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
         _secureRandom.nextBytes(iv);
 
-        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(content, materials.getCiphertextLength(), materials, iv);
-        return new EncryptedContent(iv, encryptedAsyncRequestBody, materials.getCiphertextLength());
+        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(content, materials.getCiphertextLength(), materials, iv, null);
+        return new EncryptedContent(iv, null, encryptedAsyncRequestBody, materials.getCiphertextLength());
     }
 
     public static class Builder {

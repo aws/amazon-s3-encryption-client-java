@@ -47,7 +47,7 @@ public class DecryptMaterialsRequest {
      * immutable.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
-        + " implementation is immutable")
+            + " implementation is immutable")
     public List<EncryptedDataKey> encryptedDataKeys() {
         return _encryptedDataKeys;
     }
@@ -57,13 +57,14 @@ public class DecryptMaterialsRequest {
      * immutable.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
-        + " implementation is immutable")
+            + " implementation is immutable")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }
 
     /**
      * Returns the materials description used for RSA and AES keyrings.
+     *
      * @return the materials description
      */
     public MaterialsDescription materialsDescription() {

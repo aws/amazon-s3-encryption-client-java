@@ -6,6 +6,7 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -32,13 +33,16 @@ public class ParameterMalleabilityTest {
     @Test
     public void contentEncryptionDowngradeAttackFails() {
         final String objectKey = appendTestSuffix("content-downgrade-attack-fails");
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
+                
                 .build();
         final String input = "ContentDowngradeAttackFails";
 
         // Encrypt something using AES-GCM
-        v3Client.putObject(builder -> builder.bucket(BUCKET).key(objectKey), RequestBody.fromString(input));
+        s3Client.putObject(builder -> builder.bucket(BUCKET).key(objectKey), RequestBody.fromString(input));
 
         // Using a default client, tamper with the metadata
         // CBC mode uses no parameter value, so just remove the "cek-alg" key
@@ -53,31 +57,35 @@ public class ParameterMalleabilityTest {
                 RequestBody.fromInputStream(response, response.response().contentLength()));
 
         // getObject fails
-        assertThrows(Exception.class, () -> v3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
+        assertThrows(Exception.class, () -> s3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
         // Enabling unauthenticated modes also fail
-        S3Client v3ClientUnauthenticated = S3EncryptionClient.builder()
+        S3Client s3ClientUnauthenticated = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .enableLegacyWrappingAlgorithms(true)
                 .build();
-        assertThrows(Exception.class, () -> v3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
+        assertThrows(Exception.class, () -> s3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
     public void keyWrapRemovalAttackFails() {
         final String objectKey = appendTestSuffix("keywrap-removal-attack-fails");
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
         final String input = "KeyWrapRemovalAttackFails";
 
         // Encrypt something using AES-GCM
-        v3Client.putObject(builder -> builder.bucket(BUCKET).key(objectKey), RequestBody.fromString(input));
+        s3Client.putObject(builder -> builder.bucket(BUCKET).key(objectKey), RequestBody.fromString(input));
 
         // Using a default client, tamper with the metadata
         S3Client defaultClient = S3Client.builder().build();
@@ -91,31 +99,35 @@ public class ParameterMalleabilityTest {
                 RequestBody.fromInputStream(response, response.response().contentLength()));
 
         // getObject fails
-        assertThrows(Exception.class, () -> v3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
+        assertThrows(Exception.class, () -> s3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
         // Enabling unauthenticated modes also fail
-        S3Client v3ClientUnauthenticated = S3EncryptionClient.builder()
+        S3Client s3ClientUnauthenticated = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .enableLegacyWrappingAlgorithms(true)
                 .build();
-        assertThrows(Exception.class, () -> v3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
+        assertThrows(Exception.class, () -> s3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
     public void keyWrapDowngradeAesWrapAttackFails() {
         final String objectKey = appendTestSuffix("keywrap-downgrade-aeswrap-attack-fails");
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
         final String input = "KeyWrapDowngradeAesWrapAttackFails";
 
         // Encrypt something using AES-GCM
-        v3Client.putObject(builder -> builder.bucket(BUCKET).key(objectKey), RequestBody.fromString(input));
+        s3Client.putObject(builder -> builder.bucket(BUCKET).key(objectKey), RequestBody.fromString(input));
 
         // Using a default client, tamper with the metadata
         S3Client defaultClient = S3Client.builder().build();
@@ -130,31 +142,35 @@ public class ParameterMalleabilityTest {
                 RequestBody.fromInputStream(response, response.response().contentLength()));
 
         // getObject fails
-        assertThrows(Exception.class, () -> v3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
+        assertThrows(Exception.class, () -> s3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
         // Enabling unauthenticated modes also fail
-        S3Client v3ClientUnauthenticated = S3EncryptionClient.builder()
+        S3Client s3ClientUnauthenticated = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .aesKey(AES_KEY)
                 .build();
-        assertThrows(Exception.class, () -> v3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
+        assertThrows(Exception.class, () -> s3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
     public void keyWrapDowngradeAesAttackFails() {
         final String objectKey = appendTestSuffix("keywrap-downgrade-aes-attack-fails");
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
         final String input = "KeyWrapDowngradeAesAttackFails";
 
         // Encrypt something using AES-GCM
-        v3Client.putObject(builder -> builder.bucket(BUCKET).key(objectKey), RequestBody.fromString(input));
+        s3Client.putObject(builder -> builder.bucket(BUCKET).key(objectKey), RequestBody.fromString(input));
 
         // Using a default client, tamper with the metadata
         S3Client defaultClient = S3Client.builder().build();
@@ -169,19 +185,22 @@ public class ParameterMalleabilityTest {
                 RequestBody.fromInputStream(response, response.response().contentLength()));
 
         // getObject fails
-        assertThrows(Exception.class, () -> v3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
+        assertThrows(Exception.class, () -> s3Client.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
         // Enabling unauthenticated modes also fail
-        S3Client v3ClientUnauthenticated = S3EncryptionClient.builder()
+        S3Client s3ClientUnauthenticated = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
+
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
-        assertThrows(Exception.class, () -> v3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
+        assertThrows(Exception.class, () -> s3ClientUnauthenticated.getObject(builder -> builder.bucket(BUCKET).key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
 

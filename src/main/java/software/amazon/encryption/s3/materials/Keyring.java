@@ -5,8 +5,10 @@ package software.amazon.encryption.s3.materials;
 import java.util.List;
 
 //= specification/s3-encryption/materials/keyrings.md#interface
-//= type=implication
 //# The Keyring interface and its operations SHOULD adhere to the naming conventions of the implementation language.
+//= specification/s3-encryption/materials/keyrings.md#supported-keyrings
+//= type=implication
+//# Note: A user MAY create their own custom keyring(s).
 /**
  * Keyring defines the interface for wrapping data keys. A {@link CryptographicMaterialsManager} will use
  * keyrings to encrypt and decrypt data keys.

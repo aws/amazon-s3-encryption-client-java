@@ -32,11 +32,12 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
     private Cipher cipher;
     private final CryptographicMaterials materials;
     private final byte[] iv;
+    private final byte[] messageId;
 
     private byte[] outputBuffer;
     private final Queue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
 
-    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, long bufferSizeInBytes) {
+    BufferedCipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, byte[] messageId, long bufferSizeInBytes) {
         this.wrappedSubscriber = wrappedSubscriber;
         if (contentLength == null) {
             throw new S3EncryptionClientException("contentLength cannot be null in buffered mode. To enable unbounded " +
@@ -51,6 +52,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
         this.contentLength = Math.toIntExact(contentLength);
         this.materials = materials;
         this.iv = iv;
+        this.messageId = messageId;
         cipher = materials.getCipher(iv);
     }
 
@@ -72,7 +74,7 @@ public class BufferedCipherSubscriber implements Subscriber<ByteBuffer> {
                 // same key/IV. It's actually fine here, because the data is the same, but any
                 // sane implementation will throw an exception.
                 // Request a new cipher using the same materials to avoid reinit issues
-                cipher = CipherProvider.createAndInitCipher(materials, iv);
+                cipher = CipherProvider.createAndInitCipher(materials, iv, messageId);
             }
 
             if (outputBuffer == null && amountToReadFromByteBuffer < cipher.getBlockSize()) {

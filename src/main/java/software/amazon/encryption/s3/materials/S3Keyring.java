@@ -2,16 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.materials;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import software.amazon.encryption.s3.S3EncryptionClientException;
-
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import javax.crypto.SecretKey;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.encryption.s3.S3EncryptionClientException;
 
 //= specification/s3-encryption/materials/s3-keyring.md#overview
 //= type=implication
@@ -90,7 +90,7 @@ abstract public class S3Keyring implements Keyring {
             byte[] encryptedDataKeyCiphertext = encryptStrategy.encryptDataKey(_secureRandom, materials);
             EncryptedDataKey encryptedDataKey = EncryptedDataKey.builder()
                     .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
-                    .keyProviderInfo(encryptStrategy.keyProviderInfo().getBytes(StandardCharsets.UTF_8))
+                    .keyProviderInfo(encryptStrategy.keyProviderInfo())
                     .encryptedDataKey(encryptedDataKeyCiphertext)
                     .build();
 
@@ -118,29 +118,29 @@ abstract public class S3Keyring implements Keyring {
     @Override
     public DecryptionMaterials onDecrypt(final DecryptionMaterials materials, List<EncryptedDataKey> encryptedDataKeys) {
         //= specification/s3-encryption/materials/s3-keyring.md#ondecrypt
-        //= type=implementation
+        //= type=implication
         //# If the input DecryptionMaterials contains a Plaintext Data Key, the S3 Keyring MUST throw an exception.
         if (materials.plaintextDataKey() != null) {
             throw new S3EncryptionClientException("Decryption materials already contains a plaintext data key.");
         }
 
         //= specification/s3-encryption/materials/s3-keyring.md#ondecrypt
-        //= type=implementation
+        //= type=implication
         //# If the input collection of EncryptedDataKey instances contains any number of EDKs other than 1, the S3 Keyring MUST throw an exception.
         if (encryptedDataKeys.size() != 1) {
             throw new S3EncryptionClientException("Only one encrypted data key is supported, found: " + encryptedDataKeys.size());
         }
 
         //= specification/s3-encryption/materials/s3-keyring.md#ondecrypt
-        //= type=implementation
-        //# If the input DecryptionMaterials contains a Plaintext Data Key, the S3 Keyring MUST throw an exception.
+        //= type=implication
+        //# The S3 Keyring MAY validate that the Key Provider ID of the Encrypted Data Key matches the expected default Key Provider ID value.
         EncryptedDataKey encryptedDataKey = encryptedDataKeys.get(0);
         final String keyProviderId = encryptedDataKey.keyProviderId();
         if (!KEY_PROVIDER_ID.equals(keyProviderId)) {
             throw new S3EncryptionClientException("Unknown key provider: " + keyProviderId);
         }
 
-        String keyProviderInfo = new String(encryptedDataKey.keyProviderInfo(), StandardCharsets.UTF_8);
+        String keyProviderInfo = encryptedDataKey.keyProviderInfo();
 
         DecryptDataKeyStrategy decryptStrategy = decryptDataKeyStrategies().get(keyProviderInfo);
         if (decryptStrategy == null) {

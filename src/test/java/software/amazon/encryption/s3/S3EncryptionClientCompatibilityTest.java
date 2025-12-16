@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.MaterialsDescription;
@@ -86,10 +87,24 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
+                //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
+                //= type=test
+                //# The S3EC MUST support the option to enable or disable legacy wrapping algorithms.
+                //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
+                //= type=test
+                //# When enabled, the S3EC MUST be able to decrypt objects encrypted with all supported wrapping algorithms (both legacy and fully supported).
                 .enableLegacyWrappingAlgorithms(true)
+                //= specification/s3-encryption/client.md#enable-legacy-unauthenticated-modes
+                //= type=test
+                //# The S3EC MUST support the option to enable or disable legacy unauthenticated modes (content encryption algorithms).
+                //= specification/s3-encryption/client.md#enable-legacy-unauthenticated-modes
+                //= type=test
+                //# When enabled, the S3EC MUST be able to decrypt objects encrypted with all content encryption algorithms (both legacy and fully supported).
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
@@ -97,15 +112,15 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesCbcV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -122,8 +137,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(true)
                 .build();
@@ -132,15 +149,15 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesGcmV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -154,8 +171,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
@@ -163,15 +182,15 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesGcmV2toV3";
         v2Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
 
     }
 
@@ -190,8 +209,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .instructionFileClient(S3Client.create())
@@ -202,7 +223,7 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesGcmV2toV3";
         v2Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(
                 GetObjectRequest.builder()
                         .bucket(BUCKET)
                         .key(objectKey).build());
@@ -210,8 +231,8 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -228,14 +249,16 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
         // Asserts
         final String input = "AesGcmV3toV1";
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey), RequestBody.fromString(input));
 
@@ -243,8 +266,8 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -258,14 +281,16 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
         // Asserts
         final String input = "AesGcmV3toV2";
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey), RequestBody.fromString(input));
 
@@ -273,35 +298,37 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
     public void AesGcmV3toV3() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3");
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
         // Asserts
         final String input = "AesGcmV3toV3";
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -313,7 +340,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
@@ -322,7 +352,7 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "This is some content to encrypt using the v1 client";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build());
@@ -330,10 +360,9 @@ public class S3EncryptionClientCompatibilityTest {
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
-
 
     @Test
     public void RsaV1toV3AesFails() {
@@ -344,7 +373,9 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
@@ -353,13 +384,13 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "This is some content to encrypt using the v1 client";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build()));
 
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -376,8 +407,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .enableLegacyWrappingAlgorithms(true)
                 .build();
@@ -386,15 +419,15 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "RsaEcbV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -411,8 +444,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
@@ -420,15 +455,15 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "RsaOaepV2toV3";
         v2Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -445,14 +480,16 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 Client - Transition Mode
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
         // Asserts
         final String input = "RsaOaepV3toV1";
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey), RequestBody.fromString(input));
 
@@ -460,8 +497,8 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -475,14 +512,16 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
         // Asserts
         final String input = "RsaOaepV3toV2";
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey), RequestBody.fromString(input));
 
@@ -490,35 +529,37 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
     public void RsaOaepV3toV3() {
         final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v3");
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
         // Asserts
         final String input = "RsaOaepV3toV3";
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -536,7 +577,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withKmsClient(kmsClient)
                 .build();
 
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyUnauthenticatedModes(true)
                 .enableLegacyWrappingAlgorithms(true)
@@ -545,7 +589,7 @@ public class S3EncryptionClientCompatibilityTest {
         String input = "This is some content to encrypt using v1 client";
 
         v1Client.putObject(BUCKET, objectKey, input);
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build());
@@ -553,8 +597,8 @@ public class S3EncryptionClientCompatibilityTest {
 
         assertEquals(input, output);
 
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -574,8 +618,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyWrappingAlgorithms(true)
                 .build();
@@ -584,15 +630,15 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "KmsV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -608,8 +654,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withCryptoConfiguration(config)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
 
@@ -625,7 +673,7 @@ public class S3EncryptionClientCompatibilityTest {
         ).withMaterialsDescription(encryptionContext);
         v2Client.putObject(putObjectRequest);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext)));
@@ -633,10 +681,11 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
+    // All Below cases should expect failure, since we're writing with V3 Message Format
     @Test
     public void KmsContextV3toV1() {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v1");
@@ -655,8 +704,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
 
@@ -665,7 +716,7 @@ public class S3EncryptionClientCompatibilityTest {
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v1");
 
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext)), RequestBody.fromString(input));
@@ -673,9 +724,10 @@ public class S3EncryptionClientCompatibilityTest {
         String output = v1Client.getObjectAsString(BUCKET, objectKey);
         assertEquals(input, output);
 
+
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -691,8 +743,10 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
 
@@ -701,7 +755,7 @@ public class S3EncryptionClientCompatibilityTest {
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v2");
 
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
                         .bucket(BUCKET)
                         .key(objectKey)
                         .overrideConfiguration(withAdditionalConfiguration(encryptionContext)),
@@ -709,18 +763,19 @@ public class S3EncryptionClientCompatibilityTest {
 
         String output = v2Client.getObjectAsString(BUCKET, objectKey);
         assertEquals(input, output);
-
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
     public void KmsContextV3toV3() {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v3");
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 - Transition Mode Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
 
@@ -729,13 +784,13 @@ public class S3EncryptionClientCompatibilityTest {
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
                         .bucket(BUCKET)
                         .key(objectKey)
                         .overrideConfiguration(withAdditionalConfiguration(encryptionContext)),
                 RequestBody.fromString(input));
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext)));
@@ -743,8 +798,8 @@ public class S3EncryptionClientCompatibilityTest {
         assertEquals(input, output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -752,7 +807,9 @@ public class S3EncryptionClientCompatibilityTest {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v3");
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
 
@@ -761,7 +818,7 @@ public class S3EncryptionClientCompatibilityTest {
         Map<String, String> encryptionContext = new HashMap<>();
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
                         .bucket(BUCKET)
                         .key(objectKey)
                         .overrideConfiguration(withAdditionalConfiguration(encryptionContext)),
@@ -771,14 +828,14 @@ public class S3EncryptionClientCompatibilityTest {
         Map<String, String> otherEncryptionContext = new HashMap<>();
         otherEncryptionContext.put("user-metadata-key", "!user-metadata-value-v3-to-v3");
 
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .overrideConfiguration(withAdditionalConfiguration(otherEncryptionContext))));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
 
@@ -795,7 +852,9 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(false)
                 .enableLegacyUnauthenticatedModes(false)
@@ -804,13 +863,22 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesCbcV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        //= specification/s3-encryption/client.md#enable-legacy-unauthenticated-modes
+        //= type=test
+        //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy content encryption algorithms; it MUST throw an exception when attempting to decrypt an object encrypted with a legacy content encryption algorithm.
+        //= specification/s3-encryption/decryption.md#legacy-decryption
+        //= type=test
+        //# The S3EC MUST NOT decrypt objects encrypted using legacy unauthenticated algorithm suites unless specifically configured to do so.
+        //= specification/s3-encryption/decryption.md#legacy-decryption
+        //= type=test
+        //# If the S3EC is not configured to enable legacy unauthenticated content decryption, the client MUST throw an exception when attempting to decrypt an object encrypted with a legacy unauthenticated algorithm suite.
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -827,11 +895,16 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4 Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(true)
-                .enableLegacyUnauthenticatedModes(false)
+                //= specification/s3-encryption/client.md#enable-legacy-unauthenticated-modes
+                //= type=test
+                //# The option to enable legacy unauthenticated modes MUST be set to false by default.
+                //.enableLegacyUnauthenticatedModes(false)
                 .build();
 
         // Asserts
@@ -841,13 +914,13 @@ public class S3EncryptionClientCompatibilityTest {
         //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
         //= type=test
         //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy wrapping algorithms; it MUST throw an exception when attempting to decrypt an object encrypted with a legacy wrapping algorithm.
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -865,9 +938,14 @@ public class S3EncryptionClientCompatibilityTest {
                 .build();
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
-                .enableLegacyWrappingAlgorithms(false)
+                //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
+                //= type=test
+                //# The option to enable legacy wrapping algorithms MUST be set to false by default.
+                //.enableLegacyWrappingAlgorithms(false)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
@@ -878,13 +956,13 @@ public class S3EncryptionClientCompatibilityTest {
         //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
         //= type=test
         //# When disabled, the S3EC MUST NOT decrypt objects encrypted using legacy wrapping algorithms; it MUST throw an exception when attempting to decrypt an object encrypted with a legacy wrapping algorithm.
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -900,7 +978,9 @@ public class S3EncryptionClientCompatibilityTest {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(false)
                 .build();
@@ -908,13 +988,13 @@ public class S3EncryptionClientCompatibilityTest {
         final String input = "AesGcmV1toV3";
         v1Client.putObject(BUCKET, objectKey, input);
 
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -923,23 +1003,25 @@ public class S3EncryptionClientCompatibilityTest {
 
         // V2 Client
         EncryptionMaterialsProvider materialsProvider =
-          new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
+                new StaticEncryptionMaterialsProvider(new EncryptionMaterials(AES_KEY));
         AmazonS3EncryptionV2 v2Client = AmazonS3EncryptionClientV2.encryptionBuilder()
-          .withEncryptionMaterialsProvider(materialsProvider)
-          .build();
+                .withEncryptionMaterialsProvider(materialsProvider)
+                .build();
 
-        // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
-          .aesKey(AES_KEY)
-          .build();
+        // V4 Transition Client
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .aesKey(AES_KEY)
+                .build();
 
         // Asserts
         final String input = "AesGcmWithNullMatDesc";
         v2Client.putObject(BUCKET, objectKey, input);
 
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
-          .bucket(BUCKET)
-          .key(objectKey));
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
         String output = objectResponse.asUtf8String();
         assertEquals(input, output);
 
@@ -948,31 +1030,30 @@ public class S3EncryptionClientCompatibilityTest {
         Map<String, String> modMd = new HashMap<>(objectResponse.response().metadata());
         modMd.remove("x-amz-meta-x-amz-matdesc");
         modMd.remove("x-amz-matdesc");
-        v3Client.copyObject(builder -> builder
-          .sourceBucket(BUCKET)
-          .destinationBucket(BUCKET)
-          .sourceKey(objectKey)
-          .destinationKey(copyKey)
-          .metadataDirective(MetadataDirective.REPLACE)
-          .metadata(modMd)
-          .build());
+        s3Client.copyObject(builder -> builder
+                .sourceBucket(BUCKET)
+                .destinationBucket(BUCKET)
+                .sourceKey(objectKey)
+                .destinationKey(copyKey)
+                .metadataDirective(MetadataDirective.REPLACE)
+                .metadata(modMd)
+                .build());
 
         // V2
         String v2CopyOut = v2Client.getObjectAsString(BUCKET, copyKey);
         assertEquals(input, v2CopyOut);
 
         // V3
-        ResponseBytes<GetObjectResponse> objectResponseCopy = v3Client.getObjectAsBytes(builder -> builder
-          .bucket(BUCKET)
-          .key(copyKey));
+        ResponseBytes<GetObjectResponse> objectResponseCopy = s3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(copyKey));
         String outputCopy = objectResponseCopy.asUtf8String();
         assertEquals(input, outputCopy);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        deleteObject(BUCKET, copyKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        deleteObject(BUCKET, copyKey, s3Client);
+        s3Client.close();
 
     }
-
 }

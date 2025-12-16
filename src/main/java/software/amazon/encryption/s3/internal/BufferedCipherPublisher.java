@@ -14,14 +14,16 @@ public class BufferedCipherPublisher implements SdkPublisher<ByteBuffer> {
     private final Long contentLength;
     private final CryptographicMaterials materials;
     private final byte[] iv;
+    private final byte[] messageId;
     private final long bufferSize;
 
     public BufferedCipherPublisher(final SdkPublisher<ByteBuffer> wrappedPublisher, final Long contentLength,
-                                   final CryptographicMaterials materials, final byte[] iv, final long bufferSize) {
+                                   final CryptographicMaterials materials, final byte[] iv, byte[] messageId, final long bufferSize) {
         this.wrappedPublisher = wrappedPublisher;
         this.contentLength = contentLength;
         this.materials = materials;
         this.iv = iv;
+        this.messageId = messageId;
         this.bufferSize = bufferSize;
     }
 
@@ -29,6 +31,6 @@ public class BufferedCipherPublisher implements SdkPublisher<ByteBuffer> {
     public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
         // Wrap the (customer) subscriber in a CipherSubscriber, then subscribe it
         // to the wrapped (ciphertext) publisher
-        wrappedPublisher.subscribe(new BufferedCipherSubscriber(subscriber, contentLength, materials, iv, bufferSize));
+        wrappedPublisher.subscribe(new BufferedCipherSubscriber(subscriber, contentLength, materials, iv, messageId, bufferSize));
     }
 }
