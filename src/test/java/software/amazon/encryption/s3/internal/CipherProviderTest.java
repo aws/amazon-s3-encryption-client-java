@@ -5,9 +5,11 @@ package software.amazon.encryption.s3.internal;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.SecureRandom;
@@ -74,6 +76,24 @@ public class CipherProviderTest {
     }
 
     @Test
+    public void testCreateAndInitCipherWithCommittingAlgorithmValidMessageId() throws Exception {
+        //= specification/s3-encryption/encryption.md#cipher-initialization
+        //= type=test
+        //# The client SHOULD validate that the generated IV or Message ID is not zeros.
+        SecretKey dataKey = createTestDataKey(32);
+        EncryptionMaterials materials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey);
+
+        byte[] messageId = new byte[materials.algorithmSuite().commitmentNonceLengthBytes()]; // 224 bits / 8 = 28 bytes
+        secureRandom.nextBytes(messageId);
+        byte[] iv = FIXED_IV_FOR_COMMIT_ALG.clone(); // IV for committing algorithm
+
+        Cipher cipher = CipherProvider.createAndInitCipher(materials, iv, messageId);
+
+        assertNotNull(cipher);
+        assertEquals("AES/GCM/NoPadding", cipher.getAlgorithm());
+    }
+
+    @Test
     public void testCreateAndInitCipherWithCommittingAlgorithmZeroMessageId() throws Exception {
         //= specification/s3-encryption/encryption.md#cipher-initialization
         //= type=test
@@ -124,6 +144,32 @@ public class CipherProviderTest {
         assertEquals("IV has not been initialized!", exception.getMessage());
     }
 
+    @Test
+    public void testCreateAndInitCipherALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY() throws Exception {
+        //= specification/s3-encryption/encryption.md#alg-aes-256-gcm-hkdf-sha512-commit-key
+        //= type=test
+        //# The client MUST use HKDF to derive the key commitment value and the derived encrypting key
+        //# as described in [Key Derivation](key-derivation.md).
+        SecretKey dataKey = createTestDataKey(32);
+        EncryptionMaterials materials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey);
+        assertNull(materials.getKeyCommitment());
+
+        byte[] messageId = new byte[materials.algorithmSuite().commitmentNonceLengthBytes()];
+        secureRandom.nextBytes(messageId);
+        byte[] iv = FIXED_IV_FOR_COMMIT_ALG.clone();
+
+        materials.setIvAndMessageId(iv, messageId);
+        Cipher cipher = materials.getCipher(iv);
+
+        assertNotNull(cipher);
+        assertEquals("AES/GCM/NoPadding", cipher.getAlgorithm());
+
+        // Verify that key commitment was set on encryption materials
+        //= specification/s3-encryption/encryption.md#alg-aes-256-gcm-hkdf-sha512-commit-key
+        //= type=test
+        //# The derived key commitment value MUST be set or returned from the encryption process such that it can be included in the content metadata.
+        assertNotNull(materials.getKeyCommitment());
+    }
 
     @Test
     public void testCreateAndInitCipherALG_AES_256_GCM_IV12_TAG16_NO_KDF() throws Exception {
@@ -264,6 +310,24 @@ public class CipherProviderTest {
         //# - The length of the input keying material MUST equal the key derivation input length specified by the
         //# algorithm suite commit key derivation setting.
         SecretKey wrongSizeDataKey = createTestDataKey(16); // Wrong size - should be 32 bytes
+        EncryptionMaterials materials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, wrongSizeDataKey);
+
+        byte[] messageId = new byte[materials.algorithmSuite().commitmentNonceLengthBytes()];
+        secureRandom.nextBytes(messageId);
+        byte[] iv = FIXED_IV_FOR_COMMIT_ALG.clone();
+
+        S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () -> CipherProvider.createAndInitCipher(materials, iv, messageId));
+
+        assertEquals("Length of Input key material does not match the expected value!", exception.getMessage());
+    }
+
+    @Test
+    public void testKeyDerivationInputKeyMaterialLengthValidationDecryptionMaterials() throws Exception {
+        //= specification/s3-encryption/key-derivation.md#hkdf-operation
+        //= type=test
+        //# - The length of the input keying material MUST equal the key derivation input length specified by the
+        //# algorithm suite commit key derivation setting.
+        SecretKey wrongSizeDataKey = createTestDataKey(16); // Wrong size - should be 32 bytes
         DecryptionMaterials materials = createDecryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, wrongSizeDataKey, EMPTY_KEY_COMMITMENT);
 
         byte[] messageId = new byte[materials.algorithmSuite().commitmentNonceLengthBytes()];
@@ -281,6 +345,23 @@ public class CipherProviderTest {
         //= type=test
         //# - The salt MUST be the Message ID with the length defined in the algorithm suite.
         SecretKey dataKey = createTestDataKey(32);
+        EncryptionMaterials materials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey);
+
+        byte[] wrongSizeMessageId = new byte[16]; // Wrong size - should be 28 bytes
+        secureRandom.nextBytes(wrongSizeMessageId);
+        byte[] iv = FIXED_IV_FOR_COMMIT_ALG.clone();
+
+        S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () -> CipherProvider.createAndInitCipher(materials, iv, wrongSizeMessageId));
+        
+        assertEquals("Length of Input Message ID does not match the expected value!", exception.getMessage());
+    }
+
+    @Test
+    public void testKeyDerivationMessageIdLengthValidationDecryptionMaterials() throws Exception {
+        //= specification/s3-encryption/key-derivation.md#hkdf-operation
+        //= type=test
+        //# - The salt MUST be the Message ID with the length defined in the algorithm suite.
+        SecretKey dataKey = createTestDataKey(32);
         DecryptionMaterials materials = createDecryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey, EMPTY_KEY_COMMITMENT);
 
         byte[] wrongSizeMessageId = new byte[16]; // Wrong size - should be 28 bytes
@@ -290,6 +371,117 @@ public class CipherProviderTest {
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () -> CipherProvider.createAndInitCipher(materials, iv, wrongSizeMessageId));
 
         assertEquals("Length of Input Message ID does not match the expected value!", exception.getMessage());
+    }
+
+    @Test
+    public void testKeyCommitmentVerification() throws Exception {
+        SecretKey dataKey = createTestDataKey(32);
+
+        // First, create encryption materials to generate the key commitment
+        EncryptionMaterials encMaterials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey);
+
+        byte[] messageId = new byte[encMaterials.algorithmSuite().commitmentNonceLengthBytes()];
+        secureRandom.nextBytes(messageId);
+        byte[] iv = FIXED_IV_FOR_COMMIT_ALG.clone();
+
+        // Generate the cipher and key commitment
+        assertNull(encMaterials.getKeyCommitment());
+        Cipher encCipher = CipherProvider.createAndInitCipher(encMaterials, iv, messageId);
+
+        // Verify that key commitment was set
+        assertNotNull(encMaterials.getKeyCommitment());
+
+        // Create decryption materials with the same key commitment
+        DecryptionMaterials decMaterials = createDecryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey, encMaterials.getKeyCommitment());
+        //= specification/s3-encryption/decryption.md#decrypting-with-commitment
+        //= type=test
+        //# When using an algorithm suite which supports key commitment, the client MUST verify that the
+        //# [derived key commitment](./key-derivation.md#hkdf-operation) contains the same bytes as the stored key
+        //# commitment retrieved from the stored object's metadata.
+        //= specification/s3-encryption/decryption.md#decrypting-with-commitment
+        //= type=test
+        //# When using an algorithm suite which supports key commitment, the client MUST verify the key commitment values match
+        //# before deriving the [derived encryption key](./key-derivation.md#hkdf-operation).
+        Cipher decCipher = CipherProvider.createAndInitCipher(decMaterials, FIXED_IV_FOR_COMMIT_ALG.clone(), messageId);
+        assertNotNull(decCipher.getAlgorithm());
+
+        // Create decryption materials with the wrong key commitment
+        byte[] wrongKeyCommitment = new byte[28];
+        secureRandom.nextBytes(wrongKeyCommitment);
+        DecryptionMaterials decMaterialsWithWrongKeyCommitment = createDecryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey, wrongKeyCommitment);
+        //= specification/s3-encryption/decryption.md#decrypting-with-commitment
+        //= type=test
+        //# When using an algorithm suite which supports key commitment, the client MUST throw an exception when the
+        //# derived key commitment value and stored key commitment value do not match.
+        S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () -> CipherProvider.createAndInitCipher(decMaterialsWithWrongKeyCommitment, iv, messageId));
+        assertEquals(S3EncryptionClientSecurityException.class, exception.getCause().getClass());
+        assertEquals("Key commitment validation failed. The derived key commitment does not match the stored key commitment value. " +
+                        "This indicates potential data tampering or corruption.",
+                exception.getCause().getMessage());
+    }
+
+    @Test
+    public void testKeyDerivationWithZeroIVForCommittingAlgorithm() throws Exception {
+        //= specification/s3-encryption/key-derivation.md#hkdf-operation
+        //= type=TODO
+        //# When encrypting or decrypting with ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY,
+        //# the IV used in the AES-GCM content encryption/decryption MUST consist entirely of bytes with the value 0x01.
+        SecretKey dataKey = createTestDataKey(32);
+        EncryptionMaterials materials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey);
+
+        byte[] messageId = new byte[28];
+        secureRandom.nextBytes(messageId);
+
+        Cipher cipher = CipherProvider.createAndInitCipher(materials, FIXED_IV_FOR_COMMIT_ALG.clone(), messageId);
+
+        assertNotNull(cipher);
+
+        // Verify the cipher was initialized with zero IV
+        GCMParameterSpec params = cipher.getParameters().getParameterSpec(GCMParameterSpec.class);
+        byte[] actualIV = params.getIV();
+        assertTrue(MessageDigest.isEqual(FIXED_IV_FOR_COMMIT_ALG.clone(), actualIV));
+    }
+
+    @Test
+    public void testGenerateDerivedEncryptionKey() throws Exception {
+        SecretKey dataKey = createTestDataKey(32);
+        EncryptionMaterials materials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey);
+
+        byte[] messageId = new byte[materials.algorithmSuite().commitmentNonceLengthBytes()];
+        secureRandom.nextBytes(messageId);
+
+        assertNull(materials.getKeyCommitment());
+        SecretKey ek = CipherProvider.generateDerivedEncryptionKey(materials, messageId);
+        assertNotNull(ek);
+        assertNotNull(materials.getKeyCommitment());
+        //= specification/s3-encryption/key-derivation.md#hkdf-operation
+        //= type=test
+        //# - The length of the output keying material MUST equal the commit key length specified by the supported algorithm suites.
+        assertEquals(materials.algorithmSuite().commitmentLengthBytes(), materials.getKeyCommitment().length);
+        //= specification/s3-encryption/key-derivation.md#hkdf-operation
+        //= type=test
+        //# - The length of the output keying material MUST equal the encryption key length specified by the algorithm suite encryption settings.
+        assertEquals(materials.algorithmSuite().dataKeyLengthBytes(), ek.getEncoded().length);
+    }
+
+    @Test
+    public void testKeyDerivationHashAlgorithmFromAlgorithmSuite() throws Exception {
+        //= specification/s3-encryption/key-derivation.md#hkdf-operation
+        //= type=test
+        //# - The hash function MUST be specified by the algorithm suite commitment settings.
+        SecretKey dataKey = createTestDataKey(32);
+        EncryptionMaterials materials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY, dataKey);
+
+        byte[] messageId = new byte[28];
+        secureRandom.nextBytes(messageId);
+        byte[] iv = FIXED_IV_FOR_COMMIT_ALG;
+
+        // This test verifies that the correct hash algorithm (HmacSHA512) is used
+        // The test passes if no exception is thrown during cipher creation
+        Cipher cipher = CipherProvider.createAndInitCipher(materials, iv, messageId);
+
+        assertNotNull(cipher);
+        assertEquals("AES/GCM/NoPadding", cipher.getAlgorithm());
     }
 
     @Test
@@ -335,9 +527,9 @@ public class CipherProviderTest {
 
         // Step 3: Create decryption materials with the same secret key and correct key commitment
         DecryptionMaterials correctMaterials = createDecryptionMaterials(
-            AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY,
-            dataKey,
-            correctKeyCommitment
+                AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY,
+                dataKey,
+                correctKeyCommitment
         );
 
         //= specification/s3-encryption/key-derivation.md#hkdf-operation

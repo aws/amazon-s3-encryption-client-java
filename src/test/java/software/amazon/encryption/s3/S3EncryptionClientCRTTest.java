@@ -288,8 +288,6 @@ public class S3EncryptionClientCRTTest {
 
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
@@ -443,8 +441,6 @@ public class S3EncryptionClientCRTTest {
 
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
@@ -533,8 +529,6 @@ public class S3EncryptionClientCRTTest {
 
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)

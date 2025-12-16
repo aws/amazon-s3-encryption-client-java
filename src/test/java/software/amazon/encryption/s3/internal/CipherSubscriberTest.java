@@ -24,6 +24,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CipherSubscriberTest {
+
+    // Use a common static IV
+    private static final byte[] _iv = new byte[12];
+
+    static {
+        _iv[0] = 1;
+    }
+
     // Helper classes for testing
     class SimpleSubscriber implements Subscriber<ByteBuffer> {
 
@@ -139,11 +147,18 @@ class CipherSubscriberTest {
             KeyGenerator keyGen = KeyGenerator.getInstance("AES");
             keyGen.init(256);
             AES_KEY = keyGen.generateKey();
-            return EncryptionMaterials.builder()
+            EncryptionMaterials materials = EncryptionMaterials.builder()
                     .plaintextDataKey(AES_KEY.getEncoded())
                     .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                     .plaintextLength(plaintext.getBytes(StandardCharsets.UTF_8).length)
                     .build();
+            if (materials.algorithmSuite().isCommitting()) {
+                // Set MessageId or IV
+                materials.setIvAndMessageId(new byte[12], _iv);
+            } else {
+                materials.setIvAndMessageId(_iv, null);
+            }
+            return materials;
         } catch (NoSuchAlgorithmException exception) {
             // this should never happen
             throw new RuntimeException("AES doesn't exist");
@@ -181,11 +196,8 @@ class CipherSubscriberTest {
         AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         String plaintext = "unit test of cipher subscriber";
         EncryptionMaterials materials = getTestEncryptMaterials(plaintext);
-        byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
-        // we reject 0-ized IVs, so just do something
-        iv[0] = 1;
         SimpleSubscriber wrappedSubscriber = new SimpleSubscriber();
-        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, iv, null);
+        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, materials.iv(), materials.messageId());
 
         // Act
         TestPublisher<ByteBuffer> publisher = new TestPublisher<>();
@@ -208,7 +220,7 @@ class CipherSubscriberTest {
         // Now decrypt.
         DecryptionMaterials decryptionMaterials = getTestDecryptionMaterialsFromEncMats(materials);
         SimpleSubscriber wrappedDecryptSubscriber = new SimpleSubscriber();
-        CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, iv, null);
+        CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, materials.iv(), materials.messageId());
         TestPublisher<ByteBuffer> decryptPublisher = new TestPublisher<>();
         decryptPublisher.subscribe(decryptSubscriber);
 
@@ -239,7 +251,7 @@ class CipherSubscriberTest {
         // we reject 0-ized IVs, so just do something non-zero
         iv[0] = 1;
         SimpleSubscriber wrappedSubscriber = new SimpleSubscriber();
-        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, iv, null);
+        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, iv, materials.messageId());
 
         // Setup Publisher
         TestPublisher<ByteBuffer> publisher = new TestPublisher<>();
@@ -262,7 +274,7 @@ class CipherSubscriberTest {
         // Now decrypt the ciphertext
         DecryptionMaterials decryptionMaterials = getTestDecryptionMaterialsFromEncMats(materials);
         SimpleSubscriber wrappedDecryptSubscriber = new SimpleSubscriber();
-        CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, iv, null);
+        CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, iv, materials.messageId());
         TestPublisher<ByteBuffer> decryptPublisher = new TestPublisher<>();
         decryptPublisher.subscribe(decryptSubscriber);
 

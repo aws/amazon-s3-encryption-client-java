@@ -68,7 +68,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
                 .aesKey(AES_KEY)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .build());
-        assertTrue(exception.getMessage().contains("Both encryption algorithm and commitment policy must be configured."));
+        assertTrue(exception.getMessage().contains("The commitment policy requires encryption with a committing algorithm suite, but the specified encryption algorithm does not support key commitment."));
         //= specification/s3-encryption/client.md#encryption-algorithm
         //= type=test
         //# The S3EC MUST support configuration of the encryption algorithm (or algorithm suite) during its initialization.
@@ -76,7 +76,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
                 .aesKey(AES_KEY)
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .build());
-        assertTrue(exception1.getMessage().contains("Both encryption algorithm and commitment policy must be configured."));
+        assertTrue(exception1.getMessage().contains("The commitment policy forbids encryption with committing algorithm suites, but the specified encryption algorithm supports key commitment."));
 
         //= specification/s3-encryption/client.md#encryption-algorithm
         //= type=test
@@ -89,7 +89,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF)
                 .build());
-        assertTrue(exception2.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+        assertTrue(exception2.getMessage().contains("Encryption algorithm provided is LEGACY! Please specify a fully-supported encryption algorithm."));
 
         // Invalid Configurations
 
@@ -104,13 +104,13 @@ public class S3EncryptionClientCommitmentPolicyTest {
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY)
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .build());
-        assertTrue(exception3.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+        assertTrue(exception3.getMessage().contains("Encryption algorithm provided is LEGACY! Please specify a fully-supported encryption algorithm."));
         S3EncryptionClientException exception4 = assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
                 .aesKey(AES_KEY)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY)
                 .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT)
                 .build());
-        assertTrue(exception4.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+        assertTrue(exception4.getMessage().contains("Encryption algorithm provided is LEGACY! Please specify a fully-supported encryption algorithm."));
 
         //= specification/s3-encryption/key-commitment.md#commitment-policy
         //= type=test
@@ -120,7 +120,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .build());
-        assertTrue(exception5.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+        assertTrue(exception5.getMessage().contains("The commitment policy forbids encryption with committing algorithm suites, but the specified encryption algorithm supports key commitment."));
         //= specification/s3-encryption/key-commitment.md#commitment-policy
         //= type=test
         //# When the commitment policy is REQUIRE_ENCRYPT_REQUIRE_DECRYPT, the S3EC MUST only encrypt using an algorithm suite which supports key commitment.
@@ -129,7 +129,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT)
                 .build());
-        assertTrue(exception6.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+        assertTrue(exception6.getMessage().contains("The commitment policy requires encryption with a committing algorithm suite, but the specified encryption algorithm does not support key commitment."));
         //= specification/s3-encryption/key-commitment.md#commitment-policy
         //= type=test
         //# When the commitment policy is REQUIRE_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST only encrypt using an algorithm suite which supports key commitment.
@@ -138,53 +138,35 @@ public class S3EncryptionClientCommitmentPolicyTest {
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
                 .build());
-        assertTrue(exception7.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+        assertTrue(exception7.getMessage().contains("The commitment policy requires encryption with a committing algorithm suite, but the specified encryption algorithm does not support key commitment."));
 
     }
+
 
     @Test
     public void testCommitmentPolicyForbidEncryptAllowDecrypt() {
         final String objectKey = appendTestSuffix("commitment-policy-forbid-encrypt-allow-decrypt");
 
-        //= specification/s3-encryption/key-commitment.md#commitment-policy
-        //= type=test
-        //# When the commitment policy is FORBID_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST NOT encrypt using an algorithm suite which supports key commitment.
-        //= specification/s3-encryption/key-commitment.md#commitment-policy
-        //= type=test
-        //# When the commitment policy is FORBID_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST allow decryption using algorithm suites which do not support key commitment.
+        // Create clients with all three commitment policies
         S3Client forbidClient = S3EncryptionClient.builderV4()
+                .aesKey(AES_KEY)
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
-                .aesKey(AES_KEY)
                 .build();
 
-        //= specification/s3-encryption/key-commitment.md#commitment-policy
-        //= type=test
-        //# When the commitment policy is REQUIRE_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST only encrypt using an algorithm suite which supports key commitment.
-        //= specification/s3-encryption/key-commitment.md#commitment-policy
-        //= type=test
-        //# When the commitment policy is REQUIRE_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST allow decryption using algorithm suites which do not support key commitment.
-        S3EncryptionClientException allowDecryptException = assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
+        S3Client requireAllowClient = S3EncryptionClient.builderV4()
                 .aesKey(AES_KEY)
                 .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
-                .build());
-        assertTrue(allowDecryptException.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+                .build();
 
-        //= specification/s3-encryption/key-commitment.md#commitment-policy
-        //= type=test
-        //# When the commitment policy is REQUIRE_ENCRYPT_REQUIRE_DECRYPT, the S3EC MUST only encrypt using an algorithm suite which supports key commitment.
-        //= specification/s3-encryption/key-commitment.md#commitment-policy
-        //= type=test
-        //# When the commitment policy is REQUIRE_ENCRYPT_REQUIRE_DECRYPT, the S3EC MUST NOT allow decryption using algorithm suites which do not support key commitment.
-        S3EncryptionClientException requireDecryptException = assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
+        S3Client requireRequireClient = S3EncryptionClient.builderV4()
                 .aesKey(AES_KEY)
                 .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
-                .build());
-        assertTrue(requireDecryptException.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+                .build();
 
-        // Test FORBID client encryption
+        // Test FORBID client encryption and decryption by all clients
         final String input = "CommitmentPolicyForbidEncryptAllowDecrypt";
         forbidClient.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -209,9 +191,172 @@ public class S3EncryptionClientCommitmentPolicyTest {
                 .key(objectKey));
         assertEquals(input, forbidResponse.asUtf8String());
 
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is REQUIRE_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST allow decryption using algorithm suites which do not support key commitment.
+        // REQUIRE_ALLOW client should be able to decrypt FORBID encryption (allows legacy)
+        ResponseBytes<GetObjectResponse> requireAllowResponse = requireAllowClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+        assertEquals(input, requireAllowResponse.asUtf8String());
+
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is REQUIRE_ENCRYPT_REQUIRE_DECRYPT, the S3EC MUST NOT allow decryption using algorithm suites which do not support key commitment.
+        // REQUIRE_REQUIRE client should NOT be able to decrypt FORBID encryption (requires commitment)
+        S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () -> requireRequireClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)));
+        assertTrue(exception.getMessage().contains("Commitment policy violation, decryption requires a committing algorithm suite, but the object was encrypted with a non-committing algorithm."));
+
         // Cleanup
         deleteObject(BUCKET, objectKey, forbidClient);
         forbidClient.close();
+        requireAllowClient.close();
+        requireRequireClient.close();
     }
 
+    @Test
+    public void testCommitmentPolicyRequireEncryptAllowDecrypt() {
+        final String objectKey = appendTestSuffix("commitment-policy-require-encrypt-allow-decrypt");
+
+        // Create clients with all three commitment policies
+        S3Client forbidClient = S3EncryptionClient.builderV4()
+                .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .build();
+
+        S3Client requireAllowClient = S3EncryptionClient.builderV4()
+                .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .build();
+
+        S3Client requireRequireClient = S3EncryptionClient.builderV4()
+                .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .build();
+
+        // Test REQUIRE_ALLOW client encryption and decryption by all clients
+        final String input = "CommitmentPolicyRequireEncryptAllowDecrypt";
+        requireAllowClient.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
+
+        Map<String, String> metadata = requireAllowClient.headObject(HeadObjectRequest.builder().bucket(BUCKET).key(objectKey).build()).metadata();
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is REQUIRE_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST only encrypt using an algorithm suite which supports key commitment.
+        assertTrue(ContentMetadataDecodingStrategy.isV3InObjectMetadata(metadata));
+        assertFalse(ContentMetadataDecodingStrategy.isV1V2InObjectMetadata(metadata));
+        assertEquals(metadata.get(MetadataKeyConstants.CONTENT_CIPHER_V3), AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString());
+
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is FORBID_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST allow decryption using algorithm suites which do not support key commitment.
+        // FORBID client should be able to decrypt its own encryption
+        ResponseBytes<GetObjectResponse> forbidResponse = forbidClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+        assertEquals(input, forbidResponse.asUtf8String());
+
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is REQUIRE_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST allow decryption using algorithm suites which do not support key commitment.
+        // REQUIRE_ALLOW client should be able to decrypt FORBID encryption (allows legacy)
+        ResponseBytes<GetObjectResponse> requireAllowResponse = requireAllowClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+        assertEquals(input, requireAllowResponse.asUtf8String());
+
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is REQUIRE_ENCRYPT_REQUIRE_DECRYPT, the S3EC MUST NOT allow decryption using algorithm suites which do not support key commitment.
+        // REQUIRE_REQUIRE client should NOT be able to decrypt FORBID encryption (requires commitment)
+        ResponseBytes<GetObjectResponse> requireRequireResponse = requireRequireClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+        assertEquals(input, requireRequireResponse.asUtf8String());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, requireAllowClient);
+        forbidClient.close();
+        requireAllowClient.close();
+        requireRequireClient.close();
+    }
+
+    @Test
+    public void testCommitmentPolicyRequireEncryptRequireDecrypt() {
+        final String objectKey = appendTestSuffix("commitment-policy-require-encrypt-require-decrypt");
+
+        // Create clients with all three commitment policies
+        S3Client forbidClient = S3EncryptionClient.builderV4()
+                .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .build();
+
+        S3Client requireAllowClient = S3EncryptionClient.builderV4()
+                .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .build();
+
+        S3Client requireRequireClient = S3EncryptionClient.builderV4()
+                .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .build();
+
+        // Test REQUIRE_REQUIRE client encryption and decryption by all clients
+        final String input = "CommitmentPolicyRequireEncryptRequireDecrypt";
+        requireRequireClient.putObject(PutObjectRequest.builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
+
+        Map<String, String> metadata = requireAllowClient.headObject(HeadObjectRequest.builder().bucket(BUCKET).key(objectKey).build()).metadata();
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is REQUIRE_ENCRYPT_REQUIRE_DECRYPT, the S3EC MUST only encrypt using an algorithm suite which supports key commitment.
+        assertTrue(ContentMetadataDecodingStrategy.isV3InObjectMetadata(metadata));
+        assertFalse(ContentMetadataDecodingStrategy.isV1V2InObjectMetadata(metadata));
+        assertEquals(metadata.get(MetadataKeyConstants.CONTENT_CIPHER_V3), AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString());
+
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is FORBID_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST allow decryption using algorithm suites which do not support key commitment.
+        // FORBID client should be able to decrypt its own encryption
+        ResponseBytes<GetObjectResponse> forbidResponse = forbidClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+        assertEquals(input, forbidResponse.asUtf8String());
+
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is REQUIRE_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST allow decryption using algorithm suites which do not support key commitment.
+        // REQUIRE_ALLOW client should be able to decrypt FORBID encryption (allows legacy)
+        ResponseBytes<GetObjectResponse> requireAllowResponse = requireAllowClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+        assertEquals(input, requireAllowResponse.asUtf8String());
+
+        //= specification/s3-encryption/key-commitment.md#commitment-policy
+        //= type=test
+        //# When the commitment policy is REQUIRE_ENCRYPT_REQUIRE_DECRYPT, the S3EC MUST NOT allow decryption using algorithm suites which do not support key commitment.
+        // REQUIRE_REQUIRE client should NOT be able to decrypt FORBID encryption (requires commitment)
+        ResponseBytes<GetObjectResponse> requireRequireResponse = requireRequireClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey));
+        assertEquals(input, requireRequireResponse.asUtf8String());
+
+        // Cleanup
+        deleteObject(BUCKET, objectKey, requireRequireClient);
+        forbidClient.close();
+        requireAllowClient.close();
+        requireRequireClient.close();
+    }
 }

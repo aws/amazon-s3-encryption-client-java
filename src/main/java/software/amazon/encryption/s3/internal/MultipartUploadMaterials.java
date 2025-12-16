@@ -8,7 +8,9 @@ import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.CryptographicMaterials;
+import software.amazon.encryption.s3.materials.EncryptedDataKey;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
+import software.amazon.encryption.s3.materials.MaterialsDescription;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -16,6 +18,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.MessageDigest;
 import java.security.Provider;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,6 +43,9 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
     private long _plaintextLength;
     private boolean hasFinalPartBeenSeen;
     private final Cipher _cipher;
+    private byte[] _keyCommitment;
+    private byte[] _messageId;
+    private byte[] _iv;
 
     private MultipartUploadMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -49,6 +55,7 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
         this._cryptoProvider = builder._cryptoProvider;
         this._plaintextLength = builder._plaintextLength;
         this._cipher = builder._cipher;
+        this._keyCommitment = builder._keyCommitment;
     }
 
     static public Builder builder() {
@@ -83,10 +90,6 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
             throw new S3EncryptionClientException("IVs in MultipartUploadMaterials do not match!");
         }
         return _cipher;
-    }
-
-    public byte[] getIv() {
-        return _cipher.getIV();
     }
 
     /**
@@ -125,6 +128,7 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
     /**
      * Increments the plaintextSize as parts come in, checking to
      * ensure that the max GCM size limit is not exceeded.
+     *
      * @param lengthOfPartToAdd the length of the incoming part
      * @return the new _plaintextLength value
      */
@@ -184,14 +188,43 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
         return CipherMode.MULTIPART_ENCRYPT;
     }
 
+    @Override
+    public byte[] getKeyCommitment() {
+        return _keyCommitment != null ? _keyCommitment.clone() : null;
+    }
+
+    @Override
+    public byte[] messageId() {
+        return _messageId != null ? _messageId.clone() : null;
+    }
+
+    @Override
+    public byte[] iv() {
+        return _iv != null ? _iv.clone() : null;
+    }
+
+    public void setKeyCommitment(byte[] keyCommitment) {
+        _keyCommitment = keyCommitment;
+    }
+
+    public void setIvAndMessageId(byte[] iv, byte[] messageId) {
+        this._iv = iv;
+        this._messageId = messageId;
+    }
+
     static public class Builder {
         private S3Request _s3Request = null;
-        private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
+        private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private byte[] _plaintextDataKey = null;
-        private long _plaintextLength = 0;
+        private final long _plaintextLength = 0;
         private Provider _cryptoProvider = null;
         private Cipher _cipher = null;
+        private byte[] _keyCommitment = null;
+        private MaterialsDescription _materialsDescription = MaterialsDescription.builder().build();
+        private List<EncryptedDataKey> _encryptedDataKeys;
+        private byte[] _iv;
+        private byte[] _messageId;
 
         private Builder() {
         }
@@ -205,8 +238,12 @@ public class MultipartUploadMaterials implements CryptographicMaterials {
             _s3Request = materials.s3Request();
             _algorithmSuite = materials.algorithmSuite();
             _encryptionContext = materials.encryptionContext();
+            _encryptedDataKeys = materials.encryptedDataKeys();
             _plaintextDataKey = materials.plaintextDataKey();
             _cryptoProvider = materials.cryptoProvider();
+            _materialsDescription = materials.materialsDescription();
+            _iv = materials.iv();
+            _messageId = materials.messageId();
             return this;
         }
 

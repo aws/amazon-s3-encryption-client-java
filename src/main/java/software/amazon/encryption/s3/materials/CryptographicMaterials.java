@@ -30,4 +30,9 @@ public interface CryptographicMaterials {
 
     Cipher getCipher(byte[] iv);
 
+    byte[] getKeyCommitment();
+
+    byte[] messageId();
+
+    byte[] iv();
 }

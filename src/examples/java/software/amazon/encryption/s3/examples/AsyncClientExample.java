@@ -37,12 +37,12 @@ public class AsyncClientExample {
         //
         // This means that the S3 Async Encryption Client can perform both encrypt and decrypt operations
         // as part of the S3 putObject and getObject operations.
-        S3AsyncClient v3AsyncClient = S3AsyncEncryptionClient.builder()
+        S3AsyncClient s3AsyncClient = S3AsyncEncryptionClient.builderV4()
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
 
         // Call putObject to encrypt the object and upload it to S3
-        CompletableFuture<PutObjectResponse> futurePut = v3AsyncClient.putObject(builder -> builder
+        CompletableFuture<PutObjectResponse> futurePut = s3AsyncClient.putObject(builder -> builder
                 .bucket(bucket)
                 .key(OBJECT_KEY)
                 .build(), AsyncRequestBody.fromString(input));
@@ -50,7 +50,7 @@ public class AsyncClientExample {
         futurePut.join();
 
         // Call getObject to retrieve and decrypt the object from S3
-        CompletableFuture<ResponseBytes<GetObjectResponse>> futureGet = v3AsyncClient.getObject(builder -> builder
+        CompletableFuture<ResponseBytes<GetObjectResponse>> futureGet = s3AsyncClient.getObject(builder -> builder
                 .bucket(bucket)
                 .key(OBJECT_KEY)
                 .build(), AsyncResponseTransformer.toBytes());
@@ -61,20 +61,20 @@ public class AsyncClientExample {
         assertEquals(input, getResponse.asUtf8String());
 
         // Close the client
-        v3AsyncClient.close();
+        s3AsyncClient.close();
     }
 
     private static void cleanup(String bucket) {
         // Instantiate the client to delete object
-        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builderV4()
                 .kmsKeyId(KMS_KEY_ID)
                 .build();
 
         // Call deleteObject to delete the object from given S3 Bucket
-        v3Client.deleteObject(builder -> builder.bucket(bucket)
+        s3Client.deleteObject(builder -> builder.bucket(bucket)
                 .key(OBJECT_KEY)).join();
 
         // Close the client
-        v3Client.close();
+        s3Client.close();
     }
 }

@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.MaterialsDescription;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
@@ -82,7 +83,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -100,7 +103,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -142,7 +147,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -161,7 +168,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -203,7 +212,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -228,7 +239,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -270,7 +283,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -307,7 +322,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -349,7 +366,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -378,7 +397,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -420,7 +441,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -449,7 +472,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -490,7 +515,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -511,7 +538,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -556,7 +585,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -578,7 +609,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -623,7 +656,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -654,7 +689,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -699,7 +736,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -745,7 +784,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -790,7 +831,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -825,7 +868,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 
@@ -870,7 +915,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for encryption
-        S3Client encryptionClient = S3EncryptionClient.builder()
+        S3Client encryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(encryptionKeyring)
                 .build();
 
@@ -905,7 +952,9 @@ public class AdditionalDecryptionKeyMaterialTest {
                 .build();
 
         // Create an S3 encryption client for decryption
-        S3Client decryptionClient = S3EncryptionClient.builder()
+        S3Client decryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(decryptionKeyring)
                 .build();
 

@@ -24,6 +24,7 @@ public class PutEncryptedObjectPipeline {
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private AsyncContentEncryptionStrategy _asyncContentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
+    final private AlgorithmSuite _encryptionAlgorithm;
 
     public static Builder builder() {
         return new Builder();
@@ -34,6 +35,7 @@ public class PutEncryptedObjectPipeline {
         this._cryptoMaterialsManager = builder._cryptoMaterialsManager;
         this._asyncContentEncryptionStrategy = builder._asyncContentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
+        this._encryptionAlgorithm = builder._encryptionAlgorithm;
     }
 
     public CompletableFuture<PutObjectResponse> putObject(PutObjectRequest request, AsyncRequestBody requestBody) {
@@ -54,7 +56,7 @@ public class PutEncryptedObjectPipeline {
             contentLength = requestBody.contentLength().orElseThrow(() -> new S3EncryptionClientException("Unbounded streams are currently not supported."));
         }
 
-        if (contentLength > AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes()) {
+        if (contentLength > _encryptionAlgorithm.cipherMaxContentLengthBytes()) {
             throw new S3EncryptionClientException("The contentLength of the object you are attempting to encrypt exceeds" +
                     "the maximum length allowed for GCM encryption.");
         }
@@ -62,6 +64,9 @@ public class PutEncryptedObjectPipeline {
         EncryptionMaterialsRequest encryptionMaterialsRequest = EncryptionMaterialsRequest.builder()
                 .s3Request(request)
                 .plaintextLength(contentLength)
+                //= specification/s3-encryption/encryption.md#content-encryption
+                //# The S3EC MUST use the encryption algorithm configured during [client](./client.md) initialization.
+                .encryptionAlgorithm(_encryptionAlgorithm)
                 .build();
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(encryptionMaterialsRequest);
@@ -73,7 +78,8 @@ public class PutEncryptedObjectPipeline {
 
         EncryptedContent encryptedContent = _asyncContentEncryptionStrategy.encryptContent(materials, requestBody);
 
-        PutObjectRequest modifiedRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.iv(), request);
+        final byte[] contentIV = materials.algorithmSuite().isCommitting() ? materials.messageId() : materials.iv();
+        PutObjectRequest modifiedRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, contentIV, request);
         PutObjectRequest encryptedPutRequest = modifiedRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .contentLength(encryptedContent.getCiphertextLength())
@@ -115,6 +121,11 @@ public class PutEncryptedObjectPipeline {
 
         public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
             this._instructionFileConfig = instructionFileConfig;
+            return this;
+        }
+
+        public Builder encryptionAlgorithm(AlgorithmSuite encryptionAlgorithm) {
+            this._encryptionAlgorithm = encryptionAlgorithm;
             return this;
         }
 

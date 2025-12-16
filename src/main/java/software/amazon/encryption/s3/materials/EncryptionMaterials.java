@@ -12,6 +12,7 @@ import software.amazon.encryption.s3.internal.CipherProvider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.MessageDigest;
 import java.security.Provider;
 import java.util.Collections;
 import java.util.List;
@@ -40,6 +41,11 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     private final Provider _cryptoProvider;
     private final long _plaintextLength;
     private final long _ciphertextLength;
+    // Key Commitment is set during the encryption process
+    private byte[] _keyCommitment;
+    private byte[] _iv;
+    private byte[] _messageId;
+    private Cipher _cipher;
 
     private EncryptionMaterials(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -71,7 +77,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
      */
     @Override
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
-        + " implementation is immutable")
+            + " implementation is immutable")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }
@@ -81,7 +87,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
      * immutable.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
-        + " implementation is immutable")
+            + " implementation is immutable")
     public List<EncryptedDataKey> encryptedDataKeys() {
         return _encryptedDataKeys;
     }
@@ -120,7 +126,35 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
     @Override
     public Cipher getCipher(byte[] iv) {
-        return CipherProvider.createAndInitCipher(this, iv, null);
+        if (!MessageDigest.isEqual(iv, _iv)) {
+            throw new S3EncryptionClientException("IV does not match!");
+        }
+        return _cipher;
+    }
+
+    public byte[] getKeyCommitment() {
+        return _keyCommitment != null ? _keyCommitment.clone() : null;
+    }
+
+    public void setKeyCommitment(byte[] keyCommitment) {
+        _keyCommitment = keyCommitment;
+    }
+
+    @Override
+    public byte[] messageId() {
+        return _messageId != null ? _messageId.clone() : null;
+    }
+
+    @Override
+    public byte[] iv() {
+        return _iv != null ? _iv.clone() : null;
+    }
+
+    public void setIvAndMessageId(byte[] iv, byte[] messageId) {
+        this._iv = iv;
+        this._messageId = messageId;
+        // Once we have an IV, we can create a cipher
+        this._cipher = CipherProvider.createAndInitCipher(this, iv, messageId);
     }
 
     public Builder toBuilder() {
@@ -132,20 +166,22 @@ final public class EncryptionMaterials implements CryptographicMaterials {
                 .plaintextDataKey(_plaintextDataKey)
                 .cryptoProvider(_cryptoProvider)
                 .materialsDescription(_materialsDescription)
-                .plaintextLength(_plaintextLength);
+                .plaintextLength(_plaintextLength)
+                .keyCommitment(_keyCommitment);
     }
 
     static public class Builder {
 
         private S3Request _s3Request = null;
-
-        private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
+        private AlgorithmSuite _algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY;
         private Map<String, String> _encryptionContext = Collections.emptyMap();
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private byte[] _plaintextDataKey = null;
         private long _plaintextLength = -1;
         private Provider _cryptoProvider = null;
         private MaterialsDescription _materialsDescription = MaterialsDescription.builder().build();
+        private byte[] _keyCommitment = null;
+        private byte[] _iv = null;
 
         private Builder() {
         }
@@ -159,12 +195,14 @@ final public class EncryptionMaterials implements CryptographicMaterials {
             _algorithmSuite = algorithmSuite;
             return this;
         }
+
         public Builder materialsDescription(MaterialsDescription materialsDescription) {
             _materialsDescription = materialsDescription == null
                     ? MaterialsDescription.builder().build()
                     : materialsDescription;
             return this;
         }
+
         public Builder encryptionContext(Map<String, String> encryptionContext) {
             _encryptionContext = encryptionContext == null
                     ? Collections.emptyMap()
@@ -183,6 +221,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
             _plaintextDataKey = plaintextDataKey == null ? null : plaintextDataKey.clone();
             return this;
         }
+
         public Builder cryptoProvider(Provider cryptoProvider) {
             _cryptoProvider = cryptoProvider;
             return this;
@@ -190,6 +229,16 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
         public Builder plaintextLength(long plaintextLength) {
             _plaintextLength = plaintextLength;
+            return this;
+        }
+
+        public Builder keyCommitment(byte[] keyCommitment) {
+            _keyCommitment = keyCommitment;
+            return this;
+        }
+
+        public Builder iV(byte[] iv) {
+            _iv = iv;
             return this;
         }
 

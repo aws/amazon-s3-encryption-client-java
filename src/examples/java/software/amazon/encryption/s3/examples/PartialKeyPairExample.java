@@ -57,7 +57,7 @@ public class PartialKeyPairExample {
         // parameter.
         // This means that the S3 Encryption Client can perform both encrypt and decrypt operations
         // as part of the S3 putObject and getObject operations.
-        S3Client s3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
@@ -85,7 +85,7 @@ public class PartialKeyPairExample {
         // public key from an RSA key pair with the PartialKeyPair object.
         // When you specify the public key alone, all GetObject calls will fail
         // because the private key is required to decrypt.
-        S3Client s3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
                 .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
                 .build();
 
@@ -116,7 +116,7 @@ public class PartialKeyPairExample {
         // private key from an RSA key pair with the PartialRsaKeyPair object.
         // When you specify the private key alone, all PutObject calls will
         // fail because the public key is required to encrypt.
-        S3Client s3ClientPrivateKeyOnly = S3EncryptionClient.builder()
+        S3Client s3ClientPrivateKeyOnly = S3EncryptionClient.builderV4()
                 .rsaKeyPair(new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), null))
                 .build();
 
@@ -135,7 +135,7 @@ public class PartialKeyPairExample {
         // Instantiate a new S3 Encryption client with a public key in order
         // to successfully call PutObject so that the client which only has
         // a private key can call GetObject on a valid S3 Object.
-        S3Client s3ClientPublicKeyOnly = S3EncryptionClient.builder()
+        S3Client s3ClientPublicKeyOnly = S3EncryptionClient.builderV4()
                 .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
                 .build();
 

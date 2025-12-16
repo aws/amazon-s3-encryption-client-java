@@ -54,9 +54,6 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
-//= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
-//= type=test
-//# The S3EC MAY support re-encryption/key rotation via Instruction Files.
 public class S3EncryptionClientReEncryptInstructionFileTest {
 
     private static SecretKey AES_KEY;
@@ -75,6 +72,240 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         keyPairGen.initialize(2048);
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
         RSA_KEY_PAIR_TWO = keyPairGen.generateKeyPair();
+    }
+
+    @Test
+    public void testAesReEncryptInstructionFileFailsWithV2NonCommittingAlgorithmMismatch() {
+        final String objectKey = appendTestSuffix(
+                "v2-algorithm-mismatch-test"
+        );
+        final String input = "Testing re-encryption failure with V2 non-committing algorithm mismatch";
+
+        // Create object with V2 encryption client (non-committing algorithm)
+        AesKeyring oldKeyring = AesKeyring
+                .builder()
+                .wrappingKey(AES_KEY)
+                .materialsDescription(
+                        MaterialsDescription.builder().put("version", "v2").build()
+                )
+                .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3EncryptionClient v2Client = S3EncryptionClient
+                .builderV4()
+                .keyring(oldKeyring)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .instructionFileConfig(
+                        InstructionFileConfig
+                                .builder()
+                                .instructionFileClient(wrappedClient)
+                                .enableInstructionFilePutObject(true)
+                                .build()
+                )
+                .build();
+
+        v2Client.putObject(
+                builder -> builder.bucket(BUCKET).key(objectKey).build(),
+                RequestBody.fromString(input)
+        );
+
+        // Try to re-encrypt with V3 client (committing algorithm) - should fail
+        AesKeyring newKeyring = AesKeyring
+                .builder()
+                .wrappingKey(AES_KEY_TWO)
+                .materialsDescription(
+                        MaterialsDescription.builder().put("version", "v3").build()
+                )
+                .build();
+
+        S3EncryptionClient v3Client = S3EncryptionClient
+                .builderV4()
+                .keyring(oldKeyring)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
+                .instructionFileConfig(
+                        InstructionFileConfig
+                                .builder()
+                                .instructionFileClient(wrappedClient)
+                                .enableInstructionFilePutObject(true)
+                                .build()
+                )
+                .build();
+
+        ReEncryptInstructionFileRequest reEncryptRequest = ReEncryptInstructionFileRequest
+                .builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .newKeyring(newKeyring)
+                .build();
+
+        try {
+            v3Client.reEncryptInstructionFile(reEncryptRequest);
+            fail("Expected S3EncryptionClientException for V2 algorithm mismatch");
+        } catch (S3EncryptionClientException e) {
+            assertTrue(e.getMessage().contains("Given object is encrypted with non-committing encryption algorithm"));
+            assertTrue(e.getMessage().contains("ALG_AES_256_GCM_IV12_TAG16_NO_KDF"));
+            assertTrue(e.getMessage().contains("FORBID_ENCRYPT_ALLOW_DECRYPT"));
+        }
+
+        deleteObject(BUCKET, objectKey, v2Client);
+    }
+
+
+    @Test
+    public void testReEncryptInstructionFileFailsWithV3CommittingAlgorithmMismatch() {
+        final String objectKey = appendTestSuffix(
+                "v3-algorithm-mismatch-test"
+        );
+        final String input = "Testing re-encryption failure with V3 committing algorithm mismatch";
+
+        // Create object with V3 encryption client (committing algorithm)
+        AesKeyring oldKeyring = AesKeyring
+                .builder()
+                .wrappingKey(AES_KEY)
+                .materialsDescription(
+                        MaterialsDescription.builder().put("version", "v3").build()
+                )
+                .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3EncryptionClient v3Client = S3EncryptionClient
+                .builderV4()
+                .keyring(oldKeyring)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT)
+                .instructionFileConfig(
+                        InstructionFileConfig
+                                .builder()
+                                .instructionFileClient(wrappedClient)
+                                .enableInstructionFilePutObject(true)
+                                .build()
+                )
+                .build();
+
+        v3Client.putObject(
+                builder -> builder.bucket(BUCKET).key(objectKey).build(),
+                RequestBody.fromString(input)
+        );
+
+        // Try to re-encrypt with V2 client (non-committing algorithm) - should fail
+        AesKeyring newKeyring = AesKeyring
+                .builder()
+                .wrappingKey(AES_KEY_TWO)
+                .materialsDescription(
+                        MaterialsDescription.builder().put("version", "v2").build()
+                )
+                .build();
+
+        S3EncryptionClient v2Client = S3EncryptionClient
+                .builderV4()
+                .keyring(oldKeyring)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .instructionFileConfig(
+                        InstructionFileConfig
+                                .builder()
+                                .instructionFileClient(wrappedClient)
+                                .enableInstructionFilePutObject(true)
+                                .build()
+                )
+                .build();
+
+        ReEncryptInstructionFileRequest reEncryptRequest = ReEncryptInstructionFileRequest
+                .builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .newKeyring(newKeyring)
+                .build();
+
+        try {
+            v2Client.reEncryptInstructionFile(reEncryptRequest);
+            fail("Expected S3EncryptionClientException for V3 algorithm mismatch");
+        } catch (S3EncryptionClientException e) {
+            assertTrue(e.getMessage().contains("Given object is encrypted with a committing encryption algorithm"));
+            assertTrue(e.getMessage().contains("REQUIRE_ENCRYPT_ALLOW_DECRYPT"));
+            assertTrue(e.getMessage().contains("REQUIRE_ENCRYPT_REQUIRE_DECRYPT"));
+        }
+
+        deleteObject(BUCKET, objectKey, v3Client);
+    }
+
+    @Test
+    public void testReEncryptInstructionFileFailsWithLegacyAlgorithm() {
+        final String objectKey = appendTestSuffix(
+                "legacy-algorithm-mismatch-test"
+        );
+        final String input = "Testing re-encryption failure with legacy algorithm";
+
+        // Create object with V1 client (legacy algorithm)
+        EncryptionMaterialsProvider materialsProvider = new StaticEncryptionMaterialsProvider(
+                new EncryptionMaterials(AES_KEY)
+                        .addDescription("version", "v1")
+        );
+        // Create Keyring with Existing Materials
+        AesKeyring oldKeyring = AesKeyring.builder()
+                .wrappingKey(AES_KEY)
+                .enableLegacyWrappingAlgorithms(true)
+                .build();
+
+        CryptoConfiguration cryptoConfig = new CryptoConfiguration(
+                CryptoMode.EncryptionOnly
+        )
+                .withStorageMode(CryptoStorageMode.InstructionFile);
+
+        AmazonS3Encryption v1Client = AmazonS3EncryptionClient
+                .encryptionBuilder()
+                .withCryptoConfiguration(cryptoConfig)
+                .withEncryptionMaterials(materialsProvider)
+                .build();
+
+        v1Client.putObject(BUCKET, objectKey, input);
+
+        // Try to re-encrypt with V3 client - should fail with legacy algorithm error
+        AesKeyring newKeyring = AesKeyring
+                .builder()
+                .wrappingKey(AES_KEY_TWO)
+                .materialsDescription(
+                        MaterialsDescription.builder().put("version", "v3").build()
+                )
+                .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3EncryptionClient v3Client = S3EncryptionClient
+                .builderV4()
+                .keyring(oldKeyring)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
+                .enableLegacyUnauthenticatedModes(true)
+                .enableLegacyWrappingAlgorithms(true)
+                .instructionFileConfig(
+                        InstructionFileConfig
+                                .builder()
+                                .instructionFileClient(wrappedClient)
+                                .enableInstructionFilePutObject(true)
+                                .build()
+                )
+                .build();
+
+        ReEncryptInstructionFileRequest reEncryptRequest = ReEncryptInstructionFileRequest
+                .builder()
+                .bucket(BUCKET)
+                .key(objectKey)
+                .newKeyring(newKeyring)
+                .build();
+
+        try {
+            v3Client.reEncryptInstructionFile(reEncryptRequest);
+            fail("Expected S3EncryptionClientException for legacy algorithm");
+        } catch (S3EncryptionClientException e) {
+            System.out.println(e.getMessage());
+            assertTrue(e.getMessage().contains("Given object is encrypted with legacy content encryption algorithm: AES/CBC/PKCS5Padding."));
+            assertTrue(e.getMessage().contains("To re-encrypt the data key, configure the client with encryptionAlgorithm ALG_AES_256_GCM_IV12_TAG16_NO_KDF and commitmentPolicy FORBID_ENCRYPT_ALLOW_DECRYPT"));
+            assertTrue(e.getMessage().contains("and enable legacy unauthenticated modes to use legacy content decryption."));
+        }
+
+        deleteObject(BUCKET, objectKey, v3Client);
     }
 
     @Test
@@ -371,6 +602,334 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     }
 
     @Test
+    public void testAesKeyringReEncryptInstructionFile() {
+        AesKeyring oldKeyring = AesKeyring
+                .builder()
+                .wrappingKey(AES_KEY)
+                .materialsDescription(
+                        MaterialsDescription.builder().put("rotated", "no").build()
+                )
+                .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3EncryptionClient s3Client = S3EncryptionClient
+                .builderV4()
+                .keyring(oldKeyring)
+                .instructionFileConfig(
+                        InstructionFileConfig
+                                .builder()
+                                .instructionFileClient(wrappedClient)
+                                .enableInstructionFilePutObject(true)
+                                .build()
+                )
+                .build();
+
+        final String objectKey = appendTestSuffix(
+                "aes-re-encrypt-instruction-file-test"
+        );
+        final String input =
+                "Testing re-encryption of instruction file with AES Keyring";
+
+        s3Client.putObject(
+                builder -> builder.bucket(BUCKET).key(objectKey).build(),
+                RequestBody.fromString(input)
+        );
+
+        ResponseBytes<GetObjectResponse> instructionFile =
+                wrappedClient.getObjectAsBytes(builder ->
+                        builder.bucket(BUCKET).key(objectKey + ".instruction").build()
+                );
+
+        String instructionFileContent = instructionFile.asUtf8String();
+        JsonNodeParser parser = JsonNodeParser.create();
+        JsonNode instructionFileNode = parser.parse(instructionFileContent);
+
+        String originalEncryptedDataKeyAlgorithm = instructionFileNode
+                .asObject()
+                .get("x-amz-w")
+                .asString();
+        String originalEncryptedDataKey = instructionFileNode
+                .asObject()
+                .get("x-amz-3")
+                .asString();
+        JsonNode originalMatDescNode = parser.parse(
+                instructionFileNode.asObject().get("x-amz-m").asString()
+        );
+        assertEquals(
+                "no",
+                originalMatDescNode.asObject().get("rotated").asString()
+        );
+
+        AesKeyring newKeyring = AesKeyring
+                .builder()
+                .wrappingKey(AES_KEY_TWO)
+                .materialsDescription(
+                        MaterialsDescription.builder().put("rotated", "yes").build()
+                )
+                .build();
+
+        ReEncryptInstructionFileRequest reEncryptInstructionFileRequest =
+                ReEncryptInstructionFileRequest
+                        .builder()
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .newKeyring(newKeyring)
+                        .build();
+
+        //= specification/s3-encryption/client.md#optional-api-operations
+        //= type=test
+        //# - ReEncryptInstructionFile MAY be implemented by the S3EC.
+        //= specification/s3-encryption/client.md#optional-api-operations
+        //= type=test
+        //# - ReEncryptInstructionFile MUST decrypt the instruction file's encrypted data key for the given object using the client's CMM.
+        //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+        //= type=test
+        //# The S3EC MAY support re-encryption/key rotation via Instruction Files.
+        ReEncryptInstructionFileResponse response = s3Client.reEncryptInstructionFile(
+                reEncryptInstructionFileRequest
+        );
+
+        assertEquals(BUCKET, response.bucket());
+        assertEquals(objectKey, response.key());
+        assertEquals("instruction", response.instructionFileSuffix());
+
+        S3Client rotatedWrappedClient = S3Client.create();
+
+        S3EncryptionClient rotatedClient = S3EncryptionClient
+                .builderV4()
+                .keyring(newKeyring)
+                .instructionFileConfig(
+                        InstructionFileConfig
+                                .builder()
+                                .instructionFileClient(rotatedWrappedClient)
+                                .enableInstructionFilePutObject(true)
+                                .build()
+                )
+                .build();
+
+        try {
+            s3Client.getObjectAsBytes(
+                    GetObjectRequest.builder().bucket(BUCKET).key(objectKey).build()
+            );
+            throw new RuntimeException("Expected exception");
+        } catch (S3EncryptionClientException e) {
+            assertTrue(e.getMessage().contains("Unable to AES/GCM unwrap"));
+        }
+
+        ResponseBytes<GetObjectResponse> getResponse =
+                rotatedClient.getObjectAsBytes(builder ->
+                        builder.bucket(BUCKET).key(objectKey).build()
+                );
+
+        assertEquals(input, getResponse.asUtf8String());
+
+        ResponseBytes<GetObjectResponse> reEncryptedInstructionFile =
+                rotatedWrappedClient.getObjectAsBytes(builder ->
+                        builder.bucket(BUCKET).key(objectKey + ".instruction").build()
+                );
+
+        String newInstructionFileContent =
+                reEncryptedInstructionFile.asUtf8String();
+        JsonNode newInstructionFileNode = parser.parse(newInstructionFileContent);
+
+        String postReEncryptionEncryptedDataKeyAlgorithm = newInstructionFileNode
+                .asObject()
+                .get("x-amz-w")
+                .asString();
+        String postReEncryptionEncryptedDataKey = newInstructionFileNode
+                .asObject()
+                .get("x-amz-3")
+                .asString();
+        JsonNode postReEncryptionMatDescNode = parser.parse(
+                newInstructionFileNode.asObject().get("x-amz-m").asString()
+        );
+
+        //= specification/s3-encryption/client.md#optional-api-operations
+        //= type=test
+        //# - ReEncryptInstructionFile MUST re-encrypt the plaintext data key with a provided keyring.
+        assertEquals(
+                "yes",
+                postReEncryptionMatDescNode.asObject().get("rotated").asString()
+        );
+        assertEquals(
+                originalEncryptedDataKeyAlgorithm,
+                postReEncryptionEncryptedDataKeyAlgorithm
+        );
+        //= specification/s3-encryption/client.md#optional-api-operations
+        //= type=test
+        //# - ReEncryptInstructionFile MUST re-encrypt the plaintext data key with a provided keyring.
+        assertNotEquals(originalEncryptedDataKey, postReEncryptionEncryptedDataKey);
+
+        deleteObject(BUCKET, objectKey, s3Client);
+    }
+
+    @Test
+    public void testRsaKeyringReEncryptInstructionFile() {
+        PublicKey originalPublicKey = RSA_KEY_PAIR.getPublic();
+        PrivateKey originalPrivateKey = RSA_KEY_PAIR.getPrivate();
+
+        PartialRsaKeyPair originalPartialRsaKeyPair = PartialRsaKeyPair
+                .builder()
+                .publicKey(originalPublicKey)
+                .privateKey(originalPrivateKey)
+                .build();
+
+        RsaKeyring oldKeyring = RsaKeyring
+                .builder()
+                .wrappingKeyPair(originalPartialRsaKeyPair)
+                .materialsDescription(
+                        MaterialsDescription.builder().put("rotated", "no").build()
+                )
+                .build();
+
+        S3Client wrappedClient = S3Client.create();
+        S3EncryptionClient client = S3EncryptionClient
+                .builderV4()
+                .keyring(oldKeyring)
+                .instructionFileConfig(
+                        InstructionFileConfig
+                                .builder()
+                                .instructionFileClient(wrappedClient)
+                                .enableInstructionFilePutObject(true)
+                                .build()
+                )
+                .build();
+
+        final String objectKey = appendTestSuffix(
+                "rsa-re-encrypt-instruction-file-test"
+        );
+        final String input =
+                "Testing re-encryption of instruction file with RSA Keyring";
+
+        client.putObject(
+                builder -> builder.bucket(BUCKET).key(objectKey).build(),
+                RequestBody.fromString(input)
+        );
+
+        ResponseBytes<GetObjectResponse> instructionFile =
+                wrappedClient.getObjectAsBytes(builder ->
+                        builder.bucket(BUCKET).key(objectKey + ".instruction").build()
+                );
+
+        String instructionFileContent = instructionFile.asUtf8String();
+        JsonNodeParser parser = JsonNodeParser.create();
+        JsonNode instructionFileNode = parser.parse(instructionFileContent);
+
+        String originalEncryptedDataKeyAlgorithm = instructionFileNode
+                .asObject()
+                .get("x-amz-w")
+                .asString();
+        String originalEncryptedDataKey = instructionFileNode
+                .asObject()
+                .get("x-amz-3")
+                .asString();
+        JsonNode originalMatDescNode = parser.parse(
+                instructionFileNode.asObject().get("x-amz-m").asString()
+        );
+        assertEquals(
+                "no",
+                originalMatDescNode.asObject().get("rotated").asString()
+        );
+
+        PublicKey newPublicKey = RSA_KEY_PAIR_TWO.getPublic();
+        PrivateKey newPrivateKey = RSA_KEY_PAIR_TWO.getPrivate();
+
+        PartialRsaKeyPair newPartialRsaKeyPair = PartialRsaKeyPair
+                .builder()
+                .publicKey(newPublicKey)
+                .privateKey(newPrivateKey)
+                .build();
+
+        RsaKeyring newKeyring = RsaKeyring
+                .builder()
+                .wrappingKeyPair(newPartialRsaKeyPair)
+                .materialsDescription(
+                        MaterialsDescription.builder().put("rotated", "yes").build()
+                )
+                .build();
+
+        ReEncryptInstructionFileRequest reEncryptInstructionFileRequest =
+                ReEncryptInstructionFileRequest
+                        .builder()
+                        .bucket(BUCKET)
+                        .key(objectKey)
+                        .newKeyring(newKeyring)
+                        .build();
+
+        ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(
+                reEncryptInstructionFileRequest
+        );
+
+        assertEquals(BUCKET, response.bucket());
+        assertEquals(objectKey, response.key());
+        assertEquals("instruction", response.instructionFileSuffix());
+        assertFalse(response.enforceRotation());
+
+        S3Client rotatedWrappedClient = S3Client.create();
+
+        S3EncryptionClient rotatedClient = S3EncryptionClient
+                .builderV4()
+                .keyring(newKeyring)
+                .instructionFileConfig(
+                        InstructionFileConfig
+                                .builder()
+                                .instructionFileClient(rotatedWrappedClient)
+                                .enableInstructionFilePutObject(true)
+                                .build()
+                )
+                .build();
+
+        try {
+            client.getObjectAsBytes(
+                    GetObjectRequest.builder().bucket(BUCKET).key(objectKey).build()
+            );
+            throw new RuntimeException("Expected exception");
+        } catch (S3EncryptionClientException e) {
+            assertTrue(e.getMessage().contains("Unable to RSA-OAEP-SHA1 unwrap"));
+        }
+
+        ResponseBytes<GetObjectResponse> getResponse =
+                rotatedClient.getObjectAsBytes(builder ->
+                        builder.bucket(BUCKET).key(objectKey).build()
+                );
+
+        assertEquals(input, getResponse.asUtf8String());
+
+        ResponseBytes<GetObjectResponse> reEncryptedInstructionFile =
+                rotatedWrappedClient.getObjectAsBytes(builder ->
+                        builder.bucket(BUCKET).key(objectKey + ".instruction").build()
+                );
+
+        String newInstructionFileContent =
+                reEncryptedInstructionFile.asUtf8String();
+        JsonNode newInstructionFileNode = parser.parse(newInstructionFileContent);
+
+        String postReEncryptionEncryptedDataKeyAlgorithm = newInstructionFileNode
+                .asObject()
+                .get("x-amz-w")
+                .asString();
+        String postReEncryptionEncryptedDataKey = newInstructionFileNode
+                .asObject()
+                .get("x-amz-3")
+                .asString();
+        JsonNode postReEncryptionMatDescNode = parser.parse(
+                newInstructionFileNode.asObject().get("x-amz-m").asString()
+        );
+
+        assertEquals(
+                "yes",
+                postReEncryptionMatDescNode.asObject().get("rotated").asString()
+        );
+        assertEquals(
+                originalEncryptedDataKeyAlgorithm,
+                postReEncryptionEncryptedDataKeyAlgorithm
+        );
+        assertNotEquals(originalEncryptedDataKey, postReEncryptionEncryptedDataKey);
+
+        deleteObject(BUCKET, objectKey, client);
+    }
+
+    @Test
     public void testV4TransitionAesKeyringReEncryptInstructionFile() {
         AesKeyring oldKeyring = AesKeyring
                 .builder()
@@ -451,15 +1010,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
                         .newKeyring(newKeyring)
                         .build();
 
-        //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=test
-        //# - ReEncryptInstructionFile MAY be implemented by the S3EC.
-        //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=test
-        //# - ReEncryptInstructionFile MUST decrypt the instruction file's encrypted data key for the given object using the client's CMM.
-        //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
-        //= type=test
-        //# The S3EC MAY support re-encryption/key rotation via Instruction Files.
         ReEncryptInstructionFileResponse response = client.reEncryptInstructionFile(
                 reEncryptInstructionFileRequest
         );
@@ -526,9 +1076,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
                 newInstructionFileNode.asObject().get("x-amz-matdesc").asString()
         );
 
-        //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=test
-        //# - ReEncryptInstructionFile MUST re-encrypt the plaintext data key with a provided keyring.
         assertEquals(
                 "yes",
                 postReEncryptionMatDescNode.asObject().get("rotated").asString()
@@ -723,7 +1270,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
     }
 
     @Test
-    public void testV4RsaKeyringReEncryptInstructionFileWithCustomSuffix() {
+    public void testRsaKeyringReEncryptInstructionFileWithCustomSuffix() {
         PublicKey clientPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey clientPrivateKey = RSA_KEY_PAIR.getPrivate();
 
@@ -749,8 +1296,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         S3EncryptionClient client = S3EncryptionClient
                 .builderV4()
                 .keyring(clientKeyring)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .instructionFileConfig(
                         InstructionFileConfig
                                 .builder()
@@ -807,8 +1352,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         S3EncryptionClient thirdPartyClient = S3EncryptionClient
                 .builderV4()
                 .keyring(thirdPartyKeyring)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .instructionFileConfig(
                         InstructionFileConfig
                                 .builder()
@@ -841,23 +1384,22 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         JsonNode clientInstructionFileNode = parser.parse(
                 clientInstructionFileContent
         );
-        String clientIv = clientInstructionFileNode
-                .asObject()
-                .get("x-amz-iv")
-                .asString();
+
         String clientEncryptedDataKeyAlgorithm = clientInstructionFileNode
                 .asObject()
-                .get("x-amz-wrap-alg")
+                .get("x-amz-w")
                 .asString();
         String clientEncryptedDataKey = clientInstructionFileNode
                 .asObject()
-                .get("x-amz-key-v2")
+                .get("x-amz-3")
                 .asString();
         JsonNode clientMatDescNode = parser.parse(
-                clientInstructionFileNode.asObject().get("x-amz-matdesc").asString()
+                clientInstructionFileNode.asObject().get("x-amz-m").asString()
         );
-
-        assertEquals("yes", clientMatDescNode.asObject().get("isOwner").asString());
+        assertEquals(
+                "yes",
+                clientMatDescNode.asObject().get("isOwner").asString()
+        );
         assertEquals(
                 "admin",
                 clientMatDescNode.asObject().get("access-level").asString()
@@ -878,20 +1420,17 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         JsonNode thirdPartyInstructionFileNode = parser.parse(
                 thirdPartyInstructionFileContent
         );
-        String thirdPartyIv = thirdPartyInstructionFileNode
-                .asObject()
-                .get("x-amz-iv")
-                .asString();
+
         String thirdPartyEncryptedDataKeyAlgorithm = thirdPartyInstructionFileNode
                 .asObject()
-                .get("x-amz-wrap-alg")
+                .get("x-amz-w")
                 .asString();
         String thirdPartyEncryptedDataKey = thirdPartyInstructionFileNode
                 .asObject()
-                .get("x-amz-key-v2")
+                .get("x-amz-3")
                 .asString();
         JsonNode thirdPartyMatDescNode = parser.parse(
-                thirdPartyInstructionFileNode.asObject().get("x-amz-matdesc").asString()
+                thirdPartyInstructionFileNode.asObject().get("x-amz-m").asString()
         );
         assertEquals(
                 "no",
@@ -902,7 +1441,6 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
                 thirdPartyMatDescNode.asObject().get("access-level").asString()
         );
 
-        assertEquals(clientIv, thirdPartyIv);
         assertEquals(
                 clientEncryptedDataKeyAlgorithm,
                 thirdPartyEncryptedDataKeyAlgorithm

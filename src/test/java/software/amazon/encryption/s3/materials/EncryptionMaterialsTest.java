@@ -8,10 +8,14 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.CipherMode;
 
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EncryptionMaterialsTest {
 
@@ -65,6 +69,22 @@ class EncryptionMaterialsTest {
     @Test
     void testCipherMode() {
         assertEquals(CipherMode.ENCRYPT, actualEncryptionMaterials.cipherMode());
+    }
+
+    @Test
+    void testSetIvAndMessageId() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] iv = new byte[12];
+        secureRandom.nextBytes(iv);
+        byte[] messageId = new byte[28];
+        secureRandom.nextBytes(messageId);
+
+        assertNull(actualEncryptionMaterials.iv());
+        assertNull(actualEncryptionMaterials.messageId());
+
+        actualEncryptionMaterials.setIvAndMessageId(iv, messageId);
+        assertTrue(MessageDigest.isEqual(iv, actualEncryptionMaterials.iv()));
+        assertTrue(MessageDigest.isEqual(messageId, actualEncryptionMaterials.messageId()));
     }
 
     @Test

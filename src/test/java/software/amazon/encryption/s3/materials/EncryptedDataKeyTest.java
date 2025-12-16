@@ -15,7 +15,7 @@ public class EncryptedDataKeyTest {
     private byte[] encryptedDataKey;
     private String keyProviderId;
     private String keyProviderInfo;
-    
+
     @BeforeEach
     public void setUp() {
         keyProviderId = "testKeyProviderId";

@@ -40,19 +40,19 @@ public class RangedGetExample {
         //
         // This means that the S3 Encryption Client can perform both encrypt and decrypt operations,
         // and can perform ranged GET requests when a range is provided.
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Call putObject to encrypt the object and upload it to S3
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                                    .bucket(bucket)
                                    .key(objectKey)
                                    .build(), RequestBody.fromString(OBJECT_CONTENT));
 
         // Call getObject to retrieve a range of 10-20 bytes from the object content.
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .range("bytes=10-20")
                 .key(objectKey));
@@ -63,8 +63,8 @@ public class RangedGetExample {
         assertEquals(OBJECT_CONTENT.substring(10, 20 + 1), output);
 
         // Cleanup
-        v3Client.deleteObject(builder -> builder.bucket(bucket).key(objectKey));
-        v3Client.close();
+        s3Client.deleteObject(builder -> builder.bucket(bucket).key(objectKey));
+        s3Client.close();
     }
 
     /**
@@ -75,20 +75,20 @@ public class RangedGetExample {
     public static void aesGcmV3RangedGetOperations(String bucket) {
         final String objectKey = appendTestSuffix("aes-gcm-v3-ranged-get-examples");
 
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Call putObject to encrypt the object and upload it to S3
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                                    .bucket(bucket)
                                    .key(objectKey)
                                    .build(), RequestBody.fromString(OBJECT_CONTENT));
 
         // 1. Call getObject to retrieve a range of 190-300 bytes,
         // where 190 is within object range but 300 is outside the original plaintext object range.
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .range("bytes=190-300")
                 .key(objectKey));
@@ -100,7 +100,7 @@ public class RangedGetExample {
 
         // 2. Call getObject to retrieve a range of 100-50 bytes,
         // where the start index is greater than the end index.
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .range("bytes=100-50")
                 .key(objectKey));
@@ -111,7 +111,7 @@ public class RangedGetExample {
         assertEquals(OBJECT_CONTENT, output);
 
         // 3. Call getObject to retrieve a range of 10-20 bytes but with invalid format
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .range("10-20")
                 .key(objectKey));
@@ -124,7 +124,7 @@ public class RangedGetExample {
 
         // 4. Call getObject to retrieve a range of 216-217 bytes.
         // Both the start and end indices are greater than the original plaintext object's total length, 200.
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .range("bytes=216-217")
                 .key(objectKey));
@@ -136,7 +136,7 @@ public class RangedGetExample {
 
         // 5. Call getObject to retrieve a range starting from byte 40 to the end of the object,
         // where the start index is within the object range, and the end index is unspecified.
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(bucket)
                 .range("bytes=40-")
                 .key(objectKey));
@@ -147,7 +147,7 @@ public class RangedGetExample {
         assertEquals(OBJECT_CONTENT.substring(40), output);
 
         // Cleanup
-        v3Client.deleteObject(builder -> builder.bucket(bucket).key(objectKey));
-        v3Client.close();
+        s3Client.deleteObject(builder -> builder.bucket(bucket).key(objectKey));
+        s3Client.close();
     }
 }

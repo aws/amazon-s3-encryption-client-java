@@ -74,7 +74,7 @@ public class ClientConfigurationExample {
             .build();
 
     // Instantiate the S3 Encryption Client using the configured clients and keyring.
-    final S3Client s3Client = S3EncryptionClient.builder()
+    final S3Client s3Client = S3EncryptionClient.builderV4()
             .wrappedClient(wrappedClient)
             .wrappedAsyncClient(wrappedAsyncClient)
             .keyring(kmsKeyring)
@@ -118,7 +118,7 @@ public class ClientConfigurationExample {
     // NOTE: If you use both the "top-level" configuration AND
     // custom configuration such as the above example, the custom client
     // configuration will take precedence.
-    final S3Client s3Client = S3EncryptionClient.builder()
+    final S3Client s3Client = S3EncryptionClient.builderV4()
             .credentialsProvider(creds)
             .region(Region.of(KMS_REGION.toString()))
             .kmsKeyId(ALTERNATE_KMS_KEY)
@@ -179,7 +179,7 @@ public class ClientConfigurationExample {
             .build();
 
     // Instantiate the S3 Async Encryption Client using the configured clients and keyring.
-    final S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
+    final S3AsyncClient s3Client = S3AsyncEncryptionClient.builderV4()
             .wrappedClient(wrappedAsyncClient)
             .keyring(kmsKeyring)
             .build();
@@ -222,7 +222,7 @@ public class ClientConfigurationExample {
     // NOTE: If you use both the "top-level" configuration AND
     // custom configuration such as the above example, the custom client
     // configuration will take precedence.
-    final S3AsyncClient s3Client = S3AsyncEncryptionClient.builder()
+    final S3AsyncClient s3Client = S3AsyncEncryptionClient.builderV4()
             .credentialsProvider(creds)
             .region(Region.of(KMS_REGION.toString()))
             .kmsKeyId(ALTERNATE_KMS_KEY)

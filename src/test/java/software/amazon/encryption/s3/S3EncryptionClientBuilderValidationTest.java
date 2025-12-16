@@ -33,8 +33,6 @@ public class S3EncryptionClientBuilderValidationTest {
         // Test AES + RSA
         S3EncryptionClientException exception1 = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .rsaKeyPair(rsaKeyPair)
                 .build()
@@ -44,8 +42,6 @@ public class S3EncryptionClientBuilderValidationTest {
         // Test AES + KMS
         S3EncryptionClientException exception2 = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .kmsKeyId("test-key-id")
                 .build()
@@ -55,8 +51,6 @@ public class S3EncryptionClientBuilderValidationTest {
         // Test RSA + KMS
         S3EncryptionClientException exception3 = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(rsaKeyPair)
                 .kmsKeyId("test-key-id")
                 .build()
@@ -67,9 +61,7 @@ public class S3EncryptionClientBuilderValidationTest {
     @Test
     public void testBuilderWithNoKeyringFails() {
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
-            S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF).build()
+            S3EncryptionClient.builderV4().build()
         );
         assertTrue(exception.getMessage().contains("Exactly one must be set of"));
     }
@@ -87,8 +79,6 @@ public class S3EncryptionClientBuilderValidationTest {
 
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .cryptoMaterialsManager(cmm)
                 .build()
@@ -105,8 +95,6 @@ public class S3EncryptionClientBuilderValidationTest {
         // Test buffer size too small
         S3EncryptionClientException exception1 = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .setBufferSize(15L)
                 .build()
@@ -116,8 +104,6 @@ public class S3EncryptionClientBuilderValidationTest {
         // Test buffer size too large
         S3EncryptionClientException exception2 = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .setBufferSize(68719476705L)
                 .build()
@@ -136,8 +122,6 @@ public class S3EncryptionClientBuilderValidationTest {
                 //= type=test
                 //# If Delayed Authentication mode is enabled, and the buffer size has been set to a value other than its default, the S3EC MUST throw an exception.
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .setBufferSize(1024)
                 .enableDelayedAuthenticationMode(true)
@@ -154,8 +138,6 @@ public class S3EncryptionClientBuilderValidationTest {
 
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .secureRandom(null)
                 .build()
@@ -172,22 +154,22 @@ public class S3EncryptionClientBuilderValidationTest {
         // Test REQUIRE_ENCRYPT with non-committing algorithm
         S3EncryptionClientException exception1 = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                    .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT)
-                    .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
-                    .aesKey(aesKey)
-                    .build()
+                .aesKey(aesKey)
+                .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .build()
         );
-        assertTrue(exception1.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+        assertTrue(exception1.getMessage().contains("commitment policy requires encryption with a committing algorithm"));
 
         // Test FORBID_ENCRYPT with committing algorithm
         S3EncryptionClientException exception2 = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                    .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                    .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
-                    .aesKey(aesKey)
-                    .build()
+                .aesKey(aesKey)
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .build()
         );
-        assertTrue(exception2.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+        assertTrue(exception2.getMessage().contains("commitment policy forbids encryption with committing algorithm"));
     }
 
     @Test
@@ -198,12 +180,11 @@ public class S3EncryptionClientBuilderValidationTest {
 
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                    .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                    .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF)
-                    .aesKey(aesKey)
-                    .build()
+                .aesKey(aesKey)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF)
+                .build()
         );
-        assertTrue(exception.getMessage().contains("This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF."));
+        assertTrue(exception.getMessage().contains("Encryption algorithm provided is LEGACY"));
     }
 
     @Test
@@ -213,16 +194,12 @@ public class S3EncryptionClientBuilderValidationTest {
         SecretKey aesKey = keyGen.generateKey();
 
         S3EncryptionClient wrappedEncryptionClient = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .build();
 
         // Should not be able to wrap an S3EncryptionClient
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .wrappedClient(wrappedEncryptionClient)
                 .build()
@@ -239,16 +216,12 @@ public class S3EncryptionClientBuilderValidationTest {
         SecretKey aesKey = keyGen.generateKey();
 
         S3AsyncEncryptionClient wrappedAsyncEncryptionClient = S3AsyncEncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .build();
 
         // Should not be able to wrap an S3AsyncEncryptionClient
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .wrappedAsyncClient(wrappedAsyncEncryptionClient)
                 .build()
@@ -267,8 +240,6 @@ public class S3EncryptionClientBuilderValidationTest {
 
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(desKey)
                 .build()
         );
@@ -285,8 +256,6 @@ public class S3EncryptionClientBuilderValidationTest {
 
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(ecKey)
                 .build()
         );
@@ -298,8 +267,6 @@ public class S3EncryptionClientBuilderValidationTest {
     public void testBuilderWithEmptyKmsKeyId() {
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId("")
                 .build()
         );
@@ -310,8 +277,6 @@ public class S3EncryptionClientBuilderValidationTest {
     public void testBuilderWithNullKmsKeyId() {
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(null)
                 .build()
         );

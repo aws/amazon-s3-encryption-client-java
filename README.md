@@ -53,7 +53,36 @@ You can configure each client independently, or apply a "top-level" configuratio
 Refer to the Client Configuration Example in the [Examples directory](https://github.com/aws/amazon-s3-encryption-client-java/tree/main/src/examples/java/software/amazon/encryption/s3/examples) for examples of each configuration method.
 
 ### Examples
-#### V2 KMS Materials Provider to V3
+#### V3 to V4 Migration
+
+V4 introduces enhanced security with commitment policies. To migrate from V3:
+
+```java
+class Example {
+    public static void main(String[] args) {
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(256);
+        SecretKey aesKey = keyGen.generateKey();
+        
+        // V3
+        S3Client v3Client = S3EncryptionClient.builder()
+                .aesKey(aesKey)
+                .build();
+        
+        // V4
+        S3Client v4Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .aesKey(aesKey)
+                .build();
+    }
+}
+```
+
+For detailed migration guidance and step-by-step examples, refer to the [Migration Examples](migration_examples/v3-to-v4/README.md). For more information, refer to the <a href="https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/java-v4-migration.html">Developer Guide</a>.
+
+
+#### V2 KMS Materials Provider to V4
 ```java
 class Example {
     public static void main(String[] args) {
@@ -63,15 +92,17 @@ class Example {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
         
-        // V3
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4
+        S3Client v4Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_WRAPPING_KEY_ID)
                 .build();
     }
 }
 ```
 
-#### V2 AES Key Materials Provider to V3
+#### V2 AES Key Materials Provider to V4
 ```java
 class Example {
     public static void main(String[] args) {
@@ -85,15 +116,17 @@ class Example {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
-        // V3
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4
+        S3Client v4Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .build();
     }
 }
 ```
 
-#### V2 RSA Key Materials Provider to V3
+#### V2 RSA Key Materials Provider to V4
 ```java
 class Example {
     public static void main(String[] args) {
@@ -107,15 +140,17 @@ class Example {
                 .withEncryptionMaterialsProvider(materialsProvider)
                 .build();
 
-        // V3
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4
+        S3Client v4Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(rsaKey)
                 .build();
     }
 }
 ```
 
-#### V1 Key Materials Provider to V3
+#### V1 Key Materials Provider to V4
 To allow legacy modes (for decryption only), you must explicitly allow them
 ```java
 class Example {
@@ -130,8 +165,10 @@ class Example {
                 .withEncryptionMaterials(materialsProvider)
                 .build();
 
-        // V3
-        S3Client v3Client = S3EncryptionClient.builder()
+        // V4
+        S3Client v4Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(aesKey)
                 .enableLegacyUnauthenticatedModes(true) // for enabling legacy content decryption modes
                 .enableLegacyWrappingAlgorithms(true) // for enabling legacy key wrapping modes 
@@ -149,8 +186,6 @@ class Example {
 * RSA-OAEP w/MGF-1 and SHA-256
 * RSA
 * KMS (without context)
-#### Encryption Metadata Storage
-* Instruction File
 
 ## Security
 

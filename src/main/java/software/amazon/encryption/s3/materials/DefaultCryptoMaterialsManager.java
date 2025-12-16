@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.materials;
 
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
-
 import java.security.Provider;
 
 /**
@@ -26,7 +24,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
     public EncryptionMaterials getEncryptionMaterials(EncryptionMaterialsRequest request) {
         EncryptionMaterials materials = EncryptionMaterials.builder()
                 .s3Request(request.s3Request())
-                .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .algorithmSuite(request.encryptionAlgorithm())
                 .encryptionContext(request.encryptionContext())
                 .cryptoProvider(_cryptoProvider)
                 .plaintextLength(request.plaintextLength())
@@ -44,6 +42,7 @@ public class DefaultCryptoMaterialsManager implements CryptographicMaterialsMana
                 .ciphertextLength(request.ciphertextLength())
                 .cryptoProvider(_cryptoProvider)
                 .contentRange(request.contentRange())
+                .keyCommitment(request.keyCommitment())
                 .build();
 
         return _keyring.onDecrypt(materials, request.encryptedDataKeys());

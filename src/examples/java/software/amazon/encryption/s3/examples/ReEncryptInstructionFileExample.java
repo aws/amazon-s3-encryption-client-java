@@ -102,7 +102,7 @@ public class ReEncryptInstructionFileExample {
     // Create the S3 Encryption Client with instruction file support enabled
     // The client can perform both putObject and getObject operations using the original AES key
     S3EncryptionClient originalClient = S3EncryptionClient
-      .builder()
+      .builderV4()
       .keyring(oldKeyring)
       .instructionFileConfig(
         InstructionFileConfig
@@ -167,7 +167,7 @@ public class ReEncryptInstructionFileExample {
 
     // Create a new client with the rotated AES key
     S3EncryptionClient newClient = S3EncryptionClient
-      .builder()
+      .builderV4()
       .keyring(newKeyring)
       .instructionFileConfig(
         InstructionFileConfig
@@ -241,7 +241,7 @@ public class ReEncryptInstructionFileExample {
     // Create the S3 Encryption Client with instruction file support enabled
     // The client can perform both putObject and getObject operations using RSA keyring
     S3EncryptionClient originalClient = S3EncryptionClient
-      .builder()
+      .builderV4()
       .keyring(originalKeyring)
       .instructionFileConfig(
         InstructionFileConfig
@@ -315,7 +315,7 @@ public class ReEncryptInstructionFileExample {
 
     // Create a new client with the rotated RSA key
     S3EncryptionClient newClient = S3EncryptionClient
-      .builder()
+      .builderV4()
       .keyring(newKeyring)
       .instructionFileConfig(
         InstructionFileConfig
@@ -395,7 +395,7 @@ public class ReEncryptInstructionFileExample {
     // Create the S3 Encryption Client with instruction file support enabled
     // The client can perform both putObject and getObject operations using RSA keyring
     S3EncryptionClient client = S3EncryptionClient
-      .builder()
+      .builderV4()
       .keyring(clientKeyring)
       .instructionFileConfig(
         InstructionFileConfig
@@ -472,7 +472,7 @@ public class ReEncryptInstructionFileExample {
 
     // Create the third party's S3 Encryption Client
     S3EncryptionClient thirdPartyClient = S3EncryptionClient
-      .builder()
+      .builderV4()
       .keyring(thirdPartyKeyring)
       .instructionFileConfig(
         InstructionFileConfig

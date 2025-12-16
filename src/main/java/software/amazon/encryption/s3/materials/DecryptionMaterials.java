@@ -40,7 +40,7 @@ final public class DecryptionMaterials implements CryptographicMaterials {
     final private long _ciphertextLength;
     final private Provider _cryptoProvider;
     final private String _contentRange;
-    private byte[] _keyCommitment;
+    final private byte[] _keyCommitment;
     private byte[] _messageId;
     private byte[] _iv;
 
@@ -122,18 +122,16 @@ final public class DecryptionMaterials implements CryptographicMaterials {
         return _contentRange;
     }
 
-    public void setKeyCommitment(byte[] keyCommitment) {
-        this._keyCommitment = keyCommitment;
-    }
-
     public byte[] getKeyCommitment() {
         return _keyCommitment != null ? _keyCommitment.clone() : null;
     }
 
+    @Override
     public byte[] messageId() {
         return _messageId;
     }
 
+    @Override
     public byte[] iv() {
         return _iv;
     }
