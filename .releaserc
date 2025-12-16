@@ -60,5 +60,5 @@
             "message": "Amazon S3 Encryption Client ${nextRelease.version} Release -- ${new Date().toISOString().slice(0, 10)} \n\n${nextRelease.notes}"
           }],
     ],
-    "repositoryUrl": "https://github.com/aws/aws-s3-encryption-client-java",
+    "repositoryUrl": "https://github.com/aws/amazon-s3-encryption-client-java",
 }
