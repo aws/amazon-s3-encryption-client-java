@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.6.0](https://github.com/aws/amazon-s3-encryption-client-java/compare/v3.5.0...v3.6.0) (2025-12-16)
+
+### Features
+
+* Updates to the S3 Encryption Client ([#489](https://github.com/aws/amazon-s3-encryption-client-java/issues/489)) ([2b13cf2](https://github.com/aws/amazon-s3-encryption-client-java/commit/2b13cf2a4f68651fb09b15b489a8fa8a8d8380ce))
+
+### Maintenance
+
+* Add 's3:HeadObject' action to S3 bucket policies ([#488](https://github.com/aws/amazon-s3-encryption-client-java/issues/488)) ([c24b358](https://github.com/aws/amazon-s3-encryption-client-java/commit/c24b358f15996a0db73c4eed690eb01b93383adf))
+* update releaserc ([#490](https://github.com/aws/amazon-s3-encryption-client-java/issues/490)) ([51d4635](https://github.com/aws/amazon-s3-encryption-client-java/commit/51d46350945041f990d0486f5e7c0c5bb32aa453))
+
 ## [3.5.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.4.0...v3.5.0) (2025-10-27)
 
 ### Features
