@@ -38,8 +38,8 @@ public class ContentMetadataEncodingStrategy {
             String metadataString;
             Map<String, String> objectMetadata;
             if (materials.algorithmSuite().isCommitting()) {
-                // TODO: Should throw an exception for Commiting Alg
-                throw new S3EncryptionClientException("This version of S3EC does not support encryption with committing algorithm suite: " + materials.algorithmSuite());
+                metadataString = metadataToStringForV3InstructionFile(materials, iv);
+                objectMetadata = addMetadataToMapV3InstructionFile(putObjectRequest.metadata(), materials, iv);
             } else {
                 metadataString = metadataToStringForV1V2InstructionFile(materials, iv);
                 objectMetadata = putObjectRequest.metadata();
@@ -68,8 +68,8 @@ public class ContentMetadataEncodingStrategy {
             String metadataString;
             Map<String, String> objectMetadata;
             if (materials.algorithmSuite().isCommitting()) {
-                // TODO: Should throw an exception for Commiting Alg
-                throw new S3EncryptionClientException("This version of S3EC does not support encryption with committing algorithm suite: " + materials.algorithmSuite());
+                metadataString = metadataToStringForV3InstructionFile(materials, iv);
+                objectMetadata = addMetadataToMapV3InstructionFile(createMultipartUploadRequest.metadata(), materials, iv);
             } else {
                 metadataString = metadataToStringForV1V2InstructionFile(materials, iv);
                 objectMetadata = createMultipartUploadRequest.metadata();
@@ -92,6 +92,19 @@ public class ContentMetadataEncodingStrategy {
         final Map<String, String> metadataMap = addMetadataToMap(new HashMap<>(), materials, iv);
         return metadataToString(metadataMap);
     }
+    private String metadataToStringForV3InstructionFile(EncryptionMaterials materials, byte[] iv) {
+        final Map<String, String> metadataMap = addMetadataToMap(new HashMap<>(), materials, iv);
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //# - The V3 message format MUST NOT store the mapkey "x-amz-c" and its value in the Instruction File.
+        metadataMap.remove(MetadataKeyConstants.CONTENT_CIPHER_V3);
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //# - The V3 message format MUST NOT store the mapkey "x-amz-d" and its value in the Instruction File.
+        metadataMap.remove(MetadataKeyConstants.KEY_COMMITMENT_V3);
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //# - The V3 message format MUST NOT store the mapkey "x-amz-i" and its value in the Instruction File.
+        metadataMap.remove(MetadataKeyConstants.MESSAGE_ID_V3);
+        return metadataToString(metadataMap);
+    }
 
     private String metadataToString(Map<String, String> metadataMap) {
         try (JsonWriter jsonWriter = JsonWriter.create()) {
@@ -107,10 +120,67 @@ public class ContentMetadataEncodingStrategy {
         }
     }
 
+    private Map<String, String> addMetadataToMapV3InstructionFile(Map<String, String> map, EncryptionMaterials materials, byte[] iv) {
+        Map<String, String> metadata = new HashMap<>(map);
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //# In the V3 format, the mapkeys "x-amz-c", "x-amz-d", and "x-amz-i" MUST be stored exclusively in the Object Metadata.
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //# - The V3 message format MUST store the mapkey "x-amz-c" and its value in the Object Metadata when writing with an Instruction File.
+        metadata.put(MetadataKeyConstants.CONTENT_CIPHER_V3, materials.algorithmSuite().idAsString());
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //# - The V3 message format MUST store the mapkey "x-amz-d" and its value in the Object Metadata when writing with an Instruction File.
+        metadata.put(MetadataKeyConstants.KEY_COMMITMENT_V3, ENCODER.encodeToString(materials.getKeyCommitment()));
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //# - The V3 message format MUST store the mapkey "x-amz-i" and its value in the Object Metadata when writing with an Instruction File.
+        metadata.put(MetadataKeyConstants.MESSAGE_ID_V3, ENCODER.encodeToString(iv));
+        return metadata;
+    }
+
+    private Map<String, String> addMetadataToMapV3(Map<String, String> map, EncryptionMaterials materials, byte[] iv) {
+        Map<String, String> metadata = new HashMap<>(map);
+        EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //# - The V3 message format MUST store the mapkey "x-amz-3" and its value in the Instruction File.
+        metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3, ENCODER.encodeToString(edk.encryptedDatakey()));
+        metadata.put(MetadataKeyConstants.MESSAGE_ID_V3, ENCODER.encodeToString(iv));
+        metadata.put(MetadataKeyConstants.CONTENT_CIPHER_V3, materials.algorithmSuite().idAsString());
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //# - The V3 message format MUST store the mapkey "x-amz-w" and its value in the Instruction File.
+        String keyProviderInfo = MetadataKeyConstants.compressWrappingAlgorithm(edk.keyProviderInfo());
+        metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM_V3, keyProviderInfo);
+        metadata.put(MetadataKeyConstants.KEY_COMMITMENT_V3, ENCODER.encodeToString(materials.getKeyCommitment()));
+
+        try (JsonWriter jsonWriter = JsonWriter.create()) {
+            jsonWriter.writeStartObject();
+            if (!materials.encryptionContext().isEmpty() && materials.materialsDescription().isEmpty()) {
+                // write EncryptionContext
+                for (Map.Entry<String, String> entry : materials.encryptionContext().entrySet()) {
+                    jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
+                }
+                jsonWriter.writeEndObject();
+                String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
+                //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+                //# - The V3 message format MUST store the mapkey "x-amz-t" and its value (when present in the content metadata) in the Instruction File.
+                metadata.put(MetadataKeyConstants.ENCRYPTION_CONTEXT_V3, jsonEncryptionContext);
+            } else if (materials.encryptionContext().isEmpty() && !materials.materialsDescription().isEmpty()) {
+                // write EncryptionContext
+                for (Map.Entry<String, String> entry : materials.materialsDescription().entrySet()) {
+                    jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
+                }
+                jsonWriter.writeEndObject();
+                String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
+                //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+                //# - The V3 message format MUST store the mapkey "x-amz-m" and its value (when present in the content metadata) in the Instruction File.
+                metadata.put(MetadataKeyConstants.MAT_DESC_V3, jsonEncryptionContext);
+            }
+        } catch (JsonWriter.JsonGenerationException e) {
+            throw new S3EncryptionClientException("Cannot serialize encryption context or mat desc to JSON.", e);
+        }
+        return metadata;
+    }
     private Map<String, String> addMetadataToMap(Map<String, String> map, EncryptionMaterials materials, byte[] iv) {
         if (materials.algorithmSuite().isCommitting()) {
-            // TODO: Should throw an exception for Commiting Alg
-            throw new S3EncryptionClientException("This version of S3EC does not support encryption with committing algorithm suite: " + materials.algorithmSuite());
+            return addMetadataToMapV3(map, materials, iv);
         }
         Map<String, String> metadata = new HashMap<>(map);
         EncryptedDataKey edk = materials.encryptedDataKeys().get(0);

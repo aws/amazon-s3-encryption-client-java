@@ -112,6 +112,7 @@ public class KmsKeyring extends S3Keyring {
 
         @Override
         public String keyProviderInfo() {
+            // Default to v3 format for new encryptions
             return KEY_PROVIDER_INFO;
         }
 
@@ -138,7 +139,6 @@ public class KmsKeyring extends S3Keyring {
             } else {
                 encryptionContext.put(ENCRYPTION_CONTEXT_ALGORITHM_KEY, materials.algorithmSuite().cipherName());
             }
-
             return materials.toBuilder()
                     .encryptionContext(encryptionContext)
                     .build();

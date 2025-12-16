@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.encryption.s3.CommitmentPolicy;
 import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -69,9 +68,8 @@ public class KmsDiscoveryKeyringTest {
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(kmsDiscoveryKeyring)
+                .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
                 .build();
 
         // Asserts
@@ -104,9 +102,8 @@ public class KmsDiscoveryKeyringTest {
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .keyring(kmsDiscoveryKeyring)
+          .commitmentPolicy(CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
           .build();
 
         // Asserts
@@ -139,8 +136,6 @@ public class KmsDiscoveryKeyringTest {
 
         // V3 Client - KmsKeyring
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .kmsKeyId(KMS_KEY_ID)
           .build();
 
@@ -157,8 +152,6 @@ public class KmsDiscoveryKeyringTest {
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
         S3Client s3ClientDiscovery = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .keyring(kmsDiscoveryKeyring)
           .build();
 
@@ -180,8 +173,6 @@ public class KmsDiscoveryKeyringTest {
 
         // V3 Client - KmsKeyring
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .kmsKeyId(KMS_KEY_ID)
           .build();
 
@@ -198,8 +189,6 @@ public class KmsDiscoveryKeyringTest {
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
         S3Client s3ClientDiscovery = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .keyring(kmsDiscoveryKeyring)
           .build();
 
@@ -229,8 +218,6 @@ public class KmsDiscoveryKeyringTest {
         KmsDiscoveryKeyring kmsDiscoveryKeyring = KmsDiscoveryKeyring
           .builder().enableLegacyWrappingAlgorithms(true).build();
         S3Client s3ClientDiscovery = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
           .keyring(kmsDiscoveryKeyring)
           .build();
 

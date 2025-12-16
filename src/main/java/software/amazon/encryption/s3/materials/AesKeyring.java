@@ -120,7 +120,12 @@ public class AesKeyring extends RawKeyring<SecretKey> {
             final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
             cipher.init(Cipher.ENCRYPT_MODE, _wrappingKey, gcmParameterSpec, secureRandom);
 
-            final byte[] aADBytes = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+            byte[] aADBytes;
+            if (materials.algorithmSuite().id() == AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.id()) {
+                aADBytes = AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString().getBytes(StandardCharsets.UTF_8);
+            } else {
+                aADBytes = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+            }
             cipher.updateAAD(aADBytes);
             byte[] ciphertext = cipher.doFinal(materials.plaintextDataKey());
 

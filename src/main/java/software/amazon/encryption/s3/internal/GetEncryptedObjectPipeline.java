@@ -2,6 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
+import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
+
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.async.SdkPublisher;
@@ -17,14 +25,6 @@ import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DecryptMaterialsRequest;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptedDataKey;
-
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
-import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
 
 /**
  * This class will determine the necessary mechanisms to decrypt objects returned from S3.
@@ -100,11 +100,9 @@ public class GetEncryptedObjectPipeline {
         }
 
         //= specification/s3-encryption/decryption.md#key-commitment
-        //= type=implication
         //# The S3EC MUST validate the algorithm suite used for decryption against the key commitment policy before attempting to decrypt the content ciphertext.
         if (_commitmentPolicy.requiresDecrypt() && !algorithmSuite.isCommitting()) {
             //= specification/s3-encryption/decryption.md#key-commitment
-            //= type=implication
             //# If the commitment policy requires decryption using a committing algorithm suite, and the algorithm suite
             //# associated with the object does not support key commitment, then the S3EC MUST throw an exception.
             throw new S3EncryptionClientException("Commitment policy violation, decryption requires a committing algorithm suite, " +
@@ -122,6 +120,7 @@ public class GetEncryptedObjectPipeline {
                 .materialsDescription(contentMetadata.materialsDescription())
                 .ciphertextLength(getObjectResponse.contentLength())
                 .contentRange(getObjectRequest.range())
+                .keyCommitment(contentMetadata.keyCommitment())
                 .build();
 
         DecryptionMaterials materials = _cryptoMaterialsManager.decryptMaterials(materialsRequest);
@@ -130,8 +129,6 @@ public class GetEncryptedObjectPipeline {
                     "This may be caused by a misconfigured custom CMM implementation or " +
                     "a suppressed exception from metadata decoding or CMM invocation due to a network failure.");
         }
-        materials.setKeyCommitment(contentMetadata.keyCommitment());
-
         return materials;
     }
 

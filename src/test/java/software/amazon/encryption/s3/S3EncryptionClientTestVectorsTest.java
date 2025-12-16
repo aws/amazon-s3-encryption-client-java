@@ -25,9 +25,9 @@ public class S3EncryptionClientTestVectorsTest {
     @Test
     public void decryptUnicodeTestVectors() {
         S3Client s3EncryptionClient = S3EncryptionClient.builderV4()
+                .kmsKeyId(TESTVECTORS_KMS_KEY)
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
-                .kmsKeyId(TESTVECTORS_KMS_KEY)
                 .region(Region.of("us-west-2"))
                 .build();
         // Reuse s3EncryptionClient, even though this operation doesn't require encryption

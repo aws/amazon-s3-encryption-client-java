@@ -9,7 +9,6 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.PartialRsaKeyPair;
 
 import java.security.KeyPair;
@@ -39,8 +38,6 @@ public class S3EncryptionClientRsaKeyPairTest {
 
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
@@ -66,14 +63,10 @@ public class S3EncryptionClientRsaKeyPairTest {
     public void RsaPrivateKeyCanOnlyDecrypt() {
         final String objectKey = appendTestSuffix("rsa-private-key-only");
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(RSA_KEY_PAIR)
                 .build();
 
         S3Client s3ClientReadOnly = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), null))
                 .build();
 
@@ -103,8 +96,6 @@ public class S3EncryptionClientRsaKeyPairTest {
     public void RsaPublicKeyCanOnlyEncrypt() {
         final String objectKey = appendTestSuffix("rsa-public-key-only");
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic()))
                 .build();
 

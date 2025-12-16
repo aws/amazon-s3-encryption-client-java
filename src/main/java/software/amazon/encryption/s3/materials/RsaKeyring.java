@@ -122,12 +122,17 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
 
             // Create a pseudo-data key with the content encryption appended to the data key
             byte[] dataKey = materials.plaintextDataKey();
-            byte[] dataCipherName = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
-            byte[] pseudoDataKey = new byte[1 + dataKey.length + dataCipherName.length];
+            byte[] dataCipherAlg;
+            if (materials.algorithmSuite().id() == AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.id()) {
+                dataCipherAlg = AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString().getBytes(StandardCharsets.UTF_8);
+            } else {
+                dataCipherAlg = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+            }
+            byte[] pseudoDataKey = new byte[1 + dataKey.length + dataCipherAlg.length];
 
             pseudoDataKey[0] = (byte) dataKey.length;
             System.arraycopy(dataKey, 0, pseudoDataKey, 1, dataKey.length);
-            System.arraycopy(dataCipherName, 0, pseudoDataKey, 1 + dataKey.length, dataCipherName.length);
+            System.arraycopy(dataCipherAlg, 0, pseudoDataKey, 1 + dataKey.length, dataCipherAlg.length);
 
             byte[] ciphertext = cipher.wrap(new SecretKeySpec(pseudoDataKey, materials.algorithmSuite().dataKeyAlgorithm()));
             return ciphertext;

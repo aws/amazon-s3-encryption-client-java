@@ -22,3 +22,10 @@ jobs:
     with:
       version: ${{ matrix.version }}
       distribution: ${{ matrix.distribution }}
+
+  Examples:
+    uses: ./.github/workflows/examples.yml
+    secrets: inherit
+    with:
+      version: 17
+      distribution: corretto

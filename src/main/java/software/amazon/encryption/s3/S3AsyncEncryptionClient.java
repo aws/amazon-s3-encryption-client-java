@@ -85,6 +85,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
     private final boolean _enableMultipartPutObject;
     private final long _bufferSize;
     private final InstructionFileConfig _instructionFileConfig;
+    private final AlgorithmSuite _encryptionAlgorithm;
     private final CommitmentPolicy _commitmentPolicy;
 
     private S3AsyncEncryptionClient(Builder builder) {
@@ -97,28 +98,17 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         _enableMultipartPutObject = builder._enableMultipartPutObject;
         _bufferSize = builder._bufferSize;
         _instructionFileConfig = builder._instructionFileConfig;
+        _encryptionAlgorithm = builder._encryptionAlgorithm;
         _commitmentPolicy = builder._commitmentPolicy;
     }
 
     /**
      * Creates a builder that can be used to configure and create a {@link S3AsyncEncryptionClient}.
      */
-    @Deprecated
-    public static Builder builder() {
-        // Defaults to ForbidEncryptAllowDecrypt and ALG_AES_256_GCM_IV12_TAG16_NO_KDF
-        return new Builder(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT, AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF);
-    }
-
-
-
-    /**
-     * Creates a V4 Transition builder that can be used to configure and create a {@link S3AsyncEncryptionClient}.
-     */
     public static Builder builderV4() {
-        // NewBuilder introduced which REQUIRES commitmentPolicy and encryptionAlgorithm
-        // to be set and is V4 compatible
         return new Builder();
     }
+
 
     /**
      * Attaches encryption context to a request. Must be used as a parameter to
@@ -171,6 +161,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .instructionFileConfig(_instructionFileConfig)
+                .encryptionAlgorithm(_encryptionAlgorithm)
                 .build();
 
         return pipeline.putObject(putObjectRequest, requestBody);
@@ -190,6 +181,7 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
                 .cryptoMaterialsManager(_cryptoMaterialsManager)
                 .secureRandom(_secureRandom)
                 .instructionFileConfig(_instructionFileConfig)
+                .encryptionAlgorithm(_encryptionAlgorithm)
                 .build();
         // Ensures parts are not retried to avoid corrupting ciphertext
         AsyncRequestBody noRetryBody = new NoRetriesAsyncRequestBody(requestBody);
@@ -329,8 +321,8 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         private SecureRandom _secureRandom = new SecureRandom();
         private long _bufferSize = -1L;
         private InstructionFileConfig _instructionFileConfig = null;
-        private AlgorithmSuite _encryptionAlgorithm = null;
-        private CommitmentPolicy _commitmentPolicy = null;
+        private AlgorithmSuite _encryptionAlgorithm = AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY;
+        private CommitmentPolicy _commitmentPolicy = CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT;
 
         // generic AwsClient configuration to be shared by default clients
         private AwsCredentialsProvider _awsCredentialsProvider = null;
@@ -355,11 +347,6 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
         // private MultipartConfiguration _multipartConfiguration = null;
 
         private Builder() {
-        }
-
-        private Builder(CommitmentPolicy commitmentPolicy, AlgorithmSuite algorithmSuite) {
-            _commitmentPolicy = commitmentPolicy;
-            _encryptionAlgorithm = algorithmSuite;
         }
 
         /**
@@ -961,26 +948,29 @@ public class S3AsyncEncryptionClient extends DelegatingS3AsyncClient {
 
             //= specification/s3-encryption/client.md#encryption-algorithm
             //# The S3EC MUST validate that the configured encryption algorithm is not legacy.
-            //= specification/s3-encryption/client.md#key-commitment
-            //# The S3EC MUST validate the configured Encryption Algorithm against the provided key commitment policy.
-            //= specification/s3-encryption/key-commitment.md#commitment-policy
-            //# When the commitment policy is FORBID_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST NOT encrypt using an algorithm suite which supports key commitment.
-            if (_encryptionAlgorithm == null || _commitmentPolicy == null) {
-                throw new S3EncryptionClientException(
-                        "Both encryption algorithm and commitment policy must be configured."
-                );
-            }
-            if (!(_encryptionAlgorithm.id() == AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.id()
-                    && _commitmentPolicy.equals(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT))) {
+            if (_encryptionAlgorithm.isLegacy()) {
                 //= specification/s3-encryption/client.md#encryption-algorithm
                 //# If the configured encryption algorithm is legacy, then the S3EC MUST throw an exception.
+                throw new S3EncryptionClientException("Encryption algorithm provided is LEGACY! Please specify a fully-supported encryption algorithm.");
+            }
+
+            //= specification/s3-encryption/client.md#key-commitment
+            //# The S3EC MUST validate the configured Encryption Algorithm against the provided key commitment policy.
+            if (_commitmentPolicy.requiresEncrypt() && !_encryptionAlgorithm.isCommitting()) {
                 //= specification/s3-encryption/client.md#key-commitment
                 //# If the configured Encryption Algorithm is incompatible with the key commitment policy, then it MUST throw an exception.
-                throw new S3EncryptionClientException(
-                        "This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF. "
-                                + "Note that the Encryption Algorithm does NOT effect Decryption; See: https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/encryption-algorithms.html#decryption-modes. "
-                                +  "Please update your configuration. Provided algorithm: " + _encryptionAlgorithm.name() + " and commitment policy: " + _commitmentPolicy.name()
-                );
+                throw new S3EncryptionClientException("The commitment policy requires encryption with a committing algorithm suite, " +
+                        "but the specified encryption algorithm does not support key commitment. " +
+                        "Please configure a committing algorithm suite such as ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.");
+            }
+            //= specification/s3-encryption/key-commitment.md#commitment-policy
+            //# When the commitment policy is FORBID_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST NOT encrypt using an algorithm suite which supports key commitment.
+            if (_commitmentPolicy.equals(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT) && _encryptionAlgorithm.isCommitting()) {
+                //= specification/s3-encryption/client.md#key-commitment
+                //# If the configured Encryption Algorithm is incompatible with the key commitment policy, then it MUST throw an exception.
+                throw new S3EncryptionClientException("The commitment policy forbids encryption with committing algorithm suites, " +
+                        "but the specified encryption algorithm supports key commitment. " +
+                        "Please configure a non-committing algorithm suite such as ALG_AES_256_GCM_IV12_TAG16_NO_KDF or change the commitment policy.");
             }
 
             return new S3AsyncEncryptionClient(this);

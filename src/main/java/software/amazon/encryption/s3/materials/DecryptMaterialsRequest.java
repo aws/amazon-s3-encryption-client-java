@@ -19,6 +19,7 @@ public class DecryptMaterialsRequest {
     private final MaterialsDescription _materialsDescription;
     private final long _ciphertextLength;
     private final String _contentRange;
+    private final byte[] _keyCommitment;
 
     private DecryptMaterialsRequest(Builder builder) {
         this._s3Request = builder._s3Request;
@@ -28,6 +29,7 @@ public class DecryptMaterialsRequest {
         this._materialsDescription = builder._materialsDescription;
         this._ciphertextLength = builder._ciphertextLength;
         this._contentRange = builder._contentRange;
+        this._keyCommitment = builder._keyCommitment;
     }
 
     static public Builder builder() {
@@ -79,6 +81,10 @@ public class DecryptMaterialsRequest {
         return _contentRange;
     }
 
+    public byte[] keyCommitment() {
+        return _keyCommitment;
+    }
+
     static public class Builder {
 
         public GetObjectRequest _s3Request = null;
@@ -88,6 +94,7 @@ public class DecryptMaterialsRequest {
         private List<EncryptedDataKey> _encryptedDataKeys = Collections.emptyList();
         private long _ciphertextLength = -1;
         private String _contentRange = null;
+        private byte[] _keyCommitment = null;
 
         private Builder() {
         }
@@ -130,6 +137,11 @@ public class DecryptMaterialsRequest {
 
         public Builder contentRange(String range) {
             _contentRange = range;
+            return this;
+        }
+
+        public Builder keyCommitment(byte[] keyCommitment) {
+            _keyCommitment = keyCommitment;
             return this;
         }
 

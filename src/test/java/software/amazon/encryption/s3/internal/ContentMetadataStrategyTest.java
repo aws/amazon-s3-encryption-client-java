@@ -783,4 +783,159 @@ public class ContentMetadataStrategyTest {
             throw new S3EncryptionClientException("Cannot serialize materials to JSON.", e);
         }
     }
+
+    @Test
+    public void testEncodeMetaV3WithAESGCM() {
+        // Test V3 encoding with AES/GCM wrapping algorithm
+        EncryptedDataKey edk = EncryptedDataKey.builder()
+                .encryptedDataKey("encrypted-key-data".getBytes(StandardCharsets.UTF_8))
+                .keyProviderId("test-provider")
+                .keyProviderInfo("AES/GCM")
+                .build();
+
+        MaterialsDescription materialsDescription = MaterialsDescription.builder()
+                .put("test", "material-desc")
+                .put("custom", "value")
+                .build();
+
+        EncryptionMaterials materials = EncryptionMaterials.builder()
+                .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .encryptedDataKeys(java.util.Collections.singletonList(edk))
+                .materialsDescription(materialsDescription)
+                .build();
+
+        // Key Commitment is set during Cipher Initialization
+        materials.setKeyCommitment("key-commitment-data".getBytes(StandardCharsets.UTF_8));
+
+        byte[] iv = "test-iv-28-bytes-long-1234567890".getBytes(StandardCharsets.UTF_8);
+
+        PutObjectRequest originalRequest = PutObjectRequest.builder()
+                .bucket("test-bucket")
+                .key("test-key")
+                .build();
+
+        PutObjectRequest result = encodingStrategy.encodeMetadata(materials, iv, originalRequest);
+
+        // Verify V3 format metadata
+        Map<String, String> metadata = result.metadata();
+        assertNotNull(metadata);
+
+        assertEquals(Base64.getEncoder().encodeToString(edk.encryptedDatakey()),
+                metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3));
+        assertEquals(Base64.getEncoder().encodeToString(iv),
+                metadata.get(MetadataKeyConstants.MESSAGE_ID_V3));
+        assertEquals("115",
+                metadata.get(MetadataKeyConstants.CONTENT_CIPHER_V3));
+        //= specification/s3-encryption/data-format/content-metadata.md#v3-only
+        //= type=test
+        //# The Material Description MUST be used for wrapping algorithms `AES/GCM` (`02`) and `RSA-OAEP-SHA1` (`22`).
+        assertEquals("02", // Compressed AES/GCM
+                metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM_V3));
+        assertEquals(Base64.getEncoder().encodeToString(materials.getKeyCommitment()),
+                metadata.get(MetadataKeyConstants.KEY_COMMITMENT_V3));
+
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //= type=test
+        //# - The mapkey "x-amz-m" SHOULD be present for V3 format objects that use Raw Keyring Material Description.
+        String matDesc = metadata.get(MetadataKeyConstants.MAT_DESC_V3);
+        assertNotNull(matDesc);
+        assertTrue(matDesc.contains("test"));
+        assertTrue(matDesc.contains("material-desc"));
+        assertTrue(matDesc.contains("custom"));
+        assertTrue(matDesc.contains("value"));
+    }
+
+    @Test
+    public void testEncodeMetaV3WithKMSContext() {
+        // Test V3 encoding with kms+context wrapping algorithm
+        EncryptedDataKey edk = EncryptedDataKey.builder()
+                .encryptedDataKey("encrypted-key-data".getBytes(StandardCharsets.UTF_8))
+                .keyProviderId("test-provider")
+                .keyProviderInfo("kms+context")
+                .build();
+
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("kms_cmk_id", "test-key-id");
+        encryptionContext.put("custom", "value");
+
+        EncryptionMaterials materials = EncryptionMaterials.builder()
+                .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .encryptedDataKeys(java.util.Collections.singletonList(edk))
+                .encryptionContext(encryptionContext)
+                .build();
+
+        materials.setKeyCommitment("key-commitment-data".getBytes(StandardCharsets.UTF_8));
+
+        byte[] iv = "test-iv-28-bytes-long-1234567890".getBytes(StandardCharsets.UTF_8);
+
+        PutObjectRequest originalRequest = PutObjectRequest.builder()
+                .bucket("test-bucket")
+                .key("test-key")
+                .build();
+
+        PutObjectRequest result = encodingStrategy.encodeMetadata(materials, iv, originalRequest);
+
+        Map<String, String> metadata = result.metadata();
+        //= specification/s3-encryption/data-format/content-metadata.md#v3-only
+        //= type=test
+        //# The Encryption Context value MUST be used for wrapping algorithm `kms+context` or `12`.
+        assertEquals("12", // Compressed kms+context
+                metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM_V3));
+
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //= type=test
+        //# - The mapkey "x-amz-t" SHOULD be present for V3 format objects that use KMS Encryption Context.
+        String encCtx = metadata.get(MetadataKeyConstants.ENCRYPTION_CONTEXT_V3);
+        assertNotNull(encCtx);
+        assertTrue(encCtx.contains("kms_cmk_id"));
+        assertTrue(encCtx.contains("test-key-id"));
+        assertTrue(encCtx.contains("custom"));
+        assertTrue(encCtx.contains("value"));
+    }
+
+    @Test
+    public void testEncodeMetaV3WithRSAOAEP() {
+        // Test V3 encoding with RSA-OAEP-SHA1 wrapping algorithm
+        EncryptedDataKey edk = EncryptedDataKey.builder()
+                .encryptedDataKey("encrypted-key-data".getBytes(StandardCharsets.UTF_8))
+                .keyProviderId("test-provider")
+                .keyProviderInfo("RSA-OAEP-SHA1")
+                .build();
+
+        MaterialsDescription materialsDescription = MaterialsDescription.builder()
+                .put("rsa", "material-desc")
+                .build();
+
+        EncryptionMaterials materials = EncryptionMaterials.builder()
+                .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+                .encryptedDataKeys(java.util.Collections.singletonList(edk))
+                .materialsDescription(materialsDescription)
+                .build();
+
+        materials.setKeyCommitment("key-commitment-data".getBytes(StandardCharsets.UTF_8));
+
+        byte[] iv = "test-iv-28-bytes-long-1234567890".getBytes(StandardCharsets.UTF_8);
+
+        PutObjectRequest originalRequest = PutObjectRequest.builder()
+                .bucket("test-bucket")
+                .key("test-key")
+                .build();
+
+        PutObjectRequest result = encodingStrategy.encodeMetadata(materials, iv, originalRequest);
+
+        Map<String, String> metadata = result.metadata();
+        //= specification/s3-encryption/data-format/content-metadata.md#v3-only
+        //= type=test
+        //# The Material Description MUST be used for wrapping algorithms `AES/GCM` (`02`) and `RSA-OAEP-SHA1` (`22`).
+        assertEquals("22", // Compressed RSA-OAEP-SHA1
+                metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM_V3));
+
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //= type=test
+        //# - The mapkey "x-amz-m" SHOULD be present for V3 format objects that use Raw Keyring Material Description.
+        String matDesc = metadata.get(MetadataKeyConstants.MAT_DESC_V3);
+        assertNotNull(matDesc);
+        assertTrue(matDesc.contains("rsa"));
+        assertTrue(matDesc.contains("material-desc"));
+    }
 }

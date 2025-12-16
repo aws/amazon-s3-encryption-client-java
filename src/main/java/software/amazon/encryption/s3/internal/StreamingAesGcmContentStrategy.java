@@ -3,6 +3,7 @@
 package software.amazon.encryption.s3.internal;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 
@@ -32,14 +33,26 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
                     "the maximum length allowed for GCM encryption.");
         }
 
-
         //= specification/s3-encryption/encryption.md#content-encryption
         //# The client MUST generate an IV or Message ID using the length of the IV or Message ID defined in the algorithm suite.
         final byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
-        _secureRandom.nextBytes(iv);
+        final byte[] messageId = new byte[materials.algorithmSuite().commitmentNonceLengthBytes()];
+        //= specification/s3-encryption/encryption.md#content-encryption
+        //# The generated IV or Message ID MUST be set or returned from the encryption process such that it can be included in the content metadata.
+        if (materials.algorithmSuite().isCommitting()) {
+            // Set MessageId if the algorithm is commiting.
+            //= specification/s3-encryption/key-derivation.md#hkdf-operation
+            //# When encrypting or decrypting with ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY,
+            //# the IV used in the AES-GCM content encryption/decryption MUST consist entirely of bytes with the value 0x01.
+            Arrays.fill(iv, (byte) 0x01);
+            _secureRandom.nextBytes(messageId);
+        } else {
+            _secureRandom.nextBytes(iv);
+        }
+        materials.setIvAndMessageId(iv, messageId);
 
-        final Cipher cipher = CipherProvider.createAndInitCipher(materials, iv, null);
-        return new MultipartEncryptedContent(iv, null, cipher, materials.getCiphertextLength());
+        final Cipher cipher = CipherProvider.createAndInitCipher(materials, materials.iv(), materials.messageId());
+        return new MultipartEncryptedContent(materials.iv(), materials.messageId(), cipher, materials.getCiphertextLength());
     }
 
     @Override
@@ -54,10 +67,23 @@ public class StreamingAesGcmContentStrategy implements AsyncContentEncryptionStr
         //= specification/s3-encryption/encryption.md#content-encryption
         //# The client MUST generate an IV or Message ID using the length of the IV or Message ID defined in the algorithm suite.
         final byte[] iv = new byte[materials.algorithmSuite().iVLengthBytes()];
-        _secureRandom.nextBytes(iv);
+        final byte[] messageId = new byte[materials.algorithmSuite().commitmentNonceLengthBytes()];
+        //= specification/s3-encryption/encryption.md#content-encryption
+        //# The generated IV or Message ID MUST be set or returned from the encryption process such that it can be included in the content metadata.
+        if (materials.algorithmSuite().isCommitting()) {
+            // Set MessageId if the algorithm is commiting.
+            //= specification/s3-encryption/key-derivation.md#hkdf-operation
+            //# When encrypting or decrypting with ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY,
+            //# the IV used in the AES-GCM content encryption/decryption MUST consist entirely of bytes with the value 0x01.
+            Arrays.fill(iv, (byte) 0x01);
+            _secureRandom.nextBytes(messageId);
+        } else {
+            _secureRandom.nextBytes(iv);
+        }
+        materials.setIvAndMessageId(iv, messageId);
 
-        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(content, materials.getCiphertextLength(), materials, iv, null);
-        return new EncryptedContent(iv, null, encryptedAsyncRequestBody, materials.getCiphertextLength());
+        AsyncRequestBody encryptedAsyncRequestBody = new CipherAsyncRequestBody(content, materials.getCiphertextLength(), materials, materials.iv(), materials.messageId());
+        return new EncryptedContent(materials.iv(), materials.messageId(), encryptedAsyncRequestBody, materials.getCiphertextLength());
     }
 
     public static class Builder {

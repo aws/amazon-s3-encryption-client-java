@@ -46,7 +46,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,8 +76,6 @@ public class S3EncryptionClientStreamTest {
         final String objectKey = appendTestSuffix("markResetInputStreamV3Encrypt");
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
@@ -112,8 +109,6 @@ public class S3EncryptionClientStreamTest {
 
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
@@ -164,8 +159,6 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void ordinaryInputStreamV3UnboundedMultipartAsync() {
         try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableMultipartPutObject(true)
                 .build()) {
@@ -186,8 +179,6 @@ public class S3EncryptionClientStreamTest {
     public void ordinaryInputStreamV3UnboundedCrt() {
         try (S3AsyncClient s3CrtAsyncClient = S3AsyncClient.crtCreate()) {
             try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builderV4()
-                    .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                    .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                     .aesKey(AES_KEY)
                     .enableMultipartPutObject(true)
                     .wrappedClient(s3CrtAsyncClient)
@@ -212,8 +203,6 @@ public class S3EncryptionClientStreamTest {
 
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
@@ -290,28 +279,20 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void invalidBufferSize() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
 
                 .setBufferSize(15L)
                 .build());
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(68719476705L)
                 .build());
 
         assertThrows(S3EncryptionClientException.class, () -> S3AsyncEncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(15L)
                 .build());
         assertThrows(S3EncryptionClientException.class, () -> S3AsyncEncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(68719476705L)
                 .build());
@@ -320,16 +301,12 @@ public class S3EncryptionClientStreamTest {
     @Test
     public void failsWhenBothBufferSizeAndDelayedAuthModeEnabled() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(16)
                 .enableDelayedAuthenticationMode(true)
                 .build());
 
         assertThrows(S3EncryptionClientException.class, () -> S3AsyncEncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(KMS_KEY_ID)
                 .setBufferSize(16)
                 .enableDelayedAuthenticationMode(true)
@@ -345,8 +322,6 @@ public class S3EncryptionClientStreamTest {
 
         // V3 Client with custom max buffer size 32 MiB.
         S3Client s3ClientWithBuffer32MiB = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
                 //= specification/s3-encryption/client.md#set-buffer-size
@@ -359,8 +334,6 @@ public class S3EncryptionClientStreamTest {
         // V3 Client with default buffer size (i.e. 64MiB)
         // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
         S3Client s3ClientWithDelayedAuth = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
                 .enableDelayedAuthenticationMode(true)
@@ -405,8 +378,6 @@ public class S3EncryptionClientStreamTest {
 
         // V3 Client with custom max buffer size 32 MiB.
         S3AsyncClient s3ClientWithBuffer32MiB = S3AsyncEncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
                 .setBufferSize(32 * 1024 * 1024)
@@ -415,8 +386,6 @@ public class S3EncryptionClientStreamTest {
         // V3 Client with default buffer size (i.e. 64MiB)
         // When enableDelayedAuthenticationMode is set to true, delayed authentication mode always takes priority over buffered mode.
         S3AsyncClient s3ClientWithDelayedAuth = S3AsyncEncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .cryptoProvider(provider)
                 .enableDelayedAuthenticationMode(true)
@@ -469,8 +438,6 @@ public class S3EncryptionClientStreamTest {
 
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 //= specification/s3-encryption/client.md#enable-delayed-authentication
                 //= type=test
@@ -497,8 +464,6 @@ public class S3EncryptionClientStreamTest {
                 .key(objectKey)));
 
         S3Client s3ClientWithDelayedAuth = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 //= specification/s3-encryption/client.md#enable-delayed-authentication
                 //= type=test
@@ -529,8 +494,6 @@ public class S3EncryptionClientStreamTest {
 
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableDelayedAuthenticationMode(true)
                 .build();
@@ -557,8 +520,6 @@ public class S3EncryptionClientStreamTest {
 
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .build();
 
@@ -620,7 +581,7 @@ public class S3EncryptionClientStreamTest {
         try {
             dataStream.read(chunk1, 0, chunkSize);
         } catch (RuntimeException outerEx) {
-            assertInstanceOf(AEADBadTagException.class, outerEx.getCause());
+            assertTrue(outerEx.getCause() instanceof AEADBadTagException);
         } catch (IOException unexpected) {
             // Not expected, but fail the test anyway
             fail(unexpected);

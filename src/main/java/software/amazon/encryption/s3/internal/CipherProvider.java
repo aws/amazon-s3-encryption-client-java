@@ -17,6 +17,7 @@ import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.materials.CryptographicMaterials;
 import software.amazon.encryption.s3.materials.DecryptionMaterials;
+import software.amazon.encryption.s3.materials.EncryptionMaterials;
 
 /**
  * Composes a CMM to provide S3 specific functionality
@@ -33,7 +34,7 @@ public class CipherProvider {
             0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
     };
 
-    public static SecretKey generateDerivedEncryptionKey(final DecryptionMaterials materials, byte[] messageId) {
+    public static SecretKey generateDerivedEncryptionKey(final CryptographicMaterials materials, byte[] messageId) {
         //= specification/s3-encryption/key-derivation.md#hkdf-operation
         //= type=implication
         //# - The hash function MUST be specified by the algorithm suite commitment settings.
@@ -78,28 +79,27 @@ public class CipherProvider {
 
         //= specification/s3-encryption/key-derivation.md#hkdf-operation
         //# - The length of the output keying material MUST equal the commit key length specified by the supported algorithm suites.
-        //= specification/s3-encryption/encryption.md#alg-aes-256-gcm-hkdf-sha512-commit-key
-        //= type=exception
-        //# The derived key commitment value MUST be set or returned from the encryption process such that it can be included in the content metadata.
         final byte[] commitment = kdf.deriveKey(commitKeyLabel, materials.algorithmSuite().commitmentLengthBytes());
-        //= specification/s3-encryption/decryption.md#decrypting-with-commitment
-        //# When using an algorithm suite which supports key commitment, the client MUST verify the key commitment values match
-        //# before deriving the [derived encryption key](./key-derivation.md#hkdf-operation).
-        //= specification/s3-encryption/decryption.md#decrypting-with-commitment
-        //# When using an algorithm suite which supports key commitment, the client MUST verify that the
-        //# [derived key commitment](./key-derivation.md#hkdf-operation) contains the same bytes as the stored key
-        //# commitment retrieved from the stored object's metadata.
-        //= specification/s3-encryption/decryption.md#decrypting-with-commitment
-        //= type=implication
-        //# When using an algorithm suite which supports key commitment, the verification of the derived key commitment value
-        //# MUST be done in constant time.
-        if (!MessageDigest.isEqual(commitment, materials.getKeyCommitment())) {
+        if (materials instanceof DecryptionMaterials) {
             //= specification/s3-encryption/decryption.md#decrypting-with-commitment
-            //# When using an algorithm suite which supports key commitment, the client MUST throw an exception when the
-            //# derived key commitment value and stored key commitment value do not match.
-            throw new S3EncryptionClientSecurityException("Key commitment validation failed. " +
-                    "The derived key commitment does not match the stored key commitment value. " +
-                    "This indicates potential data tampering or corruption.");
+            //# When using an algorithm suite which supports key commitment, the client MUST verify the key commitment values match
+            //# before deriving the [derived encryption key](./key-derivation.md#hkdf-operation).
+            //= specification/s3-encryption/decryption.md#decrypting-with-commitment
+            //# When using an algorithm suite which supports key commitment, the client MUST verify that the
+            //# [derived key commitment](./key-derivation.md#hkdf-operation) contains the same bytes as the stored key
+            //# commitment retrieved from the stored object's metadata.
+            //= specification/s3-encryption/decryption.md#decrypting-with-commitment
+            //= type=implication
+            //# When using an algorithm suite which supports key commitment, the verification of the derived key commitment value
+            //# MUST be done in constant time.
+            if (!MessageDigest.isEqual(commitment, materials.getKeyCommitment())) {
+                //= specification/s3-encryption/decryption.md#decrypting-with-commitment
+                //# When using an algorithm suite which supports key commitment, the client MUST throw an exception when the
+                //# derived key commitment value and stored key commitment value do not match.
+                throw new S3EncryptionClientSecurityException("Key commitment validation failed. " +
+                        "The derived key commitment does not match the stored key commitment value. " +
+                        "This indicates potential data tampering or corruption.");
+            }
         }
 
         //= specification/s3-encryption/key-derivation.md#hkdf-operation
@@ -112,7 +112,18 @@ public class CipherProvider {
 
         //= specification/s3-encryption/key-derivation.md#hkdf-operation
         //# - The length of the output keying material MUST equal the encryption key length specified by the algorithm suite encryption settings.
-        return new SecretKeySpec(kdf.deriveKey(deriveKeyLabel, materials.algorithmSuite().dataKeyLengthBytes()), materials.algorithmSuite().dataKeyAlgorithm());
+        SecretKey ek =
+                new SecretKeySpec(kdf.deriveKey(deriveKeyLabel, materials.algorithmSuite().dataKeyLengthBytes()), materials.algorithmSuite().dataKeyAlgorithm());
+
+        //= specification/s3-encryption/encryption.md#alg-aes-256-gcm-hkdf-sha512-commit-key
+        //# The derived key commitment value MUST be set or returned from the encryption process such that it can be included in the content metadata.
+        if (materials instanceof EncryptionMaterials) {
+            ((EncryptionMaterials) materials).setKeyCommitment(commitment);
+        } else if (materials instanceof MultipartUploadMaterials) {
+            ((MultipartUploadMaterials) materials).setKeyCommitment(commitment);
+        }
+
+        return ek;
     }
 
     /**
@@ -155,7 +166,7 @@ public class CipherProvider {
                     //= specification/s3-encryption/encryption.md#alg-aes-256-gcm-hkdf-sha512-commit-key
                     //# The client MUST use HKDF to derive the key commitment value and the derived encrypting key
                     //# as described in [Key Derivation](key-derivation.md).
-                    actualKey = generateDerivedEncryptionKey((DecryptionMaterials)materials, messageId);
+                    actualKey = generateDerivedEncryptionKey(materials, messageId);
                     //= specification/s3-encryption/key-derivation.md#hkdf-operation
                     //# The client MUST initialize the cipher, or call an AES-GCM encryption API, with the derived encryption key, an IV containing only bytes with the value 0x01,
                     //# and the tag length defined in the Algorithm Suite when encrypting or decrypting with ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.
@@ -194,7 +205,7 @@ public class CipherProvider {
                     //= specification/s3-encryption/encryption.md#alg-aes-256-gcm-hkdf-sha512-commit-key
                     //# The client MUST use HKDF to derive the key commitment value and the derived encrypting key
                     //# as described in [Key Derivation](key-derivation.md).
-                    actualKey = generateDerivedEncryptionKey((DecryptionMaterials) materials, messageId);
+                    actualKey = generateDerivedEncryptionKey(materials, messageId);
                     cipher.init(materials.cipherMode().opMode(), actualKey, new IvParameterSpec(iv));
                     break;
 

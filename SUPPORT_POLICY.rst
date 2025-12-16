@@ -30,6 +30,10 @@ This table describes the current support status of each major version of the Ama
       - End of Support
       - EOY 2025
     * - 3.x
+      - Maintenance Mode
+      -
+      -
+    * - 4.x
       - Generally Available
       -
       -

@@ -11,6 +11,7 @@ import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.internal.ReEncryptInstructionFileRequest;
 import software.amazon.encryption.s3.internal.ReEncryptInstructionFileResponse;
@@ -116,7 +117,9 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
 
         // Create an S3 client for the original encryption
         S3Client wrappedClient = S3Client.create();
-        S3EncryptionClient originalClient = S3EncryptionClient.builder()
+        S3EncryptionClient originalClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(originalKeyring)
                 .instructionFileConfig(
                         InstructionFileConfig.builder()
@@ -162,7 +165,9 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
                 .build();
 
         // Create a client with the new keyring
-        S3EncryptionClient newClient = S3EncryptionClient.builder()
+        S3EncryptionClient newClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(newKeyring)
                 .instructionFileConfig(
                         InstructionFileConfig.builder()
@@ -297,7 +302,9 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
 
         // Create an S3 client for the original encryption
         S3Client wrappedClient = S3Client.create();
-        S3EncryptionClient originalClient = S3EncryptionClient.builder()
+        S3EncryptionClient originalClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(originalKeyring)
                 .instructionFileConfig(
                         InstructionFileConfig.builder()
@@ -343,7 +350,9 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
                 .build();
 
         // Create a client with the new keyring
-        S3EncryptionClient newClient = S3EncryptionClient.builder()
+        S3EncryptionClient newClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(newKeyring)
                 .instructionFileConfig(
                         InstructionFileConfig.builder()
@@ -478,7 +487,9 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
 
         // Create an S3 client for the original encryption
         S3Client wrappedClient = S3Client.create();
-        S3EncryptionClient originalClient = S3EncryptionClient.builder()
+        S3EncryptionClient originalClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(originalKeyring)
                 .instructionFileConfig(
                         InstructionFileConfig.builder()
@@ -525,7 +536,9 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
                 .build();
 
         // Create a client with the new keyring
-        S3EncryptionClient newClient = S3EncryptionClient.builder()
+        S3EncryptionClient newClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .keyring(newKeyring)
                 .instructionFileConfig(
                         InstructionFileConfig.builder()

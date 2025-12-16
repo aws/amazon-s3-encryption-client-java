@@ -63,8 +63,6 @@ public class S3EncryptionClientInstructionFileTest {
         final String input = "testS3EncryptionClientInstructionFile";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 //= specification/s3-encryption/client.md#instruction-file-configuration
                 //= type=test
                 //# The S3EC MAY support the option to provide Instruction File Configuration during its initialization.
@@ -147,7 +145,120 @@ public class S3EncryptionClientInstructionFileTest {
     }
 
     @Test
-    public void testV3TransitionInstructionFileExists() {
+    public void testS3EncryptionClientInstructionFileV3Format() {
+        final String objectKey = appendTestSuffix("simple-instruction-file-v3-test");
+        final String input = "testS3EncryptionClientInstructionFile";
+        S3Client wrappedClient = S3Client.create();
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                //= specification/s3-encryption/client.md#instruction-file-configuration
+                //= type=test
+                //# The S3EC MAY support the option to provide Instruction File Configuration during its initialization.
+                //= specification/s3-encryption/client.md#instruction-file-configuration
+                //= type=test
+                //# If the S3EC in a given language supports Instruction Files, then it MUST accept Instruction File Configuration during its initialization.
+                //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+                //= type=test
+                //# Instruction File writes MUST be optionally configured during client creation or on each PutObject request.
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(wrappedClient)
+                        .enableInstructionFilePutObject(true)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        s3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
+
+        // Get the instruction file separately using a default client
+        S3Client defaultClient = S3Client.create();
+
+        ResponseBytes<GetObjectResponse> directGetResponse = defaultClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+
+        Map<String, String> objectMetadata = directGetResponse.response().metadata();
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //= type=test
+        //# In the V3 format, the mapkeys "x-amz-c", "x-amz-d", and "x-amz-i" MUST be stored exclusively in the Object Metadata.
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //= type=test
+        //# - The V3 message format MUST store the mapkey "x-amz-c" and its value in the Object Metadata when writing with an Instruction File.
+        assertTrue(objectMetadata.containsKey(MetadataKeyConstants.CONTENT_CIPHER_V3));
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //= type=test
+        //# - The V3 message format MUST store the mapkey "x-amz-d" and its value in the Object Metadata when writing with an Instruction File.
+        assertTrue(objectMetadata.containsKey(MetadataKeyConstants.KEY_COMMITMENT_V3));
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //= type=test
+        //# - The V3 message format MUST store the mapkey "x-amz-i" and its value in the Object Metadata when writing with an Instruction File.
+        assertTrue(objectMetadata.containsKey(MetadataKeyConstants.MESSAGE_ID_V3));
+
+        //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+        //= type=test
+        //# The S3EC MUST support writing some or all (depending on format) content metadata to an Instruction File.
+        assertFalse(objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3));
+        assertFalse(objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTION_CONTEXT_V3));
+        assertFalse(objectMetadata.containsKey(MetadataKeyConstants.MAT_DESC_V3));
+        assertFalse(objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM_V3));
+
+        ResponseBytes<GetObjectResponse> instructionFile = defaultClient.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey + ".instruction")
+                .build());
+        // Ensure its metadata identifies it as such
+        assertTrue(instructionFile.response().metadata().containsKey("x-amz-crypto-instr-file"));
+        //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+        //= type=test
+        //# The serialized JSON string MUST be the only contents of the Instruction File.
+        String instructionFileContent = instructionFile.asUtf8String();
+        JsonNodeParser parser = JsonNodeParser.create();
+        //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+        //= type=test
+        //# The content metadata stored in the Instruction File MUST be serialized to a JSON string.
+        Map<String, JsonNode> instructionFileMetadata = parser.parse(instructionFileContent).asObject();
+
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //= type=test
+        //# - The V3 message format MUST NOT store the mapkey "x-amz-c" and its value in the Instruction File.
+        assertFalse(instructionFileMetadata.containsKey(MetadataKeyConstants.CONTENT_CIPHER_V3));
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //= type=test
+        //# - The V3 message format MUST NOT store the mapkey "x-amz-d" and its value in the Instruction File.
+        assertFalse(instructionFileMetadata.containsKey(MetadataKeyConstants.KEY_COMMITMENT_V3));
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //= type=test
+        //# - The V3 message format MUST NOT store the mapkey "x-amz-i" and its value in the Instruction File.
+        assertFalse(instructionFileMetadata.containsKey(MetadataKeyConstants.MESSAGE_ID_V3));
+
+        //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+        //= type=test
+        //# The S3EC MUST support writing some or all (depending on format) content metadata to an Instruction File.
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //= type=test
+        //# - The V3 message format MUST store the mapkey "x-amz-3" and its value in the Instruction File.
+        assertTrue(instructionFileMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3));
+        //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
+        //= type=test
+        //# - The V3 message format MUST store the mapkey "x-amz-w" and its value in the Instruction File.
+        assertTrue(instructionFileMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM_V3));
+        // Ensure decryption succeeds
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build());
+        String output = objectResponse.asUtf8String();
+        assertEquals(input, output);
+
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
+        defaultClient.close();
+    }
+
+    @Test
+    public void testV4TransitionInstructionFileExists() {
         final String objectKey = appendTestSuffix("instruction-file-put-object");
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
@@ -189,13 +300,11 @@ public class S3EncryptionClientInstructionFileTest {
     }
 
     @Test
-    public void testV3InstructionFileExists() {
+    public void testV4InstructionFileExists() {
         final String objectKey = appendTestSuffix("instruction-file-put-object");
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .instructionFileClient(wrappedClient)
                         .enableInstructionFilePutObject(true)
@@ -231,14 +340,13 @@ public class S3EncryptionClientInstructionFileTest {
     }
 
     @Test
-    public void testV3DisabledClientFails() {
+    public void testV4TransitionDisabledClientFails() {
         final String objectKey = appendTestSuffix("instruction-file-put-object-disabled-fails");
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builderV4()
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
-                
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .instructionFileClient(wrappedClient)
                         .enableInstructionFilePutObject(true)
@@ -254,8 +362,49 @@ public class S3EncryptionClientInstructionFileTest {
 
         // Disabled client should fail
         S3Client s3ClientDisabledInstructionFile = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
+                .wrappedClient(wrappedClient)
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .disableInstructionFile(true)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        try {
+            s3ClientDisabledInstructionFile.getObjectAsBytes(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build());
+            fail("expected exception");
+        } catch (S3EncryptionClientException exception) {
+            assertTrue(exception.getMessage().contains("Exception encountered while fetching Instruction File."));
+        }
+
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
+        s3ClientDisabledInstructionFile.close();
+    }
+
+    @Test
+    public void testV4DisabledClientFails() {
+        final String objectKey = appendTestSuffix("instruction-file-put-object-disabled-fails");
+        final String input = "SimpleTestOfV3EncryptionClient";
+        S3Client wrappedClient = S3Client.create();
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .instructionFileConfig(InstructionFileConfig.builder()
+                        .instructionFileClient(wrappedClient)
+                        .enableInstructionFilePutObject(true)
+                        .build())
+                .kmsKeyId(KMS_KEY_ID)
+                .build();
+
+        // Put with Instruction File
+        s3Client.putObject(builder -> builder
+                .bucket(BUCKET)
+                .key(objectKey)
+                .build(), RequestBody.fromString(input));
+
+        // Disabled client should fail
+        S3Client s3ClientDisabledInstructionFile = S3EncryptionClient.builderV4()
                 .wrappedClient(wrappedClient)
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .disableInstructionFile(true)
@@ -284,7 +433,7 @@ public class S3EncryptionClientInstructionFileTest {
      * e.g. deleteObjectWithInstructionFileSuccess, but is included anyway to be thorough
      */
     @Test
-    public void testV3TransitionInstructionFileDelete() {
+    public void testV4TransitionInstructionFileDelete() {
         final String objectKey = appendTestSuffix("instruction-file-put-object-delete");
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
@@ -337,13 +486,11 @@ public class S3EncryptionClientInstructionFileTest {
     }
 
     @Test
-    public void testV3InstructionFileDelete() {
+    public void testV4InstructionFileDelete() {
         final String objectKey = appendTestSuffix("instruction-file-put-object-delete");
         final String input = "SimpleTestOfV3EncryptionClient";
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .instructionFileClient(wrappedClient)
                         .enableInstructionFilePutObject(true)
@@ -514,7 +661,7 @@ public class S3EncryptionClientInstructionFileTest {
     }
 
     @Test
-    public void testV3TransitionMultipartPutWithInstructionFile() throws IOException {
+    public void testV4TransitionMultipartPutWithInstructionFile() throws IOException {
         final String object_key = appendTestSuffix("test-multipart-put-instruction-file");
 
         final long fileSizeLimit = 1024 * 1024 * 50; //50 MB
@@ -565,7 +712,7 @@ public class S3EncryptionClientInstructionFileTest {
     }
 
     @Test
-    public void testV3MultipartPutWithInstructionFile() throws IOException {
+    public void testV4MultipartPutWithInstructionFile() throws IOException {
         final String object_key = appendTestSuffix("test-multipart-put-instruction-file");
 
         final long fileSizeLimit = 1024 * 1024 * 50; //50 MB
@@ -575,8 +722,6 @@ public class S3EncryptionClientInstructionFileTest {
 
         S3Client wrappedClient = S3Client.create();
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .instructionFileClient(wrappedClient)
                         .enableInstructionFilePutObject(true)
@@ -616,7 +761,7 @@ public class S3EncryptionClientInstructionFileTest {
     }
 
     @Test
-    public void testV3TransitionLowLevelMultipartPutWithInstructionFile() throws NoSuchAlgorithmException, IOException {
+    public void testV4TransitionLowLevelMultipartPutWithInstructionFile() throws NoSuchAlgorithmException, IOException {
         final String object_key = appendTestSuffix("test-low-level-multipart-put-instruction-file");
 
         final long fileSizeLimit = 1024 * 1024 * 50;
@@ -718,7 +863,7 @@ public class S3EncryptionClientInstructionFileTest {
     }
 
     @Test
-    public void testV3LowLevelMultipartPutWithInstructionFile() throws NoSuchAlgorithmException, IOException {
+    public void testV4LowLevelMultipartPutWithInstructionFile() throws NoSuchAlgorithmException, IOException {
         final String object_key = appendTestSuffix("test-low-level-multipart-put-instruction-file");
 
         final long fileSizeLimit = 1024 * 1024 * 50;
@@ -734,8 +879,6 @@ public class S3EncryptionClientInstructionFileTest {
         S3Client wrappedClient = S3Client.create();
 
         S3Client s3Client = S3EncryptionClient.builderV4()
-                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
-                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .rsaKeyPair(rsaKey)
                 .instructionFileConfig(InstructionFileConfig.builder()
                         .instructionFileClient(wrappedClient)

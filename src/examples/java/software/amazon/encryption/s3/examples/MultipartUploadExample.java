@@ -59,13 +59,13 @@ public class MultipartUploadExample {
         //
         // This means that the S3 Encryption Client can perform both encrypt and decrypt operations
         // as part of the S3 putObject and getObject operations.
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableDelayedAuthenticationMode(true)
                 .build();
 
         // Create Multipart upload request to S3
-        CreateMultipartUploadResponse initiateResult = v3Client.createMultipartUpload(builder ->
+        CreateMultipartUploadResponse initiateResult = s3Client.createMultipartUpload(builder ->
                 builder.bucket(BUCKET).key(objectKey));
 
         List<CompletedPart> partETags = new ArrayList<>();
@@ -96,7 +96,7 @@ public class MultipartUploadExample {
             final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
 
             // Upload all the different parts of the object
-            UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
+            UploadPartResponse uploadPartResult = s3Client.uploadPart(uploadPartRequest,
                     RequestBody.fromInputStream(partInputStream, partInputStream.available()));
 
             // We need to add eTag's of all CompletedParts before calling CompleteMultipartUpload.
@@ -124,7 +124,7 @@ public class MultipartUploadExample {
 
         // Upload the last part multipart upload to invoke `cipher.doFinal()`
         final InputStream partInputStream = new ByteArrayInputStream(outputStream.toByteArray());
-        UploadPartResponse uploadPartResult = v3Client.uploadPart(uploadPartRequest,
+        UploadPartResponse uploadPartResult = s3Client.uploadPart(uploadPartRequest,
                 RequestBody.fromInputStream(partInputStream, partInputStream.available()));
 
         partETags.add(CompletedPart.builder()
@@ -134,14 +134,14 @@ public class MultipartUploadExample {
 
         // Finally call completeMultipartUpload operation to tell S3 to merge all uploaded
         // parts and finish the multipart operation.
-        v3Client.completeMultipartUpload(builder -> builder
+        s3Client.completeMultipartUpload(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .uploadId(initiateResult.uploadId())
                 .multipartUpload(partBuilder -> partBuilder.parts(partETags)));
 
         // Call getObject to retrieve and decrypt the object from S3
-        ResponseInputStream<GetObjectResponse> output = v3Client.getObject(builder -> builder
+        ResponseInputStream<GetObjectResponse> output = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey));
 
@@ -149,8 +149,8 @@ public class MultipartUploadExample {
         assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
 
         // Cleanup
-        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
-        v3Client.close();
+        s3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+        s3Client.close();
     }
 
     /**
@@ -175,7 +175,7 @@ public class MultipartUploadExample {
         // This means that the S3 Encryption Client can perform both encrypt and decrypt operations
         // as part of the S3 putObject and getObject operations.
         // Note: You must also specify the `enableDelayedAuthenticationMode` parameter to perform getObject with more than 64MB object.
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
                 .kmsKeyId(KMS_KEY_ID)
                 .enableMultipartPutObject(true)
                 .enableDelayedAuthenticationMode(true)
@@ -186,13 +186,13 @@ public class MultipartUploadExample {
         encryptionContext.put("user-metadata-key", "user-metadata-value-v3-to-v3");
 
         // Call putObject to encrypt the object and upload it to S3.
-        v3Client.putObject(builder -> builder
+        s3Client.putObject(builder -> builder
                 .bucket(BUCKET)
                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
                 .key(objectKey), RequestBody.fromInputStream(inputStream, fileSizeLimit));
 
         // Call getObject to retrieve and decrypt the object from S3.
-        ResponseInputStream<GetObjectResponse> output = v3Client.getObject(builder -> builder
+        ResponseInputStream<GetObjectResponse> output = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .overrideConfiguration(withAdditionalConfiguration(encryptionContext))
                 .key(objectKey));
@@ -201,7 +201,7 @@ public class MultipartUploadExample {
         assertTrue(IOUtils.contentEquals(objectStreamForResult, output));
 
         // Cleanup
-        v3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
-        v3Client.close();
+        s3Client.deleteObject(builder -> builder.bucket(BUCKET).key(objectKey));
+        s3Client.close();
     }
 }

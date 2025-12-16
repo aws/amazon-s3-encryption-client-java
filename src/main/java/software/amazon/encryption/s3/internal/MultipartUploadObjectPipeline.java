@@ -43,6 +43,8 @@ public class MultipartUploadObjectPipeline {
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
+    final private InstructionFileConfig _instructionFileConfig;
+    final private AlgorithmSuite _encryptionAlgorithm;
     /**
      * Map of data about in progress encrypted multipart uploads.
      */
@@ -54,6 +56,8 @@ public class MultipartUploadObjectPipeline {
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
         this._multipartUploadMaterials = builder._multipartUploadMaterials;
+        this._instructionFileConfig = builder._instructionFileConfig;
+        this._encryptionAlgorithm = builder._encryptionAlgorithm;
     }
 
     public static Builder builder() {
@@ -62,6 +66,7 @@ public class MultipartUploadObjectPipeline {
 
     public CreateMultipartUploadResponse createMultipartUpload(CreateMultipartUploadRequest request) {
         EncryptionMaterialsRequest.Builder requestBuilder = EncryptionMaterialsRequest.builder()
+                .encryptionAlgorithm(_encryptionAlgorithm)
                 .s3Request(request);
 
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
@@ -72,8 +77,8 @@ public class MultipartUploadObjectPipeline {
                     "This may be caused by a misconfigured custom CMM implementation, or " +
                     "a suppressed exception from CMM invocation due to a network failure.");
         }
-
-        CreateMultipartUploadRequest createMpuRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.iv(), request);
+        final byte[] contentIV = materials.algorithmSuite().isCommitting() ? materials.messageId() : materials.iv();
+        CreateMultipartUploadRequest createMpuRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, contentIV, request);
         request = createMpuRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
@@ -86,6 +91,7 @@ public class MultipartUploadObjectPipeline {
                 .fromEncryptionMaterials(materials)
                 .cipher(encryptedContent.getCipher())
                 .build();
+        mpuMaterials.setIvAndMessageId(encryptedContent.iv(), encryptedContent.messageId());
 
         _multipartUploadMaterials.put(response.uploadId(), mpuMaterials);
 
@@ -144,7 +150,7 @@ public class MultipartUploadObjectPipeline {
         materials.beginPartUpload(actualRequest.partNumber(), partContentLength);
         //= specification/s3-encryption/client.md#optional-api-operations
         //# - Each part MUST be encrypted using the same cipher instance for each part.
-        Cipher cipher = materials.getCipher(materials.getIv());
+        Cipher cipher = materials.getCipher(materials.iv());
 
         ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 
@@ -157,7 +163,7 @@ public class MultipartUploadObjectPipeline {
                     partContentLength, // this MUST be the original contentLength; it refers to the plaintext stream
                     singleThreadExecutor
                 ),
-                ciphertextLength, materials, cipher.getIV(), null, isLastPart
+                ciphertextLength, materials, cipher.getIV(), materials.messageId(), isLastPart
             );
 
             // Ensure we haven't already seen the last part
@@ -218,7 +224,7 @@ public class MultipartUploadObjectPipeline {
 
     public void putLocalObject(RequestBody requestBody, String uploadId, OutputStream os) throws IOException {
         final MultipartUploadMaterials materials = _multipartUploadMaterials.get(uploadId);
-        Cipher cipher = materials.getCipher(materials.getIv());
+        Cipher cipher = materials.getCipher(materials.iv());
         final InputStream cipherInputStream = new AuthenticatedCipherInputStream(requestBody.contentStreamProvider().newStream(), cipher);
 
         try {
@@ -267,6 +273,11 @@ public class MultipartUploadObjectPipeline {
 
         public Builder instructionFileConfig(InstructionFileConfig instructionFileConfig) {
             this._instructionFileConfig = instructionFileConfig;
+            return this;
+        }
+
+        public Builder encryptionAlgorithm(AlgorithmSuite encryptionAlgorithm) {
+            this._encryptionAlgorithm = encryptionAlgorithm;
             return this;
         }
 
