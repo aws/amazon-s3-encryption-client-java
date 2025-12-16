@@ -1,4 +1,4 @@
 [submodule "specification"]
 	path = specification
-	url = git@github.com:awslabs/aws-encryption-sdk-specification.git
-	branch = kessplas/s3-ec-v3
+	url = git@github.com:awslabs/private-aws-encryption-sdk-specification-staging.git
+	branch = fire-egg-staging

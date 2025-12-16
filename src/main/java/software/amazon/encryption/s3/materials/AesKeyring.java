@@ -41,16 +41,16 @@ public class AesKeyring extends RawKeyring<SecretKey> {
             return KEY_PROVIDER_INFO;
         }
 
-    @Override
-    public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-        // Find the appropriate key material to use for decryption
-        SecretKey keyToUse = findKeyMaterialForDecryption(materials, _wrappingKey);
+        @Override
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+            // Find the appropriate key material to use for decryption
+            SecretKey keyToUse = findKeyMaterialForDecryption(materials, _wrappingKey);
 
-        final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-        cipher.init(Cipher.DECRYPT_MODE, keyToUse);
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+            cipher.init(Cipher.DECRYPT_MODE, keyToUse);
 
-        return cipher.doFinal(encryptedDataKey);
-    }
+            return cipher.doFinal(encryptedDataKey);
+        }
     };
 
     private final DecryptDataKeyStrategy _aesWrapStrategy = new DecryptDataKeyStrategy() {
@@ -68,17 +68,17 @@ public class AesKeyring extends RawKeyring<SecretKey> {
             return KEY_PROVIDER_INFO;
         }
 
-    @Override
-    public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-        // Find the appropriate key material to use for decryption
-        SecretKey keyToUse = findKeyMaterialForDecryption(materials, _wrappingKey);
+        @Override
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+            // Find the appropriate key material to use for decryption
+            SecretKey keyToUse = findKeyMaterialForDecryption(materials, _wrappingKey);
 
-        final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-        cipher.init(Cipher.UNWRAP_MODE, keyToUse);
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+            cipher.init(Cipher.UNWRAP_MODE, keyToUse);
 
-        Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
-        return plaintextKey.getEncoded();
-    }
+            Key plaintextKey = cipher.unwrap(encryptedDataKey, CIPHER_ALGORITHM, Cipher.SECRET_KEY);
+            return plaintextKey.getEncoded();
+        }
     };
 
     private final DataKeyStrategy _aesGcmStrategy = new DataKeyStrategy() {
@@ -111,7 +111,7 @@ public class AesKeyring extends RawKeyring<SecretKey> {
 
         @Override
         public byte[] encryptDataKey(SecureRandom secureRandom,
-                EncryptionMaterials materials)
+                                     EncryptionMaterials materials)
                 throws GeneralSecurityException {
             byte[] iv = new byte[IV_LENGTH_BYTES];
             secureRandom.nextBytes(iv);
@@ -132,25 +132,32 @@ public class AesKeyring extends RawKeyring<SecretKey> {
             return encodedBytes;
         }
 
-    @Override
-    public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
-        byte[] iv = new byte[IV_LENGTH_BYTES];
-        byte[] ciphertext = new byte[encryptedDataKey.length - iv.length];
+        @Override
+        public byte[] decryptDataKey(DecryptionMaterials materials, byte[] encryptedDataKey) throws GeneralSecurityException {
+            byte[] iv = new byte[IV_LENGTH_BYTES];
+            byte[] ciphertext = new byte[encryptedDataKey.length - iv.length];
 
-        System.arraycopy(encryptedDataKey, 0, iv, 0, iv.length);
-        System.arraycopy(encryptedDataKey, iv.length, ciphertext, 0, ciphertext.length);
+            System.arraycopy(encryptedDataKey, 0, iv, 0, iv.length);
+            System.arraycopy(encryptedDataKey, iv.length, ciphertext, 0, ciphertext.length);
 
-        // Find the appropriate key material to use for decryption
-        SecretKey keyToUse = findKeyMaterialForDecryption(materials, _wrappingKey);
+            // Find the appropriate key material to use for decryption
+            SecretKey keyToUse = findKeyMaterialForDecryption(materials, _wrappingKey);
 
-        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, iv);
-        final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
-        cipher.init(Cipher.DECRYPT_MODE, keyToUse, gcmParameterSpec);
+            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_BITS, iv);
+            final Cipher cipher = CryptoFactory.createCipher(CIPHER_ALGORITHM, materials.cryptoProvider());
+            cipher.init(Cipher.DECRYPT_MODE, keyToUse, gcmParameterSpec);
 
-        final byte[] aADBytes = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
-        cipher.updateAAD(aADBytes);
-        return cipher.doFinal(ciphertext);
-    }
+            byte[] aADBytes;
+            // For V3 committed algorithms (both GCM 115 and CTR 116), use GCM's suite ID string (115/0x0073)
+            if (materials.algorithmSuite().id() == AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.id() ||
+                    materials.algorithmSuite().id() == AlgorithmSuite.ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY.id()) {
+                aADBytes = AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString().getBytes(StandardCharsets.UTF_8);
+            } else {
+                aADBytes = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+            }
+            cipher.updateAAD(aADBytes);
+            return cipher.doFinal(ciphertext);
+        }
     };
 
     private final Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies = new HashMap<>();
@@ -184,7 +191,7 @@ public class AesKeyring extends RawKeyring<SecretKey> {
         return decryptDataKeyStrategies;
     }
 
-  public static class Builder extends RawKeyring.Builder<AesKeyring, Builder, SecretKey> {
+    public static class Builder extends RawKeyring.Builder<AesKeyring, Builder, SecretKey> {
         private SecretKey _wrappingKey;
 
         private Builder() {
@@ -206,6 +213,7 @@ public class AesKeyring extends RawKeyring<SecretKey> {
             _wrappingKey = wrappingKey;
             return builder();
         }
+
         public AesKeyring build() {
             return new AesKeyring(this);
         }

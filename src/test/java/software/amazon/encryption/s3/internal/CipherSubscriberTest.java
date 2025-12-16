@@ -185,7 +185,7 @@ class CipherSubscriberTest {
         // we reject 0-ized IVs, so just do something
         iv[0] = 1;
         SimpleSubscriber wrappedSubscriber = new SimpleSubscriber();
-        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, iv);
+        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, iv, null);
 
         // Act
         TestPublisher<ByteBuffer> publisher = new TestPublisher<>();
@@ -208,7 +208,7 @@ class CipherSubscriberTest {
         // Now decrypt.
         DecryptionMaterials decryptionMaterials = getTestDecryptionMaterialsFromEncMats(materials);
         SimpleSubscriber wrappedDecryptSubscriber = new SimpleSubscriber();
-        CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, iv);
+        CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, iv, null);
         TestPublisher<ByteBuffer> decryptPublisher = new TestPublisher<>();
         decryptPublisher.subscribe(decryptSubscriber);
 
@@ -239,7 +239,7 @@ class CipherSubscriberTest {
         // we reject 0-ized IVs, so just do something non-zero
         iv[0] = 1;
         SimpleSubscriber wrappedSubscriber = new SimpleSubscriber();
-        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, iv);
+        CipherSubscriber subscriber = new CipherSubscriber(wrappedSubscriber, materials.getCiphertextLength(), materials, iv, null);
 
         // Setup Publisher
         TestPublisher<ByteBuffer> publisher = new TestPublisher<>();
@@ -262,7 +262,7 @@ class CipherSubscriberTest {
         // Now decrypt the ciphertext
         DecryptionMaterials decryptionMaterials = getTestDecryptionMaterialsFromEncMats(materials);
         SimpleSubscriber wrappedDecryptSubscriber = new SimpleSubscriber();
-        CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, iv);
+        CipherSubscriber decryptSubscriber = new CipherSubscriber(wrappedDecryptSubscriber, expectedLength, decryptionMaterials, iv, null);
         TestPublisher<ByteBuffer> decryptPublisher = new TestPublisher<>();
         decryptPublisher.subscribe(decryptSubscriber);
 

@@ -10,13 +10,27 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * This class contains that which can be shared between the default S3 Encryption
- * Client and its Async counterpart.
+ * Utility class containing shared constants and helper methods for the S3 Encryption Client
+ * and S3 Async Encryption Client.
  */
 public class S3EncryptionClientUtilities {
 
+    /**
+     * The default suffix appended to object keys when creating instruction files.
+     * Instruction files store encryption metadata separately from the encrypted object.
+     */
     public static final String DEFAULT_INSTRUCTION_FILE_SUFFIX = ".instruction";
+    
+    /**
+     * The minimum allowed buffer size in bytes for safe authentication mode.
+     * This is based on the cipher block size of the AES-256-GCM algorithm.
+     */
     public static final long MIN_ALLOWED_BUFFER_SIZE_BYTES = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherBlockSizeBytes();
+    
+    /**
+     * The maximum allowed buffer size in bytes for safe authentication mode.
+     * This is based on the maximum content length supported by the AES-256-GCM algorithm.
+     */
     public static final long MAX_ALLOWED_BUFFER_SIZE_BYTES = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes();
 
     /**

@@ -95,7 +95,6 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_BUFFER_SIZE_BYTES;
-
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MAX_ALLOWED_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MIN_ALLOWED_BUFFER_SIZE_BYTES;
@@ -104,14 +103,16 @@ import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INT
 
 
 //= specification/s3-encryption/client.md#aws-sdk-compatibility
-//= type=implication
 //# The S3EC MUST adhere to the same interface for API operations as the conventional AWS SDK S3 client.
 //= specification/s3-encryption/client.md#aws-sdk-compatibility
-//= type=implementation
 //# The S3EC SHOULD support invoking operations unrelated to client-side encryption e.g. CopyObject as the conventional AWS SDK S3 client would.
+
 /**
  * This client is a drop-in replacement for the S3 client. It will automatically encrypt objects
  * on putObject and decrypt objects on getObject using the provided encryption key(s).
+ * <p>
+ * This major version uses AES_GCM_HKDF_SHA512_COMMIT_KEY by default and only recent minor versions
+ * of the previous major version can decrypt these objects.
  */
 public class S3EncryptionClient extends DelegatingS3Client {
 
@@ -119,7 +120,9 @@ public class S3EncryptionClient extends DelegatingS3Client {
     public static final ExecutionAttribute<Map<String, String>> ENCRYPTION_CONTEXT = new ExecutionAttribute<>("EncryptionContext");
     public static final ExecutionAttribute<MultipartConfiguration> CONFIGURATION = new ExecutionAttribute<>("MultipartConfiguration");
 
-    //Used for specifying custom instruction file suffix on a per-request basis
+    //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+    //# The S3EC SHOULD support providing a custom Instruction File suffix on GetObject requests, regardless of whether or not re-encryption is supported.
+    // Used for specifying custom instruction file suffix on a per-request basis
     public static final ExecutionAttribute<String> CUSTOM_INSTRUCTION_FILE_SUFFIX = new ExecutionAttribute<>("CustomInstructionFileSuffix");
 
     private final S3Client _wrappedClient;
@@ -132,9 +135,9 @@ public class S3EncryptionClient extends DelegatingS3Client {
     private final MultipartUploadObjectPipeline _multipartPipeline;
     private final long _bufferSize;
     private final InstructionFileConfig _instructionFileConfig;
+    private final CommitmentPolicy _commitmentPolicy;
 
     //= specification/s3-encryption/client.md#aws-sdk-compatibility
-    //= type=implication
     //# The S3EC MUST provide a different set of configuration options than the conventional S3 client.
     private S3EncryptionClient(Builder builder) {
         super(builder._wrappedClient);
@@ -148,12 +151,25 @@ public class S3EncryptionClient extends DelegatingS3Client {
         _multipartPipeline = builder._multipartPipeline;
         _bufferSize = builder._bufferSize;
         _instructionFileConfig = builder._instructionFileConfig;
+        _commitmentPolicy = builder._commitmentPolicy;
     }
 
     /**
      * Creates a builder that can be used to configure and create a {@link S3EncryptionClient}.
      */
+    @Deprecated
     public static Builder builder() {
+        // Defaults to ForbidEncryptAllowDecrypt and ALG_AES_256_GCM_IV12_TAG16_NO_KDF
+        return new Builder(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT, AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF);
+    }
+
+
+    /**
+     * Creates a V4 Transition builder that can be used to configure and create a {@link S3EncryptionClient}.
+     */
+    public static Builder builderV4() {
+        // NewBuilder introduced which REQUIRES commitmentPolicy and encryptionAlgorithm
+        // to be set and is V4 compatible
         return new Builder();
     }
 
@@ -163,6 +179,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * Encryption context can be used to enforce authentication of ciphertext.
      * The same encryption context used to encrypt MUST be provided on decrypt.
      * Encryption context is only supported with KMS keys.
+     *
      * @param encryptionContext the encryption context to use for the request.
      * @return Consumer for use in overrideConfiguration()
      */
@@ -175,6 +192,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * Attaches a custom instruction file suffix to a request. Must be used as a parameter to
      * {@link S3Request#overrideConfiguration()} in the request.
      * This allows specifying a custom suffix for the instruction file on a per-request basis.
+     *
      * @param customInstructionFileSuffix the custom suffix to use for the instruction file.
      * @return Consumer for use in overrideConfiguration()
      */
@@ -186,6 +204,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     /**
      * Attaches multipart configuration to a request. Must be used as a parameter to
      * {@link S3Request#overrideConfiguration()} in the request.
+     *
      * @param multipartConfiguration the {@link MultipartConfiguration} instance to use
      * @return Consumer for use in overrideConfiguration()
      */
@@ -201,7 +220,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * Encryption context can be used to enforce authentication of ciphertext.
      * The same encryption context used to encrypt MUST be provided on decrypt.
      * Encryption context is only supported with KMS keys.
-     * @param encryptionContext the encryption context to use for the request.
+     *
+     * @param encryptionContext      the encryption context to use for the request.
      * @param multipartConfiguration the {@link MultipartConfiguration} instance to use
      * @return Consumer for use in overrideConfiguration()
      */
@@ -212,8 +232,10 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     //= specification/s3-encryption/client.md#optional-api-operations
-    //= type=implication
     //# - ReEncryptInstructionFile MAY be implemented by the S3EC.
+    //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+    //# The S3EC MAY support re-encryption/key rotation via Instruction Files.
+
     /**
      * Re-encrypts an instruction file with a new keyring while preserving the original encrypted object in S3.
      * This enables:
@@ -222,7 +244,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * <p>
      * Key rotation scenarios:
      * - Legacy to V3: Can rotate same wrapping key from legacy wrapping algorithms to fully supported wrapping algorithms
-     * - Within V3: When rotating the wrapping key, the new keyring must be different from the current keyring
+     * - Within V3 or later (V4+): When rotating the wrapping key, the new keyring must be different from the current keyring
      * - Enforce Rotation: When enabled, ensures old keyring cannot decrypt data encrypted by new keyring
      *
      * @param reEncryptInstructionFileRequest the request containing bucket, object key, new keyring, and optional instruction file suffix
@@ -236,45 +258,49 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         //Build request to retrieve the encrypted object and its associated instruction file
         final GetObjectRequest request = GetObjectRequest.builder()
-          .bucket(reEncryptInstructionFileRequest.bucket())
-          .key(reEncryptInstructionFileRequest.key())
-          .build();
+                .bucket(reEncryptInstructionFileRequest.bucket())
+                .key(reEncryptInstructionFileRequest.key())
+                .build();
 
         ResponseInputStream<GetObjectResponse> response = this.getObject(request);
         ContentMetadataDecodingStrategy decodingStrategy = new ContentMetadataDecodingStrategy(_instructionFileConfig);
         ContentMetadata contentMetadata = decodingStrategy.decode(request, response.response());
 
-        //Extract cryptographic parameters from the current instruction file that MUST be preserved during re-encryption
+        // Extract cryptographic parameters from the current instruction file that MUST be preserved during re-encryption
         final AlgorithmSuite algorithmSuite = contentMetadata.algorithmSuite();
         final EncryptedDataKey originalEncryptedDataKey = contentMetadata.encryptedDataKey();
         final MaterialsDescription currentKeyringMaterialsDescription = contentMetadata.materialsDescription();
-        final byte[] iv = contentMetadata.contentIv();
+        final byte[] contentIv = contentMetadata.contentIv();
+
+        if (algorithmSuite.isCommitting()) {
+            // TODO: Proper Error Message
+            throw new S3EncryptionClientException("Object encrypted with Algorithm Suite which support key commitment. " +
+                    "This version of S3EC does not support committing");
+        }
 
         //Decrypt the data key using the current keyring
         //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=implication
         //# - ReEncryptInstructionFile MUST decrypt the instruction file's encrypted data key for the given object using the client's CMM.
         DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
-          DecryptMaterialsRequest.builder()
-            .algorithmSuite(algorithmSuite)
-            .encryptedDataKeys(Collections.singletonList(originalEncryptedDataKey))
-            .materialsDescription(contentMetadata.materialsDescription())
-            .s3Request(request)
-            .build()
+                DecryptMaterialsRequest.builder()
+                        .algorithmSuite(algorithmSuite)
+                        .encryptedDataKeys(Collections.singletonList(originalEncryptedDataKey))
+                        .materialsDescription(contentMetadata.materialsDescription())
+                        .s3Request(request)
+                        .build()
         );
 
         final byte[] plaintextDataKey = decryptedMaterials.plaintextDataKey();
 
         //Prepare encryption materials with the decrypted data key
         EncryptionMaterials encryptionMaterials = EncryptionMaterials.builder()
-          .algorithmSuite(algorithmSuite)
-          .plaintextDataKey(plaintextDataKey)
-          .s3Request(request)
-          .build();
+                .algorithmSuite(algorithmSuite)
+                .plaintextDataKey(plaintextDataKey)
+                .s3Request(request)
+                .build();
 
         //Re-encrypt the data key with the new keyring while preserving other cryptographic parameters
         //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=implication
         //# - ReEncryptInstructionFile MUST re-encrypt the plaintext data key with a provided keyring.
         RawKeyring newKeyring = reEncryptInstructionFileRequest.newKeyring();
         EncryptionMaterials encryptedMaterials = newKeyring.onEncrypt(encryptionMaterials);
@@ -289,27 +315,28 @@ public class S3EncryptionClient extends DelegatingS3Client {
         if (reEncryptInstructionFileRequest.enforceRotation()) {
             enforceRotation(encryptedMaterials, request);
         }
-      
+
         //Create or update instruction file with the re-encrypted metadata while preserving IV
         ContentMetadataEncodingStrategy encodeStrategy = new ContentMetadataEncodingStrategy(_instructionFileConfig);
-        encodeStrategy.encodeMetadata(encryptedMaterials, iv, PutObjectRequest.builder()
-          .bucket(reEncryptInstructionFileRequest.bucket())
-          .key(reEncryptInstructionFileRequest.key())
-          .build(), reEncryptInstructionFileRequest.instructionFileSuffix());
+        final byte[] contentIV = algorithmSuite.isCommitting() ? contentMetadata.contentMessageId() : contentMetadata.contentIv();
+        encodeStrategy.encodeMetadata(encryptedMaterials, contentIV, PutObjectRequest.builder()
+                .bucket(reEncryptInstructionFileRequest.bucket())
+                .key(reEncryptInstructionFileRequest.key())
+                .build(), reEncryptInstructionFileRequest.instructionFileSuffix());
 
         return new ReEncryptInstructionFileResponse(reEncryptInstructionFileRequest.bucket(),
-            reEncryptInstructionFileRequest.key(), reEncryptInstructionFileRequest.instructionFileSuffix(), reEncryptInstructionFileRequest.enforceRotation());
+                reEncryptInstructionFileRequest.key(), reEncryptInstructionFileRequest.instructionFileSuffix(), reEncryptInstructionFileRequest.enforceRotation());
 
     }
 
     private void enforceRotation(EncryptionMaterials newEncryptionMaterials, GetObjectRequest request) {
         try {
             DecryptionMaterials decryptedMaterials = this._cryptoMaterialsManager.decryptMaterials(
-              DecryptMaterialsRequest.builder()
-                .algorithmSuite(newEncryptionMaterials.algorithmSuite())
-                .encryptedDataKeys(newEncryptionMaterials.encryptedDataKeys())
-                .s3Request(request)
-                .build()
+                    DecryptMaterialsRequest.builder()
+                            .algorithmSuite(newEncryptionMaterials.algorithmSuite())
+                            .encryptedDataKeys(newEncryptionMaterials.encryptedDataKeys())
+                            .s3Request(request)
+                            .build()
             );
         } catch (S3EncryptionClientException e) {
             return;
@@ -318,21 +345,21 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     //= specification/s3-encryption/client.md#required-api-operations
-    //= type=implication
     //# - PutObject MUST be implemented by the S3EC.
+
     /**
      * See {@link S3EncryptionClient#putObject(PutObjectRequest, RequestBody)}.
      * <p>
      * In the S3EncryptionClient, putObject encrypts the data in the requestBody as it is
      * written to S3.
      * </p>
+     *
      * @param putObjectRequest the request instance
-     * @param requestBody
-     *        The content to send to the service. A {@link RequestBody} can be created using one of several factory
-     *        methods for various sources of data. For example, to create a request body from a file you can do the
-     *        following.
+     * @param requestBody      The content to send to the service. A {@link RequestBody} can be created using one of several factory
+     *                         methods for various sources of data. For example, to create a request body from a file you can do the
+     *                         following.
      * @return Result of the PutObject operation returned by the service.
-     * @throws SdkClientException If any client side error occurs such as an IO related failure, failure to get credentials, etc.
+     * @throws SdkClientException          If any client side error occurs such as an IO related failure, failure to get credentials, etc.
      * @throws S3EncryptionClientException Base class for all encryption client exceptions.
      */
     @Override
@@ -358,7 +385,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         try {
             //= specification/s3-encryption/client.md#required-api-operations
-            //= type=implication
             //# - PutObject MUST encrypt its input data before it is uploaded to S3.
             CompletableFuture<PutObjectResponse> futurePut = pipeline.putObject(putObjectRequest,
                     AsyncRequestBody.fromInputStream(
@@ -385,22 +411,22 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     //= specification/s3-encryption/client.md#required-api-operations
-    //= type=implication
     //# - GetObject MUST be implemented by the S3EC.
+
     /**
      * See {@link S3EncryptionClient#getObject(GetObjectRequest, ResponseTransformer)}
      * <p>
      * In the S3EncryptionClient, getObject decrypts the data as it is read from S3.
      * </p>
-     * @param getObjectRequest the request instance
-     * @param responseTransformer
-     *        Functional interface for processing the streamed response content. The unmarshalled GetObjectResponse and
-     *        an InputStream to the response content are provided as parameters to the callback. The callback may return
-     *        a transformed type which will be the return value of this method. See
-     *        {@link software.amazon.awssdk.core.sync.ResponseTransformer} for details on implementing this interface
-     *        and for links to pre-canned implementations for common scenarios like downloading to a file.
+     *
+     * @param getObjectRequest    the request instance
+     * @param responseTransformer Functional interface for processing the streamed response content. The unmarshalled GetObjectResponse and
+     *                            an InputStream to the response content are provided as parameters to the callback. The callback may return
+     *                            a transformed type which will be the return value of this method. See
+     *                            {@link software.amazon.awssdk.core.sync.ResponseTransformer} for details on implementing this interface
+     *                            and for links to pre-canned implementations for common scenarios like downloading to a file.
      * @return The transformed result of the ResponseTransformer.
-     * @throws SdkClientException If any client side error occurs such as an IO related failure, failure to get credentials, etc.
+     * @throws SdkClientException          If any client side error occurs such as an IO related failure, failure to get credentials, etc.
      * @throws S3EncryptionClientException Base class for all encryption client exceptions.
      */
     @Override
@@ -409,7 +435,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
             throws AwsServiceException, SdkClientException {
 
         //= specification/s3-encryption/client.md#required-api-operations
-        //= type=implication
         //# - GetObject MUST decrypt data received from the S3 server and return it as plaintext.
         GetEncryptedObjectPipeline pipeline = GetEncryptedObjectPipeline.builder()
                 .s3AsyncClient(_wrappedAsyncClient)
@@ -418,6 +443,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .enableDelayedAuthentication(_enableDelayedAuthenticationMode)
                 .bufferSize(_bufferSize)
                 .instructionFileConfig(_instructionFileConfig)
+                .commitmentPolicy(_commitmentPolicy)
                 .build();
 
         try {
@@ -519,14 +545,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     //= specification/s3-encryption/client.md#required-api-operations
-    //= type=implication
     //# - DeleteObject MUST be implemented by the S3EC.
+
     /**
      * See {@link S3Client#deleteObject(DeleteObjectRequest)}.
      * <p>
      * In the S3 Encryption Client, deleteObject also deletes the instruction file,
      * if present.
      * </p>
+     *
      * @param deleteObjectRequest the request instance
      * @return Result of the DeleteObject operation returned by the service.
      */
@@ -560,14 +587,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     //= specification/s3-encryption/client.md#required-api-operations
-    //= type=implication
     //# - DeleteObjects MUST be implemented by the S3EC.
+
     /**
      * See {@link S3Client#deleteObjects(DeleteObjectsRequest)}.
      * <p>
      * In the S3 Encryption Client, deleteObjects also deletes the instruction file(s),
      * if present.
      * </p>
+     *
      * @param deleteObjectsRequest the request instance
      * @return Result of the DeleteObjects operation returned by the service.
      */
@@ -600,8 +628,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     //= specification/s3-encryption/client.md#optional-api-operations
-    //= type=implication
     //# - CreateMultipartUpload MAY be implemented by the S3EC.
+
     /**
      * See {@link S3Client#createMultipartUpload(CreateMultipartUploadRequest)}
      * <p>
@@ -609,6 +637,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * multipart upload. Parts MUST be uploaded sequentially.
      * See {@link S3EncryptionClient#uploadPart(UploadPartRequest, RequestBody)} for details.
      * </p>
+     *
      * @param request the request instance
      * @return Result of the CreateMultipartUpload operation returned by the service.
      */
@@ -624,8 +653,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     //= specification/s3-encryption/client.md#optional-api-operations
-    //= type=implication
     //# - UploadPart MAY be implemented by the S3EC.
+
     /**
      * See {@link S3Client#uploadPart(UploadPartRequest, RequestBody)}
      *
@@ -634,6 +663,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
      * S3EncryptionClient (as opposed to the normal S3Client) must
      * be uploaded serially, and in order. Otherwise, the previous encryption
      * context isn't available to use when encrypting the current part.
+     *
      * @param request the request instance
      * @return Result of the UploadPart operation returned by the service.
      */
@@ -650,10 +680,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     //= specification/s3-encryption/client.md#optional-api-operations
-    //= type=implication
     //# - CompleteMultipartUpload MAY be implemented by the S3EC.
+
     /**
      * See {@link S3Client#completeMultipartUpload(CompleteMultipartUploadRequest)}
+     *
      * @param request the request instance
      * @return Result of the CompleteMultipartUpload operation returned by the service.
      */
@@ -670,10 +701,11 @@ public class S3EncryptionClient extends DelegatingS3Client {
     }
 
     //= specification/s3-encryption/client.md#optional-api-operations
-    //= type=implication
     //# - AbortMultipartUpload MAY be implemented by the S3EC.
+
     /**
      * See {@link S3Client#abortMultipartUpload(AbortMultipartUploadRequest)}
+     *
      * @param request the request instance
      * @return Result of the AbortMultipartUpload operation returned by the service.
      */
@@ -713,22 +745,21 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private PartialRsaKeyPair _rsaKeyPair;
         private String _kmsKeyId;
         //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
-        //= type=implication
         //# The option to enable legacy wrapping algorithms MUST be set to false by default.
         private boolean _enableLegacyWrappingAlgorithms = false;
         //= specification/s3-encryption/client.md#enable-delayed-authentication
-        //= type=implication
         //# Delayed Authentication mode MUST be set to false by default.
         private boolean _enableDelayedAuthenticationMode = false;
         private boolean _enableMultipartPutObject = false;
         private Provider _cryptoProvider = null;
         private SecureRandom _secureRandom = new SecureRandom();
         //= specification/s3-encryption/client.md#enable-legacy-unauthenticated-modes
-        //= type=implication
         //# The option to enable legacy unauthenticated modes MUST be set to false by default.
         private boolean _enableLegacyUnauthenticatedModes = false;
         private long _bufferSize = -1L;
         private InstructionFileConfig _instructionFileConfig = null;
+        private AlgorithmSuite _encryptionAlgorithm = null;
+        private CommitmentPolicy _commitmentPolicy = null;
         // generic AwsClient configuration to be shared by default clients
         private AwsCredentialsProvider _awsCredentialsProvider = null;
         private Region _region = null;
@@ -752,9 +783,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
         private Builder() {
         }
 
+        private Builder(CommitmentPolicy commitmentPolicy, AlgorithmSuite algorithmSuite) {
+            _commitmentPolicy = commitmentPolicy;
+            _encryptionAlgorithm = algorithmSuite;
+        }
+
         //= specification/s3-encryption/client.md#wrapped-s3-client-s
         //= type=implementation
         //# The S3EC MUST support the option to provide an SDK S3 client instance during its initialization.
+
         /**
          * Sets the wrappedClient to be used for non-cryptographic operations.
          */
@@ -777,6 +814,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         //= specification/s3-encryption/client.md#wrapped-s3-client-s
         //= type=implementation
         //# The S3EC MUST support the option to provide an SDK S3 client instance during its initialization.
+
         /**
          * Sets the wrappedAsyncClient to be used for cryptographic operations.
          */
@@ -799,6 +837,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         /**
          * Specifies the {@link CryptographicMaterialsManager} to use for managing key wrapping keys.
+         *
          * @param cryptoMaterialsManager the CMM to use
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -811,6 +850,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         /**
          * Specifies the {@link Keyring} to use for key wrapping and unwrapping.
+         *
          * @param keyring the Keyring instance to use
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -823,6 +863,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         /**
          * Specifies a "raw" AES key to use for key wrapping/unwrapping.
+         *
          * @param aesKey the AES key as a {@link SecretKey} instance
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -835,6 +876,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         /**
          * Specifies a "raw" RSA key pair to use for key wrapping/unwrapping.
+         *
          * @param rsaKeyPair the RSA key pair as a {@link KeyPair} instance
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -850,6 +892,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
          * This option takes a {@link PartialRsaKeyPair} instance, which allows
          * either a public key (decryption only) or private key (encryption only)
          * rather than requiring both parts.
+         *
          * @param partialRsaKeyPair the RSA key pair as a {@link PartialRsaKeyPair} instance
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -865,6 +908,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
          * identifier (including the full ARN or an alias ARN) is permitted. When
          * decrypting objects, the key referred to by this KMS key identifier is
          * always used.
+         *
          * @param kmsKeyId the KMS key identifier as a {@link String} instance
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -879,7 +923,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
         //= type=implementation
         //# The S3EC MUST accept either one CMM or one Keyring instance upon initialization.
         //= specification/s3-encryption/client.md#cryptographic-materials
-        //= type=implication
         //# The S3EC MAY accept key material directly.
         private void checkKeyOptions() {
             if (onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
@@ -908,11 +951,12 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         //= specification/s3-encryption/client.md#enable-legacy-wrapping-algorithms
-        //= type=implication
         //# The S3EC MUST support the option to enable or disable legacy wrapping algorithms.
+
         /**
          * When set to true, decryption of objects using legacy key wrapping
          * modes is enabled.
+         *
          * @param shouldEnableLegacyWrappingAlgorithms true to enable legacy wrapping algorithms
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -922,12 +966,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         //= specification/s3-encryption/client.md#enable-legacy-unauthenticated-modes
-        //= type=implication
         //# The S3EC MUST support the option to enable or disable legacy unauthenticated modes (content encryption algorithms).
+
         /**
          * When set to true, decryption of content using legacy encryption algorithms
          * is enabled. This includes use of GetObject requests with a range, as this
          * mode is not authenticated.
+         *
          * @param shouldEnableLegacyUnauthenticatedModes true to enable legacy content algorithms
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -937,8 +982,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         //= specification/s3-encryption/client.md#enable-delayed-authentication
-        //= type=implication
         //# The S3EC MUST support the option to enable or disable Delayed Authentication mode.
+
         /**
          * When set to true, authentication of streamed objects is delayed until the
          * entire object is read from the stream. When this mode is enabled, the consuming
@@ -946,6 +991,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
          * the tag will not be validated until the stream is read to completion, as the
          * integrity of the data cannot be ensured. See the AWS Documentation for more
          * information.
+         *
          * @param shouldEnableDelayedAuthenticationMode true to enable delayed authentication
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -957,6 +1003,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
         /**
          * When set to true, the putObject method will use multipart upload to perform
          * the upload. Disabled by default.
+         *
          * @param _enableMultipartPutObject true enables the multipart upload implementation of putObject
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -966,11 +1013,12 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         //= specification/s3-encryption/client.md#set-buffer-size
-        //= type=implication
         //# The S3EC SHOULD accept a configurable buffer size which refers to the maximum ciphertext length in bytes to store in memory when Delayed Authentication mode is disabled.
+
         /**
          * Sets the buffer size for safe authentication used when delayed authentication mode is disabled.
          * If buffer size is not given during client configuration, default buffer size is set to 64MiB.
+         *
          * @param bufferSize the desired buffer size in Bytes.
          * @return Returns a reference to this object so that method calls can be chained together.
          * @throws S3EncryptionClientException if the specified buffer size is outside the allowed bounds
@@ -993,6 +1041,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
          * operations may fail.
          * Advanced option. Users who configure a {@link Provider} are responsible
          * for the security and correctness of the provider.
+         *
          * @param cryptoProvider the {@link Provider to always use}
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -1002,12 +1051,13 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         //= specification/s3-encryption/client.md#randomness
-        //= type=implication
         //# The S3EC MAY accept a source of randomness during client initialization.
+
         /**
          * Allows the user to pass an instance of {@link SecureRandom} to be used
          * for generating keys and IVs. Advanced option. Users who provide a {@link SecureRandom}
          * are responsible for the security and correctness of the {@link SecureRandom} implementation.
+         *
          * @param secureRandom the {@link SecureRandom} instance to use
          * @return Returns a reference to this object so that method calls can be chained together.
          */
@@ -1020,15 +1070,15 @@ public class S3EncryptionClient extends DelegatingS3Client {
         }
 
         //= specification/s3-encryption/client.md#instruction-file-configuration
-        //= type=implication
         //# If the S3EC in a given language supports Instruction Files, then it MUST accept Instruction File Configuration during its initialization.
         //= specification/s3-encryption/client.md#instruction-file-configuration
-        //= type=implication
         //# The S3EC MAY support the option to provide Instruction File Configuration during its initialization.
+
         /**
          * Sets the Instruction File configuration for the S3 Encryption Client.
          * The InstructionFileConfig can be used to specify an S3 client to use for retrieval of Instruction files,
          * or to disable GetObject requests for the instruction file.
+         *
          * @param instructionFileConfig
          * @return
          */
@@ -1037,15 +1087,51 @@ public class S3EncryptionClient extends DelegatingS3Client {
             return this;
         }
 
+        //= specification/s3-encryption/client.md#encryption-algorithm
+        //# The S3EC MUST support configuration of the encryption algorithm (or algorithm suite) during its initialization.
+        /**
+         * Sets the {@link AlgorithmSuite} to encrypt with.
+         * <p>
+         * Defaults to AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY which provides key commitment.
+         * Objects encrypted with this default algorithm can only be decrypted by version 3.6.0 or later.
+         *
+         * @param encryptionAlgorithm The {@link AlgorithmSuite}
+         * @return The Builder, for method chaining
+         */
+        public Builder encryptionAlgorithm(AlgorithmSuite encryptionAlgorithm) {
+            _encryptionAlgorithm = encryptionAlgorithm;
+            return this;
+        }
+
+        //= specification/s3-encryption/client.md#key-commitment
+        //# The S3EC MUST support configuration of the [Key Commitment policy](./key-commitment.md) during its initialization.
+
+        /**
+         * Sets the commitment policy for this S3 encryption client.
+         * The commitment policy determines whether the client requires, forbids, or allows
+         * key commitment during encryption and decryption operations.
+         * <p>
+         * Defaults to REQUIRE_ENCRYPT_REQUIRE_DECRYPT which provides the highest security.
+         * This policy will reject messages encrypted without key commitment, so it should be only used when all the objects expected to succeed decryption have been encrypted using key commitment.
+         *
+         * @param commitmentPolicy the commitment policy to use
+         * @return this builder instance for method chaining
+         * @see CommitmentPolicy
+         */
+        public Builder commitmentPolicy(CommitmentPolicy commitmentPolicy) {
+            _commitmentPolicy = commitmentPolicy;
+            return this;
+        }
+
         //= specification/s3-encryption/client.md#inherited-sdk-configuration
-        //= type=implication
         //# The S3EC MAY support directly configuring the wrapped SDK clients through its initialization.
         //= specification/s3-encryption/client.md#inherited-sdk-configuration
-        //= type=implication
         //# For example, the S3EC MAY accept a credentials provider instance during its initialization.
+
         /**
          * The credentials provider to use for all inner clients, including KMS, if a KMS key ID is provided.
          * Note that if a wrapped client is configured, the wrapped client will take precedence over this option.
+         *
          * @param awsCredentialsProvider
          * @return
          */
@@ -1057,6 +1143,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
         /**
          * The AWS region to use for all inner clients, including KMS, if a KMS key ID is provided.
+         *
          * @param region
          * @return
          */
@@ -1302,13 +1389,14 @@ public class S3EncryptionClient extends DelegatingS3Client {
         /**
          * Validates and builds the S3EncryptionClient according
          * to the configuration options passed to the Builder object.
+         *
          * @return an instance of the S3EncryptionClient
          */
         public S3EncryptionClient build() {
             if (!onlyOneNonNull(_cryptoMaterialsManager, _keyring, _aesKey, _rsaKeyPair, _kmsKeyId)) {
                 throw new S3EncryptionClientException("Exactly one must be set of: crypto materials manager, keyring, AES key, RSA key pair, KMS key id");
             }
-            if (_enableLegacyWrappingAlgorithms && _keyring !=null) {
+            if (_enableLegacyWrappingAlgorithms && _keyring != null) {
                 S3Keyring keyring = (S3Keyring) _keyring;
                 if (!keyring.areLegacyWrappingAlgorithmsEnabled()) {
                     LogFactory.getLog(getClass()).warn("enableLegacyWrappingAlgorithms is set on the client, but is not set on the keyring provided. In order to enable legacy wrapping algorithms, set enableLegacyWrappingAlgorithms to true in the keyring's builder.");
@@ -1317,14 +1405,18 @@ public class S3EncryptionClient extends DelegatingS3Client {
 
             if (_bufferSize >= 0) {
                 if (_enableDelayedAuthenticationMode) {
+                    //= specification/s3-encryption/client.md#set-buffer-size
+                    //# If Delayed Authentication mode is enabled, and the buffer size has been set to a value other than its default, the S3EC MUST throw an exception.
                     throw new S3EncryptionClientException("Buffer size cannot be set when delayed authentication mode is enabled");
                 }
             } else {
+                //= specification/s3-encryption/client.md#set-buffer-size
+                //= type=implication
+                //# If Delayed Authentication mode is disabled, and no buffer size is provided, the S3EC MUST set the buffer size to a reasonable default.
                 _bufferSize = DEFAULT_BUFFER_SIZE_BYTES;
             }
 
             //= specification/s3-encryption/client.md#inherited-sdk-configuration
-            //= type=implication
             //# If the S3EC accepts SDK client configuration, the configuration MUST be applied to all wrapped S3 clients.
             if (_wrappedClient == null) {
                 _wrappedClient = S3Client.builder()
@@ -1410,7 +1502,6 @@ public class S3EncryptionClient extends DelegatingS3Client {
             }
 
             //= specification/s3-encryption/client.md#cryptographic-materials
-            //= type=implication
             //# When a Keyring is provided, the S3EC MUST create an instance of the DefaultCMM using the provided Keyring.
             if (_cryptoMaterialsManager == null) {
                 _cryptoMaterialsManager = DefaultCryptoMaterialsManager.builder()
@@ -1425,6 +1516,30 @@ public class S3EncryptionClient extends DelegatingS3Client {
                     .secureRandom(_secureRandom)
                     .instructionFileConfig(_instructionFileConfig)
                     .build();
+
+            //= specification/s3-encryption/client.md#encryption-algorithm
+            //# The S3EC MUST validate that the configured encryption algorithm is not legacy.
+            //= specification/s3-encryption/client.md#key-commitment
+            //# The S3EC MUST validate the configured Encryption Algorithm against the provided key commitment policy.
+            //= specification/s3-encryption/key-commitment.md#commitment-policy
+            //# When the commitment policy is FORBID_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST NOT encrypt using an algorithm suite which supports key commitment.
+            if (_encryptionAlgorithm == null || _commitmentPolicy == null) {
+                throw new S3EncryptionClientException(
+                        "Both encryption algorithm and commitment policy must be configured."
+                );
+            }
+            if (!(_encryptionAlgorithm.id() == AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.id()
+                    && _commitmentPolicy.equals(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT))) {
+                //= specification/s3-encryption/client.md#encryption-algorithm
+                //# If the configured encryption algorithm is legacy, then the S3EC MUST throw an exception.
+                //= specification/s3-encryption/client.md#key-commitment
+                //# If the configured Encryption Algorithm is incompatible with the key commitment policy, then it MUST throw an exception.
+                throw new S3EncryptionClientException(
+                        "This client can ONLY be built with these Settings: Commitment Policy: FORBID_ENCRYPT_ALLOW_DECRYPT; Encryption Algorithm: ALG_AES_256_GCM_IV12_TAG16_NO_KDF. "
+                                + "Note that the Encryption Algorithm does NOT effect Decryption; See: https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/encryption-algorithms.html#decryption-modes. "
+                                + "Please update your configuration. Provided algorithm: " + _encryptionAlgorithm.name() + " and commitment policy: " + _commitmentPolicy.name()
+                );
+            }
 
             return new S3EncryptionClient(this);
         }

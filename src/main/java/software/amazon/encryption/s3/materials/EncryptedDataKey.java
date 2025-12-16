@@ -8,7 +8,7 @@ public class EncryptedDataKey {
     private final String _keyProviderId;
 
     // a unique identifer e.g. an ARN
-    private final byte[] _keyProviderInfo;
+    private final String _keyProviderInfo;
     // Encrypted data key ciphertext
     private final byte[] _encryptedDataKey;
 
@@ -26,11 +26,8 @@ public class EncryptedDataKey {
         return _keyProviderId;
     }
 
-    public byte[] keyProviderInfo() {
-        if (_keyProviderInfo == null) {
-            return null;
-        }
-        return _keyProviderInfo.clone();
+    public String keyProviderInfo() {
+        return _keyProviderInfo;
     }
 
     public byte[] encryptedDatakey() {
@@ -44,7 +41,7 @@ public class EncryptedDataKey {
     static public class Builder {
 
         private String _keyProviderId = null;
-        private byte[] _keyProviderInfo = null;
+        private String _keyProviderInfo = null;
         private byte[] _encryptedDataKey = null;
 
         private Builder() {
@@ -55,8 +52,8 @@ public class EncryptedDataKey {
             return this;
         }
 
-        public Builder keyProviderInfo(byte[] keyProviderInfo) {
-            _keyProviderInfo = keyProviderInfo == null ? null : keyProviderInfo.clone();
+        public Builder keyProviderInfo(String keyProviderInfo) {
+            _keyProviderInfo = keyProviderInfo;
             return this;
         }
 

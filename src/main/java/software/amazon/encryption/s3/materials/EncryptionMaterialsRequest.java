@@ -38,7 +38,7 @@ final public class EncryptionMaterialsRequest {
      * immutable.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
-        + " implementation is immutable")
+            + " implementation is immutable")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }

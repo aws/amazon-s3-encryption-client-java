@@ -13,7 +13,7 @@ public class RsaKeyMaterial extends RawKeyMaterial<PartialRsaKeyPair> {
      * Creates a new RsaKeyMaterial with the specified materials description and key material.
      *
      * @param materialsDescription the materials description
-     * @param keyMaterial the RSA key material
+     * @param keyMaterial          the RSA key material
      */
     public RsaKeyMaterial(MaterialsDescription materialsDescription, PartialRsaKeyPair keyMaterial) {
         super(materialsDescription, keyMaterial);

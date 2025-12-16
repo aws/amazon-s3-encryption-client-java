@@ -15,7 +15,7 @@ public class AesKeyMaterial extends RawKeyMaterial<SecretKey> {
      * Creates a new AesKeyMaterial with the specified materials description and key material.
      *
      * @param materialsDescription the materials description
-     * @param keyMaterial the AES key material
+     * @param keyMaterial          the AES key material
      */
     public AesKeyMaterial(MaterialsDescription materialsDescription, SecretKey keyMaterial) {
         super(materialsDescription, keyMaterial);

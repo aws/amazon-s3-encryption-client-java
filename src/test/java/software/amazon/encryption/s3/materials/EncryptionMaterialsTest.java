@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.CipherMode;
 
 import java.util.*;
 
@@ -20,12 +21,13 @@ class EncryptionMaterialsTest {
     private EncryptionMaterials actualEncryptionMaterials;
     private Map<String, String> encryptionContext = new HashMap<>();
 
+
     @BeforeEach
     public void setUp() {
         s3Request = PutObjectRequest.builder().bucket("testBucket").key("testKey").build();
         encryptionContext.put("Key","Value");
         encryptedDataKeys.add(EncryptedDataKey.builder().keyProviderId("testKeyProviderId").build());
-        plaintextDataKey = "Test String".getBytes();
+        plaintextDataKey = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
         actualEncryptionMaterials = EncryptionMaterials.builder()
                 .s3Request(s3Request)
                 .algorithmSuite(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
@@ -58,6 +60,11 @@ class EncryptionMaterialsTest {
     @Test
     void testPlaintextDataKey() {
         assertEquals(Arrays.toString(plaintextDataKey), Arrays.toString(actualEncryptionMaterials.plaintextDataKey()));
+    }
+
+    @Test
+    void testCipherMode() {
+        assertEquals(CipherMode.ENCRYPT, actualEncryptionMaterials.cipherMode());
     }
 
     @Test

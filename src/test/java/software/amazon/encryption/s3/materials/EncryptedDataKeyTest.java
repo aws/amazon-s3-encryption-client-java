@@ -14,12 +14,12 @@ public class EncryptedDataKeyTest {
     private EncryptedDataKey actualEncryptedDataKey;
     private byte[] encryptedDataKey;
     private String keyProviderId;
-    private byte[] keyProviderInfo;
+    private String keyProviderInfo;
     
     @BeforeEach
     public void setUp() {
         keyProviderId = "testKeyProviderId";
-        keyProviderInfo = new byte[]{20, 10, 30, 5};
+        keyProviderInfo = "test";
         encryptedDataKey = new byte[]{20, 10, 30, 5};
 
         actualEncryptedDataKey = EncryptedDataKey.builder()
@@ -36,7 +36,7 @@ public class EncryptedDataKeyTest {
 
     @Test
     public void keyProviderInfo() {
-        assertEquals(Arrays.toString(keyProviderInfo), Arrays.toString(actualEncryptedDataKey.keyProviderInfo()));
+        assertEquals(keyProviderInfo, actualEncryptedDataKey.keyProviderInfo());
     }
 
     @Test

@@ -27,7 +27,7 @@ public class ContentMetadataTest {
     public void setUp() {
         encryptedDataKey = mock(EncryptedDataKey.class);
         contentIv = "Test String".getBytes();
-        encryptedDataKeyAlgorithm =   "Test Algorithm";
+        encryptedDataKeyAlgorithm = "Test Algorithm";
         encryptedDataKeyContext.put("testKey", "testValue");
 
         actualContentMetadata = ContentMetadata.builder()
@@ -62,7 +62,7 @@ public class ContentMetadataTest {
 
     @Test
     public void testContentIv() {
-        assertEquals(Arrays.toString(contentIv),Arrays.toString(actualContentMetadata.contentIv()));
+        assertEquals(Arrays.toString(contentIv), Arrays.toString(actualContentMetadata.contentIv()));
     }
 }
 

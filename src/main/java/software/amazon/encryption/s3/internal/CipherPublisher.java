@@ -22,9 +22,10 @@ public class CipherPublisher implements SdkPublisher<ByteBuffer> {
     private final String contentRange;
     private final int cipherTagLengthBits;
     private final byte[] iv;
+    private final byte[] messageId;
 
     public CipherPublisher(final SdkPublisher<ByteBuffer> wrappedPublisher, final Long contentLength, long[] range,
-                           String contentRange, int cipherTagLengthBits, final CryptographicMaterials materials, final byte[] iv) {
+                           String contentRange, int cipherTagLengthBits, final CryptographicMaterials materials, final byte[] iv, byte[] messageId) {
         this.wrappedPublisher = wrappedPublisher;
         this.materials = materials;
         this.contentLength = contentLength;
@@ -32,6 +33,7 @@ public class CipherPublisher implements SdkPublisher<ByteBuffer> {
         this.contentRange = contentRange;
         this.cipherTagLengthBits = cipherTagLengthBits;
         this.iv = iv;
+        this.messageId = messageId;
     }
 
     @Override
@@ -39,6 +41,6 @@ public class CipherPublisher implements SdkPublisher<ByteBuffer> {
         // Wrap the (customer) subscriber in a CipherSubscriber, then subscribe it
         // to the wrapped (ciphertext) publisher
         Subscriber<? super ByteBuffer> wrappedSubscriber = RangedGetUtils.adjustToDesiredRange(subscriber, range, contentRange, cipherTagLengthBits);
-        wrappedPublisher.subscribe(new CipherSubscriber(wrappedSubscriber, contentLength, materials, iv));
+        wrappedPublisher.subscribe(new CipherSubscriber(wrappedSubscriber, contentLength, materials, iv, messageId));
     }
 }
