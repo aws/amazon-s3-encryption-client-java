@@ -24,6 +24,8 @@ jobs:
       distribution: ${{ matrix.distribution }}
 
   Examples:
+    permissions:
+      contents: read
     uses: ./.github/workflows/examples.yml
     secrets: inherit
     with:
