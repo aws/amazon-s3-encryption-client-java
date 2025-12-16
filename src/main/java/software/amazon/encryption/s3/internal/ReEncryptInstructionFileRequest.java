@@ -118,6 +118,8 @@ public class ReEncryptInstructionFileRequest {
       return this;
     }
 
+    //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+    //# The S3EC MUST NOT support providing a custom Instruction File suffix on ordinary writes; custom suffixes MUST only be used during re-encryption.
     /**
      * Sets a custom instruction file suffix for the re-encrypted instruction file.
      * For AES keyrings, only the default instruction file suffix is allowed.

@@ -9,10 +9,11 @@ import javax.crypto.Cipher;
 public class MultipartEncryptedContent extends EncryptedContent {
     private final Cipher _cipher;
 
-    public MultipartEncryptedContent(byte[] iv, Cipher cipher, long ciphertextLength) {
-        super(iv, null, ciphertextLength);
+    public MultipartEncryptedContent(byte[] iv, byte[] messageId, Cipher cipher, long ciphertextLength) {
+        super(iv, messageId, null, ciphertextLength);
         _cipher = cipher;
         _iv = iv;
+        _messageId = messageId;
     }
 
     /**

@@ -36,6 +36,9 @@ public class RangedGetUtilsTest {
         assertNull(RangedGetUtils.getCryptoRangeAsString("bytes=100-10"), "Should return null for start greater than end range");
     }
 
+    //= specification/s3-encryption/decryption.md#ranged-gets
+    //= type=test
+    //# If the S3EC supports Ranged Gets, the S3EC MUST adjust the customer-provided range to include the beginning and end of the cipher blocks for the given range.
     @Test
     public void testGetCryptoRangeAsStringAndAdjustmentWithValidRanges() {
         // Adjusted to include the full block that contains byte 0 and the full block after byte 15, given block size of 16

@@ -7,6 +7,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,9 +19,14 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.TESTVECTORS_KMS_KEY;
 
 public class S3EncryptionClientTestVectorsTest {
+    //= specification/s3-encryption/data-format/metadata-strategy.md#object-metadata
+    //= type=test
+    //# The S3EC SHOULD support decoding the S3 Server's "double encoding".
     @Test
     public void decryptUnicodeTestVectors() {
-        S3Client s3EncryptionClient = S3EncryptionClient.builder()
+        S3Client s3EncryptionClient = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .kmsKeyId(TESTVECTORS_KMS_KEY)
                 .region(Region.of("us-west-2"))
                 .build();

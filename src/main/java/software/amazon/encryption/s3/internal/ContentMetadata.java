@@ -28,9 +28,11 @@ public class ContentMetadata {
     private final MaterialsDescription _materialsDescription;
 
     private final byte[] _contentIv;
+    private final byte[] _contentMessageId;
     private final String _contentCipher;
     private final String _contentCipherTagLength;
     private final String _contentRange;
+    private final byte[] _keyCommitment;
 
     private ContentMetadata(Builder builder) {
         _algorithmSuite = builder._algorithmSuite;
@@ -41,9 +43,11 @@ public class ContentMetadata {
         _materialsDescription = builder._materialsDescription;
 
         _contentIv = builder._contentIv;
+        _contentMessageId = builder._contentMessageId;
         _contentCipher = builder._contentCipher;
         _contentCipherTagLength = builder._contentCipherTagLength;
         _contentRange = builder._contentRange;
+        _keyCommitment = builder._keyCommitment;
     }
 
     public static Builder builder() {
@@ -68,13 +72,14 @@ public class ContentMetadata {
      * immutable.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "False positive; underlying"
-        + " implementation is immutable")
+            + " implementation is immutable")
     public Map<String, String> encryptionContext() {
         return _encryptionContext;
     }
 
     /**
      * Returns the materials description used for RSA and AES keyrings.
+     *
      * @return the materials description
      */
     public MaterialsDescription materialsDescription() {
@@ -86,6 +91,13 @@ public class ContentMetadata {
             return null;
         }
         return _contentIv.clone();
+    }
+
+    public byte[] contentMessageId() {
+        if (_contentMessageId == null) {
+            return null;
+        }
+        return _contentMessageId.clone();
     }
 
     public String contentCipher() {
@@ -100,6 +112,10 @@ public class ContentMetadata {
         return _contentRange;
     }
 
+    public byte[] keyCommitment() {
+        return _keyCommitment != null ? _keyCommitment.clone() : null;
+    }
+
     public static class Builder {
         private AlgorithmSuite _algorithmSuite;
 
@@ -109,9 +125,11 @@ public class ContentMetadata {
         private MaterialsDescription _materialsDescription = MaterialsDescription.builder().build();
 
         private byte[] _contentIv;
+        private byte[] _contentMessageId;
         private String _contentCipher;
         private String _contentCipherTagLength;
         public String _contentRange;
+        private byte[] _keyCommitment;
 
         private Builder() {
 
@@ -149,8 +167,18 @@ public class ContentMetadata {
             return this;
         }
 
+        public Builder contentMessageId(byte[] contentMessageId) {
+            _contentMessageId = contentMessageId.clone();
+            return this;
+        }
+
         public Builder contentRange(String contentRange) {
             _contentRange = contentRange;
+            return this;
+        }
+
+        public Builder keyCommitment(byte[] keyCommitment) {
+            _keyCommitment = keyCommitment;
             return this;
         }
 

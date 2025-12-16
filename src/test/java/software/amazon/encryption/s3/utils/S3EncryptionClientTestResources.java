@@ -41,6 +41,10 @@ public class S3EncryptionClientTestResources {
     public static final String TESTVECTORS_BUCKET = Optional.ofNullable(System.getenv("AWS_S3EC_TEST_TESTVECTORS_BUCKET")).orElse("s3ec-github-test-bucket-testvectors");
     // Test Vector KMS key
     public static final String TESTVECTORS_KMS_KEY = Optional.ofNullable(System.getenv("AWS_S3EC_TEST_TESTVECTORS_KMS_KEY_ARN")).orElse("41689b41-3fb1-42bd-92e9-b6bded3e3491");
+    // Test Server bucket
+    public static final String TEST_SERVER_BUCKET = Optional.ofNullable(System.getenv("AWS_S3EC_TEST_SERVER_BUCKET")).orElse("s3ec-test-server-github-bucket");
+    // Test Server KMS key
+    public static final String TEST_SERVER_KMS_KEY = Optional.ofNullable(System.getenv("AWS_S3EC_TEST_SERVER_KMS_KEY_ARN")).orElse("arn:aws:kms:us-west-2:370957321024:alias/S3EC-Test-Server-Github-KMS-Key");
 
     /**
      * Creds provider for the "alternate" role which is useful for testing cred configuration

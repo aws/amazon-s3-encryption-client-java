@@ -11,6 +11,10 @@ import javax.crypto.SecretKey;
 import java.security.Provider;
 import java.util.Map;
 
+/**
+ * Base interface for cryptographic materials containing common fields needed for encryption and decryption operations.
+ * Materials include algorithm suite, data key, encryption context, and other cryptographic components.
+ */
 public interface CryptographicMaterials {
     AlgorithmSuite algorithmSuite();
 

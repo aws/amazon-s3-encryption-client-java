@@ -2,6 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
+import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.crypto.Cipher;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -24,25 +38,11 @@ import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.EncryptionMaterials;
 import software.amazon.encryption.s3.materials.EncryptionMaterialsRequest;
 
-import javax.crypto.Cipher;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
-
 public class MultipartUploadObjectPipeline {
     final private S3AsyncClient _s3AsyncClient;
     final private CryptographicMaterialsManager _cryptoMaterialsManager;
     final private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
     final private ContentMetadataEncodingStrategy _contentMetadataEncodingStrategy;
-    final private InstructionFileConfig _instructionFileConfig;
     /**
      * Map of data about in progress encrypted multipart uploads.
      */
@@ -54,7 +54,6 @@ public class MultipartUploadObjectPipeline {
         this._contentEncryptionStrategy = builder._contentEncryptionStrategy;
         this._contentMetadataEncodingStrategy = builder._contentMetadataEncodingStrategy;
         this._multipartUploadMaterials = builder._multipartUploadMaterials;
-        this._instructionFileConfig = builder._instructionFileConfig;
     }
 
     public static Builder builder() {
@@ -68,14 +67,18 @@ public class MultipartUploadObjectPipeline {
         EncryptionMaterials materials = _cryptoMaterialsManager.getEncryptionMaterials(requestBuilder.build());
 
         MultipartEncryptedContent encryptedContent = _contentEncryptionStrategy.initMultipartEncryption(materials);
+        if (materials == null) {
+            throw new S3EncryptionClientException("Encryption materials cannot be null during multipart initialization. " +
+                    "This may be caused by a misconfigured custom CMM implementation, or " +
+                    "a suppressed exception from CMM invocation due to a network failure.");
+        }
 
-        CreateMultipartUploadRequest createMpuRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.getIv(), request);
+        CreateMultipartUploadRequest createMpuRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, encryptedContent.iv(), request);
         request = createMpuRequest.toBuilder()
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
 
         //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=implication
         //# - If implemented, CreateMultipartUpload MUST initiate a multipart upload.
         CreateMultipartUploadResponse response = _s3AsyncClient.createMultipartUpload(request).join();
 
@@ -137,11 +140,9 @@ public class MultipartUploadObjectPipeline {
         }
         final UploadPartResponse response;
         //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=implication
         //# - Each part MUST be encrypted in sequence.
         materials.beginPartUpload(actualRequest.partNumber(), partContentLength);
         //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=implication
         //# - Each part MUST be encrypted using the same cipher instance for each part.
         Cipher cipher = materials.getCipher(materials.getIv());
 
@@ -149,7 +150,6 @@ public class MultipartUploadObjectPipeline {
 
         try {
             //= specification/s3-encryption/client.md#optional-api-operations
-            //= type=implication
             //# - UploadPart MUST encrypt each part.
             final AsyncRequestBody cipherAsyncRequestBody = new CipherAsyncRequestBody(
                 AsyncRequestBody.fromInputStream(
@@ -157,7 +157,7 @@ public class MultipartUploadObjectPipeline {
                     partContentLength, // this MUST be the original contentLength; it refers to the plaintext stream
                     singleThreadExecutor
                 ),
-                ciphertextLength, materials, cipher.getIV(), isLastPart
+                ciphertextLength, materials, cipher.getIV(), null, isLastPart
             );
 
             // Ensure we haven't already seen the last part
@@ -199,7 +199,6 @@ public class MultipartUploadObjectPipeline {
                 .build();
 
         //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=implication
         //# - CompleteMultipartUpload MUST complete the multipart upload.
         CompleteMultipartUploadResponse response = _s3AsyncClient.completeMultipartUpload(actualRequest).join();
 
@@ -213,7 +212,6 @@ public class MultipartUploadObjectPipeline {
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .build();
         //= specification/s3-encryption/client.md#optional-api-operations
-        //= type=implication
         //# - AbortMultipartUpload MUST abort the multipart upload.
         return _s3AsyncClient.abortMultipartUpload(actualRequest).join();
     }
@@ -242,6 +240,7 @@ public class MultipartUploadObjectPipeline {
         // To Create Cipher which is used in during uploadPart requests.
         private MultipartContentEncryptionStrategy _contentEncryptionStrategy;
         private InstructionFileConfig _instructionFileConfig;
+        private AlgorithmSuite _encryptionAlgorithm;
 
         private Builder() {
         }

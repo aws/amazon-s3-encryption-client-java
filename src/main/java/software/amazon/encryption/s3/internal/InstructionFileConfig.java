@@ -1,5 +1,11 @@
 package software.amazon.encryption.s3.internal;
 
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
+import static software.amazon.encryption.s3.internal.MetadataKeyConstants.INSTRUCTION_FILE;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -11,13 +17,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
-
-import java.util.HashMap;
-import java.util.Map;
-
-
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
-import static software.amazon.encryption.s3.internal.MetadataKeyConstants.INSTRUCTION_FILE;
 
 /**
  * Provides configuration options for instruction file behaviors.
@@ -115,7 +114,9 @@ public class InstructionFileConfig {
         private boolean _disableInstructionFile;
         private S3AsyncClient _s3AsyncClient;
         private S3Client _s3Client;
-        private boolean _enableInstructionFilePut;
+        //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+        //# Instruction File writes MUST NOT be enabled by default.
+        private boolean _enableInstructionFilePut = false;
 
         /**
          * When set to true, the S3 Encryption Client will not attempt to get instruction files.
@@ -127,6 +128,13 @@ public class InstructionFileConfig {
             return this;
         }
 
+        //= specification/s3-encryption/data-format/metadata-strategy.md#instruction-file
+        //# Instruction File writes MUST be optionally configured during client creation or on each PutObject request.
+        /**
+         * When set to true, the S3 Encryption Client will write content metadata to an Instruction File.
+         * @param enableInstructionFilePutObject
+         * @return
+         */
         public Builder enableInstructionFilePutObject(boolean enableInstructionFilePutObject) {
             _enableInstructionFilePut = enableInstructionFilePutObject;
             return this;

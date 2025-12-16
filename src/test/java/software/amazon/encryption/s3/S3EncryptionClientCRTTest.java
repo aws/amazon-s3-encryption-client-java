@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 
 import javax.crypto.KeyGenerator;
@@ -72,8 +73,10 @@ public class S3EncryptionClientCRTTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // Async Client
-        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builderV4()
                 .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .enableLegacyUnauthenticatedModes(true)
                 .wrappedClient(S3AsyncClient.crtCreate())
                 .build();
@@ -137,7 +140,9 @@ public class S3EncryptionClientCRTTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // V3 Client
-        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .build();
@@ -180,8 +185,10 @@ public class S3EncryptionClientCRTTest {
         v1Client.putObject(BUCKET, objectKey, input);
 
         // V3 Client
-        S3AsyncClient v3Client = S3AsyncEncryptionClient.builder()
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builderV4()
                 .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedClient(S3AsyncClient.crtCreate())
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
@@ -190,7 +197,7 @@ public class S3EncryptionClientCRTTest {
         // Valid Range
         ResponseBytes<GetObjectResponse> objectResponse;
 
-        objectResponse = v3Client.getObject(builder -> builder
+        objectResponse = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=10-20")
                 .key(objectKey), AsyncResponseTransformer.toBytes()).join();
@@ -199,7 +206,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals("klmnopqrst0", output);
 
         // Valid start index within input and end index out of range, returns object from start index to End of Stream
-        objectResponse = v3Client.getObject(builder -> builder
+        objectResponse = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=190-300")
                 .key(objectKey), AsyncResponseTransformer.toBytes()).join();
@@ -207,7 +214,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals("KLMNOPQRST", output);
 
         // Invalid range start index range greater than ending index, returns entire object
-        objectResponse = v3Client.getObject(builder -> builder
+        objectResponse = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=100-50")
                 .key(objectKey), AsyncResponseTransformer.toBytes()).join();
@@ -215,7 +222,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals(input, output);
 
         // Invalid range format, returns entire object
-        objectResponse = v3Client.getObject(builder -> builder
+        objectResponse = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .range("10-20")
                 .key(objectKey), AsyncResponseTransformer.toBytes()).join();
@@ -223,7 +230,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals(input, output);
 
         // Invalid range starting index and ending index greater than object length but within Cipher Block size, returns empty object
-        objectResponse = v3Client.getObject(builder -> builder
+        objectResponse = s3Client.getObject(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=216-217")
                 .key(objectKey), AsyncResponseTransformer.toBytes()).join();
@@ -231,8 +238,8 @@ public class S3EncryptionClientCRTTest {
         assertEquals("", output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
 
@@ -246,25 +253,27 @@ public class S3EncryptionClientCRTTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .build();
 
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
         // Asserts
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .key(objectKey)
                 .range("bytes=10-20")));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -278,18 +287,22 @@ public class S3EncryptionClientCRTTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedAsyncClient(S3AsyncClient.crtCreate())
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
         // Valid Range
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=10-20")
                 .key(objectKey));
@@ -297,7 +310,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals("klmnopqrst0", output);
 
         // Valid start index within input and end index out of range, returns object from start index to End of Stream
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=190-300")
                 .key(objectKey));
@@ -305,7 +318,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals("KLMNOPQRST", output);
 
         // Invalid range start index range greater than ending index, returns entire object
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=100-50")
                 .key(objectKey));
@@ -313,7 +326,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals(input, output);
 
         // Invalid range format, returns entire object
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("10-20")
                 .key(objectKey));
@@ -321,7 +334,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals(input, output);
 
         // Invalid range starting index and ending index greater than object length but within Cipher Block size, returns empty object
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=216-217")
                 .key(objectKey));
@@ -329,8 +342,8 @@ public class S3EncryptionClientCRTTest {
         assertEquals("", output);
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -344,26 +357,28 @@ public class S3EncryptionClientCRTTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
-        v3Client.putObject(PutObjectRequest.builder()
+        s3Client.putObject(PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(objectKey)
                 .build(), RequestBody.fromString(input));
 
         // Invalid range exceed object length, Throws S3EncryptionClientException wrapped with S3Exception
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=300-400")
                 .key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -377,7 +392,9 @@ public class S3EncryptionClientCRTTest {
                 "4bcdefghijklmnopqrst4BCDEFGHIJKLMNOPQRST";
 
         // Async Client
-        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedClient(S3AsyncClient.crtCreate())
                 .aesKey(AES_KEY)
                 .enableLegacyUnauthenticatedModes(true)
@@ -425,15 +442,19 @@ public class S3EncryptionClientCRTTest {
         v1Client.putObject(BUCKET, objectKey, input);
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedAsyncClient(S3AsyncClient.crtCreate())
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .build();
 
         // Valid Range
-        ResponseBytes<GetObjectResponse> objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        ResponseBytes<GetObjectResponse> objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=10-20")
                 .key(objectKey));
@@ -441,7 +462,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals("klmnopqrst0", output);
 
         // Valid start index within input and end index out of range, returns object from start index to End of Stream
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=190-300")
                 .key(objectKey));
@@ -449,7 +470,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals("KLMNOPQRST", output);
 
         // Invalid range start index range greater than ending index, returns entire object
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=100-50")
                 .key(objectKey));
@@ -457,7 +478,7 @@ public class S3EncryptionClientCRTTest {
         assertEquals(input, output);
 
         // Invalid range format, returns entire object
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("10-20")
                 .key(objectKey));
@@ -466,7 +487,7 @@ public class S3EncryptionClientCRTTest {
 
         // Invalid range starting index and ending index greater than object length
         // but within Cipher Block size, returns empty object
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=216-217")
                 .key(objectKey));
@@ -475,7 +496,7 @@ public class S3EncryptionClientCRTTest {
 
         // Invalid range starting index and ending index greater than object length
         // but within Cipher Block size, returns empty object
-        objectResponse = v3Client.getObjectAsBytes(builder -> builder
+        objectResponse = s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=216-218")
                 .key(objectKey));
@@ -484,8 +505,8 @@ public class S3EncryptionClientCRTTest {
 
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -511,22 +532,26 @@ public class S3EncryptionClientCRTTest {
         v1Client.putObject(BUCKET, objectKey, input);
 
         // V3 Client
-        S3Client v3Client = S3EncryptionClient.builder()
+        S3Client s3Client = S3EncryptionClient.builderV4()
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .enableLegacyWrappingAlgorithms(true)
                 .enableLegacyUnauthenticatedModes(true)
                 .wrappedAsyncClient(S3AsyncClient.crtCreate())
                 .build();
 
         // Invalid range exceed object length, Throws S3EncryptionClientException wrapped with S3Exception
-        assertThrows(S3EncryptionClientException.class, () -> v3Client.getObjectAsBytes(builder -> builder
+        assertThrows(S3EncryptionClientException.class, () -> s3Client.getObjectAsBytes(builder -> builder
                 .bucket(BUCKET)
                 .range("bytes=300-400")
                 .key(objectKey)));
 
         // Cleanup
-        deleteObject(BUCKET, objectKey, v3Client);
-        v3Client.close();
+        deleteObject(BUCKET, objectKey, s3Client);
+        s3Client.close();
     }
 
     @Test
@@ -538,8 +563,10 @@ public class S3EncryptionClientCRTTest {
         final InputStream objectStreamForResult = new BoundedInputStream(fileSizeLimit);
 
         // Async CRT Client
-        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builder()
+        S3AsyncClient asyncClient = S3AsyncEncryptionClient.builderV4()
                 .aesKey(AES_KEY)
+                .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
+                .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF)
                 .wrappedClient(S3AsyncClient.crtCreate())
                 .enableDelayedAuthenticationMode(true)
                 .cryptoProvider(PROVIDER)

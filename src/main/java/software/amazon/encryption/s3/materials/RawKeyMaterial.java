@@ -22,7 +22,7 @@ public class RawKeyMaterial<T> {
      * Protected constructor for subclasses.
      *
      * @param materialsDescription the materials description
-     * @param keyMaterial the key material
+     * @param keyMaterial          the key material
      */
     protected RawKeyMaterial(MaterialsDescription materialsDescription, T keyMaterial) {
         this._materialsDescription = materialsDescription;

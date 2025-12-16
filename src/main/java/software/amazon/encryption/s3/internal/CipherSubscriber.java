@@ -2,17 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-import software.amazon.awssdk.utils.BinaryUtils;
-import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
-import software.amazon.encryption.s3.materials.CryptographicMaterials;
-
-import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.crypto.Cipher;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import software.amazon.awssdk.utils.BinaryUtils;
+import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
+import software.amazon.encryption.s3.materials.CryptographicMaterials;
 
 public class CipherSubscriber implements Subscriber<ByteBuffer> {
     private final AtomicLong contentRead = new AtomicLong(0);
@@ -26,7 +28,7 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
 
     private byte[] outputBuffer;
 
-    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, boolean isLastPart) {
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, byte[] messageId, boolean isLastPart) {
         this.wrappedSubscriber = wrappedSubscriber;
         this.contentLength = contentLength;
         this.cipher = materials.getCipher(iv);
@@ -35,9 +37,9 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         this.isEncrypt = (CipherMode.DECRYPT != materials.cipherMode());
     }
 
-    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv) {
+    CipherSubscriber(Subscriber<? super ByteBuffer> wrappedSubscriber, Long contentLength, CryptographicMaterials materials, byte[] iv, byte[] messageId) {
         // When no partType is specified, it's not multipart, so there's one part, which must be the last
-        this(wrappedSubscriber, contentLength, materials, iv, true);
+        this(wrappedSubscriber, contentLength, materials, iv, messageId, true);
     }
 
     @Override
@@ -159,6 +161,12 @@ public class CipherSubscriber implements Subscriber<ByteBuffer> {
         // The result of doFinal MUST be included with the bytes that were in outputBuffer in the final onNext call.
         byte[] finalBytes;
         try {
+            //= specification/s3-encryption/encryption.md#alg-aes-256-gcm-hkdf-sha512-commit-key
+            //= type=implication
+            //# The client MUST append the GCM auth tag to the ciphertext if the underlying crypto provider does not do so automatically.
+            //= specification/s3-encryption/encryption.md#alg-aes-256-gcm-iv12-tag16-no-kdf
+            //= type=implication
+            //# The client MUST append the GCM auth tag to the ciphertext if the underlying crypto provider does not do so automatically.
             finalBytes = cipher.doFinal();
         } catch (final GeneralSecurityException exception) {
             // Even if doFinal fails, downstream still expects to receive the bytes that were in outputBuffer

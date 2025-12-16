@@ -17,6 +17,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Contains the cryptographic materials needed for an encryption operation.
+ *
+ * @see CryptographicMaterialsManager#getEncryptionMaterials(EncryptionMaterialsRequest)
+ */
 final public class EncryptionMaterials implements CryptographicMaterials {
 
     // Original request
@@ -107,6 +112,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
     public MaterialsDescription materialsDescription() {
         return _materialsDescription;
     }
+
     @Override
     public CipherMode cipherMode() {
         return CipherMode.ENCRYPT;
@@ -114,7 +120,7 @@ final public class EncryptionMaterials implements CryptographicMaterials {
 
     @Override
     public Cipher getCipher(byte[] iv) {
-        return CipherProvider.createAndInitCipher(this, iv);
+        return CipherProvider.createAndInitCipher(this, iv, null);
     }
 
     public Builder toBuilder() {
