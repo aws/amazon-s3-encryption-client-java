@@ -1,5 +1,36 @@
 # Changelog
 
+## [4.0.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.6.0...v4.0.0) (2025-12-17)
+
+### ⚠ BREAKING CHANGES
+
+* The S3 Encryption Client now requires key committing algorithm suites by default.
+See migration guide from 3.x to 4.x: [link](https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/java-v4-migration.html)
+
+* `builder()` method has been removed; use `builderV4()` instead
+* `builderV4()` now defaults to `commitmentPolicy` (REQUIRE_ENCRYPT_REQUIRE_DECRYPT) and `encryptionAlgorithm` (ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
+
+* Updated expectations for custom implementations of the `CryptographicMaterialsManager` interface.
+  * Custom implementations of the interface's `getEncryptionMaterials` method MUST set the `AlgorithmSuite` field on the returned `EncryptionMaterials`.
+    * The provided `DefaultCryptoMaterialsManager`'s `getEncryptionMaterials` method sets this field from the `AlgorithmSuite` provided in the `EncryptionMaterialsRequest`.
+    * If the custom implementation wraps the provided `DefaultCryptoMaterialsManager.getEncryptionMaterials` method, it's likely that no code updates are required. The provided logic has been updated with this change.
+  * Custom implementations of the interface's `decryptMaterials` method MUST set the `KeyCommitment` field on the returned `DecryptionMaterials`.
+    * The provided `DefaultCryptoMaterialsManager`'s `decryptMaterials` method sets this field from the `KeyCommitment` provided in the `DecryptMaterialsRequest`.
+    * If the custom implementation wraps the provided `DefaultCryptoMaterialsManager.decryptMaterials` method, it's likely that no code updates are required. The provided logic has been updated with this change.
+
+* Updated expectations for custom implementations of the `Keyring` interface.
+  * Custom implementations of the interface's `onDecrypt` method MUST preserve the `KeyCommitment` field on the returned `DecryptionMaterials`.
+    * The provided `S3Keyring`'s `onDecrypt` method (base class for all keyrings including `KmsKeyring`) preserves this field through the builder pattern when returning updated materials.
+    * If the custom implementation wraps the provided `S3Keyring.onDecrypt` method or uses the builder pattern to return materials, it's likely that no code updates are required. The provided logic has been updated with this change.
+
+### Features
+
+* Updates to the S3 Encryption Client ([#491](https://github.com/aws/aws-s3-encryption-client-java/issues/491)) ([9d4523e](https://github.com/aws/aws-s3-encryption-client-java/commit/9d4523edbbc249781b3b3b3f8868fad39c5673d5))
+
+### Maintenance
+
+* update releaserc ([#492](https://github.com/aws/aws-s3-encryption-client-java/issues/492)) ([d423d8d](https://github.com/aws/aws-s3-encryption-client-java/commit/d423d8d0f500c6fcc7adb703a1626d6e7d4c2e3d))
+
 ## [3.6.0](https://github.com/aws/amazon-s3-encryption-client-java/compare/v3.5.0...v3.6.0) (2025-12-16)
 
 ### Features

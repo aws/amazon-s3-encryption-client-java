@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ApiNameVersionTest {
 
     private final static String EXPECTED_API_NAME = "AmazonS3Encrypt";
-    private final static String EXPECTED_API_MAJOR_VERSION = "3";
+    private final static String EXPECTED_API_MAJOR_VERSION = "4";
 
     @Test
     public void testApiNameWithVersion() {

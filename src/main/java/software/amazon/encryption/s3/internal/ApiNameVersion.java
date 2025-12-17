@@ -22,7 +22,7 @@ public class ApiNameVersion {
             builder -> builder.addApiName(API_NAME);
 
     public static final String NAME = "AmazonS3Encrypt";
-    public static final String API_VERSION_UNKNOWN = "3-unknown";
+    public static final String API_VERSION_UNKNOWN = "4-unknown";
 
     public static ApiName apiNameWithVersion() {
         return ApiName.builder()
