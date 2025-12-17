@@ -1,6 +1,6 @@
 # S3 Encryption Client v3 to v4 Migration Examples
 
-> **Note:** This directory contains migration-specific examples for users upgrading from v3 to v4. If you're starting fresh with the S3 Encryption Client, see the [code examples](../../../src/examples/java/software/amazon/encryption/s3/examples).
+> **Note:** This directory contains migration-specific examples for users upgrading from v3 to v4. If you're starting fresh with the S3 Encryption Client, see the [code examples](../../src/examples/java/software/amazon/encryption/s3/examples).
 
 This directory contains examples demonstrating the migration path from S3 Encryption Client v3 to v4, focusing on different commitment policy configurations. For more information, refer to the <a href="https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/java-v4-migration.html">Developer Guide</a>.
 
