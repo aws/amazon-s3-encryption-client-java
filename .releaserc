@@ -62,7 +62,6 @@
     [
       "@semantic-release/exec",
       {
-        "verifyReleaseCmd": "bash ./release-prepare.sh ${nextRelease.version}",
         "prepareCmd": "bash ./release-prepare.sh ${nextRelease.version}"
       }
     ],
