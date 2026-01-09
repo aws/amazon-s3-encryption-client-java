@@ -65,10 +65,12 @@ public class InstructionFileConfig {
         instFileMetadata.put(INSTRUCTION_FILE, "");
 
         // Use toBuilder to keep all other fields the same as the actual request
+        // but set the content length, key, and metadata appropriately for the instruction file
         final PutObjectRequest instPutRequest = request.toBuilder()
-          .key(request.key() + instructionFileSuffix)
-          .metadata(instFileMetadata)
-          .build();
+            .key(request.key() + instructionFileSuffix)
+            .contentLength((long) instructionFileContent.getBytes().length)
+            .metadata(instFileMetadata)
+            .build();
         switch (_clientType) {
             case SYNCHRONOUS:
                 return _s3Client.putObject(instPutRequest, RequestBody.fromString(instructionFileContent));
