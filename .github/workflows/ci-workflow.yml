@@ -1,5 +1,8 @@
 name: Continuous Integration Workflow
 
+permissions:
+  contents: read
+
 on:
   pull_request:
   push:
