@@ -1,4 +1,6 @@
 name: Issue Created Notification
+permissions:
+  contents: read
 on:
   issues:
     types: [opened, reopened]
