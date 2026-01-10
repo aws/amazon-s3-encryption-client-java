@@ -1,5 +1,9 @@
 name: Continuous Integration Workflow
 
+permissions:
+  contents: read
+  id-token: write
+
 on:
   pull_request:
   push:
@@ -29,3 +33,17 @@ jobs:
     with:
       version: 17
       distribution: corretto
+  
+  notify:
+    needs:
+      [
+        Static_Analysis,
+        Build,
+        Examples,
+      ]
+    if: ${{ failure() && github.event_name == 'schedule' }}
+    uses: aws/aws-cryptographic-material-providers-library/.github/workflows/slack-notification.yml@main
+    with:
+      message: "Daily CI failed on `${{ github.repository }}`. View run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_CI }}
