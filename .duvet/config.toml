@@ -1,0 +1,21 @@
+'$schema' = "https://awslabs.github.io/duvet/config/v0.4.0.json"
+
+[[source]]
+pattern = "src/**/*.java"
+
+# Include required specifications here
+[[specification]]
+source = "specification/s3-encryption/client.md"
+[[specification]]
+source = "specification/s3-encryption/materials/keyrings.md"
+[[specification]]
+source = "specification/s3-encryption/materials/s3-keyring.md"
+[[specification]]
+source = "specification/s3-encryption/materials/s3-kms-keyring.md"
+
+[report.html]
+enabled = true
+
+# Enable snapshots to prevent requirement coverage regressions
+[report.snapshot]
+enabled = false
