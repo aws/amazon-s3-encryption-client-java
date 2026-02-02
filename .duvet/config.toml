@@ -7,11 +7,17 @@ pattern = "src/**/*.java"
 [[specification]]
 source = "specification/s3-encryption/client.md"
 [[specification]]
-source = "specification/s3-encryption/materials/keyrings.md"
+source = "specification/s3-encryption/decryption.md"
 [[specification]]
-source = "specification/s3-encryption/materials/s3-keyring.md"
+source = "specification/s3-encryption/encryption.md"
 [[specification]]
-source = "specification/s3-encryption/materials/s3-kms-keyring.md"
+source = "specification/s3-encryption/key-commitment.md"
+[[specification]]
+source = "specification/s3-encryption/key-derivation.md"
+[[specification]]
+source = "specification/s3-encryption/data-format/content-metadata.md"
+[[specification]]
+source = "specification/s3-encryption/data-format/metadata-strategy.md"
 
 [report.html]
 enabled = true
