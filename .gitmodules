@@ -1,4 +1,4 @@
 [submodule "private_aws"]
 	path = specification
 	url = git@github.com:awslabs/private-aws-encryption-sdk-specification-staging.git
-	branch = tonyknap/todo-cbc-encryption
+	branch = tonyknap/v4.0.1-candidate
