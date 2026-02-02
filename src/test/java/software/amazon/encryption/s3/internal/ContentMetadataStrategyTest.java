@@ -63,9 +63,6 @@ public class ContentMetadataStrategyTest {
 
     @Test
     public void testDetectV1Format() {
-        //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-        //= type=test
-        //# - If the metadata contains "x-amz-iv" and "x-amz-key" then the object MUST be considered as an S3EC-encrypted object using the V1 format.
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-iv", "dGVzdC1pdi0xMi1i"); // base64 of "test-iv-12-b"
         metadata.put("x-amz-key", "ZW5jcnlwdGVkLWtleS1kYXRh"); // base64 of "encrypted-key-data"
@@ -447,9 +444,6 @@ public class ContentMetadataStrategyTest {
                 .metadata(metadata)
                 .build();
 
-        //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-        //= type=test
-        //# If there are multiple mapkeys which are meant to be exclusive, such as "x-amz-key", "x-amz-key-v2", and "x-amz-3" then the S3EC SHOULD throw an exception.
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () -> decodingStrategy.decode(getObjectRequest, response));
         assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata to decrypt the object are missing"));
     }
@@ -515,9 +509,7 @@ public class ContentMetadataStrategyTest {
         //= type=test
         //# - The mapkey "x-amz-cek-alg" MUST be present for V2 format objects.
         v2Metadata.put("x-amz-cek-alg", "AES/GCM/NoPadding");
-        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
-        //= type=test
-        //# - The mapkey "x-amz-tag-len" MUST be present for V2 format objects.
+
         v2Metadata.put("x-amz-tag-len", "128");
 
         Map<String, String> v2CbcMetadata = new HashMap<>();
@@ -541,9 +533,7 @@ public class ContentMetadataStrategyTest {
         //= type=test
         //# - The mapkey "x-amz-cek-alg" MUST be present for V2 format objects.
         v2CbcMetadata.put("x-amz-cek-alg", "AES/CBC/PKCS5Padding");
-        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
-        //= type=test
-        //# - The mapkey "x-amz-tag-len" MUST be present for V2 format objects.
+
         v2CbcMetadata.put("x-amz-tag-len", "128");
 
 
@@ -573,30 +563,19 @@ public class ContentMetadataStrategyTest {
                 //= specification/s3-encryption/data-format/content-metadata.md#algorithm-suite-and-message-format-version-compatibility
                 //= type=test
                 //# Objects encrypted with ALG_AES_256_CBC_IV16_NO_KDF MAY use either the V1 or V2 message format version.
-                //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-                //= type=test
-                //# - If the metadata contains "x-amz-iv" and "x-amz-key" then the object MUST be considered as an S3EC-encrypted object using the V1 format.
+
                 Arguments.of(v1Metadata, "V1", AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF),
                 //= specification/s3-encryption/data-format/content-metadata.md#algorithm-suite-and-message-format-version-compatibility
                 //= type=test
                 //# Objects encrypted with ALG_AES_256_CBC_IV16_NO_KDF MAY use either the V1 or V2 message format version.
-                //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-                //= type=test
-                //# - If the metadata contains "x-amz-iv" and "x-amz-metadata-x-amz-key-v2" then the object MUST be considered as an S3EC-encrypted object using the V2 format.
                 Arguments.of(v2CbcMetadata, "V2", AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF),
                 //= specification/s3-encryption/data-format/content-metadata.md#algorithm-suite-and-message-format-version-compatibility
                 //= type=test
                 //# Objects encrypted with ALG_AES_256_GCM_IV12_TAG16_NO_KDF MUST use the V2 message format version only.
-                //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-                //= type=test
-                //# - If the metadata contains "x-amz-iv" and "x-amz-metadata-x-amz-key-v2" then the object MUST be considered as an S3EC-encrypted object using the V2 format.
                 Arguments.of(v2Metadata, "V2", AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF),
                 //= specification/s3-encryption/data-format/content-metadata.md#algorithm-suite-and-message-format-version-compatibility
                 //= type=test
                 //# Objects encrypted with ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY MUST use the V3 message format version only.
-                //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-                //= type=test
-                //# - If the metadata contains "x-amz-3" and "x-amz-d" and "x-amz-i" then the object MUST be considered an S3EC-encrypted object using the V3 format.
                 Arguments.of(v3Metadata, "V3", AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY)
         );
     }
