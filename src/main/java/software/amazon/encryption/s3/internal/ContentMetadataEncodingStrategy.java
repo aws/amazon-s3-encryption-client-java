@@ -9,6 +9,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -178,21 +179,32 @@ public class ContentMetadataEncodingStrategy {
         }
         return metadata;
     }
+
     private Map<String, String> addMetadataToMap(Map<String, String> map, EncryptionMaterials materials, byte[] iv) {
         if (materials.algorithmSuite().isCommitting()) {
             return addMetadataToMapV3(map, materials, iv);
         }
+        return addMetadataToMapV2(map, materials, iv);
+    }
+
+    @NonNull
+    private Map<String, String> addMetadataToMapV2(Map<String, String> map, EncryptionMaterials materials, byte[] iv) {
         Map<String, String> metadata = new HashMap<>(map);
         EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
         metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
         metadata.put(MetadataKeyConstants.CONTENT_IV, ENCODER.encodeToString(iv));
         metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
+        // When the object is encrypted using the V2 format:
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //# - The mapkey "x-amz-tag-len" MAY be present for V2 format objects.
         //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
         //# - If the object is encrypted using AES-GCM for content encryption, then the the mapkey "x-amz-tag-len" MUST be present.
         //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
         //# - If the object is encrypted using AES-CBC for content encryption, then the the mapkey "x-amz-tag-len" MUST NOT be present.
         if (materials.algorithmSuite().cipherName().contains("GCM")) {
             metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
+        } else {
+            throw new S3EncryptionClientException("Only AES-GCM encryption is supported for encryption. AES-CBC is deprecated.");
         }
         metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, edk.keyProviderInfo());
 
@@ -213,6 +225,9 @@ public class ContentMetadataEncodingStrategy {
         } catch (JsonWriter.JsonGenerationException e) {
             throw new S3EncryptionClientException("Cannot serialize encryption context to JSON.", e);
         }
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //= type=exception
+        //# - The mapkey "x-amz-unencrypted-content-length" MAY be present for V2 format objects.
         return metadata;
     }
 }

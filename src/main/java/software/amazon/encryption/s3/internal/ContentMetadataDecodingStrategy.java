@@ -255,9 +255,19 @@ public class ContentMetadataDecodingStrategy {
                 //# Objects encrypted with ALG_AES_256_CBC_IV16_NO_KDF MAY use either the V1 or V2 message format version.
                 if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)) {
                     //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+                    //# - Mapkeys exclusive to other format versions MUST NOT be present.
+                    if (isV2InObjectMetadata(metadata) || isV3InObjectMetadata(metadata)) {
+                        throw new S3EncryptionClientException("Object metadata is tampered, conflicting keys are present.");
+                    }
+                    //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
                     //# - The mapkey "x-amz-key" MUST be present for V1 format objects.
                     edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1));
                 } else if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)) {
+                    //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+                    //# - If a mapkey exclusive to one or more other format versions is present, the S3EC SHOULD throw an exception.
+                    if (isV1InObjectMetadata(metadata) || isV3InObjectMetadata(metadata)) {
+                        throw new S3EncryptionClientException("Object metadata is tampered, conflicting keys are present.");
+                    }
                     //= specification/s3-encryption/data-format/content-metadata.md#algorithm-suite-and-message-format-version-compatibility
                     //# Objects encrypted with ALG_AES_256_CBC_IV16_NO_KDF MAY use either the V1 or V2 message format version.
                     //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
@@ -300,7 +310,6 @@ public class ContentMetadataDecodingStrategy {
                 break;
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
             case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
-
                 final int tagLength = Integer.parseInt(metadata.get(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH));
                 if (tagLength != algorithmSuite.cipherTagLengthBits()) {
                     throw new S3EncryptionClientException("Expected tag length (bits) of: "
@@ -520,11 +529,9 @@ public class ContentMetadataDecodingStrategy {
 
     public ContentMetadata decode(GetObjectRequest request, GetObjectResponse response) {
         Map<String, String> objectMetadata = response.metadata();
-
-        //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-        //# If there are multiple mapkeys which are meant to be exclusive to different versions, such as "x-amz-key", "x-amz-key-v2", and "x-amz-3" then the S3EC SHOULD throw an exception.
-
         if (objectMetadata != null) {
+            //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
+            //# If there are multiple mapkeys which are meant to be exclusive to different versions, such as "x-amz-key", "x-amz-key-v2", and "x-amz-3" then the S3EC SHOULD throw an exception.
             if (MetadataKeyConstants.hasExclusiveKeyCollision(objectMetadata)) {
                 throw new S3EncryptionClientException("Content metadata is tampered, required metadata combination is illegal.");
             }
