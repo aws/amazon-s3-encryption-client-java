@@ -193,6 +193,10 @@ public class CipherProvider {
                     if (materials.cipherMode().opMode() == Cipher.ENCRYPT_MODE) {
                         throw new S3EncryptionClientException("Encryption is not supported for algorithm: " + materials.algorithmSuite().cipherName());
                     }
+                    //= specification/s3-encryption/decryption.md#cbc-decryption
+                    //# If an object is encrypted with ALG_AES_256_CBC_IV16_NO_KDF and [legacy unauthenticated algorithm suites](#legacy-decryption) is enabled,
+                    //# then the S3EC MUST create a cipher object using the cipher transformation "AES/CBC/PKCS5Padding".
+                    // NOTE: PKCS5Padding is specified above in CryptoFactory.createCipher(materials.algorithmSuite().cipherName(), materials.cryptoProvider())
                     cipher.init(materials.cipherMode().opMode(), materials.dataKey(), new IvParameterSpec(iv));
                     break;
                 case ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY:
