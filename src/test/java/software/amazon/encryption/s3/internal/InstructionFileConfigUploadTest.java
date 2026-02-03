@@ -65,7 +65,7 @@ class InstructionFileConfigUploadTest {
             .key("someKey").build();
     String instructionFileContent = "some content that fakes an instruction file";
 
-    // call the actual method under test
+    // Call the actual method under test
     instructionFileConfig.putInstructionFile(putObjectRequest, instructionFileContent);
 
     // Verify that the putObject method was called and the captured request has the correct content length
