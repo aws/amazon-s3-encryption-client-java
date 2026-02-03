@@ -422,8 +422,11 @@ public class ContentMetadataDecodingStrategy {
         //# - If the metadata contains "x-amz-iv" and "x-amz-key" but no other version exclusive keys then the object MUST be considered as an S3EC-encrypted object using the V1 format.
         return objectMetadata.containsKey(MetadataKeyConstants.CONTENT_IV)
                 && objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
-                && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)
-                && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3);
+               //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+               //= type=implication
+               //# - Mapkeys exclusive to other format versions MUST NOT be present.
+               && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)
+               && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3);
     }
 
     /**
@@ -523,7 +526,7 @@ public class ContentMetadataDecodingStrategy {
 
         if (objectMetadata != null) {
             if (MetadataKeyConstants.hasExclusiveKeyCollision(objectMetadata)) {
-                throw new S3EncryptionClientException("Content metadata is tampered, required metadata to decrypt the object are missing");
+                throw new S3EncryptionClientException("Content metadata is tampered, required metadata combination is illegal.");
             }
 
             // V1/V2 in Object Metadata - All V1/V2 keys present in object metadata

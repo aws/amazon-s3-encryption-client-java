@@ -72,7 +72,10 @@ public class MetadataKeyConstants {
         return metadata.containsKey(CONTENT_IV) &&
                 metadata.containsKey(ENCRYPTED_DATA_KEY_MATDESC_OR_EC) &&
                 metadata.containsKey(ENCRYPTED_DATA_KEY_V1) &&
-                !metadata.containsKey(ENCRYPTED_DATA_KEY_V2) &&
+               //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+               //= type=implication
+               //# - Mapkeys exclusive to other format versions MUST NOT be present.
+               !metadata.containsKey(ENCRYPTED_DATA_KEY_V2) &&
                 !metadata.containsKey(ENCRYPTED_DATA_KEY_V3);
     }
 

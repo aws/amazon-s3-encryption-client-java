@@ -187,7 +187,13 @@ public class ContentMetadataEncodingStrategy {
         metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
         metadata.put(MetadataKeyConstants.CONTENT_IV, ENCODER.encodeToString(iv));
         metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
-        metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //# - If the object is encrypted using AES-GCM for content encryption, then the the mapkey "x-amz-tag-len" MUST be present.
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //# - If the object is encrypted using AES-CBC for content encryption, then the the mapkey "x-amz-tag-len" MUST NOT be present.
+        if (materials.algorithmSuite().cipherName().contains("GCM")) {
+            metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
+        }
         metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, edk.keyProviderInfo());
 
         try (JsonWriter jsonWriter = JsonWriter.create()) {
