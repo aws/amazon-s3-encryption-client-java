@@ -1,11 +1,5 @@
 package software.amazon.encryption.s3.internal;
 
-import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
-import static software.amazon.encryption.s3.internal.MetadataKeyConstants.INSTRUCTION_FILE;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -17,6 +11,12 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_INSTRUCTION_FILE_SUFFIX;
+import static software.amazon.encryption.s3.internal.MetadataKeyConstants.INSTRUCTION_FILE;
 
 /**
  * Provides configuration options for instruction file behaviors.
@@ -65,8 +65,10 @@ public class InstructionFileConfig {
         instFileMetadata.put(INSTRUCTION_FILE, "");
 
         // Use toBuilder to keep all other fields the same as the actual request
+        // but set the content length, key, and metadata appropriately for the instruction file
         final PutObjectRequest instPutRequest = request.toBuilder()
           .key(request.key() + instructionFileSuffix)
+          .contentLength((long) instructionFileContent.getBytes().length)
           .metadata(instFileMetadata)
           .build();
         switch (_clientType) {
