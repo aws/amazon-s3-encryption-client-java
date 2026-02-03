@@ -177,7 +177,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
         //= specification/s3-encryption/key-commitment.md#commitment-policy
         //= type=test
         //# When the commitment policy is FORBID_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST NOT encrypt using an algorithm suite which supports key commitment.
-        assertTrue(ContentMetadataDecodingStrategy.isV1V2InObjectMetadata(metadata));
+        assertTrue(ContentMetadataDecodingStrategy.isV1InObjectMetadata(metadata) || ContentMetadataDecodingStrategy.isV2InObjectMetadata(metadata));
         assertFalse(ContentMetadataDecodingStrategy.isV3InObjectMetadata(metadata));
         assertEquals(metadata.get(MetadataKeyConstants.CONTENT_CIPHER),
                 AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName());
@@ -251,7 +251,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
         //= type=test
         //# When the commitment policy is REQUIRE_ENCRYPT_ALLOW_DECRYPT, the S3EC MUST only encrypt using an algorithm suite which supports key commitment.
         assertTrue(ContentMetadataDecodingStrategy.isV3InObjectMetadata(metadata));
-        assertFalse(ContentMetadataDecodingStrategy.isV1V2InObjectMetadata(metadata));
+        assertFalse(ContentMetadataDecodingStrategy.isV1InObjectMetadata(metadata) || ContentMetadataDecodingStrategy.isV2InObjectMetadata(metadata));
         assertEquals(metadata.get(MetadataKeyConstants.CONTENT_CIPHER_V3), AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString());
 
         //= specification/s3-encryption/key-commitment.md#commitment-policy
@@ -323,7 +323,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
         //= type=test
         //# When the commitment policy is REQUIRE_ENCRYPT_REQUIRE_DECRYPT, the S3EC MUST only encrypt using an algorithm suite which supports key commitment.
         assertTrue(ContentMetadataDecodingStrategy.isV3InObjectMetadata(metadata));
-        assertFalse(ContentMetadataDecodingStrategy.isV1V2InObjectMetadata(metadata));
+        assertFalse(ContentMetadataDecodingStrategy.isV1InObjectMetadata(metadata) || ContentMetadataDecodingStrategy.isV2InObjectMetadata(metadata));
         assertEquals(metadata.get(MetadataKeyConstants.CONTENT_CIPHER_V3), AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString());
 
         //= specification/s3-encryption/key-commitment.md#commitment-policy

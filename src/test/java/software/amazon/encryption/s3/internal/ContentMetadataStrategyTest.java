@@ -445,7 +445,7 @@ public class ContentMetadataStrategyTest {
                 .build();
 
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () -> decodingStrategy.decode(getObjectRequest, response));
-        assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata to decrypt the object are missing"));
+        assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata combination is illegal"));
     }
 
     @Test
