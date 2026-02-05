@@ -274,6 +274,9 @@ public class ContentMetadataDecodingStrategy {
                     //# Objects encrypted with ALG_AES_256_CBC_IV16_NO_KDF MAY use either the V1 or V2 message format version.
                     //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
                     //# - The mapkey "x-amz-key-v2" MUST be present for V2 format objects.
+                    //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+                    //= type=exception
+                    //# - The mapkey "x-amz-unencrypted-content-length" SHOULD be present for V2 format objects.
                     edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2));
                 } else {
                     // this shouldn't happen under normal circumstances- only if out-of-band modification

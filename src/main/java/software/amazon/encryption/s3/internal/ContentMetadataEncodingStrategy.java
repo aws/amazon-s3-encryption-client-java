@@ -227,7 +227,7 @@ public class ContentMetadataEncodingStrategy {
         }
         //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
         //= type=exception
-        //# - The mapkey "x-amz-unencrypted-content-length" MAY be present for V2 format objects.
+        //# - The mapkey "x-amz-unencrypted-content-length" SHOULD be present for V2 format objects.
         return metadata;
     }
 }
