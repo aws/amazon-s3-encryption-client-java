@@ -5,7 +5,7 @@ version: 0.2
 
 env:
   variables:
-    BRANCH: "main"
+    BRANCH: "main-3.x"
   git-credential-helper: yes
   parameter-store:
     ACCOUNT: /CodeBuild/AccountId

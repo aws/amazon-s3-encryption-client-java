@@ -84,13 +84,3 @@ batch:
       # standard:6.0 (Ubuntu) supports GH CLI; AL2 does not
       image: aws/codebuild/standard:6.0
 
-  # Generate and update new javadocs
-  - identifier: update_javadoc
-    depend-on:
-      - upload_artifacts
-    buildspec: codebuild/release/javadoc.yml
-    env:
-      variables:
-        JAVA_ENV_VERSION: corretto11
-        JAVA_NUMERIC_VERSION: 11
-      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
