@@ -92,6 +92,8 @@ public class ContentMetadataDecodingStrategy {
         if (!MetadataKeyConstants.isV3Format(metadata)) {
             //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
             //# In general, if there is any deviation from the above format, with the exception of additional unrelated mapkeys, then the S3EC SHOULD throw an exception.
+            //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+            //# - If a mapkey exclusive to other (non-V3) format versions is present, the S3EC SHOULD throw an exception.
             throw new S3EncryptionClientException("Content metadata is tampered, required metadata to decrypt the object are missing");
         }
 
@@ -255,7 +257,7 @@ public class ContentMetadataDecodingStrategy {
                 //# Objects encrypted with ALG_AES_256_CBC_IV16_NO_KDF MAY use either the V1 or V2 message format version.
                 if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)) {
                     //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
-                    //# - Mapkeys exclusive to other format versions MUST NOT be present.
+                    //# - If mapkeys exclusive to other (non-V1) format versions is present,the S3EC SHOULD throw an exception.
                     if (isV2InObjectMetadata(metadata) || isV3InObjectMetadata(metadata)) {
                         throw new S3EncryptionClientException("Object metadata is tampered, conflicting keys are present.");
                     }
@@ -264,7 +266,7 @@ public class ContentMetadataDecodingStrategy {
                     edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1));
                 } else if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)) {
                     //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
-                    //# - If a mapkey exclusive to one or more other format versions is present, the S3EC SHOULD throw an exception.
+                    //# - If a mapkey exclusive to other (non-V2) format versions is present, the S3EC SHOULD throw an exception.
                     if (isV1InObjectMetadata(metadata) || isV3InObjectMetadata(metadata)) {
                         throw new S3EncryptionClientException("Object metadata is tampered, conflicting keys are present.");
                     }
@@ -431,9 +433,6 @@ public class ContentMetadataDecodingStrategy {
         //# - If the metadata contains "x-amz-iv" and "x-amz-key" but no other version exclusive keys then the object MUST be considered as an S3EC-encrypted object using the V1 format.
         return objectMetadata.containsKey(MetadataKeyConstants.CONTENT_IV)
                 && objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
-               //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
-               //= type=implication
-               //# - Mapkeys exclusive to other format versions MUST NOT be present.
                && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)
                && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3);
     }
