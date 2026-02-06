@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.6.1](https://github.com/aws/amazon-s3-encryption-client-java/compare/v3.6.0...v3.6.1) (2026-02-06)
+
+### Fixes
+
+* set instruction file content length ([#501](https://github.com/aws/amazon-s3-encryption-client-java/issues/501)) ([e32cd09](https://github.com/aws/amazon-s3-encryption-client-java/commit/e32cd096259b27c2f422bc04b64392197e497aca))
+
+### Maintenance
+
+* **release:** release from main-3.x and remove javadocs ([#503](https://github.com/aws/amazon-s3-encryption-client-java/issues/503)) ([e3bb32d](https://github.com/aws/amazon-s3-encryption-client-java/commit/e3bb32d0d4c691d51963e4469998231147b5b419))
+* **release:** Update .releaserc ([#502](https://github.com/aws/amazon-s3-encryption-client-java/issues/502)) ([80971da](https://github.com/aws/amazon-s3-encryption-client-java/commit/80971da0830088b8d0f62036fb7d0f22e9a4bbce))
+
 ## [3.6.0](https://github.com/aws/amazon-s3-encryption-client-java/compare/v3.5.0...v3.6.0) (2025-12-16)
 
 ### Features
