@@ -195,8 +195,15 @@ public class CipherProvider {
                     }
                     //= specification/s3-encryption/decryption.md#cbc-decryption
                     //# If an object is encrypted with ALG_AES_256_CBC_IV16_NO_KDF and [legacy unauthenticated algorithm suites](#legacy-decryption) is enabled,
-                    //# then the S3EC MUST create a cipher object using the cipher transformation "AES/CBC/PKCS5Padding".
-                    // NOTE: PKCS5Padding is specified above in CryptoFactory.createCipher(materials.algorithmSuite().cipherName(), materials.cryptoProvider())
+                    //# then the S3EC MUST create a cipher with AES in CBC Mode with PKCS5Padding or PKCS7Padding compatible padding for a 16-byte block cipher (example: for the Java JCE, this is "AES/CBC/PKCS5Padding").
+                    // NOTE: CBC and PKCS5Padding is specified above in CryptoFactory.createCipher(materials.algorithmSuite().cipherName(), materials.cryptoProvider())
+                    //= specification/s3-encryption/decryption.md#cbc-decryption
+                    //# If the cipher object cannot be created as described above,
+                    //# Decryption MUST fail.
+                    //= specification/s3-encryption/decryption.md#cbc-decryption
+                    //= type=exception
+                    //# The error SHOULD detail why the cipher could not be initialized
+                    //# (such as CBC or PKCS5Padding is not supported by the underlying crypto provider).
                     cipher.init(materials.cipherMode().opMode(), materials.dataKey(), new IvParameterSpec(iv));
                     break;
                 case ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY:

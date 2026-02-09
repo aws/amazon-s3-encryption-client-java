@@ -181,6 +181,10 @@ public class S3EncryptionClientBuilderValidationTest {
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
                 .aesKey(aesKey)
+                //= specification/s3-encryption/decryption.md#cbc-decryption
+                //= type=test
+                //# If an object is encrypted with ALG_AES_256_CBC_IV16_NO_KDF and [legacy unauthenticated algorithm suites](#legacy-decryption) is NOT enabled,
+                //# the S3EC MUST throw an error which details that client was not configured to decrypt objects with ALG_AES_256_CBC_IV16_NO_KDF.
                 .encryptionAlgorithm(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF)
                 .build()
         );

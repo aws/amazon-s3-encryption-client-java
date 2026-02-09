@@ -54,6 +54,11 @@ public class ContentMetadataEncodingStrategy {
         } else {
             //= specification/s3-encryption/data-format/metadata-strategy.md#object-metadata
             //# By default, the S3EC MUST store content metadata in the S3 Object Metadata.
+            //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+            //= type=exception
+            //= reason=It would be a breaking change to introduce this.
+            //# Thus,
+            //# Content Metadata MapKeys SHOULD be restricted to US-ASCII.
             Map<String, String> newMetadata = addMetadataToMap(putObjectRequest.metadata(), materials, iv);
             return putObjectRequest.toBuilder()
               .metadata(newMetadata)
@@ -80,6 +85,11 @@ public class ContentMetadataEncodingStrategy {
             return createMultipartUploadRequest.toBuilder()
                     .metadata(objectMetadata).build();
         } else {
+            //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+            //= type=exception
+            //= reason=It would be a breaking change to introduce this.
+            //# Thus,
+            //# Content Metadata MapKeys SHOULD be restricted to US-ASCII.
             Map<String, String> newMetadata = addMetadataToMap(createMultipartUploadRequest.metadata(), materials, iv);
             return createMultipartUploadRequest.toBuilder()
                     .metadata(newMetadata)
@@ -159,6 +169,8 @@ public class ContentMetadataEncodingStrategy {
                     jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
                 }
                 jsonWriter.writeEndObject();
+                //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+                //# An implementation MAY support UTF-8.
                 String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
                 //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
                 //# - The V3 message format MUST store the mapkey "x-amz-t" and its value (when present in the content metadata) in the Instruction File.
@@ -169,6 +181,8 @@ public class ContentMetadataEncodingStrategy {
                     jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
                 }
                 jsonWriter.writeEndObject();
+                //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+                //# An implementation MAY support UTF-8.
                 String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
                 //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
                 //# - The V3 message format MUST store the mapkey "x-amz-m" and its value (when present in the content metadata) in the Instruction File.
@@ -220,6 +234,8 @@ public class ContentMetadataEncodingStrategy {
                 }
             }
             jsonWriter.writeEndObject();
+            //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+            //# An implementation MAY support UTF-8.
             String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_MATDESC_OR_EC, jsonEncryptionContext);
         } catch (JsonWriter.JsonGenerationException e) {

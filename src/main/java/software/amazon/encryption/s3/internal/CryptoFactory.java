@@ -11,13 +11,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
 public class CryptoFactory {
-    //= specification/s3-encryption/decryption.md#cbc-decryption
-    //# If the cipher object cannot be created as described above,
-    //# Decryption MUST fail.
-    //= specification/s3-encryption/decryption.md#cbc-decryption
-    //= type=exception
-    //# The error SHOULD detail why the cipher could not be initialized
-    //# (such as CBC or PKCS5Padding is not supported by the underlying crypto provider).
     public static Cipher createCipher(String algorithm, Provider provider)
             throws NoSuchPaddingException, NoSuchAlgorithmException {
         // if the user has specified a provider, go with that.

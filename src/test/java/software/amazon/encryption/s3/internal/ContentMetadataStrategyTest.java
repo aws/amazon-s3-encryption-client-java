@@ -428,6 +428,25 @@ public class ContentMetadataStrategyTest {
     }
 
     @Test
+    public void testMissingKeysV1Colliding() {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("x-amz-iv", "dGVzdC1pdi0xMi1i"); // base64 of "test-iv-12-b"
+        metadata.put("x-amz-key", "ZW5jcnlwdGVkLWtleS1kYXRh"); // base64 of "encrypted-key-data"
+        metadata.put("x-amz-matdesc", "{}");
+        metadata.put("x-amz-key-v2", "ZW5jcnlwdGVkLWtleS1kYXRh");
+
+        GetObjectResponse response = GetObjectResponse.builder()
+            .metadata(metadata)
+            .build();
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //= type=test
+        //# - If mapkeys exclusive to other (non-V1) format versions is present,the S3EC SHOULD throw an exception.
+        S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () -> decodingStrategy.decode(getObjectRequest, response));
+        System.out.println(exception.getMessage());
+        assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata combination is illegal."));
+    }
+
+    @Test
     public void testExclusiveKeysCollision() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-iv", "dGVzdC1pdi0xMi1i");

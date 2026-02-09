@@ -300,6 +300,21 @@ public class CipherProviderTest {
         Cipher cipher = CipherProvider.createAndInitCipher(materials, iv, messageId);
 
         assertNotNull(cipher);
+        //= specification/s3-encryption/decryption.md#cbc-decryption
+        //= type=exception
+        //= reason=Well cipher creation failure does throw an error, we do not catch the error and throw a reasonable message
+        //# If the cipher object cannot be created as described above,
+        //# Decryption MUST fail.
+        //= specification/s3-encryption/decryption.md#cbc-decryption
+        //= type=TODO
+        //# The error SHOULD detail why the cipher could not be initialized
+        //# (such as CBC or PKCS5Padding is not supported by the underlying crypto provider).
+        // If we ever refactor so that the cipher creation failure is a modeled error, we should add tests for it.
+
+        //= specification/s3-encryption/decryption.md#cbc-decryption
+        //= type=test
+        //# If an object is encrypted with ALG_AES_256_CBC_IV16_NO_KDF and [legacy unauthenticated algorithm suites](#legacy-decryption) is enabled,
+        //# then the S3EC MUST create a cipher with AES in CBC Mode with PKCS5Padding or PKCS7Padding compatible padding for a 16-byte block cipher (example: for the Java JCE, this is "AES/CBC/PKCS5Padding").
         assertEquals("AES/CBC/PKCS5Padding", cipher.getAlgorithm());
     }
 
