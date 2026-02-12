@@ -1,0 +1,44 @@
+name: duvet
+
+on:
+  workflow_call:
+    # Optional inputs that can be provided when calling this workflow
+
+jobs:
+  test:
+    runs-on: macos-latest
+    permissions:
+      id-token: write
+      contents: read
+      pages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Clone duvet repository  
+        run: git clone https://github.com/awslabs/duvet.git /tmp/duvet
+
+      - name: Build and install duvet
+        run: |
+          cd /tmp/duvet
+          cargo xtask build
+          cargo install --path ./duvet
+
+      - name: Run duvet
+        run: make duvet
+
+      - name: Upload duvet reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          include-hidden-files: true
+          path: .duvet/reports/report.html
+          

@@ -92,6 +92,8 @@ public class ContentMetadataDecodingStrategy {
         if (!MetadataKeyConstants.isV3Format(metadata)) {
             //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
             //# In general, if there is any deviation from the above format, with the exception of additional unrelated mapkeys, then the S3EC SHOULD throw an exception.
+            //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+            //# - If a mapkey exclusive to other (non-V3) format versions is present, the S3EC SHOULD throw an exception.
             throw new S3EncryptionClientException("Content metadata is tampered, required metadata to decrypt the object are missing");
         }
 
@@ -227,9 +229,6 @@ public class ContentMetadataDecodingStrategy {
         //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
         //= type=exception
         //# - The mapkey "x-amz-unencrypted-content-length" SHOULD be present for V1 format objects.
-        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
-
-        //# - The mapkey "x-amz-cek-alg" MUST be present for V2 format objects.
         if (contentEncryptionAlgorithm == null
                 || contentEncryptionAlgorithm.equals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF.cipherName())) {
             algorithmSuite = AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF;
@@ -258,13 +257,26 @@ public class ContentMetadataDecodingStrategy {
                 //# Objects encrypted with ALG_AES_256_CBC_IV16_NO_KDF MAY use either the V1 or V2 message format version.
                 if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)) {
                     //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+                    //# - If mapkeys exclusive to other (non-V1) format versions is present,the S3EC SHOULD throw an exception.
+                    if (isV2InObjectMetadata(metadata) || isV3InObjectMetadata(metadata)) {
+                        throw new S3EncryptionClientException("Object metadata is tampered, conflicting keys are present.");
+                    }
+                    //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
                     //# - The mapkey "x-amz-key" MUST be present for V1 format objects.
                     edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1));
                 } else if (metadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)) {
+                    //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+                    //# - If a mapkey exclusive to other (non-V2) format versions is present, the S3EC SHOULD throw an exception.
+                    if (isV1InObjectMetadata(metadata) || isV3InObjectMetadata(metadata)) {
+                        throw new S3EncryptionClientException("Object metadata is tampered, conflicting keys are present.");
+                    }
                     //= specification/s3-encryption/data-format/content-metadata.md#algorithm-suite-and-message-format-version-compatibility
                     //# Objects encrypted with ALG_AES_256_CBC_IV16_NO_KDF MAY use either the V1 or V2 message format version.
                     //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
                     //# - The mapkey "x-amz-key-v2" MUST be present for V2 format objects.
+                    //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+                    //= type=exception
+                    //# - The mapkey "x-amz-unencrypted-content-length" SHOULD be present for V2 format objects.
                     edkCiphertext = DECODER.decode(metadata.get(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2));
                 } else {
                     // this shouldn't happen under normal circumstances- only if out-of-band modification
@@ -303,8 +315,6 @@ public class ContentMetadataDecodingStrategy {
                 break;
             case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
             case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
-                //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
-                //# - The mapkey "x-amz-tag-len" MUST be present for V2 format objects.
                 final int tagLength = Integer.parseInt(metadata.get(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH));
                 if (tagLength != algorithmSuite.cipherTagLengthBits()) {
                     throw new S3EncryptionClientException("Expected tag length (bits) of: "
@@ -419,17 +429,27 @@ public class ContentMetadataDecodingStrategy {
     }
 
     /**
-     * Determines if V1/V2 format is present in object metadata.
-     * All V1/V2 keys must be present in object metadata.
+     * Determines if V1 format is present in object metadata.
      */
-    public static boolean isV1V2InObjectMetadata(Map<String, String> objectMetadata) {
+    public static boolean isV1InObjectMetadata(Map<String, String> objectMetadata) {
         //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-        //# - If the metadata contains "x-amz-iv" and "x-amz-key" then the object MUST be considered as an S3EC-encrypted object using the V1 format.
-        //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-        //# - If the metadata contains "x-amz-iv" and "x-amz-metadata-x-amz-key-v2" then the object MUST be considered as an S3EC-encrypted object using the V2 format.
+        //# - If the metadata contains "x-amz-iv" and "x-amz-key" but no other version exclusive keys then the object MUST be considered as an S3EC-encrypted object using the V1 format.
         return objectMetadata.containsKey(MetadataKeyConstants.CONTENT_IV)
-                && (objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
-                || objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2));
+                && objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
+               && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)
+               && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3);
+    }
+
+    /**
+     * Determines if V2 format is present in object metadata.
+     */
+    public static boolean isV2InObjectMetadata(Map<String, String> objectMetadata) {
+        //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
+        //# - If the metadata contains "x-amz-iv" and "x-amz-key-v2" but no other version exclusive keys then the object MUST be considered as an S3EC-encrypted object using the V2 format.
+        return objectMetadata.containsKey(MetadataKeyConstants.CONTENT_IV)
+                && objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2)
+                && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V1)
+                && !objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3);
     }
 
     /**
@@ -438,7 +458,7 @@ public class ContentMetadataDecodingStrategy {
      */
     public static boolean isV3InObjectMetadata(Map<String, String> objectMetadata) {
         //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-        //# - If the metadata contains "x-amz-3" and "x-amz-d" and "x-amz-i" then the object MUST be considered an S3EC-encrypted object using the V3 format.
+        //# - If the metadata contains "x-amz-3" and "x-amz-d" and "x-amz-i" but no other version exclusive keys then the object MUST be considered an S3EC-encrypted object using the V3 format.
         return objectMetadata.containsKey(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V3)
                 && objectMetadata.containsKey(MetadataKeyConstants.KEY_COMMITMENT_V3)
                 && objectMetadata.containsKey(MetadataKeyConstants.MESSAGE_ID_V3)
@@ -511,24 +531,25 @@ public class ContentMetadataDecodingStrategy {
 
     public ContentMetadata decode(GetObjectRequest request, GetObjectResponse response) {
         Map<String, String> objectMetadata = response.metadata();
-
-        //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-        //= type=exception
-        //# If there are multiple mapkeys which are meant to be exclusive, such as "x-amz-key", "x-amz-key-v2", and "x-amz-3" then the S3EC SHOULD throw an exception.
-
         if (objectMetadata != null) {
+            //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
+            //# If there are multiple mapkeys which are meant to be exclusive to different versions, such as "x-amz-key", "x-amz-key-v2", and "x-amz-3" then the S3EC SHOULD throw an exception.
+            if (MetadataKeyConstants.hasExclusiveKeyCollision(objectMetadata)) {
+                throw new S3EncryptionClientException("Content metadata is tampered, required metadata combination is illegal.");
+            }
+
             // V1/V2 in Object Metadata - All V1/V2 keys present in object metadata
             //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-            //# - If the metadata contains "x-amz-iv" and "x-amz-key" then the object MUST be considered as an S3EC-encrypted object using the V1 format.
+            //# - If the metadata contains "x-amz-iv" and "x-amz-key" but no other version exclusive keys then the object MUST be considered as an S3EC-encrypted object using the V1 format.
             //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-            //# - If the metadata contains "x-amz-iv" and "x-amz-metadata-x-amz-key-v2" then the object MUST be considered as an S3EC-encrypted object using the V2 format.
-            if (isV1V2InObjectMetadata(objectMetadata)) {
+            //# - If the metadata contains "x-amz-iv" and "x-amz-key-v2" but no other version exclusive keys then the object MUST be considered as an S3EC-encrypted object using the V2 format.
+            if (isV1InObjectMetadata(objectMetadata) || isV2InObjectMetadata(objectMetadata)) {
                 return readFromMapV1V2(objectMetadata, response);
             }
 
             // V3 in Object Metadata - c/d/i always in object metadata, x-amz-3 also in object metadata
             //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-            //# - If the metadata contains "x-amz-3" and "x-amz-d" and "x-amz-i" then the object MUST be considered an S3EC-encrypted object using the V3 format.
+            //# - If the metadata contains "x-amz-3" and "x-amz-d" and "x-amz-i" but no other version exclusive keys then the object MUST be considered an S3EC-encrypted object using the V3 format.
             //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
             //# In the V3 format, the mapkeys "x-amz-c", "x-amz-d", and "x-amz-i" MUST be stored exclusively in the Object Metadata.
             else if (isV3InObjectMetadata(objectMetadata)) {

@@ -1,3 +1,4 @@
-[submodule "specification"]
+[submodule "private_aws"]
 	path = specification
-	url = git@github.com:awslabs/aws-encryption-sdk-specification.git
+	url = https://github.com/awslabs/aws-encryption-sdk-specification.git
+	branch = tonyknap/s3ec-v3.0.1-candidate

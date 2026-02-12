@@ -71,10 +71,11 @@ public class MetadataKeyConstants {
     public static boolean isV1Format(Map<String, String> metadata) {
         return metadata.containsKey(CONTENT_IV) &&
                 metadata.containsKey(ENCRYPTED_DATA_KEY_MATDESC_OR_EC) &&
-                //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-                //# If there are multiple mapkeys which are meant to be exclusive, such as "x-amz-key", "x-amz-key-v2", and "x-amz-3" then the S3EC SHOULD throw an exception.
                 metadata.containsKey(ENCRYPTED_DATA_KEY_V1) &&
-                !metadata.containsKey(ENCRYPTED_DATA_KEY_V2) &&
+               ///= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+               ///= type=implication
+               ///# - Mapkeys exclusive to other format versions MUST NOT be present.
+               !metadata.containsKey(ENCRYPTED_DATA_KEY_V2) &&
                 !metadata.containsKey(ENCRYPTED_DATA_KEY_V3);
     }
 
@@ -85,8 +86,6 @@ public class MetadataKeyConstants {
                 // TODO-Post-Pentest: Objects copied without x-amz-matdesc was able be decrypted by V2 Client.
                 //  Should this mapkey be SHOULD instead of MUST?
                 // metadata.containsKey(ENCRYPTED_DATA_KEY_MATDESC_OR_EC) &&
-                //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-                //# If there are multiple mapkeys which are meant to be exclusive, such as "x-amz-key", "x-amz-key-v2", and "x-amz-3" then the S3EC SHOULD throw an exception.
                 metadata.containsKey(ENCRYPTED_DATA_KEY_V2) &&
                 !metadata.containsKey(ENCRYPTED_DATA_KEY_V1) &&
                 !metadata.containsKey(ENCRYPTED_DATA_KEY_V3);
@@ -98,12 +97,22 @@ public class MetadataKeyConstants {
                 metadata.containsKey(ENCRYPTED_DATA_KEY_ALGORITHM_V3) &&
                 metadata.containsKey(KEY_COMMITMENT_V3) &&
                 metadata.containsKey(MESSAGE_ID_V3) &&
-                //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
-                //# If there are multiple mapkeys which are meant to be exclusive, such as "x-amz-key", "x-amz-key-v2", and "x-amz-3" then the S3EC SHOULD throw an exception.
                 metadata.containsKey(ENCRYPTED_DATA_KEY_V3) &&
                 !metadata.containsKey(ENCRYPTED_DATA_KEY_V2) &&
                 !metadata.containsKey(ENCRYPTED_DATA_KEY_V1);
 
+    }
+
+    /**
+     * Checks if multiple version-exclusive keys are present in metadata.
+     */
+    public static boolean hasExclusiveKeyCollision(Map<String, String> metadata) {
+        boolean hasV1Key = metadata.containsKey(ENCRYPTED_DATA_KEY_V1);
+        boolean hasV2Key = metadata.containsKey(ENCRYPTED_DATA_KEY_V2);
+        boolean hasV3Key = metadata.containsKey(ENCRYPTED_DATA_KEY_V3);
+        
+        int exclusiveKeyCount = (hasV1Key ? 1 : 0) + (hasV2Key ? 1 : 0) + (hasV3Key ? 1 : 0);
+        return exclusiveKeyCount > 1;
     }
 
     /**

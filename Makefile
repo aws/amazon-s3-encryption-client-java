@@ -1,15 +1,12 @@
 # Used for misc supporting functions like Duvet and prettier. Builds, tests, etc. should use the usual Java/Maven tooling.
 
-duvet: | duvet_extract duvet_report
-
-duvet_extract:
-	rm -rf compliance
-	$(foreach file, $(shell find specification/s3-encryption -name '*.md'), duvet extract -o compliance -f MARKDOWN $(file);)
+duvet: | duvet_clean duvet_report
 
 duvet_report:
-	duvet \
-		report \
-		--spec-pattern "compliance/**/*.toml" \
-		--source-pattern "src/**/*.java" \
-		--source-pattern "compliance_exceptions/*.txt" \
-		--html specification_compliance_report.html
+	duvet report
+
+duvet-view-report-mac:
+	open .duvet/reports/report.html
+
+duvet_clean:
+	rm -rf .duvet/reports/ .duvet/requirements/

@@ -1,0 +1,27 @@
+'$schema' = "https://awslabs.github.io/duvet/config/v0.4.0.json"
+
+[[source]]
+pattern = "src/**/*.java"
+
+# Include required specifications here
+[[specification]]
+source = "specification/s3-encryption/client.md"
+[[specification]]
+source = "specification/s3-encryption/decryption.md"
+[[specification]]
+source = "specification/s3-encryption/encryption.md"
+[[specification]]
+source = "specification/s3-encryption/key-commitment.md"
+[[specification]]
+source = "specification/s3-encryption/key-derivation.md"
+[[specification]]
+source = "specification/s3-encryption/data-format/content-metadata.md"
+[[specification]]
+source = "specification/s3-encryption/data-format/metadata-strategy.md"
+
+[report.html]
+enabled = true
+
+# Enable snapshots to prevent requirement coverage regressions
+[report.snapshot]
+enabled = false

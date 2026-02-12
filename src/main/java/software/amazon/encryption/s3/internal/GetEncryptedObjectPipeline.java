@@ -96,6 +96,9 @@ public class GetEncryptedObjectPipeline {
             //= specification/s3-encryption/decryption.md#legacy-decryption
             //# If the S3EC is not configured to enable legacy unauthenticated content decryption, the client MUST throw
             //# an exception when attempting to decrypt an object encrypted with a legacy unauthenticated algorithm suite.
+            //= specification/s3-encryption/decryption.md#cbc-decryption
+            //# If an object is encrypted with ALG_AES_256_CBC_IV16_NO_KDF and [legacy unauthenticated algorithm suites](#legacy-decryption) is NOT enabled,
+            //# the S3EC MUST throw an error which details that client was not configured to decrypt objects with ALG_AES_256_CBC_IV16_NO_KDF.
             throw new S3EncryptionClientException("Enable legacy unauthenticated modes to use legacy content decryption: " + algorithmSuite.cipherName());
         }
 

@@ -9,6 +9,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -53,6 +54,11 @@ public class ContentMetadataEncodingStrategy {
         } else {
             //= specification/s3-encryption/data-format/metadata-strategy.md#object-metadata
             //# By default, the S3EC MUST store content metadata in the S3 Object Metadata.
+            //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+            //= type=exception
+            //= reason=It would be a breaking change to introduce this.
+            //# Thus,
+            //# Content Metadata MapKeys SHOULD be restricted to US-ASCII.
             Map<String, String> newMetadata = addMetadataToMap(putObjectRequest.metadata(), materials, iv);
             return putObjectRequest.toBuilder()
               .metadata(newMetadata)
@@ -79,6 +85,11 @@ public class ContentMetadataEncodingStrategy {
             return createMultipartUploadRequest.toBuilder()
                     .metadata(objectMetadata).build();
         } else {
+            //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+            //= type=exception
+            //= reason=It would be a breaking change to introduce this.
+            //# Thus,
+            //# Content Metadata MapKeys SHOULD be restricted to US-ASCII.
             Map<String, String> newMetadata = addMetadataToMap(createMultipartUploadRequest.metadata(), materials, iv);
             return createMultipartUploadRequest.toBuilder()
                     .metadata(newMetadata)
@@ -158,6 +169,8 @@ public class ContentMetadataEncodingStrategy {
                     jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
                 }
                 jsonWriter.writeEndObject();
+                //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+                //# An implementation MAY support UTF-8.
                 String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
                 //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
                 //# - The V3 message format MUST store the mapkey "x-amz-t" and its value (when present in the content metadata) in the Instruction File.
@@ -168,6 +181,8 @@ public class ContentMetadataEncodingStrategy {
                     jsonWriter.writeFieldName(entry.getKey()).writeValue(entry.getValue());
                 }
                 jsonWriter.writeEndObject();
+                //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+                //# An implementation MAY support UTF-8.
                 String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
                 //= specification/s3-encryption/data-format/metadata-strategy.md#v3-instruction-files
                 //# - The V3 message format MUST store the mapkey "x-amz-m" and its value (when present in the content metadata) in the Instruction File.
@@ -178,16 +193,33 @@ public class ContentMetadataEncodingStrategy {
         }
         return metadata;
     }
+
     private Map<String, String> addMetadataToMap(Map<String, String> map, EncryptionMaterials materials, byte[] iv) {
         if (materials.algorithmSuite().isCommitting()) {
             return addMetadataToMapV3(map, materials, iv);
         }
+        return addMetadataToMapV2(map, materials, iv);
+    }
+
+    @NonNull
+    private Map<String, String> addMetadataToMapV2(Map<String, String> map, EncryptionMaterials materials, byte[] iv) {
         Map<String, String> metadata = new HashMap<>(map);
         EncryptedDataKey edk = materials.encryptedDataKeys().get(0);
         metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_V2, ENCODER.encodeToString(edk.encryptedDatakey()));
         metadata.put(MetadataKeyConstants.CONTENT_IV, ENCODER.encodeToString(iv));
         metadata.put(MetadataKeyConstants.CONTENT_CIPHER, materials.algorithmSuite().cipherName());
-        metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
+        // When the object is encrypted using the V2 format:
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //# - The mapkey "x-amz-tag-len" MAY be present for V2 format objects.
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //# - If the object is encrypted using AES-GCM for content encryption, then the the mapkey "x-amz-tag-len" MUST be present.
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //# - If the object is encrypted using AES-CBC for content encryption, then the the mapkey "x-amz-tag-len" MUST NOT be present.
+        if (materials.algorithmSuite().cipherName().contains("GCM")) {
+            metadata.put(MetadataKeyConstants.CONTENT_CIPHER_TAG_LENGTH, Integer.toString(materials.algorithmSuite().cipherTagLengthBits()));
+        } else {
+            throw new S3EncryptionClientException("Only AES-GCM encryption is supported for encryption. AES-CBC is deprecated.");
+        }
         metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_ALGORITHM, edk.keyProviderInfo());
 
         try (JsonWriter jsonWriter = JsonWriter.create()) {
@@ -202,11 +234,16 @@ public class ContentMetadataEncodingStrategy {
                 }
             }
             jsonWriter.writeEndObject();
+            //= specification/s3-encryption/data-format/content-metadata.md#us-ascii-preferred-string
+            //# An implementation MAY support UTF-8.
             String jsonEncryptionContext = new String(jsonWriter.getBytes(), StandardCharsets.UTF_8);
             metadata.put(MetadataKeyConstants.ENCRYPTED_DATA_KEY_MATDESC_OR_EC, jsonEncryptionContext);
         } catch (JsonWriter.JsonGenerationException e) {
             throw new S3EncryptionClientException("Cannot serialize encryption context to JSON.", e);
         }
+        //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
+        //= type=exception
+        //# - The mapkey "x-amz-unencrypted-content-length" SHOULD be present for V2 format objects.
         return metadata;
     }
 }
