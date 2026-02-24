@@ -22,8 +22,6 @@ import javax.crypto.spec.GCMParameterSpec;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junitpioneer.jupiter.RetryingTest;
-import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
