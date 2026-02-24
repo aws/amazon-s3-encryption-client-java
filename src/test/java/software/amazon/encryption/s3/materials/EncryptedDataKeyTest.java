@@ -4,8 +4,6 @@ package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junitpioneer.jupiter.RetryingTest;
-import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.RetryingTest;
 
 import java.util.Arrays;
 
