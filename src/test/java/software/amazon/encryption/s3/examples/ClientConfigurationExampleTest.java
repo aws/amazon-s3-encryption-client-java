@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3.examples;
 
-import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.RetryingTest;
 
 import static org.junit.jupiter.api.Assertions.fail;

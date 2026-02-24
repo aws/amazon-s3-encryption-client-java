@@ -1,6 +1,5 @@
 package software.amazon.encryption.s3.internal;
 
-import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.core.async.AsyncRequestBody;

@@ -4,8 +4,6 @@ package software.amazon.encryption.s3;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junitpioneer.jupiter.RetryingTest;
-import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
