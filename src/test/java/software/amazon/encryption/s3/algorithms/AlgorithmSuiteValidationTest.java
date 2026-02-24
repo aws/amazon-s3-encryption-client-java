@@ -8,12 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junitpioneer.jupiter.RetryingTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junitpioneer.jupiter.RetryingTest;
 
 public class AlgorithmSuiteValidationTest {
 
