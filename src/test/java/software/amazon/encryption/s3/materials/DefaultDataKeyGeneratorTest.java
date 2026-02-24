@@ -4,6 +4,7 @@ package software.amazon.encryption.s3.materials;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import javax.crypto.SecretKey;

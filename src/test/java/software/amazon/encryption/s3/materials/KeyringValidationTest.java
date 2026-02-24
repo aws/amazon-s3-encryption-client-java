@@ -13,7 +13,9 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 

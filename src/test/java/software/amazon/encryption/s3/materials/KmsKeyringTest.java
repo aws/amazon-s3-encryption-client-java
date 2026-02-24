@@ -3,6 +3,7 @@
 package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
