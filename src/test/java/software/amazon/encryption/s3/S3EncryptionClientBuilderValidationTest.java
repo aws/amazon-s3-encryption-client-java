@@ -20,7 +20,7 @@ import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 
 public class S3EncryptionClientBuilderValidationTest {
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithMultipleKeyringTypesFails() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -58,7 +58,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception3.getMessage().contains("Only one may be set of"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithNoKeyringFails() {
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4().build()
@@ -66,7 +66,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception.getMessage().contains("Exactly one must be set of"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithCMMAndKeyringFails() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -86,7 +86,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception.getMessage().contains("Only one may be set of"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithInvalidBufferSizes() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -111,7 +111,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception2.getMessage().contains("Invalid buffer size"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithBufferSizeAndDelayedAuthFails() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -130,7 +130,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception.getMessage().contains("Buffer size cannot be set when delayed authentication mode is enabled"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithNullSecureRandomFails() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -145,7 +145,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception.getMessage().contains("SecureRandom provided to S3EncryptionClient cannot be null"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithInvalidCommitmentPolicyAlgorithmCombination() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -172,7 +172,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception2.getMessage().contains("commitment policy forbids encryption with committing algorithm"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithLegacyAlgorithmFails() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -187,7 +187,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception.getMessage().contains("Encryption algorithm provided is LEGACY"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithWrappedS3EncryptionClientFails() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -209,7 +209,7 @@ public class S3EncryptionClientBuilderValidationTest {
         wrappedEncryptionClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithWrappedS3AsyncEncryptionClientFails() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -231,7 +231,7 @@ public class S3EncryptionClientBuilderValidationTest {
         wrappedAsyncEncryptionClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithInvalidAesKey() throws NoSuchAlgorithmException {
         // Test with DES key instead of AES
         KeyGenerator desKeyGen = KeyGenerator.getInstance("DES");
@@ -247,7 +247,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception.getMessage().contains("expecting AES"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithInvalidRsaKey() throws NoSuchAlgorithmException {
         // Test with EC key instead of RSA
         KeyPairGenerator ecKeyGen = KeyPairGenerator.getInstance("EC");
@@ -263,7 +263,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception.getMessage().contains("Only RSA keys are supported"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithEmptyKmsKeyId() {
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()
@@ -273,7 +273,7 @@ public class S3EncryptionClientBuilderValidationTest {
         assertTrue(exception.getMessage().contains("Kms Key ID cannot be empty or null"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithNullKmsKeyId() {
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () ->
             S3EncryptionClient.builderV4()

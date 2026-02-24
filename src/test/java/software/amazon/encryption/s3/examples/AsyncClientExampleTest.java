@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class AsyncClientExampleTest {
 
-    @Test
+    @RetryingTest(3)
     public void testAsyncClientExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         try {

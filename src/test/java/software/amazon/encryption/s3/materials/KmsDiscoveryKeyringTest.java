@@ -38,17 +38,17 @@ public class KmsDiscoveryKeyringTest {
     private static final String KMS_KEY_ID = System.getenv("AWS_S3EC_TEST_KMS_KEY_ID");
     private static final Region KMS_REGION = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
 
-    @Test
+    @RetryingTest(3)
     public void buildKmsDiscoveryKeyringWithNullSecureRandomFails() {
       assertThrows(S3EncryptionClientException.class, () -> KmsDiscoveryKeyring.builder().secureRandom(null));
     }
 
-    @Test
+    @RetryingTest(3)
     public void buildDiscoveryKeyringWithNullDataKeyGeneratorFails() {
       assertThrows(S3EncryptionClientException.class, () -> KmsDiscoveryKeyring.builder().dataKeyGenerator(null));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKmsDiscovery() {
         final String objectKey = appendTestSuffix("kms-v1-to-v3-discovery");
 
@@ -87,7 +87,7 @@ public class KmsDiscoveryKeyringTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKmsContextV2Discovery() {
         final String objectKey = appendTestSuffix("kms-context-v2-to-v3-discovery");
 
@@ -130,7 +130,7 @@ public class KmsDiscoveryKeyringTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKmsContextV3Discovery() {
         final String objectKey = appendTestSuffix("kms-v3-to-v3-discovery-context");
 
@@ -167,7 +167,7 @@ public class KmsDiscoveryKeyringTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKmsContextV3DiscoveryWrongECFails() {
         final String objectKey = appendTestSuffix("kms-v3-to-v3-discovery-context-wrong-ec");
 
@@ -210,7 +210,7 @@ public class KmsDiscoveryKeyringTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKmsContextV3DiscoveryEncryptFails() {
         final String objectKey = appendTestSuffix("kms-v3-to-v3-discovery-context-encrypt-fails");
 

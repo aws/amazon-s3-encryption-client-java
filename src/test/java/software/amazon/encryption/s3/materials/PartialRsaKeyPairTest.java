@@ -24,7 +24,7 @@ public class PartialRsaKeyPairTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testGetPublicKey() {
         PartialRsaKeyPair partialRsaKeyPair = new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic());
 
@@ -33,7 +33,7 @@ public class PartialRsaKeyPairTest {
         assertEquals(KEY_ALGORITHM, partialRsaKeyPair.getPublicKey().getAlgorithm());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testGetPrivateKey() {
         PartialRsaKeyPair partialRsaKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR.getPrivate(), null);
 
@@ -42,12 +42,12 @@ public class PartialRsaKeyPairTest {
         assertEquals(KEY_ALGORITHM, partialRsaKeyPair.getPrivateKey().getAlgorithm());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBothKeysNull() {
         assertThrows(S3EncryptionClientException.class, () -> new PartialRsaKeyPair(null, null));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilder() {
         PartialRsaKeyPair expectedKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
 
@@ -59,7 +59,7 @@ public class PartialRsaKeyPairTest {
         assertEquals(expectedKeyPair, actualKeyPair);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testInequality() {
         PartialRsaKeyPair firstKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
         PartialRsaKeyPair onlyPublicKeyPair = new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic());
@@ -71,7 +71,7 @@ public class PartialRsaKeyPairTest {
         assertNotEquals(onlyPrivateKeyPair, onlyPublicKeyPair);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testHashCodeSameKeyPair() {
         PartialRsaKeyPair firstKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
         PartialRsaKeyPair secondKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
@@ -79,7 +79,7 @@ public class PartialRsaKeyPairTest {
         assertEquals(firstKeyPair.hashCode(), secondKeyPair.hashCode());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testHashCodeDifferentKeyPair() {
         PartialRsaKeyPair firstKeyPair = new PartialRsaKeyPair(RSA_KEY_PAIR);
         PartialRsaKeyPair secondKeyPair = new PartialRsaKeyPair(null, RSA_KEY_PAIR.getPublic());

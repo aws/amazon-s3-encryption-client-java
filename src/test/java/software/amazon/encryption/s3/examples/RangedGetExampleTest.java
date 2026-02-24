@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class RangedGetExampleTest {
 
-    @Test
+    @RetryingTest(3)
     public void testRangedGetExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         try {

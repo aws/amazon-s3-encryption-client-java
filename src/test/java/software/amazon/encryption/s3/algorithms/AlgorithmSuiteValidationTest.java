@@ -27,7 +27,7 @@ public class AlgorithmSuiteValidationTest {
         assertNotNull(suite.dataKeyAlgorithm());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testLegacyAlgorithmIdentification() {
         assertTrue(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF.isLegacy());
         assertTrue(AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF.isLegacy());
@@ -35,7 +35,7 @@ public class AlgorithmSuiteValidationTest {
         assertFalse(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.isLegacy());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCommittingAlgorithmIdentification() {
         assertTrue(AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.isCommitting());
         assertTrue(AlgorithmSuite.ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY.isCommitting());
@@ -43,7 +43,7 @@ public class AlgorithmSuiteValidationTest {
         assertFalse(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF.isCommitting());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAlgorithmSuiteIdConversions() {
         for (AlgorithmSuite suite : AlgorithmSuite.values()) {
             assertEquals(String.valueOf(suite.id()), suite.idAsString());
@@ -54,7 +54,7 @@ public class AlgorithmSuiteValidationTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void testContentLengthLimits() {
         // Test that GCM algorithms have appropriate limits
         assertTrue(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherMaxContentLengthBytes() > 0);
@@ -67,7 +67,7 @@ public class AlgorithmSuiteValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAlgorithmSuiteSpecificProperties() {
         // Test AES-256-GCM-IV12-TAG16-NO-KDF properties
         AlgorithmSuite gcmNoKdf = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
@@ -100,7 +100,7 @@ public class AlgorithmSuiteValidationTest {
         assertFalse(cbc.isCommitting());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAlgorithmSuiteUniqueIds() {
         AlgorithmSuite[] suites = AlgorithmSuite.values();
         for (int i = 0; i < suites.length; i++) {

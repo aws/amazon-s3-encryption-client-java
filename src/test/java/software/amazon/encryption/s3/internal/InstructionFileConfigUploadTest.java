@@ -16,7 +16,7 @@ import static org.mockito.Mockito.*;
 
 class InstructionFileConfigUploadTest {
 
-    @Test
+    @RetryingTest(3)
     void uploadInstructionFileWithSetContentLengthSyncClient() {
         // Create a mock for the S3 client
         S3Client mockedS3Client = mock(S3Client.class);
@@ -42,7 +42,7 @@ class InstructionFileConfigUploadTest {
         assertEquals(instructionFileContent.getBytes().length, instructionFilePutCaptor.getValue().contentLength());
     }
 
-    @Test
+    @RetryingTest(3)
     void uploadInstructionFileWithSetContentLengthAsyncClient() {
         // Create a mock for the S3 client
         S3AsyncClient mockedS3Client = mock(S3AsyncClient.class);

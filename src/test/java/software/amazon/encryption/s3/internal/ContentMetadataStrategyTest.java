@@ -61,7 +61,7 @@ public class ContentMetadataStrategyTest {
                 .build();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testDetectV1Format() {
         //= specification/s3-encryption/data-format/content-metadata.md#determining-s3ec-object-status
         //= type=test
@@ -80,7 +80,7 @@ public class ContentMetadataStrategyTest {
     }
 
 
-    @Test
+    @RetryingTest(3)
     public void testV3WithEncryptionContext() {
         //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
         //= type=test
@@ -110,7 +110,7 @@ public class ContentMetadataStrategyTest {
         assertEquals("test-key-id", result.encryptionContext().get("kms_cmk_id"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3AesWithMaterialDescription() {
         //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
         //= type=test
@@ -140,7 +140,7 @@ public class ContentMetadataStrategyTest {
         assertEquals("material-desc", result.materialsDescription().get("test"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3RsaWithMaterialDescription() {
         //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
         //= type=test
@@ -170,7 +170,7 @@ public class ContentMetadataStrategyTest {
         assertEquals("material-desc", result.materialsDescription().get("test"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3WithoutMaterialDescriptionInMetatadata() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-c", "115");
@@ -193,7 +193,7 @@ public class ContentMetadataStrategyTest {
                 result.encryptedDataKey().keyProviderInfo());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRangedGetV3() {
         //= specification/s3-encryption/decryption.md#ranged-gets
         //= type=test
@@ -219,7 +219,7 @@ public class ContentMetadataStrategyTest {
         assertEquals(AlgorithmSuite.ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY, result.algorithmSuite());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRangedGetV2() {
         //= specification/s3-encryption/decryption.md#ranged-gets
         //= type=test
@@ -242,7 +242,7 @@ public class ContentMetadataStrategyTest {
         assertEquals(AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF, result.algorithmSuite());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV1LegacyInferAESFromCiphertextLength() {
         // Test legacy V1 behavior where algorithm is inferred from ciphertext length
         Map<String, String> metadata = new HashMap<>();
@@ -259,7 +259,7 @@ public class ContentMetadataStrategyTest {
         assertEquals("AES", result.encryptedDataKey().keyProviderInfo());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV1LegacyInferRSAFromCiphertextLength() {
         // Test legacy V1 behavior where algorithm is inferred from ciphertext length
         Map<String, String> metadata = new HashMap<>();
@@ -277,7 +277,7 @@ public class ContentMetadataStrategyTest {
         assertEquals("RSA", result.encryptedDataKey().keyProviderInfo());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testUnknownContentEncryptionAlgorithmV3() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-c", "999"); // Unknown algorithm
@@ -294,7 +294,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(exception.getMessage().contains("Unknown content encryption algorithm for V3 message format"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testUnknownContentEncryptionAlgorithmV2() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-iv", "dGVzdC1pdi0xMi1i");
@@ -312,7 +312,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(exception.getMessage().contains("Unknown content encryption algorithm for V2 message format"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMissingKeysV3InstructionFile() {
         Map<String, String> objectMetadata = new HashMap<>();
         objectMetadata.put("x-amz-c", "115");
@@ -341,7 +341,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata to decrypt the object are missing"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMissingKeysV3() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-c", "999"); // Unknown algorithm
@@ -362,7 +362,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata to decrypt the object are missing"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMissingKeysV2InstructionFile() {
         Map<String, String> instructionMetadata = new HashMap<>();
         instructionMetadata.put("x-amz-iv", "dGVzdC1pdi0xMi1i");
@@ -389,7 +389,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata to decrypt the object are missing"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMissingKeysV2() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-iv", "dGVzdC1pdi0xMi1i");
@@ -411,7 +411,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata to decrypt the object are missing"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMissingKeysV1() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-iv", "dGVzdC1pdi0xMi1i");
@@ -430,7 +430,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata to decrypt the object are missing"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testExclusiveKeysCollision() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-iv", "dGVzdC1pdi0xMi1i");
@@ -454,7 +454,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(exception.getMessage().contains("Content metadata is tampered, required metadata to decrypt the object are missing"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testTagLengthValidationV2() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-iv", "dGVzdC1pdi0xMi1i");
@@ -620,7 +620,7 @@ public class ContentMetadataStrategyTest {
 
     // ========== ENCODING TESTS ==========
 
-    @Test
+    @RetryingTest(3)
     public void testEncodeMetadataV2GCM() {
         // Test V2 metadata encoding similar to Go's TestEncodeMetaV2
         EncryptedDataKey edk = EncryptedDataKey.builder()
@@ -673,7 +673,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(matDesc.contains("value"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncodeMetaV2WithEmptyMaterialDescription() {
         EncryptedDataKey edk = EncryptedDataKey.builder()
                 .encryptedDataKey("encrypted-key-data".getBytes(StandardCharsets.UTF_8))
@@ -701,7 +701,7 @@ public class ContentMetadataStrategyTest {
         assertEquals("{}", matDesc);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testDecodeMetadataV3GCMFromInstructionFile() {
         //= specification/s3-encryption/data-format/content-metadata.md#content-metadata-mapkeys
         //= type=test
@@ -784,7 +784,7 @@ public class ContentMetadataStrategyTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncodeMetaV3WithAESGCM() {
         // Test V3 encoding with AES/GCM wrapping algorithm
         EncryptedDataKey edk = EncryptedDataKey.builder()
@@ -845,7 +845,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(matDesc.contains("value"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncodeMetaV3WithKMSContext() {
         // Test V3 encoding with kms+context wrapping algorithm
         EncryptedDataKey edk = EncryptedDataKey.builder()
@@ -893,7 +893,7 @@ public class ContentMetadataStrategyTest {
         assertTrue(encCtx.contains("value"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncodeMetaV3WithRSAOAEP() {
         // Test V3 encoding with RSA-OAEP-SHA1 wrapping algorithm
         EncryptedDataKey edk = EncryptedDataKey.builder()

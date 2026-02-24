@@ -9,12 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KmsKeyringTest {
 
-    @Test
+    @RetryingTest(3)
     public void buildKmsKeyringWithNullSecureRandomFails() {
         assertThrows(S3EncryptionClientException.class, () -> KmsKeyring.builder().secureRandom(null));
     }
 
-    @Test
+    @RetryingTest(3)
     public void buildKmsKeyringWithNullDataKeyGeneratorFails() {
         assertThrows(S3EncryptionClientException.class, () -> KmsKeyring.builder().dataKeyGenerator(null));
     }

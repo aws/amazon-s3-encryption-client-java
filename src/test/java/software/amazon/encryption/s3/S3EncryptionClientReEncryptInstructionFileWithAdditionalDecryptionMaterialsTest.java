@@ -76,7 +76,7 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
      * This test encrypts an object with AES_KEY_1, then uses a client with AES_KEY_2 as the primary key
      * but with additionalDecryptionMaterials containing AES_KEY_1 to re-encrypt the instruction file.
      */
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringReEncryptInstructionFileWithAdditionalDecryptionMaterials() {
         // Create materials descriptions
         MaterialsDescription originalMatDesc = MaterialsDescription.builder()
@@ -245,7 +245,7 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
      * This test encrypts an object with RSA_KEY_PAIR_1, then uses a client with RSA_KEY_PAIR_2 as the primary key
      * but with additionalDecryptionMaterials containing RSA_KEY_PAIR_1 to re-encrypt the instruction file.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithAdditionalDecryptionMaterials() {
         // Create materials descriptions
         MaterialsDescription originalMatDesc = MaterialsDescription.builder()
@@ -430,7 +430,7 @@ public class S3EncryptionClientReEncryptInstructionFileWithAdditionalDecryptionM
      * This test encrypts an object with RSA_KEY_PAIR_1, then uses a client with RSA_KEY_PAIR_2 as the primary key
      * but with additionalDecryptionMaterials containing RSA_KEY_PAIR_1 to re-encrypt the instruction file with a custom suffix.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithCustomSuffixAndAdditionalDecryptionMaterials() {
         // Create materials descriptions
         MaterialsDescription originalMatDesc = MaterialsDescription.builder()

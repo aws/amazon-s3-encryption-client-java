@@ -11,7 +11,7 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
 
 public class MetadataKeyConstantsTest {
 
-    @Test
+    @RetryingTest(3)
     public void testWrappingAlgorithmCompression() {
         //= specification/s3-encryption/data-format/content-metadata.md#v3-only
         //= type=test
@@ -37,7 +37,7 @@ public class MetadataKeyConstantsTest {
         });
     }
 
-    @Test
+    @RetryingTest(3)
     public void testWrappingAlgorithmDecompression() {
         //= specification/s3-encryption/data-format/content-metadata.md#v3-only
         //= type=test

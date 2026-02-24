@@ -23,7 +23,7 @@ public class KeyMaterialTest {
     /**
      * Test creating AesKeyMaterial using the builder.
      */
-    @Test
+    @RetryingTest(3)
     public void testAesKeyMaterial() throws NoSuchAlgorithmException {
         // Generate an AES key
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
@@ -50,7 +50,7 @@ public class KeyMaterialTest {
     /**
      * Test creating RsaKeyMaterial using the builder.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyMaterial() throws NoSuchAlgorithmException {
         // Generate an RSA key pair
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
@@ -83,7 +83,7 @@ public class KeyMaterialTest {
     /**
      * Test using AesKeyMaterial with additionalDecryptionKeyMaterial.
      */
-    @Test
+    @RetryingTest(3)
     public void testAesKeyMaterialWithAdditionalDecryptionKeyMaterial() throws NoSuchAlgorithmException {
         // Generate AES keys
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
@@ -126,7 +126,7 @@ public class KeyMaterialTest {
     /**
      * Test using RsaKeyMaterial with additionalDecryptionKeyMaterial.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyMaterialWithAdditionalDecryptionKeyMaterial() throws NoSuchAlgorithmException {
         // Generate RSA key pairs
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");

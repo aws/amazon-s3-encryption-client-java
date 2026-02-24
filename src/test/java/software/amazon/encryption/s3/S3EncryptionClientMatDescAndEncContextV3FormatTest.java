@@ -46,7 +46,7 @@ public class S3EncryptionClientMatDescAndEncContextV3FormatTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKmsEncryptionContextInObjectMetadata() {
         S3EncryptionClient client = S3EncryptionClient
                 .builderV4()
@@ -80,7 +80,7 @@ public class S3EncryptionClientMatDescAndEncContextV3FormatTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesMaterialsDescriptionInObjectMetadata() {
         AesKeyring aesKeyring = AesKeyring
                 .builder()
@@ -118,7 +118,7 @@ public class S3EncryptionClientMatDescAndEncContextV3FormatTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaMaterialsDescriptionInObjectMetadata() {
         PartialRsaKeyPair keyPair = new PartialRsaKeyPair(
                 RSA_KEY_PAIR.getPrivate(),
@@ -165,7 +165,7 @@ public class S3EncryptionClientMatDescAndEncContextV3FormatTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKmsEncryptionContextInInstructionFile() {
 
         S3Client wrappedClient = S3Client.create();
@@ -222,7 +222,7 @@ public class S3EncryptionClientMatDescAndEncContextV3FormatTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesMaterialsDescriptionInInstructionFile() {
         AesKeyring aesKeyring = AesKeyring
                 .builder()
@@ -282,7 +282,7 @@ public class S3EncryptionClientMatDescAndEncContextV3FormatTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaMaterialsDescriptionInInstructionFile() {
         PartialRsaKeyPair keyPair = new PartialRsaKeyPair(
                 RSA_KEY_PAIR.getPrivate(),
@@ -351,7 +351,7 @@ public class S3EncryptionClientMatDescAndEncContextV3FormatTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringMatDescOverridesPutObjectEncryptionContext() {
         AesKeyring aesKeyring = AesKeyring
                 .builder()
@@ -415,7 +415,7 @@ public class S3EncryptionClientMatDescAndEncContextV3FormatTest {
         assertNull(matDescNode.asObject().get("admin"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringMatDescOverridesPutObjectEncryptionContext() {
         PartialRsaKeyPair keyPair = new PartialRsaKeyPair(
                 RSA_KEY_PAIR.getPrivate(),

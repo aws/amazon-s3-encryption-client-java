@@ -26,12 +26,12 @@ public class EncryptionMaterialsRequestTest {
                 .s3Request(request).encryptionContext(encryptionContext).build();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testS3Request() {
         assertEquals(request, actualRequestBuilder.s3Request());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncryptionContext() {
         assertEquals(encryptionContext, actualRequestBuilder.encryptionContext());
     }

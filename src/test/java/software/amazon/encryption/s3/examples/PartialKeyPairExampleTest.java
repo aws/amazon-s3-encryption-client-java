@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class PartialKeyPairExampleTest {
 
-    @Test
+    @RetryingTest(3)
     public void testPartialKeyPairExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         try {

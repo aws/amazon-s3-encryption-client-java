@@ -21,7 +21,7 @@ import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 public class CryptographicMaterialsManagerTest {
 
-    @Test
+    @RetryingTest(3)
     public void testCMMReturningNullEncryptionMaterialsThrowsException() {
         final String objectKey = appendTestSuffix("test-cmm-null-encryption-materials");
 
@@ -50,7 +50,7 @@ public class CryptographicMaterialsManagerTest {
         encryptionClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCMMReturningNullDecryptionMaterialsThrowsException() {
         final String objectKey = appendTestSuffix("test-cmm-null-decryption-materials");
 

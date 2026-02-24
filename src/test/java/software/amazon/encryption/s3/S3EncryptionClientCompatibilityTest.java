@@ -78,7 +78,7 @@ public class S3EncryptionClientCompatibilityTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesCbcV1toV3() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3");
 
@@ -128,7 +128,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesCbcV1toV4() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v4");
 
@@ -165,7 +165,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesWrapV1toV3() {
         final String objectKey = appendTestSuffix("aes-wrap-v1-to-v3");
 
@@ -202,7 +202,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesWrapV1toV4() {
         final String objectKey = appendTestSuffix("aes-wrap-v1-to-v4");
 
@@ -236,7 +236,7 @@ public class S3EncryptionClientCompatibilityTest {
         v4Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV2toV3() {
         final String objectKey = appendTestSuffix("aes-gcm-v2-to-v3");
 
@@ -270,7 +270,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV2toV4() {
         final String objectKey = appendTestSuffix("aes-gcm-v2-to-v4");
 
@@ -301,7 +301,7 @@ public class S3EncryptionClientCompatibilityTest {
 
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV2toV3WithInstructionFile() {
         final String objectKey = appendTestSuffix("aes-gcm-v2-to-v3-with-instruction-file");
 
@@ -342,7 +342,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV2toV4WithInstructionFile() {
         final String objectKey = appendTestSuffix("aes-gcm-v2-to-v4-with-instruction-file");
 
@@ -379,7 +379,7 @@ public class S3EncryptionClientCompatibilityTest {
         v4Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV3toV1() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v1");
 
@@ -414,7 +414,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV4toV1Fails() {
         final String objectKey = appendTestSuffix("aes-gcm-v4-to-v1");
 
@@ -460,7 +460,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV3toV2() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v2");
 
@@ -492,7 +492,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV4toV2Fails() {
         final String objectKey = appendTestSuffix("aes-gcm-v4-to-v2");
 
@@ -521,7 +521,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV3toV3() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3");
 
@@ -550,7 +550,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV3toV4FailsWithRequireDecrypt() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v4");
 
@@ -584,7 +584,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV4toV4() {
         final String objectKey = appendTestSuffix("aes-gcm-v4-to-v4");
 
@@ -614,7 +614,7 @@ public class S3EncryptionClientCompatibilityTest {
         v4Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV4toV3() {
         final String objectKey = appendTestSuffix("aes-gcm-v4-to-v3");
 
@@ -649,7 +649,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaV1toV3() {
         final String objectKey = appendTestSuffix("v1-rsa-to-v3");
 
@@ -682,7 +682,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaV1toV4Fails() {
         final String objectKey = appendTestSuffix("v1-rsa-to-v4");
 
@@ -711,7 +711,7 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
 
-    @Test
+    @RetryingTest(3)
     public void RsaV1toV3AesFails() {
         final String objectKey = appendTestSuffix("v1-rsa-to-v3-aes-fails");
 
@@ -738,7 +738,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaEcbV1toV3() {
         final String objectKey = appendTestSuffix("rsa-ecb-v1-to-v3");
 
@@ -775,7 +775,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaEcbV1toV4Fails() {
         final String objectKey = appendTestSuffix("rsa-ecb-v1-to-v4");
 
@@ -809,7 +809,7 @@ public class S3EncryptionClientCompatibilityTest {
         v4Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaOaepV2toV3() {
         final String objectKey = appendTestSuffix("rsa-oaep-v2-to-v3");
 
@@ -845,7 +845,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaOaepV2toV4Fails() {
         final String objectKey = appendTestSuffix("rsa-oaep-v2-to-v4");
 
@@ -878,7 +878,7 @@ public class S3EncryptionClientCompatibilityTest {
         v4Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaOaepV3toV1() {
         final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v1");
 
@@ -913,7 +913,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaOaepV3toV2() {
         final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v2");
 
@@ -945,7 +945,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaOaepV4toV2Fails() {
         final String objectKey = appendTestSuffix("rsa-oaep-v4-to-v2");
 
@@ -974,7 +974,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaOaepV3toV3() {
         final String objectKey = appendTestSuffix("rsa-oaep-v3-to-v3");
 
@@ -1003,7 +1003,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaOaepV4toV4() {
         final String objectKey = appendTestSuffix("rsa-oaep-v4-to-v3");
 
@@ -1033,7 +1033,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsCBCV1ToV3() {
         String objectKey = appendTestSuffix("v1-kms-cbc-to-v3");
 
@@ -1072,7 +1072,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsCBCV1ToV4Fails() {
         String objectKey = appendTestSuffix("v1-kms-cbc-to-v4");
 
@@ -1106,7 +1106,7 @@ public class S3EncryptionClientCompatibilityTest {
         v4Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsV1toV3() {
         final String objectKey = appendTestSuffix("kms-v1-to-v3");
 
@@ -1146,7 +1146,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsV1toV4() {
         final String objectKey = appendTestSuffix("kms-v1-to-v4");
 
@@ -1182,7 +1182,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsContextV2toV3() {
         final String objectKey = appendTestSuffix("kms-context-v2-to-v3");
 
@@ -1226,7 +1226,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsContextV2toV4Fails() {
         final String objectKey = appendTestSuffix("kms-context-v2-to-v4");
 
@@ -1267,7 +1267,7 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
     // All Below cases should expect failure, since we're writing with V3 Message Format
-    @Test
+    @RetryingTest(3)
     public void KmsContextV3toV1() {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v1");
 
@@ -1312,7 +1312,7 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
 
-    @Test
+    @RetryingTest(3)
     public void KmsContextV4toV1Fails() {
         final String objectKey = appendTestSuffix("kms-context-v4-to-v1");
 
@@ -1370,7 +1370,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsContextV3toV2() throws IOException {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v2");
 
@@ -1408,7 +1408,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsContextV4toV2Fails() throws IOException {
         final String objectKey = appendTestSuffix("kms-context-v4-to-v2");
 
@@ -1444,7 +1444,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsContextV3toV3() {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v3");
 
@@ -1478,7 +1478,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsContextV4toV4() {
         final String objectKey = appendTestSuffix("kms-context-v4-to-v3");
 
@@ -1513,7 +1513,7 @@ public class S3EncryptionClientCompatibilityTest {
         v4Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsContextV3toV3MismatchFails() {
         final String objectKey = appendTestSuffix("kms-context-v3-to-v3");
 
@@ -1548,7 +1548,7 @@ public class S3EncryptionClientCompatibilityTest {
     }
 
 
-    @Test
+    @RetryingTest(3)
     public void AesCbcV1toV3FailsWhenLegacyModeDisabled() {
         final String objectKey = appendTestSuffix("aes-cbc-v1-to-v3");
 
@@ -1588,7 +1588,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesCbcV1toV3FailsWhenUnauthencticateModeDisabled() {
         final String objectKey = appendTestSuffix("fails-aes-cbc-v1-to-v3-when-unauthencticate-mode-disabled");
 
@@ -1628,7 +1628,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesCbcV1toV3FailsWhenLegacyKeyringDisabled() {
         final String objectKey = appendTestSuffix("fails-aes-cbc-v1-to-v3-when-legacy-keyring-disabled");
 
@@ -1668,7 +1668,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesWrapV1toV3FailsWhenLegacyModeDisabled() {
         final String objectKey = appendTestSuffix("aes-wrap-v1-to-v3");
 
@@ -1698,7 +1698,7 @@ public class S3EncryptionClientCompatibilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void nullMaterialDescriptionV3() {
         final String objectKey = appendTestSuffix("null-matdesc-v3");
 

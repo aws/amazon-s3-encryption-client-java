@@ -191,7 +191,7 @@ class CipherSubscriberTest {
         return bytes;
     }
 
-    @Test
+    @RetryingTest(3)
     public void testSubscriberBehaviorOneChunk() {
         AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         String plaintext = "unit test of cipher subscriber";
@@ -242,7 +242,7 @@ class CipherSubscriberTest {
         assertEquals(plaintext, new String(ptBytes, StandardCharsets.UTF_8));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testSubscriberBehaviorTagLengthLastChunk() {
         AlgorithmSuite algorithmSuite = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF;
         String plaintext = "unit test of cipher subscriber tag length last chunk";

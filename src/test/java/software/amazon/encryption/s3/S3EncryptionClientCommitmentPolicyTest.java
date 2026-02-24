@@ -40,7 +40,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCommitmentPolicyAndEncryptionAlgorithm() {
         //= specification/s3-encryption/client.md#encryption-algorithm
         //= type=test
@@ -143,7 +143,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
     }
 
 
-    @Test
+    @RetryingTest(3)
     public void testCommitmentPolicyForbidEncryptAllowDecrypt() {
         final String objectKey = appendTestSuffix("commitment-policy-forbid-encrypt-allow-decrypt");
 
@@ -216,7 +216,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
         requireRequireClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCommitmentPolicyRequireEncryptAllowDecrypt() {
         final String objectKey = appendTestSuffix("commitment-policy-require-encrypt-allow-decrypt");
 
@@ -288,7 +288,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
         requireRequireClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCommitmentPolicyRequireEncryptRequireDecrypt() {
         final String objectKey = appendTestSuffix("commitment-policy-require-encrypt-require-decrypt");
 

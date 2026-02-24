@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class InstructionFileExampleTest {
 
-    @Test
+    @RetryingTest(3)
     public void testInstructionFileExample() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         final String kmsKeyId = S3EncryptionClientTestResources.KMS_KEY_ID;

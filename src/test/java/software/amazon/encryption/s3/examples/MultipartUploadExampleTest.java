@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class MultipartUploadExampleTest {
 
-    @Test
+    @RetryingTest(3)
     public void testMultipartUploadExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         try {

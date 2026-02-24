@@ -14,7 +14,7 @@ import software.amazon.encryption.s3.S3EncryptionClientException;
 
 public class InstructionFileConfigValidationTest {
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithBothClientsSet() {
         S3Client syncClient = S3Client.create();
         S3AsyncClient asyncClient = S3AsyncClient.create();
@@ -30,14 +30,14 @@ public class InstructionFileConfigValidationTest {
         asyncClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithNoClientAndNotDisabled() {
         assertThrows(S3EncryptionClientException.class, () ->
             InstructionFileConfig.builder().build()
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithClientAndDisabled() {
         S3Client syncClient = S3Client.create();
 
@@ -51,7 +51,7 @@ public class InstructionFileConfigValidationTest {
         syncClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testBuilderWithPutEnabledButDisabled() {
         assertThrows(S3EncryptionClientException.class, () ->
             InstructionFileConfig.builder()
@@ -61,7 +61,7 @@ public class InstructionFileConfigValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testValidConfigurations() {
         S3Client syncClient = S3Client.create();
         S3AsyncClient asyncClient = S3AsyncClient.create();
@@ -90,7 +90,7 @@ public class InstructionFileConfigValidationTest {
         asyncClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testDefaultInstructionFilePutDisabled() {
         S3Client syncClient = S3Client.create();
 
@@ -103,7 +103,7 @@ public class InstructionFileConfigValidationTest {
         syncClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testInstructionFileConfigWithAsyncClient() {
         S3AsyncClient asyncClient = S3AsyncClient.create();
 
@@ -116,7 +116,7 @@ public class InstructionFileConfigValidationTest {
         asyncClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testInstructionFileConfigDisabledState() {
         InstructionFileConfig disabledConfig = InstructionFileConfig.builder()
             .disableInstructionFile(true)

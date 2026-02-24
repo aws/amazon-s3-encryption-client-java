@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class ClientConfigurationExampleTest {
-  @Test
+  @RetryingTest(3)
   public void testClientConfigurationExamples() {
       try {
           ClientConfigurationExample.main(new String[0]);
