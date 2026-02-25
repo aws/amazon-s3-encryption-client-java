@@ -282,11 +282,4 @@ public class S3EncryptionClientBuilderValidationTest {
         );
         assertTrue(exception.getMessage().contains("Only one may be set of"));
     }
-
-    // TODO: REMOVE THIS TEST - Demo test to verify retry behavior
-    @RetryingTest(3)
-    public void testRetryDemoAlwaysFails() {
-        System.out.println("Retry attempt made - this test always fails");
-        throw new RuntimeException("Demo test to show retry behavior - REMOVE THIS TEST");
-    }
 }
