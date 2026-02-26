@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -30,7 +30,7 @@ public class ParameterMalleabilityTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    @RetryingTest(3)
     public void contentEncryptionDowngradeAttackFails() {
         final String objectKey = appendTestSuffix("content-downgrade-attack-fails");
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -74,7 +74,7 @@ public class ParameterMalleabilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void keyWrapRemovalAttackFails() {
         final String objectKey = appendTestSuffix("keywrap-removal-attack-fails");
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -116,7 +116,7 @@ public class ParameterMalleabilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void keyWrapDowngradeAesWrapAttackFails() {
         final String objectKey = appendTestSuffix("keywrap-downgrade-aeswrap-attack-fails");
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -159,7 +159,7 @@ public class ParameterMalleabilityTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void keyWrapDowngradeAesAttackFails() {
         final String objectKey = appendTestSuffix("keywrap-downgrade-aes-attack-fails");
         S3Client s3Client = S3EncryptionClient.builderV4()

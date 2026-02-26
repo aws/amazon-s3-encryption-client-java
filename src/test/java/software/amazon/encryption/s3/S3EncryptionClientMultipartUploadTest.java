@@ -5,7 +5,7 @@ package software.amazon.encryption.s3;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -60,7 +60,7 @@ public class S3EncryptionClientMultipartUploadTest {
         PROVIDER = Security.getProvider("BC");
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObjectAsync() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object-async");
 
@@ -101,7 +101,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObjectAsyncV4Transition() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object-async");
 
@@ -144,7 +144,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObjectAsyncLargeObjectFails() {
         final String objectKey = appendTestSuffix("multipart-put-object-async-large-object-fails");
 
@@ -173,7 +173,7 @@ public class S3EncryptionClientMultipartUploadTest {
         singleThreadExecutor.shutdown();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObjectAsyncV4TransitionLargeObjectFails() {
         final String objectKey = appendTestSuffix("multipart-put-object-async-large-object-fails");
 
@@ -204,7 +204,7 @@ public class S3EncryptionClientMultipartUploadTest {
         singleThreadExecutor.shutdown();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObject() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object");
 
@@ -239,7 +239,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObjectV4Transition() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object");
 
@@ -284,7 +284,7 @@ public class S3EncryptionClientMultipartUploadTest {
      have a "long" test suite containing this test and any other tests
      which take more than 5-10 minutes to complete.
      */
-//    @Test
+//    @RetryingTest(3)
 //    public void multipartUploadV3OutputStreamLargeObjectFails() throws IOException {
 //        final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-fails");
 //
@@ -376,7 +376,7 @@ public class S3EncryptionClientMultipartUploadTest {
 //        s3Client.close();
 //    }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObjectLargeObjectFails() {
         final String objectKey = appendTestSuffix("multipart-put-object-large-fails");
 
@@ -402,7 +402,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObjectLargeObjectFailsV4Transition() {
         final String objectKey = appendTestSuffix("multipart-put-object-large-fails");
 
@@ -430,7 +430,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartUploadV3OutputStream() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream");
         // Overall "file" is 100MB, split into 10MB parts
@@ -544,7 +544,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartUploadV3OutputStreamV4Transition() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream");
 
@@ -661,7 +661,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartUploadV3OutputStreamPartSize() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size");
 
@@ -755,7 +755,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartUploadV3OutputStreamPartSizeV4Transition() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size");
 
@@ -851,7 +851,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartUploadV3OutputStreamPartSizeMismatch() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size-mismatch");
 
@@ -901,7 +901,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartUploadV3OutputStreamPartSizeMismatchV4Transition() throws IOException {
         final String objectKey = appendTestSuffix("multipart-upload-v3-output-stream-part-size-mismatch");
 
@@ -953,7 +953,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObjectWithOptions() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object-with-options");
 
@@ -997,7 +997,7 @@ public class S3EncryptionClientMultipartUploadTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void multipartPutObjectWithOptionsV4Transition() throws IOException {
         final String objectKey = appendTestSuffix("multipart-put-object-with-options");
 

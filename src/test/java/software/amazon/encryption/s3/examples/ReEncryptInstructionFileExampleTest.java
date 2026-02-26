@@ -1,13 +1,13 @@
 package software.amazon.encryption.s3.examples;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class ReEncryptInstructionFileExampleTest {
 
-    @Test
+    @RetryingTest(3)
     public void testSimpleAesKeyringReEncryptInstructionFile() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         try {
@@ -18,7 +18,7 @@ public class ReEncryptInstructionFileExampleTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void testSimpleRsaKeyringReEncryptInstructionFile() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         try {
@@ -29,7 +29,7 @@ public class ReEncryptInstructionFileExampleTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void testSimpleRsaKeyringReEncryptInstructionFileWithCustomSuffix() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         try {

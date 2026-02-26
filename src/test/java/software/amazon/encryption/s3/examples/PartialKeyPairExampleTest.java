@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.examples;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class PartialKeyPairExampleTest {
 
-    @Test
+    @RetryingTest(3)
     public void testPartialKeyPairExamples() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         try {

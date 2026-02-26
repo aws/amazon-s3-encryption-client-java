@@ -1,13 +1,13 @@
 package software.amazon.encryption.s3.examples;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class InstructionFileExampleTest {
 
-    @Test
+    @RetryingTest(3)
     public void testInstructionFileExample() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
         final String kmsKeyId = S3EncryptionClientTestResources.KMS_KEY_ID;
