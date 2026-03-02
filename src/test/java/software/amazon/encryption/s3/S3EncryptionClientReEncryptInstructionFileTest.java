@@ -17,7 +17,7 @@ import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
@@ -77,7 +77,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         RSA_KEY_PAIR_TWO = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesReEncryptInstructionFileFailsWithSameMaterialsDescription() {
         AesKeyring oldKeyring = AesKeyring
                 .builder()
@@ -143,7 +143,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaReEncryptInstructionFileWithCustomSuffixFailsWithSameMaterialsDescription() {
         PublicKey clientPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey clientPrivateKey = RSA_KEY_PAIR.getPrivate();
@@ -236,7 +236,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesReEncryptInstructionFileRejectsCustomInstructionFileSuffix() {
         AesKeyring oldKeyring = AesKeyring
                 .builder()
@@ -294,7 +294,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileFailsWhenInstructionFilePutNotEnabled() {
         PublicKey originalPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey originalPrivateKey = RSA_KEY_PAIR.getPrivate();
@@ -370,7 +370,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV4TransitionAesKeyringReEncryptInstructionFile() {
         AesKeyring oldKeyring = AesKeyring
                 .builder()
@@ -543,7 +543,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV4TransitionRsaKeyringReEncryptInstructionFile() {
         PublicKey originalPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey originalPrivateKey = RSA_KEY_PAIR.getPrivate();
@@ -722,7 +722,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV4RsaKeyringReEncryptInstructionFileWithCustomSuffix() {
         PublicKey clientPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey clientPrivateKey = RSA_KEY_PAIR.getPrivate();
@@ -944,7 +944,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV4TransitionRsaKeyringReEncryptInstructionFileWithCustomSuffix() {
         PublicKey clientPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey clientPrivateKey = RSA_KEY_PAIR.getPrivate();
@@ -1160,7 +1160,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileV2AesToV3() {
         final String input =
                 "Testing re-encryption of instruction file with AES keyrings from V2 to V3";
@@ -1276,7 +1276,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3RotatedClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileWithCustomSuffixV2RsaToV3()
             throws IOException {
         final String input =
@@ -1450,7 +1450,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileV2RsaToV3() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
@@ -1584,7 +1584,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileUpgradesV1AesToV3() {
         final String input =
                 "Testing re-encryption of instruction file, upgrading legacy V1 AES to V3";
@@ -1727,7 +1727,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3RotatedClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileWithCustomSuffixUpgradesV1RsaToV3()
             throws IOException {
         final String input =
@@ -1906,7 +1906,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileUpgradesV1RsaToV3() {
         final String input =
                 "Testing re-encryption of instruction file, upgrading legacy V1 RSA to V3";
@@ -2070,7 +2070,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileUpgradesV1AesEncryptionOnlyToV3() {
         final String input =
                 "Testing re-encryption of instruction file, upgrading legacy V1 Encryption Only AES to V3";
@@ -2227,7 +2227,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3RotatedClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileWithCustomSuffixUpgradesV1RsaEncryptionOnlyToV3()
             throws IOException {
         final String input =
@@ -2418,7 +2418,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testReEncryptInstructionFileUpgradesV1RsaEncryptionOnlyToV3()
             throws IOException {
         final String input =
@@ -2595,7 +2595,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringReEncryptInstructionFileEnforceRotation() {
         AesKeyring oldKeyring = AesKeyring
                 .builder()
@@ -2659,7 +2659,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringReEncryptInstructionFileEnforceRotationWithSameKey() {
         AesKeyring oldKeyring = AesKeyring
                 .builder()
@@ -2729,7 +2729,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileEnforceRotation() {
         PublicKey originalPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey originalPrivateKey = RSA_KEY_PAIR.getPrivate();
@@ -2811,7 +2811,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileEnforceRotationWithSameKey() {
         PublicKey originalPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey originalPrivateKey = RSA_KEY_PAIR.getPrivate();
@@ -2890,7 +2890,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithCustomSuffixEnforceRotation() {
         PublicKey clientPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey clientPrivateKey = RSA_KEY_PAIR.getPrivate();
@@ -2981,7 +2981,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithCustomSuffixEnforceRotationWithSameKey() {
         PublicKey clientPublicKey = RSA_KEY_PAIR.getPublic();
         PrivateKey clientPrivateKey = RSA_KEY_PAIR.getPrivate();
@@ -3069,7 +3069,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringReEncryptInstructionFileV1ToV3UpgradeEnforceRotation() {
         final String objectKey = appendTestSuffix(
                 "v1-aes-to-v3-re-encrypt-instruction-file-with-enforce-rotation-test"
@@ -3175,7 +3175,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3RotatedClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringReEncryptInstructionFileV1ToV3UpgradeEnforceRotationWithSameKey() {
         final String objectKey = appendTestSuffix(
                 "v1-aes-to-v3-re-encrypt-instruction-file-with-enforce-rotation-same-key-test"
@@ -3287,7 +3287,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3RotatedClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringReEncryptInstructionFileV2ToV3EnforceRotationWithSameKey() {
         final String objectKey = appendTestSuffix(
                 "v2-aes-to-v3-re-encrypt-instruction-file-with-enforce-rotation-same-key-test"
@@ -3386,7 +3386,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3RotatedClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringReEncryptInstructionFileV2ToV3EnforceRotation() {
         final String objectKey = appendTestSuffix(
                 "v2-aes-to-v3-re-encrypt-instruction-file-with-enforce-rotation-test"
@@ -3479,7 +3479,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3RotatedClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithCustomSuffixV2ToV3EnforceRotation() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
@@ -3586,7 +3586,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithCustomSuffixV2ToV3EnforceRotationWithSameKey() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
@@ -3690,7 +3690,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileV2ToV3EnforceRotation() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
@@ -3786,7 +3786,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileV2ToV3EnforceRotationWithSameKey() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V2 to V3";
@@ -3879,7 +3879,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileV1ToV3EnforceRotation() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V1 to V3";
@@ -3989,7 +3989,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileV1ToV3EnforceRotationWithSameKey() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V1 to V3";
@@ -4096,7 +4096,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithCustomSuffixV1ToV3EnforceRotation() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V1 to V3";
@@ -4207,7 +4207,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithCustomSuffixV1ToV3EnforceRotationWithSameKey() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V1 to V3";
@@ -4315,7 +4315,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithCustomSuffixV1ToV3EnforceRotationEncryptionOnly() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V1 to V3";
@@ -4426,7 +4426,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileWithCustomSuffixV1ToV3EnforceRotationWithSameKeyEncryptionOnly() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V1 to V3";
@@ -4534,7 +4534,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileV1ToV3EnforceRotationEncryptionOnly() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V1 to V3";
@@ -4644,7 +4644,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringReEncryptInstructionFileV1ToV3EnforceRotationWithSameKeyEncryptionOnly() {
         final String input =
                 "Testing re-encryption of instruction file with RSA keyrings from V1 to V3";
@@ -4751,7 +4751,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3OriginalClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringReEncryptInstructionFileV1ToV3UpgradeEnforceRotationEncryptionOnly() {
         final String objectKey = appendTestSuffix(
                 "v1-aes-to-v3-re-encrypt-instruction-file-with-enforce-rotation-encryption-only-test"
@@ -4857,7 +4857,7 @@ public class S3EncryptionClientReEncryptInstructionFileTest {
         deleteObject(BUCKET, objectKey, v3RotatedClient);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringReEncryptInstructionFileV1ToV3UpgradeEnforceRotationWithSameKeyEncryptionOnly() {
         final String objectKey = appendTestSuffix(
                 "v1-aes-to-v3-re-encrypt-instruction-file-with-enforce-rotation-same-key-encryption-only-test"

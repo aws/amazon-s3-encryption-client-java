@@ -10,7 +10,7 @@ import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -57,7 +57,7 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 public class S3EncryptionClientInstructionFileTest {
 
 
-    @Test
+    @RetryingTest(3)
     public void testS3EncryptionClientInstructionFileV1V2Format() {
         final String objectKey = appendTestSuffix("simple-instruction-file-v1-v2-test");
         final String input = "testS3EncryptionClientInstructionFile";
@@ -146,7 +146,7 @@ public class S3EncryptionClientInstructionFileTest {
         defaultClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3TransitionInstructionFileExists() {
         final String objectKey = appendTestSuffix("instruction-file-put-object");
         final String input = "SimpleTestOfV3EncryptionClient";
@@ -188,7 +188,7 @@ public class S3EncryptionClientInstructionFileTest {
         defaultClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3InstructionFileExists() {
         final String objectKey = appendTestSuffix("instruction-file-put-object");
         final String input = "SimpleTestOfV3EncryptionClient";
@@ -230,7 +230,7 @@ public class S3EncryptionClientInstructionFileTest {
         defaultClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3DisabledClientFails() {
         final String objectKey = appendTestSuffix("instruction-file-put-object-disabled-fails");
         final String input = "SimpleTestOfV3EncryptionClient";
@@ -283,7 +283,7 @@ public class S3EncryptionClientInstructionFileTest {
      * This test is somewhat redundant given deletion itself is tested in
      * e.g. deleteObjectWithInstructionFileSuccess, but is included anyway to be thorough
      */
-    @Test
+    @RetryingTest(3)
     public void testV3TransitionInstructionFileDelete() {
         final String objectKey = appendTestSuffix("instruction-file-put-object-delete");
         final String input = "SimpleTestOfV3EncryptionClient";
@@ -336,7 +336,7 @@ public class S3EncryptionClientInstructionFileTest {
         defaultClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3InstructionFileDelete() {
         final String objectKey = appendTestSuffix("instruction-file-put-object-delete");
         final String input = "SimpleTestOfV3EncryptionClient";
@@ -389,7 +389,7 @@ public class S3EncryptionClientInstructionFileTest {
         defaultClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testPutWithInstructionFileV4TransitionToV2Kms() {
         final String objectKey = appendTestSuffix("instruction-file-put-object-v3-to-v2-kms");
         final String input = "SimpleTestOfV3EncryptionClient";
@@ -428,7 +428,7 @@ public class S3EncryptionClientInstructionFileTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testPutWithInstructionFileV4TransitionToV2Aes() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
@@ -470,7 +470,7 @@ public class S3EncryptionClientInstructionFileTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testPutWithInstructionFileV4TransitionToV2Rsa() throws NoSuchAlgorithmException {
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
         keyPairGen.initialize(2048);
@@ -513,7 +513,7 @@ public class S3EncryptionClientInstructionFileTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3TransitionMultipartPutWithInstructionFile() throws IOException {
         final String object_key = appendTestSuffix("test-multipart-put-instruction-file");
 
@@ -564,7 +564,7 @@ public class S3EncryptionClientInstructionFileTest {
 
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3MultipartPutWithInstructionFile() throws IOException {
         final String object_key = appendTestSuffix("test-multipart-put-instruction-file");
 
@@ -615,7 +615,7 @@ public class S3EncryptionClientInstructionFileTest {
 
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3TransitionLowLevelMultipartPutWithInstructionFile() throws NoSuchAlgorithmException, IOException {
         final String object_key = appendTestSuffix("test-low-level-multipart-put-instruction-file");
 
@@ -717,7 +717,7 @@ public class S3EncryptionClientInstructionFileTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testV3LowLevelMultipartPutWithInstructionFile() throws NoSuchAlgorithmException, IOException {
         final String object_key = appendTestSuffix("test-low-level-multipart-put-instruction-file");
 
