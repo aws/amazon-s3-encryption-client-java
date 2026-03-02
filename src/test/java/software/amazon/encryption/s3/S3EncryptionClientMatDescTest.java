@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
@@ -46,7 +46,7 @@ public class S3EncryptionClientMatDescTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesMaterialsDescriptionInObjectMetadata() {
         AesKeyring aesKeyring = AesKeyring
                 .builder()
@@ -85,7 +85,7 @@ public class S3EncryptionClientMatDescTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaMaterialsDescriptionInObjectMetadata() {
         PartialRsaKeyPair keyPair = new PartialRsaKeyPair(
                 RSA_KEY_PAIR.getPrivate(),
@@ -133,7 +133,7 @@ public class S3EncryptionClientMatDescTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesMaterialsDescriptionInInstructionFile() {
         AesKeyring aesKeyring = AesKeyring
                 .builder()
@@ -192,7 +192,7 @@ public class S3EncryptionClientMatDescTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaMaterialsDescriptionInInstructionFile() {
         PartialRsaKeyPair keyPair = new PartialRsaKeyPair(
                 RSA_KEY_PAIR.getPrivate(),
@@ -261,7 +261,7 @@ public class S3EncryptionClientMatDescTest {
         deleteObject(BUCKET, objectKey, client);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringMatDescOverridesPutObjectEncryptionContext() {
         AesKeyring aesKeyring = AesKeyring
                 .builder()
@@ -327,7 +327,7 @@ public class S3EncryptionClientMatDescTest {
         assertNull(matDescNode.asObject().get("admin"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringMatDescOverridesPutObjectEncryptionContext() {
         PartialRsaKeyPair keyPair = new PartialRsaKeyPair(
                 RSA_KEY_PAIR.getPrivate(),

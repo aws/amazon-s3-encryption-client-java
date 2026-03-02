@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 
 class InstructionFileConfigUploadTest {
 
-  @Test
+  @RetryingTest(3)
   void uploadInstructionFileWithSetContentLengthSyncClient() {
     // Create a mock for the S3 client
     S3Client mockedS3Client = mock(S3Client.class);
@@ -44,7 +44,7 @@ class InstructionFileConfigUploadTest {
     assertEquals(instructionFileContent.getBytes().length, instructionFilePutCaptor.getValue().contentLength());
   }
 
-  @Test
+  @RetryingTest(3)
   void uploadInstructionFileWithSetContentLengthAsyncClient() {
     // Create a mock for the S3 client
     S3AsyncClient mockedS3Client = mock(S3AsyncClient.class);

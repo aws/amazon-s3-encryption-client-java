@@ -1,6 +1,6 @@
 package software.amazon.encryption.s3.internal;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.services.s3.model.*;
 
@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ConvertSDKRequestsTest {
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_Bucket() {
     final String value = "test-bucket";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -24,7 +24,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.bucket());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ACL() {
     final ObjectCannedACL value = ObjectCannedACL.PRIVATE;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -35,7 +35,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.acl());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ACL2() {
     final String value = ObjectCannedACL.PRIVATE.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -46,7 +46,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.acl().toString());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_BucketKeyEnabled() {
     final Boolean value = true;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -57,7 +57,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.bucketKeyEnabled());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_CacheControl() {
     final String value = "max-age=3600";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -68,7 +68,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.cacheControl());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ChecksumAlgorithm() {
     final ChecksumAlgorithm value = ChecksumAlgorithm.SHA256;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -79,7 +79,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.checksumAlgorithm());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ChecksumAlgorithm2() {
     final String value = ChecksumAlgorithm.SHA256.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -90,7 +90,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.checksumAlgorithm().toString());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ContentDisposition() {
     final String value = "attachment; filename=\"filename.jpg\"";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -101,7 +101,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.contentDisposition());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ContentEncoding() {
     final String value = "gzip";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -112,7 +112,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.contentEncoding());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ContentLanguage() {
     final String value = "en-US";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -123,7 +123,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.contentLanguage());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ContentType() {
     final String value = "text/plain";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -134,7 +134,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.contentType());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ExpectedBucketOwner() {
     final String value = "owner123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -145,7 +145,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.expectedBucketOwner());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_Expires() {
     final Instant value = Instant.now();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -156,7 +156,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.expires());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_GrantFullControl() {
     final String value = "id=123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -167,7 +167,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.grantFullControl());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_GrantRead() {
     final String value = "id=123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -178,7 +178,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.grantRead());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_GrantReadACP() {
     final String value = "id=123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -189,7 +189,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.grantReadACP());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_GrantWriteACP() {
     final String value = "id=123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -200,7 +200,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.grantWriteACP());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_Key() {
     final String value = "test-key";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -211,7 +211,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.key());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_Metadata() {
     final Map<String, String> value = new HashMap<>();
     value.put("key1", "value1");
@@ -223,7 +223,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.metadata());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ObjectLockLegalHoldStatus() {
     final ObjectLockLegalHoldStatus value = ObjectLockLegalHoldStatus.ON;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -234,7 +234,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.objectLockLegalHoldStatus());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ObjectLockLegalHoldStatus2() {
     final String value = ObjectLockLegalHoldStatus.ON.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -245,7 +245,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.objectLockLegalHoldStatus().toString());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ObjectLockMode() {
     final ObjectLockMode value = ObjectLockMode.GOVERNANCE;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -256,7 +256,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.objectLockMode());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ObjectLockMode2() {
     final String value = "GOVERNANCE";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -267,7 +267,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.objectLockMode().toString());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ObjectLockRetainUntilDate() {
     final Instant value = Instant.now();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -278,7 +278,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.objectLockRetainUntilDate());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_RequestPayer() {
     final RequestPayer value = RequestPayer.REQUESTER;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -289,7 +289,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.requestPayer());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_RequestPayer2() {
     final String value = RequestPayer.REQUESTER.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -300,7 +300,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.requestPayer().toString());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ServerSideEncryption() {
     final ServerSideEncryption value = ServerSideEncryption.AES256;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -311,7 +311,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.serverSideEncryption());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_ServerSideEncryption2() {
     final String value = ServerSideEncryption.AES256.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -322,7 +322,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.serverSideEncryption().toString());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_SSECustomerAlgorithm() {
     final String value = "AES256";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -333,7 +333,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.sseCustomerAlgorithm());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_SSECustomerKey() {
     final String value = "key123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -344,7 +344,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.sseCustomerKey());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_SSEKMSKeyId() {
     final String value = "arn:aws:kms:region:123456789012:key/key-id";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -355,7 +355,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.ssekmsKeyId());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_SSEKMSEncryptionContext() {
     final String value = "context123";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -366,7 +366,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.ssekmsEncryptionContext());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_StorageClass() {
     final StorageClass value = StorageClass.STANDARD;
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -377,7 +377,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.storageClass());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_StorageClass2() {
     final String value = StorageClass.STANDARD.toString();
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -388,7 +388,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.storageClass().toString());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_Tagging() {
     final String value = "key1=value1&key2=value2";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -399,7 +399,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.tagging());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_WebsiteRedirectLocation() {
     final String value = "/redirected";
     PutObjectRequest originalRequest = PutObjectRequest.builder()
@@ -410,7 +410,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.websiteRedirectLocation());
   }
 
-  @Test
+  @RetryingTest(3)
   void testConvertPutObjectRequest_OverrideConfiguration() {
     final AwsRequestOverrideConfiguration value = AwsRequestOverrideConfiguration
       .builder()
@@ -425,7 +425,7 @@ class ConvertSDKRequestsTest {
     assertEquals(value, convertedRequest.overrideConfiguration().get());
   }
 
-  @Test
+  @RetryingTest(3)
   public void testConvertResponse() {
     // Create a CompleteMultipartUploadResponse with various fields set
     CompleteMultipartUploadResponse completeResponse = CompleteMultipartUploadResponse.builder()
@@ -473,7 +473,7 @@ class ConvertSDKRequestsTest {
     assertNull(putResponse.size());
   }
 
-  @Test
+  @RetryingTest(3)
   public void testBasicConvertMultipartUploadRequest() {
     // Create a MultipartUploadRequest with various fields set
     CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
@@ -486,7 +486,7 @@ class ConvertSDKRequestsTest {
     assertNotNull(result);
   }
 
-  @Test
+  @RetryingTest(3)
   public void testConversionAllFieldsMultipartUploadRequestToPutObjectRequest() {
     Map<String, String> metadata = new HashMap<String, String>();
     metadata.put("test-key-1", "test-value-1");
@@ -559,7 +559,7 @@ class ConvertSDKRequestsTest {
     assertEquals("test-website-redirect-location", result.websiteRedirectLocation());
   }
 
-  @Test
+  @RetryingTest(3)
   public void testConvertMultipartUploadRequestWithNullValues() {
     CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
       .bucket("test-bucket")

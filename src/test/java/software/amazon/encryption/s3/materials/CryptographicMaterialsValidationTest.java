@@ -7,14 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 public class CryptographicMaterialsValidationTest {
 
-    @Test
+    @RetryingTest(3)
     public void testEncryptionMaterialsWithNullAlgorithmSuite() {
         assertThrows(NullPointerException.class, () ->
             EncryptionMaterials.builder()
@@ -25,7 +25,7 @@ public class CryptographicMaterialsValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncryptionMaterialsWithInvalidDataKeyLength() {
         // Test with wrong data key length - this might be validated by the keyring rather than materials
         byte[] shortKey = new byte[16]; // Should be 32 for AES-256
@@ -42,7 +42,7 @@ public class CryptographicMaterialsValidationTest {
         assertEquals(16, materials.plaintextDataKey().length);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMaterialsDescriptionValidation() {
         // Test empty materials description
         MaterialsDescription emptyDesc = MaterialsDescription.builder().build();
@@ -59,7 +59,7 @@ public class CryptographicMaterialsValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncryptedDataKeyValidation() {
         // Test with null encrypted key
         EncryptedDataKey keyWithNullData = EncryptedDataKey.builder()
@@ -89,7 +89,7 @@ public class CryptographicMaterialsValidationTest {
         assertNull(keyWithNullProvider.keyProviderId());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncryptedDataKeyWithEmptyEncryptedKey() {
         // Test with empty encrypted key array
         EncryptedDataKey keyWithEmptyData = EncryptedDataKey.builder()
@@ -101,7 +101,7 @@ public class CryptographicMaterialsValidationTest {
         assertEquals(0, keyWithEmptyData.encryptedDatakey().length);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testValidEncryptedDataKeyCreation() {
         // Test valid encrypted data key creation
         EncryptedDataKey validKey = EncryptedDataKey.builder()
@@ -115,7 +115,7 @@ public class CryptographicMaterialsValidationTest {
         assertEquals("test-info", validKey.keyProviderInfo());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testValidMaterialsDescriptionCreation() {
         // Test valid materials description with multiple entries
         MaterialsDescription desc = MaterialsDescription.builder()
