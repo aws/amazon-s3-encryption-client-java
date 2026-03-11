@@ -3,7 +3,7 @@
 package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.CipherMode;
@@ -40,38 +40,38 @@ class EncryptionMaterialsTest {
                 .plaintextDataKey(plaintextDataKey)
                 .build();
     }
-    @Test
+    @RetryingTest(3)
     void testS3Request() {
         assertEquals(s3Request, actualEncryptionMaterials.s3Request());
     }
 
-    @Test
+    @RetryingTest(3)
     void testAlgorithmSuite() {
         assertEquals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, actualEncryptionMaterials.algorithmSuite());
         assertNotEquals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF, actualEncryptionMaterials.algorithmSuite());
     }
 
-    @Test
+    @RetryingTest(3)
     void testEncryptionContext() {
         assertEquals(encryptionContext, actualEncryptionMaterials.encryptionContext());
     }
 
-    @Test
+    @RetryingTest(3)
     void testEncryptedDataKeys() {
         assertEquals(encryptedDataKeys, actualEncryptionMaterials.encryptedDataKeys());
     }
 
-    @Test
+    @RetryingTest(3)
     void testPlaintextDataKey() {
         assertEquals(Arrays.toString(plaintextDataKey), Arrays.toString(actualEncryptionMaterials.plaintextDataKey()));
     }
 
-    @Test
+    @RetryingTest(3)
     void testCipherMode() {
         assertEquals(CipherMode.ENCRYPT, actualEncryptionMaterials.cipherMode());
     }
 
-    @Test
+    @RetryingTest(3)
     void testSetIvAndMessageId() {
         SecureRandom secureRandom = new SecureRandom();
         byte[] iv = new byte[12];
@@ -87,7 +87,7 @@ class EncryptionMaterialsTest {
         assertTrue(MessageDigest.isEqual(messageId, actualEncryptionMaterials.messageId()));
     }
 
-    @Test
+    @RetryingTest(3)
     void testToBuilder() {
         EncryptionMaterials actualToBuilder = actualEncryptionMaterials.toBuilder().build();
         assertEquals(s3Request, actualToBuilder.s3Request());

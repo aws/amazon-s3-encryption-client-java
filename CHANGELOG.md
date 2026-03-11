@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.0.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v4.0.0...v4.0.1) (2026-02-10)
+
+### Fixes
+
+* set instruction file content length ([b76c281](https://github.com/aws/aws-s3-encryption-client-java/commit/b76c2812b856eb1528eb83bbdf8d7e6ead80016e))
+
+### Maintenance
+
+* fix examples & spec path ([#493](https://github.com/aws/aws-s3-encryption-client-java/issues/493)) ([a95aa3f](https://github.com/aws/aws-s3-encryption-client-java/commit/a95aa3fddb5abf4e17551c0ef3c247c7a43edf40))
+
 ## [4.0.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.6.0...v4.0.0) (2025-12-17)
 
 ### ⚠ BREAKING CHANGES

@@ -5,16 +5,17 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class AsyncClientExampleTest {
+public class InstructionFileExampleTest {
 
     @RetryingTest(3)
-    public void testAsyncClientExamples() {
+    public void testInstructionFileExample() {
         final String bucket = S3EncryptionClientTestResources.BUCKET;
+        final String kmsKeyId = S3EncryptionClientTestResources.KMS_KEY_ID;
         try {
-            AsyncClientExample.main(new String[]{bucket});
+            InstructionFileExample.simpleKmsKeyringUseInstructionFile(bucket, kmsKeyId);
         } catch (Throwable exception) {
             exception.printStackTrace();
-            fail("Async Example Test Failed!!", exception);
+            fail("Instruction File Example Test Failed!!", exception);
         }
     }
 }
