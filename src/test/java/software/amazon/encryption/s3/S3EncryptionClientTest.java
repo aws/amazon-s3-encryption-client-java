@@ -42,6 +42,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
 import software.amazon.encryption.s3.internal.MetadataKeyConstants;
+import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.CryptographicMaterialsManager;
 import software.amazon.encryption.s3.materials.DefaultCryptoMaterialsManager;
 import software.amazon.encryption.s3.materials.KmsKeyring;
@@ -52,6 +53,7 @@ import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -961,6 +963,32 @@ public class S3EncryptionClientTest {
         } finally {
             // Cleanup
             s3Client.close();
+        }
+    }
+
+    @RetryingTest(3)
+    public void crossRegionRoundTrip() {
+        final String objectKey = appendTestSuffix("cross-region-test");
+        SecretKeySpec aesKey = new SecretKeySpec(new byte[32], "AES");
+        AesKeyring keyRing = AesKeyring.builder().wrappingKey(aesKey).build();
+
+        S3Client s3 = S3EncryptionClient.builderV4()
+                .region(Region.EU_CENTRAL_1)
+                .crossRegionAccessEnabled(true)
+                .keyring(keyRing)
+                .build();
+
+        try {
+            PutObjectRequest request = PutObjectRequest.builder().bucket(BUCKET).key(objectKey).build();
+            s3.putObject(request, RequestBody.fromBytes("test".getBytes()));
+            ResponseBytes<GetObjectResponse> response = s3.getObjectAsBytes(builder -> builder
+                    .bucket(BUCKET)
+                    .key(objectKey)
+                    .build());
+            assertEquals("test", response.asUtf8String());
+        } finally {
+            deleteObject(BUCKET, objectKey, s3);
+            s3.close();
         }
     }
 
