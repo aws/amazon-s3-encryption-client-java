@@ -84,7 +84,7 @@ public class PutEncryptedObjectPipeline {
                 .overrideConfiguration(API_NAME_INTERCEPTOR)
                 .contentLength(encryptedContent.getCiphertextLength())
                 .build();
-        return _s3AsyncClient.putObject(encryptedPutRequest, encryptedContent.getAsyncCiphertext());
+        return _s3AsyncClient.putObject(encryptedPutRequest, new NoRetriesAsyncRequestBody(encryptedContent.getAsyncCiphertext()));
     }
 
     public static class Builder {

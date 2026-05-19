@@ -17,6 +17,7 @@ import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
@@ -966,7 +967,7 @@ public class S3EncryptionClientTest {
         }
     }
 
-    @RetryingTest(3)
+    @Test
     public void crossRegionRoundTrip() {
         final String objectKey = appendTestSuffix("cross-region-test");
         SecretKeySpec aesKey = new SecretKeySpec(new byte[32], "AES");
@@ -980,14 +981,12 @@ public class S3EncryptionClientTest {
 
         try {
             PutObjectRequest request = PutObjectRequest.builder().bucket(BUCKET).key(objectKey).build();
-            s3.putObject(request, RequestBody.fromBytes("test".getBytes()));
-            ResponseBytes<GetObjectResponse> response = s3.getObjectAsBytes(builder -> builder
-                    .bucket(BUCKET)
-                    .key(objectKey)
-                    .build());
-            assertEquals("test", response.asUtf8String());
+            S3EncryptionClientException ex = assertThrows(S3EncryptionClientException.class, () ->
+                    s3.putObject(request, RequestBody.fromBytes("test".getBytes())));
+            // Cross-region redirect causes the SDK to re-subscribe to the request body.
+            // NoRetriesAsyncRequestBody blocks this to prevent GCM cipher key/IV reuse.
+            assertTrue(ex.getMessage().contains("Re-subscription is not supported"));
         } finally {
-            deleteObject(BUCKET, objectKey, s3);
             s3.close();
         }
     }
