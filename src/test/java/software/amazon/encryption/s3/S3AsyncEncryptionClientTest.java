@@ -46,6 +46,7 @@ import software.amazon.awssdk.services.s3.model.StorageClass;
 import software.amazon.awssdk.services.s3.multipart.MultipartConfiguration;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.InstructionFileConfig;
+import software.amazon.encryption.s3.materials.AesKeyring;
 import software.amazon.encryption.s3.materials.KmsKeyring;
 import software.amazon.encryption.s3.utils.BoundedInputStream;
 import software.amazon.encryption.s3.utils.S3EncryptionClientTestResources;
@@ -53,6 +54,7 @@ import software.amazon.encryption.s3.utils.TinyBufferAsyncRequestBody;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -344,6 +346,30 @@ public class S3AsyncEncryptionClientTest {
             fail("expected exception");
         } catch (NotFoundException e) {
             assertTrue(e.getMessage().contains("Invalid arn"));
+        } finally {
+            s3Client.close();
+        }
+    }
+
+    @RetryingTest(3)
+    public void roundTripWithCrossRegionAccessEnabled() {
+        final String objectKey = appendTestSuffix("roundTripWithCrossRegionAccessEnabled-async-s3ec");
+        SecretKeySpec aesKey = new SecretKeySpec(new byte[32], "AES");
+        AesKeyring keyRing = AesKeyring.builder().wrappingKey(aesKey).build();
+
+        S3AsyncClient s3Client = S3AsyncEncryptionClient.builderV4()
+                .region(Region.EU_CENTRAL_1)
+                .crossRegionAccessEnabled(true)
+                .keyring(keyRing)
+                .build();
+
+        try {
+            PutObjectRequest request = PutObjectRequest.builder().bucket(BUCKET).key(objectKey).build();
+            S3EncryptionClientException ex = assertThrows(S3EncryptionClientException.class, () ->
+                    s3Client.putObject(request, AsyncRequestBody.fromBytes("test".getBytes())).join());
+            // Cross-region redirect causes the SDK to re-subscribe to the request body.
+            // NoRetriesAsyncRequestBody blocks this to prevent GCM cipher key/IV reuse.
+            assertTrue(ex.getMessage().contains("Re-subscription is not supported"));
         } finally {
             s3Client.close();
         }

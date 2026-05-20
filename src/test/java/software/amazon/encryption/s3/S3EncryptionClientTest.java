@@ -967,9 +967,9 @@ public class S3EncryptionClientTest {
         }
     }
 
-    @Test
-    public void crossRegionRoundTrip() {
-        final String objectKey = appendTestSuffix("cross-region-test");
+    @RetryingTest(3)
+    public void roundTripWithCrossRegionAccessEnabled() {
+        final String objectKey = appendTestSuffix("roundTripWithCrossRegionAccessEnabled-sync-s3ec");
         SecretKeySpec aesKey = new SecretKeySpec(new byte[32], "AES");
         AesKeyring keyRing = AesKeyring.builder().wrappingKey(aesKey).build();
 
