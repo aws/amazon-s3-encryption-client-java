@@ -365,11 +365,12 @@ public class S3AsyncEncryptionClientTest {
 
         try {
             PutObjectRequest request = PutObjectRequest.builder().bucket(BUCKET).key(objectKey).build();
-            S3EncryptionClientException ex = assertThrows(S3EncryptionClientException.class, () ->
+            CompletionException ex = assertThrows(CompletionException.class, () ->
                     s3Client.putObject(request, AsyncRequestBody.fromBytes("test".getBytes())).join());
             // Cross-region redirect causes the SDK to re-subscribe to the request body.
             // NoRetriesAsyncRequestBody blocks this to prevent GCM cipher key/IV reuse.
-            assertTrue(ex.getMessage().contains("Re-subscription is not supported"));
+            assertTrue(ex.getCause() instanceof S3EncryptionClientException);
+            assertTrue(ex.getCause().getMessage().contains("Re-subscription is not supported"));
         } finally {
             s3Client.close();
         }
