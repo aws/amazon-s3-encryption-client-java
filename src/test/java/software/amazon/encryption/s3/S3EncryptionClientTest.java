@@ -985,7 +985,7 @@ public class S3EncryptionClientTest {
                     s3.putObject(request, RequestBody.fromBytes("test".getBytes())));
             // Cross-region redirect causes the SDK to re-subscribe to the request body.
             // S3EC blocks this to prevent GCM cipher key/IV reuse.
-            assertTrue(ex.getMessage().contains("Re-subscription is not supported"));
+            assertTrue(ex.getCause().getMessage().contains("Re-subscription is not supported"));
         } finally {
             s3.close();
         }
