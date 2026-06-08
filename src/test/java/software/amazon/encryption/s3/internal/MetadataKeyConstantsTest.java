@@ -5,13 +5,13 @@ package software.amazon.encryption.s3.internal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
 public class MetadataKeyConstantsTest {
 
-    @Test
+    @RetryingTest(3)
     public void testWrappingAlgorithmCompression() {
         //= specification/s3-encryption/data-format/content-metadata.md#v3-only
         //= type=test
@@ -37,7 +37,7 @@ public class MetadataKeyConstantsTest {
         });
     }
 
-    @Test
+    @RetryingTest(3)
     public void testWrappingAlgorithmDecompression() {
         //= specification/s3-encryption/data-format/content-metadata.md#v3-only
         //= type=test

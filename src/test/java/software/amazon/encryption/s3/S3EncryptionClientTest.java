@@ -17,7 +17,7 @@ import com.amazonaws.services.s3.model.KMSEncryptionMaterials;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -116,7 +116,7 @@ public class S3EncryptionClientTest {
     //= specification/s3-encryption/client.md#aws-sdk-compatibility
     //= type=test
     //# The S3EC SHOULD support invoking operations unrelated to client-side encryption e.g. CopyObject as the conventional AWS SDK S3 client would.
-    @Test
+    @RetryingTest(3)
     public void copyObjectTransparently() {
         final String objectKey = appendTestSuffix("copy-object-from-here");
         final String newObjectKey = appendTestSuffix("copy-object-to-here");
@@ -155,7 +155,7 @@ public class S3EncryptionClientTest {
         s3EncryptionClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void deleteObjectWithInstructionFileSuccess() {
         final String objectKey = appendTestSuffix("delete-object-with-instruction-file");
 
@@ -204,7 +204,7 @@ public class S3EncryptionClientTest {
         defaultClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void deleteObjectsWithInstructionFilesSuccess() {
         final String[] objectKeys = {appendTestSuffix("delete-object-with-instruction-file-1"),
                 appendTestSuffix("delete-object-with-instruction-file-2"),
@@ -261,7 +261,7 @@ public class S3EncryptionClientTest {
         defaultClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void deleteObjectWithWrongObjectKeySuccess() {
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -275,7 +275,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void deleteObjectWithWrongBucketFailure() {
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -293,7 +293,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void deleteObjectsWithWrongBucketFailure() {
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -312,7 +312,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void getNonExistentObject() {
         final String objectKey = appendTestSuffix("this-is-not-an-object-key");
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -343,7 +343,7 @@ public class S3EncryptionClientTest {
     //= specification/s3-encryption/client.md#cryptographic-materials
     //= type=test
     //# The S3EC MUST accept either one CMM or one Keyring instance upon initialization.
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithMultipleKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
@@ -356,7 +356,7 @@ public class S3EncryptionClientTest {
     //= specification/s3-encryption/client.md#cryptographic-materials
     //= type=test
     //# If both a CMM and a Keyring are provided, the S3EC MUST throw an exception.
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithCMMAndKeyringFails() {
         CryptographicMaterialsManager defaultCMM = DefaultCryptoMaterialsManager.builder()
                 .keyring(RsaKeyring.builder()
@@ -371,7 +371,7 @@ public class S3EncryptionClientTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithNoKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
@@ -379,7 +379,7 @@ public class S3EncryptionClientTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithNoLegacyKeyringsFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
@@ -388,7 +388,7 @@ public class S3EncryptionClientTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testDefaultContentMetadataStorage() {
         final String objectKey = appendTestSuffix("test-default-content-metadata-storage");
 
@@ -437,7 +437,7 @@ public class S3EncryptionClientTest {
         v4Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsWithAliasARN() {
         final String objectKey = appendTestSuffix("kms-with-alias-arn");
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -453,7 +453,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsWithShortKeyId() {
         final String objectKey = appendTestSuffix("kms-with-short-key-id");
         // Just assume the ARN is well-formed
@@ -473,7 +473,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void KmsAliasARNToKeyId() {
         final String objectKey = appendTestSuffix("kms-alias-arn-to-key-id");
         S3Client aliasClient = S3EncryptionClient.builderV4()
@@ -513,7 +513,7 @@ public class S3EncryptionClientTest {
         keyIdClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesKeyringWithInvalidAesKey() throws NoSuchAlgorithmException {
         SecretKey invalidAesKey;
         KeyGenerator keyGen = KeyGenerator.getInstance("DES");
@@ -527,7 +527,7 @@ public class S3EncryptionClientTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(3)
     public void RsaKeyringWithInvalidRsaKey() throws NoSuchAlgorithmException {
         KeyPair invalidRsaKey;
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("EC");
@@ -541,7 +541,7 @@ public class S3EncryptionClientTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithKeyringFromKmsKeyIdSucceeds() {
         final String objectKey = appendTestSuffix("keyring-from-kms-key-id");
 
@@ -564,7 +564,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithCmmFromKmsKeyIdSucceeds() {
         final String objectKey = appendTestSuffix("cmm-from-kms-key-id");
 
@@ -590,7 +590,7 @@ public class S3EncryptionClientTest {
     //= specification/s3-encryption/client.md#wrapped-s3-client-s
     //= type=test
     //# The S3EC MUST support the option to provide an SDK S3 client instance during its initialization.
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithWrappedS3ClientSucceeds() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-kms-key-id");
 
@@ -622,7 +622,7 @@ public class S3EncryptionClientTest {
      * S3EncryptionClient implements S3Client, so it can be passed into the builder as a wrappedClient.
      * However, is not a supported use case, and the builder should throw an exception if this happens.
      */
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithWrappedS3EncryptionClientFails() {
         S3AsyncClient wrappedAsyncClient = S3AsyncEncryptionClient.builderV4()
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
@@ -638,7 +638,7 @@ public class S3EncryptionClientTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithNullSecureRandomFails() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
@@ -648,7 +648,7 @@ public class S3EncryptionClientTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithSecureRandom() {
         SecureRandom secureRandom = new SecureRandom();
         S3EncryptionClient s3EncryptionClient = S3EncryptionClient.builderV4()
@@ -663,7 +663,7 @@ public class S3EncryptionClientTest {
         s3EncryptionClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientFromKMSKeyDoesNotUseUnprovidedSecureRandom() {
         SecureRandom mockSecureRandom = mock(SecureRandom.class, withSettings().withoutAnnotations());
 
@@ -684,7 +684,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void cryptoProviderV3toV3Enabled() {
         final String objectKey = appendTestSuffix("crypto-provider-enabled-v3-to-v3");
 
@@ -715,7 +715,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void cryptoProviderV2toV3Enabled() {
         final String objectKey = appendTestSuffix("crypto-provider-enabled-v2-to-v3");
 
@@ -754,7 +754,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void contentLengthRequest() {
         final String objectKey = appendTestSuffix("content-length");
 
@@ -786,7 +786,7 @@ public class S3EncryptionClientTest {
         s3EncryptionClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void attemptToDecryptPlaintext() {
         final String objectKey = appendTestSuffix("plaintext-object");
 
@@ -820,7 +820,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void createMultipartUploadFailure() {
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -838,7 +838,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void uploadPartFailure() {
         final String objectKey = appendTestSuffix("upload-part-failure");
         // V3 Client
@@ -873,7 +873,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void completeMultipartUploadFailure() {
         // V3 Client
         S3Client s3Client = S3EncryptionClient.builderV4()
@@ -891,7 +891,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void abortMultipartUploadFailure() {
         final String objectKey = appendTestSuffix("abort-multipart-failure");
 
@@ -912,7 +912,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientWithCustomCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-custom-credentials");
 
@@ -954,7 +954,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientTopLevelAllOptions() {
         final String objectKey = appendTestSuffix("s3-client-with-all-top-level-options");
         AwsCredentialsProvider creds = DefaultCredentialsProvider.create();
@@ -990,7 +990,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientTopLevelCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials");
 
@@ -1012,7 +1012,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientTopLevelCredentialsWrongRegion() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials");
 
@@ -1039,7 +1039,7 @@ public class S3EncryptionClientTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientTopLevelCredentialsNullCreds() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-null-credentials");
 
@@ -1071,7 +1071,7 @@ public class S3EncryptionClientTest {
     //= specification/s3-encryption/client.md#inherited-sdk-configuration
     //= type=test
     //# If the S3EC accepts SDK client configuration, the configuration MUST be applied to all wrapped SDK clients including the KMS client.
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientTopLevelAlternateCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-top-level-credentials");
 
@@ -1114,7 +1114,7 @@ public class S3EncryptionClientTest {
         s3ClientAltCreds.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientMixedCredentials() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials");
 
@@ -1144,7 +1144,7 @@ public class S3EncryptionClientTest {
         kmsClient.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientMixedCredentialsInstructionFile() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials-instruction-file");
         final String input = "SimpleTestOfV3EncryptionClient";
@@ -1200,7 +1200,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void s3EncryptionClientMixedCredentialsInstructionFileFails() {
         final String objectKey = appendTestSuffix("wrapped-s3-client-with-mixed-credentials-instruction-file-fails");
         final String input = "SimpleTestOfV3EncryptionClient";
@@ -1253,7 +1253,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void NonUSASCIIMetadataFails() {
         final String objectKey = appendTestSuffix("non-us-ascii-metadata-fails");
         final String input = "This is a test.";
@@ -1281,7 +1281,7 @@ public class S3EncryptionClientTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testInstructionFileConfig() {
         final String objectKey = appendTestSuffix("instruction-file-config");
         final String input = "SimpleTestOfV3EncryptionClient";

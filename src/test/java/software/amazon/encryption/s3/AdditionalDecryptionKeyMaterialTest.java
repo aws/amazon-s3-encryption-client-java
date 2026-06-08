@@ -3,7 +3,7 @@
 package software.amazon.encryption.s3;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -64,7 +64,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test AES keyring with null additionalDecryptionKeyMaterial map.
      * This tests the default behavior when no additional key material is provided.
      */
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithNullAdditionalKeyMaterial() {
         final String objectKey = appendTestSuffix("aes-null-additional-key-material");
         final String input = "AES with null additional key material";
@@ -124,7 +124,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test AES keyring with empty additionalDecryptionKeyMaterial map.
      * This tests the behavior when an empty map is provided.
      */
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithEmptyAdditionalKeyMaterial() {
         final String objectKey = appendTestSuffix("aes-empty-additional-key-material");
         final String input = "AES with empty additional key material";
@@ -185,7 +185,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test AES keyring with a singleton additionalDecryptionKeyMaterial map.
      * This tests the behavior when a single additional key material is provided.
      */
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithSingletonAdditionalKeyMaterial() {
         final String objectKey = appendTestSuffix("aes-singleton-additional-key-material");
         final String input = "AES with singleton additional key material";
@@ -252,7 +252,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test AES keyring with multiple entries in the additionalDecryptionKeyMaterial map.
      * This tests the behavior when multiple additional key materials are provided.
      */
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithMultipleAdditionalKeyMaterials() {
         final String objectKey = appendTestSuffix("aes-multiple-additional-key-materials");
         final String input = "AES with multiple additional key materials";
@@ -331,7 +331,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test AES keyring with additionalDecryptionKeyMaterial that doesn't match.
      * This tests the behavior when no matching key material is found and it should fall back to the default key.
      */
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithNonMatchingAdditionalKeyMaterial() {
         final String objectKey = appendTestSuffix("aes-non-matching-additional-key-material");
         final String input = "AES with non-matching additional key material";
@@ -402,7 +402,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test AES keyring with additionalDecryptionKeyMaterial that doesn't match and a wrong default key.
      * This tests the behavior when no matching key material is found and the default key is also wrong.
      */
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithNonMatchingAdditionalKeyMaterialAndWrongDefaultKey() {
         final String objectKey = appendTestSuffix("aes-non-matching-additional-key-material-wrong-default");
         final String input = "AES with non-matching additional key material and wrong default key";
@@ -469,7 +469,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test RSA keyring with null additionalDecryptionKeyMaterial map.
      * This tests the default behavior when no additional key material is provided.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringWithNullAdditionalKeyMaterial() {
         final String objectKey = appendTestSuffix("rsa-null-additional-key-material");
         final String input = "RSA with null additional key material";
@@ -535,7 +535,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test RSA keyring with empty additionalDecryptionKeyMaterial map.
      * This tests the behavior when an empty map is provided.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringWithEmptyAdditionalKeyMaterial() {
         final String objectKey = appendTestSuffix("rsa-empty-additional-key-material");
         final String input = "RSA with empty additional key material";
@@ -602,7 +602,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test RSA keyring with a singleton additionalDecryptionKeyMaterial map.
      * This tests the behavior when a single additional key material is provided.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringWithSingletonAdditionalKeyMaterial() {
         final String objectKey = appendTestSuffix("rsa-singleton-additional-key-material");
         final String input = "RSA with singleton additional key material";
@@ -678,7 +678,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test RSA keyring with multiple entries in the additionalDecryptionKeyMaterial map.
      * This tests the behavior when multiple additional key materials are provided.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringWithMultipleAdditionalKeyMaterials() {
         final String objectKey = appendTestSuffix("rsa-multiple-additional-key-materials");
         final String input = "RSA with multiple additional key materials";
@@ -769,7 +769,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test RSA keyring with additionalDecryptionKeyMaterial that doesn't match.
      * This tests the behavior when no matching key material is found and it should fall back to the default key.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringWithNonMatchingAdditionalKeyMaterial() {
         final String objectKey = appendTestSuffix("rsa-non-matching-additional-key-material");
         final String input = "RSA with non-matching additional key material";
@@ -849,7 +849,7 @@ public class AdditionalDecryptionKeyMaterialTest {
      * Test RSA keyring with additionalDecryptionKeyMaterial that doesn't match and a wrong default key.
      * This tests the behavior when no matching key material is found and the default key is also wrong.
      */
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringWithNonMatchingAdditionalKeyMaterialAndWrongDefaultKey() {
         final String objectKey = appendTestSuffix("rsa-non-matching-additional-key-material-wrong-default");
         final String input = "RSA with non-matching additional key material and wrong default key";

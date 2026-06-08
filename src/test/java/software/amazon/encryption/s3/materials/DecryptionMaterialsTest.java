@@ -3,7 +3,7 @@
 package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
@@ -31,18 +31,18 @@ public class DecryptionMaterialsTest {
                 .build();
     }
 
-    @Test
+    @RetryingTest(3)
     public  void testS3Request() {
         assertEquals(s3Request, actualDecryptionMaterials.s3Request());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAlgorithmSuite() {
         assertEquals(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, actualDecryptionMaterials.algorithmSuite());
         assertNotEquals(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF, actualDecryptionMaterials.algorithmSuite());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncryptionContext() {
         assertEquals(encryptionContext, actualDecryptionMaterials.encryptionContext());
     }

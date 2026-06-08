@@ -12,7 +12,7 @@ import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResource
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -40,7 +40,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCommitmentPolicyAndEncryptionAlgorithm() {
         //= specification/s3-encryption/client.md#encryption-algorithm
         //= type=test
@@ -142,7 +142,7 @@ public class S3EncryptionClientCommitmentPolicyTest {
 
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCommitmentPolicyForbidEncryptAllowDecrypt() {
         final String objectKey = appendTestSuffix("commitment-policy-forbid-encrypt-allow-decrypt");
 

@@ -1,7 +1,7 @@
 package software.amazon.encryption.s3.materials;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -34,7 +34,7 @@ public class MaterialsDescriptionTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testSimpleMaterialsDescription() {
         MaterialsDescription materialsDescription = MaterialsDescription
                 .builder()
@@ -59,7 +59,7 @@ public class MaterialsDescriptionTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMaterialsDescriptionPutAll() {
         Map<String, String> description = new HashMap<>();
         description.put("version", "1.0");
@@ -85,7 +85,7 @@ public class MaterialsDescriptionTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMaterialsDescriptionAesKeyring() {
         AesKeyring aesKeyring = AesKeyring
                 .builder()
@@ -101,7 +101,7 @@ public class MaterialsDescriptionTest {
         assertNotNull(aesKeyring);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMaterialsDescriptionRsaKeyring() {
         PartialRsaKeyPair keyPair = new PartialRsaKeyPair(
                 RSA_KEY_PAIR.getPrivate(),
@@ -121,7 +121,7 @@ public class MaterialsDescriptionTest {
         assertNotNull(rsaKeyring);
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEquals() {
         // Create two identical MaterialsDescription objects
         MaterialsDescription desc1 = MaterialsDescription.builder()

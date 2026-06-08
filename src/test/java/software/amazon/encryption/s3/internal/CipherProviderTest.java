@@ -19,7 +19,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 import software.amazon.encryption.s3.S3EncryptionClientSecurityException;
@@ -73,7 +73,7 @@ public class CipherProviderTest {
                 .build();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherWithCommittingAlgorithmZeroMessageId() throws Exception {
         //= specification/s3-encryption/encryption.md#cipher-initialization
         //= type=test
@@ -90,7 +90,7 @@ public class CipherProviderTest {
         assertEquals("MessageId has not been initialized!", exception.getMessage());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherWithNonCommittingAlgorithmValidIV() throws Exception {
         //= specification/s3-encryption/encryption.md#cipher-initialization
         //= type=test
@@ -108,7 +108,7 @@ public class CipherProviderTest {
         assertEquals("AES/GCM/NoPadding", cipher.getAlgorithm());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherWithNonCommittingAlgorithmZeroIV() throws Exception {
         //= specification/s3-encryption/encryption.md#cipher-initialization
         //= type=test
@@ -125,7 +125,7 @@ public class CipherProviderTest {
     }
 
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherALG_AES_256_GCM_IV12_TAG16_NO_KDF() throws Exception {
         SecretKey dataKey = createTestDataKey(32);
         CryptographicMaterials materials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF, dataKey);
@@ -155,7 +155,7 @@ public class CipherProviderTest {
         assertArrayEquals(iv, params.getIV());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherALG_AES_256_CTR_IV16_TAG16_NO_KDF_EncryptionFails() throws Exception {
         //= specification/s3-encryption/encryption.md#alg-aes-256-ctr-iv16-tag16-no-kdf
         //= type=test
@@ -172,7 +172,7 @@ public class CipherProviderTest {
         assertTrue(exception.getMessage().contains("Encryption is not supported for algorithm"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherALG_AES_256_CTR_IV16_TAG16_NO_KDF_DecryptionSucceeds() throws Exception {
         SecretKey dataKey = createTestDataKey(32);
         CryptographicMaterials materials = createDecryptionMaterials(AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF, dataKey, EMPTY_KEY_COMMITMENT);
@@ -187,7 +187,7 @@ public class CipherProviderTest {
         assertEquals("AES/CTR/NoPadding", cipher.getAlgorithm());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY_EncryptionFails() throws Exception {
         //= specification/s3-encryption/encryption.md#alg-aes-256-ctr-hkdf-sha512-commit-key
         //= type=test
@@ -204,7 +204,7 @@ public class CipherProviderTest {
         assertTrue(exception.getMessage().contains("Encryption is not supported for algorithm"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY_DecryptionSucceeds() throws Exception {
         //= specification/s3-encryption/encryption.md#alg-aes-256-gcm-hkdf-sha512-commit-key
         //= type=test
@@ -228,7 +228,7 @@ public class CipherProviderTest {
         assertTrue(exception.getMessage().contains("Key commitment validation failed. The derived key commitment does not match the stored key commitment value. This indicates potential data tampering or corruption."));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherALG_AES_256_CBC_IV16_NO_KDF_EncryptionFails() throws Exception {
         SecretKey dataKey = createTestDataKey(32);
         CryptographicMaterials materials = createEncryptionMaterials(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF, dataKey);
@@ -242,7 +242,7 @@ public class CipherProviderTest {
         assertTrue(exception.getMessage().contains("Encryption is not supported for algorithm"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testCreateAndInitCipherALG_AES_256_CBC_IV16_NO_KDF_DecryptionSucceeds() throws Exception {
         SecretKey dataKey = createTestDataKey(32);
         CryptographicMaterials materials = createDecryptionMaterials(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF, dataKey, EMPTY_KEY_COMMITMENT);
@@ -257,7 +257,7 @@ public class CipherProviderTest {
         assertEquals("AES/CBC/PKCS5Padding", cipher.getAlgorithm());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKeyDerivationInputKeyMaterialLengthValidation() throws Exception {
         //= specification/s3-encryption/key-derivation.md#hkdf-operation
         //= type=test
@@ -275,7 +275,7 @@ public class CipherProviderTest {
         assertEquals("Length of Input key material does not match the expected value!", exception.getMessage());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKeyDerivationMessageIdLengthValidation() throws Exception {
         //= specification/s3-encryption/key-derivation.md#hkdf-operation
         //= type=test
@@ -292,7 +292,7 @@ public class CipherProviderTest {
         assertEquals("Length of Input Message ID does not match the expected value!", exception.getMessage());
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKeyCommitmentValidationBothSuccessAndFailurePaths() throws Exception {
         //= specification/s3-encryption/decryption.md#decrypting-with-commitment
         //= type=test

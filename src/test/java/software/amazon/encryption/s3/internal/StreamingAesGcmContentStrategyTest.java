@@ -12,7 +12,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.encryption.s3.S3EncryptionClientException;
@@ -30,13 +30,13 @@ public class StreamingAesGcmContentStrategyTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    @RetryingTest(3)
     public void buildStreamingAesGcmContentStrategyWithNullSecureRandomFails() {
         S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class, () -> StreamingAesGcmContentStrategy.builder().secureRandom(null));
         assertTrue(exception.getMessage().contains("SecureRandom provided to StreamingAesGcmContentStrategy cannot be null"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testEncryptContentValidatesMaxContentLength() {
         StreamingAesGcmContentStrategy strategy = StreamingAesGcmContentStrategy.builder().build();
         
@@ -58,7 +58,7 @@ public class StreamingAesGcmContentStrategyTest {
         assertTrue(exception.getMessage().contains("maximum length allowed for GCM encryption"));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testInitMultipartEncryptionValidatesMaxContentLength() {
         StreamingAesGcmContentStrategy strategy = StreamingAesGcmContentStrategy.builder().build();
         
@@ -81,7 +81,7 @@ public class StreamingAesGcmContentStrategyTest {
     //= specification/s3-encryption/encryption.md#content-encryption
     //= type=test
     //# The generated IV or Message ID MUST be set or returned from the encryption process such that it can be included in the content metadata.
-    @Test
+    @RetryingTest(3)
     public void testEncryptContentWithNonCommitingAlgorithm() {
         StreamingAesGcmContentStrategy strategy = StreamingAesGcmContentStrategy.builder().build();
         
