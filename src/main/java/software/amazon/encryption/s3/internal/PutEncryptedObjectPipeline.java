@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
-import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
-
 import java.security.SecureRandom;
 import java.util.concurrent.CompletableFuture;
 
@@ -81,7 +79,7 @@ public class PutEncryptedObjectPipeline {
         final byte[] contentIV = materials.algorithmSuite().isCommitting() ? materials.messageId() : materials.iv();
         PutObjectRequest modifiedRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, contentIV, request);
         PutObjectRequest encryptedPutRequest = modifiedRequest.toBuilder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(request.overrideConfiguration()))
                 .contentLength(encryptedContent.getCiphertextLength())
                 .build();
         return _s3AsyncClient.putObject(encryptedPutRequest, new NoRetriesAsyncRequestBody(encryptedContent.getAsyncCiphertext()));

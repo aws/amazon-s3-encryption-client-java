@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
-import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,7 +62,7 @@ public class GetEncryptedObjectPipeline {
         //# and end of the cipher blocks for the given range.
         String cryptoRange = RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range());
         GetObjectRequest adjustedRangeRequest = getObjectRequest.toBuilder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(getObjectRequest.overrideConfiguration()))
                 .range(cryptoRange)
                 .build();
         if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {

@@ -9,20 +9,35 @@ import software.amazon.awssdk.core.ApiName;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Consumer;
 
 /**
  * Provides the information for the ApiName APIs for the AWS SDK
  */
 public class ApiNameVersion {
     private static final ApiName API_NAME = ApiNameVersion.apiNameWithVersion();
-    // This is used in overrideConfiguration
-    public static final Consumer<AwsRequestOverrideConfiguration.Builder> API_NAME_INTERCEPTOR =
-            builder -> builder.addApiName(API_NAME);
 
     public static final String NAME = "AmazonS3Encrypt";
     public static final String API_VERSION_UNKNOWN = "4-unknown";
+
+    /**
+     * Returns an {@link AwsRequestOverrideConfiguration} which includes the S3EC API name while
+     * preserving any override configuration the caller already set on their request. This ensures
+     * caller-supplied configuration (e.g. custom headers, credentials providers, or signer
+     * overrides) is not dropped when the S3EC adds its API name.
+     *
+     * @param existingOverrideConfiguration the override configuration from the original request, if any
+     * @return an override configuration containing the S3EC API name merged with the existing configuration
+     */
+    public static AwsRequestOverrideConfiguration addApiNameToOverrideConfiguration(
+            Optional<AwsRequestOverrideConfiguration> existingOverrideConfiguration) {
+        return existingOverrideConfiguration
+                .map(AwsRequestOverrideConfiguration::toBuilder)
+                .orElseGet(AwsRequestOverrideConfiguration::builder)
+                .addApiName(API_NAME)
+                .build();
+    }
 
     public static ApiName apiNameWithVersion() {
         return ApiName.builder()

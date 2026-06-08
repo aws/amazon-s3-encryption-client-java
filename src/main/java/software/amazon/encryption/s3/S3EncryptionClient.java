@@ -7,7 +7,6 @@ import static software.amazon.encryption.s3.S3EncryptionClientUtilities.DEFAULT_
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MAX_ALLOWED_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.MIN_ALLOWED_BUFFER_SIZE_BYTES;
 import static software.amazon.encryption.s3.S3EncryptionClientUtilities.instructionFileKeysToDelete;
-import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
 
 import java.io.IOException;
 import java.net.URI;
@@ -75,6 +74,7 @@ import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
+import software.amazon.encryption.s3.internal.ApiNameVersion;
 import software.amazon.encryption.s3.internal.ContentMetadata;
 import software.amazon.encryption.s3.internal.ContentMetadataDecodingStrategy;
 import software.amazon.encryption.s3.internal.ContentMetadataEncodingStrategy;
@@ -570,7 +570,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     public DeleteObjectResponse deleteObject(DeleteObjectRequest deleteObjectRequest) throws AwsServiceException,
             SdkClientException {
         DeleteObjectRequest actualRequest = deleteObjectRequest.toBuilder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(deleteObjectRequest.overrideConfiguration()))
                 .build();
 
         try {
@@ -583,7 +583,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
             //# - DeleteObject MUST delete the associated instruction file using the default instruction file suffix.
             String instructionObjectKey = deleteObjectRequest.key() + DEFAULT_INSTRUCTION_FILE_SUFFIX;
             _wrappedAsyncClient.deleteObject(builder -> builder
-                    .overrideConfiguration(API_NAME_INTERCEPTOR)
+                    .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(deleteObjectRequest.overrideConfiguration()))
                     .bucket(deleteObjectRequest.bucket())
                     .key(instructionObjectKey)).join();
             // Return original deletion
@@ -610,7 +610,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
     public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest deleteObjectsRequest) throws AwsServiceException,
             SdkClientException {
         DeleteObjectsRequest actualRequest = deleteObjectsRequest.toBuilder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(deleteObjectsRequest.overrideConfiguration()))
                 .build();
         try {
             //= specification/s3-encryption/client.md#required-api-operations
@@ -622,7 +622,7 @@ public class S3EncryptionClient extends DelegatingS3Client {
             //# - DeleteObjects MUST delete each of the corresponding instruction files using the default instruction file suffix.
             List<ObjectIdentifier> deleteObjects = instructionFileKeysToDelete(deleteObjectsRequest);
             _wrappedAsyncClient.deleteObjects(DeleteObjectsRequest.builder()
-                    .overrideConfiguration(API_NAME_INTERCEPTOR)
+                    .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(deleteObjectsRequest.overrideConfiguration()))
                     .bucket(deleteObjectsRequest.bucket())
                     .delete(builder -> builder.objects(deleteObjects))
                     .build()).join();
