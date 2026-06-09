@@ -24,8 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
-
 /**
  * This class will determine the necessary mechanisms to decrypt objects returned from S3.
  * Due to supporting various legacy modes, this is not a predefined pipeline like
@@ -64,7 +62,7 @@ public class GetEncryptedObjectPipeline {
         //# and end of the cipher blocks for the given range.
         String cryptoRange = RangedGetUtils.getCryptoRangeAsString(getObjectRequest.range());
         GetObjectRequest adjustedRangeRequest = getObjectRequest.toBuilder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(getObjectRequest.overrideConfiguration()))
                 .range(cryptoRange)
                 .build();
         if (!_enableLegacyUnauthenticatedModes && getObjectRequest.range() != null) {
