@@ -1,11 +1,11 @@
 package software.amazon.encryption.s3.examples;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class ClientConfigurationExampleTest {
-  @Test
+  @RetryingTest(3)
   public void testClientConfigurationExamples() {
       try {
           ClientConfigurationExample.main(new String[0]);

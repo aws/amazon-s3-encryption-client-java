@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.amazon.encryption.s3.internal;
 
-import static software.amazon.encryption.s3.internal.ApiNameVersion.API_NAME_INTERCEPTOR;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -80,7 +78,7 @@ public class MultipartUploadObjectPipeline {
         final byte[] contentIV = materials.algorithmSuite().isCommitting() ? materials.messageId() : materials.iv();
         CreateMultipartUploadRequest createMpuRequest = _contentMetadataEncodingStrategy.encodeMetadata(materials, contentIV, request);
         request = createMpuRequest.toBuilder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(createMpuRequest.overrideConfiguration()))
                 .build();
 
         //= specification/s3-encryption/client.md#optional-api-operations
@@ -135,7 +133,7 @@ public class MultipartUploadObjectPipeline {
 
         // Once we have (a valid) ciphertext length, set the request contentLength
         UploadPartRequest actualRequest = request.toBuilder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(request.overrideConfiguration()))
                 .contentLength(ciphertextLength)
                 .build();
 
@@ -201,7 +199,7 @@ public class MultipartUploadObjectPipeline {
         }
 
         CompleteMultipartUploadRequest actualRequest = request.toBuilder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(request.overrideConfiguration()))
                 .build();
 
         //= specification/s3-encryption/client.md#optional-api-operations
@@ -215,7 +213,7 @@ public class MultipartUploadObjectPipeline {
     public AbortMultipartUploadResponse abortMultipartUpload(AbortMultipartUploadRequest request) {
         _multipartUploadMaterials.remove(request.uploadId());
         AbortMultipartUploadRequest actualRequest = request.toBuilder()
-                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .overrideConfiguration(ApiNameVersion.addApiNameToOverrideConfiguration(request.overrideConfiguration()))
                 .build();
         //= specification/s3-encryption/client.md#optional-api-operations
         //# - AbortMultipartUpload MUST abort the multipart upload.

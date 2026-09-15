@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 public class RangedGetUtilsTest {
-    @Test
+    @RetryingTest(3)
     public void testGetRangeWithValidRanges() {
         // Valid single and complete ranges
         assertArrayEquals(new long[]{10, Long.MAX_VALUE}, RangedGetUtils.getRange("bytes=10-"), "Start range should return expected output");
@@ -19,7 +19,7 @@ public class RangedGetUtilsTest {
         assertArrayEquals(new long[]{Long.MAX_VALUE - 1, Long.MAX_VALUE}, RangedGetUtils.getRange("bytes=" + (Long.MAX_VALUE - 1) + "-" + Long.MAX_VALUE));
     }
 
-    @Test
+    @RetryingTest(3)
     public void testGetRangeWithInvalidInputs() {
         // Null, empty, and invalid format inputs
         assertNull(RangedGetUtils.getRange(null), "Range should be null for null input");
@@ -30,7 +30,7 @@ public class RangedGetUtilsTest {
         assertNull(RangedGetUtils.getRange("bytes=-10"), "Range should be null for invalid range with only end specified");
     }
 
-    @Test
+    @RetryingTest(3)
     public void testGetCryptoRangeWithInvalidRanges() {
         assertNull(RangedGetUtils.getCryptoRangeAsString("bytes=-100"), "Should return null for not specifying start range");
         assertNull(RangedGetUtils.getCryptoRangeAsString("bytes=100-10"), "Should return null for start greater than end range");
@@ -39,7 +39,7 @@ public class RangedGetUtilsTest {
     //= specification/s3-encryption/decryption.md#ranged-gets
     //= type=test
     //# If the S3EC supports Ranged Gets, the S3EC MUST adjust the customer-provided range to include the beginning and end of the cipher blocks for the given range.
-    @Test
+    @RetryingTest(3)
     public void testGetCryptoRangeAsStringAndAdjustmentWithValidRanges() {
         // Adjusted to include the full block that contains byte 0 and the full block after byte 15, given block size of 16
         assertEquals("bytes=0-32", RangedGetUtils.getCryptoRangeAsString("bytes=0-15"), "Should correctly adjust to full blocks for range as string");

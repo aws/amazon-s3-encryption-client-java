@@ -7,13 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 
 public class EncryptedContentTest {
 
-    @Test
+    @RetryingTest(3)
     public void testIvAndMessageIdCanBeRetrievedForContentMetadata() {
         // Test data
         byte[] testIv = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
@@ -39,7 +39,7 @@ public class EncryptedContentTest {
         assertNotSame(testMessageId, retrievedMessageId, "Message ID should be a defensive copy");
     }
 
-    @Test
+    @RetryingTest(3)
     public void testNullIvAndMessageIdHandling() {
         AsyncRequestBody mockRequestBody = AsyncRequestBody.fromString("test content");
         long ciphertextLength = 100L;

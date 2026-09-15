@@ -79,7 +79,7 @@ class Example {
 }
 ```
 
-For detailed migration guidance and step-by-step examples, refer to the [Migration Examples](migration_examples/v3-to-v4/README.md). For more information, refer to the <a href="https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/java-v4-migration.html">Developer Guide</a>.
+For detailed migration guidance and step-by-step examples, refer to the [Migration Examples](https://github.com/aws/amazon-s3-encryption-client-java/tree/main/migration_examples/v3-to-v4). For more information, refer to the <a href="https://docs.aws.amazon.com/amazon-s3-encryption-client/latest/developerguide/java-v4-migration.html">Developer Guide</a>.
 
 
 #### V2 KMS Materials Provider to V4

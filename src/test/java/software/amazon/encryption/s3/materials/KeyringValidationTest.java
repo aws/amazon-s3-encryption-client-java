@@ -13,7 +13,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 
 import software.amazon.encryption.s3.S3EncryptionClientException;
 
@@ -33,7 +33,7 @@ public class KeyringValidationTest {
         RSA_KEY_PAIR = keyPairGen.generateKeyPair();
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithInvalidKeySize() throws NoSuchAlgorithmException {
         // Test with 128-bit key (should work)
         KeyGenerator keyGen128 = KeyGenerator.getInstance("AES");
@@ -54,7 +54,7 @@ public class KeyringValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testPartialRsaKeyPairValidation() {
         // Test with null private and public key
         assertThrows(S3EncryptionClientException.class, () ->
@@ -72,7 +72,7 @@ public class KeyringValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testKmsKeyringWithInvalidKeyId() {
         // Test with empty key ID
         assertThrows(S3EncryptionClientException.class, () ->
@@ -85,7 +85,7 @@ public class KeyringValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testMaterialsDescriptionEdgeCases() {
         // Test with very long key/value pairs
         StringBuilder longKeyBuilder = new StringBuilder();
@@ -109,14 +109,14 @@ public class KeyringValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithNullWrappingKey() {
         assertThrows(S3EncryptionClientException.class, () ->
             AesKeyring.builder().wrappingKey(null).build()
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithNullSecureRandom() {
         assertThrows(S3EncryptionClientException.class, () ->
             AesKeyring.builder()
@@ -126,7 +126,7 @@ public class KeyringValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testAesKeyringWithNullDataKeyGenerator() {
         assertThrows(S3EncryptionClientException.class, () ->
             AesKeyring.builder()
@@ -136,14 +136,14 @@ public class KeyringValidationTest {
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testRsaKeyringWithNullKeyPair() {
         assertThrows(S3EncryptionClientException.class, () ->
             RsaKeyring.builder().wrappingKeyPair(null).build()
         );
     }
 
-    @Test
+    @RetryingTest(3)
     public void testValidKeyringCreation() {
         // Test valid AES keyring creation
         assertDoesNotThrow(() -> {

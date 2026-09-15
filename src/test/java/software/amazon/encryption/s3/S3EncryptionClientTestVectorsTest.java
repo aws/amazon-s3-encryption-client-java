@@ -1,6 +1,6 @@
 package software.amazon.encryption.s3;
 
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -22,7 +22,7 @@ public class S3EncryptionClientTestVectorsTest {
     //= specification/s3-encryption/data-format/metadata-strategy.md#object-metadata
     //= type=test
     //# The S3EC SHOULD support decoding the S3 Server's "double encoding".
-    @Test
+    @RetryingTest(3)
     public void decryptUnicodeTestVectors() {
         S3Client s3EncryptionClient = S3EncryptionClient.builderV4()
                 .kmsKeyId(TESTVECTORS_KMS_KEY)

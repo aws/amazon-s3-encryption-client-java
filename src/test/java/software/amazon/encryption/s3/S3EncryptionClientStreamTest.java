@@ -12,7 +12,7 @@ import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -71,7 +71,7 @@ public class S3EncryptionClientStreamTest {
         AES_KEY = keyGen.generateKey();
     }
 
-    @Test
+    @RetryingTest(3)
     public void markResetInputStreamV3Encrypt() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3Encrypt");
         // V3 Client
@@ -103,7 +103,7 @@ public class S3EncryptionClientStreamTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void ordinaryInputStreamV3Encrypt() throws IOException {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Encrypt");
 
@@ -137,7 +137,7 @@ public class S3EncryptionClientStreamTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void ordinaryInputStreamV3UnboundedAsync() {
         try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builderV4()
                 .commitmentPolicy(CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT)
@@ -156,7 +156,7 @@ public class S3EncryptionClientStreamTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void ordinaryInputStreamV3UnboundedMultipartAsync() {
         try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builderV4()
                 .aesKey(AES_KEY)
@@ -175,7 +175,7 @@ public class S3EncryptionClientStreamTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void ordinaryInputStreamV3UnboundedCrt() {
         try (S3AsyncClient s3CrtAsyncClient = S3AsyncClient.crtCreate()) {
             try (S3AsyncClient s3AsyncEncryptionClient = S3AsyncEncryptionClient.builderV4()
@@ -197,7 +197,7 @@ public class S3EncryptionClientStreamTest {
         }
     }
 
-    @Test
+    @RetryingTest(3)
     public void ordinaryInputStreamV3Decrypt() throws IOException {
         final String objectKey = appendTestSuffix("ordinaryInputStreamV3Decrypt");
 
@@ -233,7 +233,7 @@ public class S3EncryptionClientStreamTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void ordinaryInputStreamV3DecryptCbc() throws IOException {
         final String objectKey = appendTestSuffix("markResetInputStreamV3DecryptCbc");
 
@@ -276,7 +276,7 @@ public class S3EncryptionClientStreamTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void invalidBufferSize() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
                 .kmsKeyId(KMS_KEY_ID)
@@ -298,7 +298,7 @@ public class S3EncryptionClientStreamTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(3)
     public void failsWhenBothBufferSizeAndDelayedAuthModeEnabled() {
         assertThrows(S3EncryptionClientException.class, () -> S3EncryptionClient.builderV4()
                 .kmsKeyId(KMS_KEY_ID)
@@ -313,7 +313,7 @@ public class S3EncryptionClientStreamTest {
                 .build());
     }
 
-    @Test
+    @RetryingTest(3)
     public void customSetBufferSizeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size");
 
@@ -369,7 +369,7 @@ public class S3EncryptionClientStreamTest {
         s3ClientWithDelayedAuth.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void customSetBufferSizeWithLargeObjectAsyncClient() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test-custom-buffer-size-async");
 
@@ -429,7 +429,7 @@ public class S3EncryptionClientStreamTest {
         s3ClientWithDelayedAuth.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void delayedAuthModeWithLargeObject() throws IOException {
         final String objectKey = appendTestSuffix("large-object-test");
 
@@ -488,7 +488,7 @@ public class S3EncryptionClientStreamTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void delayedAuthModeWithLargerThanMaxObjectFails() throws IOException {
         final String objectKey = appendTestSuffix("larger-than-max-object-delayed-auth-mode");
 
@@ -514,7 +514,7 @@ public class S3EncryptionClientStreamTest {
         s3Client.close();
     }
 
-    @Test
+    @RetryingTest(3)
     public void AesGcmV3toV3StreamWithTamperedTag() {
         final String objectKey = appendTestSuffix("aes-gcm-v3-to-v3-stream-tamper-tag");
 

@@ -1,5 +1,29 @@
 # Changelog
 
+## [4.0.2](https://github.com/aws/aws-s3-encryption-client-java/compare/v4.0.1...v4.0.2) (2026-08-19)
+
+### Fixes
+
+* preserve override configuration ([#515](https://github.com/aws/aws-s3-encryption-client-java/issues/515)) ([b02be77](https://github.com/aws/aws-s3-encryption-client-java/commit/b02be7700b90d0c6526fe49c55c7bab96eb3053d))
+* throw S3EC error on GCM key/IV reuse ([#513](https://github.com/aws/aws-s3-encryption-client-java/issues/513)) ([53dc99d](https://github.com/aws/aws-s3-encryption-client-java/commit/53dc99d20ebb1400bdedc5f6aef5174ce91a3fc7))
+
+### Maintenance
+
+* **ci:** add retries to tests  ([#507](https://github.com/aws/aws-s3-encryption-client-java/issues/507)) ([c751356](https://github.com/aws/aws-s3-encryption-client-java/commit/c75135680f51cb260045d32537ae01a74e1da64c))
+* **CI:** add slack notifications ([#498](https://github.com/aws/aws-s3-encryption-client-java/issues/498)) ([4986950](https://github.com/aws/aws-s3-encryption-client-java/commit/49869506bf9b635ef82cb3952c52494d5d189975))
+* **ci:** fix CI permissions ([#504](https://github.com/aws/aws-s3-encryption-client-java/issues/504)) ([371e58c](https://github.com/aws/aws-s3-encryption-client-java/commit/371e58ccb5c7b2fb9fa8fa9bf7260f5c4481de59))
+* mark 2.x as EOS ([#509](https://github.com/aws/aws-s3-encryption-client-java/issues/509)) ([8cb3fc5](https://github.com/aws/aws-s3-encryption-client-java/commit/8cb3fc5bb34f2c8bcadb706fbae32ce22d833ae5))
+
+## [4.0.1](https://github.com/aws/aws-s3-encryption-client-java/compare/v4.0.0...v4.0.1) (2026-02-10)
+
+### Fixes
+
+* set instruction file content length ([b76c281](https://github.com/aws/aws-s3-encryption-client-java/commit/b76c2812b856eb1528eb83bbdf8d7e6ead80016e))
+
+### Maintenance
+
+* fix examples & spec path ([#493](https://github.com/aws/aws-s3-encryption-client-java/issues/493)) ([a95aa3f](https://github.com/aws/aws-s3-encryption-client-java/commit/a95aa3fddb5abf4e17551c0ef3c247c7a43edf40))
+
 ## [4.0.0](https://github.com/aws/aws-s3-encryption-client-java/compare/v3.6.0...v4.0.0) (2025-12-17)
 
 ### ⚠ BREAKING CHANGES
