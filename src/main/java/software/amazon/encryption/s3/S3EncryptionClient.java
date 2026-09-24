@@ -457,13 +457,32 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .commitmentPolicy(_commitmentPolicy)
                 .build();
 
+        ResponseInputStream<GetObjectResponse> joinFutureGet = null;
+        boolean callerOwnsStream = false;
         try {
-            ResponseInputStream<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
-            return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet));
+            joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
+            T result = responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet));
+            // Streaming transformers (e.g. toInputStream) hand the stream back to the caller, who is
+            // then responsible for closing it. Buffering transformers (e.g. toBytes, toFile) fully
+            // consume the stream and return a materialized result, so ownership is not transferred and
+            // the stream is closed in the finally block below to release its buffers.
+            callerOwnsStream = responseTransformer.needsConnectionLeftOpen();
+            return result;
         } catch (CompletionException e) {
             throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
+        } finally {
+            // Close the stream unless ownership was successfully handed to the caller. This covers the
+            // buffering case (leak fix) and also the case where transform threw before returning, so a
+            // streaming transformer's stream does not leak when the caller never received it.
+            if (joinFutureGet != null && !callerOwnsStream) {
+                try {
+                    joinFutureGet.close();
+                } catch (IOException e) {
+                    throw new S3EncryptionClientException("Unable to close response stream.", e);
+                }
+            }
         }
     }
 
