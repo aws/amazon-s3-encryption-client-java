@@ -97,15 +97,18 @@ public class CipherInputStream extends SdkFilterInputStream {
     @Override
     public long skip(long n) {
         abortIfNeeded();
-        int available = maxPosition - currentPosition;
-        if (n > available) {
-            n = available;
-        }
-        if (n < 0) {
+        if (n <= 0) {
             return 0;
         }
-        currentPosition += n;
-        return n;
+        // The number of bytes remaining in the buffer is bounded by the buffer
+        // size, so it always fits in an int. Clamp the requested skip to that
+        // range as an int, which avoids the implicit narrowing conversion that
+        // would otherwise occur in the compound assignment `currentPosition += n`
+        // (int += long) and cannot overflow.
+        int available = maxPosition - currentPosition;
+        int skipped = (n < available) ? (int) n : available;
+        currentPosition += skipped;
+        return skipped;
     }
 
     @Override
