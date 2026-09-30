@@ -60,23 +60,20 @@ public class AdjustedRangeSubscriberTest {
 
     @Test
     public void testFirstChunkSmallerThanSkipDoesNotCompleteOrThrow() throws Exception {
-        // rangeBeginning=20 => numBytesToSkip=20, virtualAvailable=100
+        // rangeBeginning=20 => skip=20, virtualAvailable=100
         RecordingSubscriber downstream = new RecordingSubscriber();
         AdjustedRangeSubscriber subscriber = new AdjustedRangeSubscriber(downstream, 20L, 119L);
 
-        // First chunk (10 bytes) is smaller than the 20-byte skip.
-        subscriber.onNext(bytes(0, 10));
+        subscriber.onNext(bytes(0, 10)); // smaller than the skip
         assertEquals(0, downstream.completeCount.get());
         assertNull(downstream.error);
         assertEquals(0, downstream.data.size());
 
-        // Second chunk (10 bytes) exactly finishes the skip; still no data delivered.
-        subscriber.onNext(bytes(10, 10));
+        subscriber.onNext(bytes(10, 10)); // finishes the skip, no data yet
         assertEquals(0, downstream.completeCount.get());
         assertEquals(0, downstream.data.size());
 
-        // Third chunk carries the actual payload, which must now be delivered.
-        subscriber.onNext(bytes(100, 100));
+        subscriber.onNext(bytes(100, 100)); // payload
         assertArrayEquals(bytes(100, 100).array(), downstream.data.toByteArray());
     }
 
@@ -97,13 +94,12 @@ public class AdjustedRangeSubscriberTest {
 
     @Test
     public void testSkipOnlyChunkSignalsEmptyOnNextToKeepDemandFlowing() throws Exception {
-        // Under one-at-a-time (request(1)) demand, a chunk fully consumed by the skip must still
-        // signal the wrapped subscriber, or downstream waits forever for the next element. The
-        // subscriber forwards an empty buffer (no in-range data, but the demand chain advances).
+        // A chunk fully consumed by the skip must still forward an (empty) onNext so downstream
+        // requests the next element instead of waiting forever.
         RecordingSubscriber downstream = new RecordingSubscriber();
         AdjustedRangeSubscriber subscriber = new AdjustedRangeSubscriber(downstream, 20L, 119L);
 
-        subscriber.onNext(bytes(0, 10)); // 10 bytes < 20-byte skip: entirely skipped
+        subscriber.onNext(bytes(0, 10)); // smaller than the skip
 
         assertEquals(1, downstream.onNextCount.get(), "skip-only chunk must forward exactly one onNext");
         assertEquals(0, downstream.data.size(), "the forwarded onNext must carry no in-range bytes");
@@ -116,8 +112,7 @@ public class AdjustedRangeSubscriberTest {
         RecordingSubscriber downstream = new RecordingSubscriber();
         AdjustedRangeSubscriber subscriber = new AdjustedRangeSubscriber(downstream, 20L, 119L);
 
-        // A single 120-byte chunk: 20 skipped, 100 delivered.
-        subscriber.onNext(bytes(0, 120));
+        subscriber.onNext(bytes(0, 120)); // 20 skipped, 100 delivered
         assertArrayEquals(bytes(20, 100).array(), downstream.data.toByteArray());
         assertFalse(downstream.completeCount.get() == 0);
     }

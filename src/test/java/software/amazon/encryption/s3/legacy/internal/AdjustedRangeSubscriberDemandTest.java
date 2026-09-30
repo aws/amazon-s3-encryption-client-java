@@ -26,11 +26,9 @@ import software.amazon.awssdk.utils.async.InputStreamSubscriber;
 
 /**
  * Exercises {@link AdjustedRangeSubscriber} through the subscriber chain used by a synchronous
- * ranged GET: a backpressure-honoring publisher feeds the subscriber, which wraps an
- * {@link InputStreamSubscriber} (the subscriber behind {@code toBlockingInputStream()}). Because
- * the upstream subscription is forwarded straight to the inner subscriber, demand is driven by the
- * blocking reader on the shared subscription. The publisher delivers on a separate thread to mimic
- * async delivery, and each read is bounded by a timeout so a demand stall fails rather than hangs.
+ * ranged GET: a backpressure publisher feeds the subscriber, which wraps an
+ * {@link InputStreamSubscriber} (the one behind {@code toBlockingInputStream()}). Reads are
+ * timeout-bounded so a demand stall fails instead of hanging.
  */
 public class AdjustedRangeSubscriberDemandTest {
 
@@ -109,17 +107,14 @@ public class AdjustedRangeSubscriberDemandTest {
         }
     }
 
-    /**
-     * CTR case: a tiny non-empty first chunk (< skip), then a second small chunk finishing the skip,
-     * then the payload. Must deliver the full in-range payload, not an empty stream.
-     */
+    /** CTR case: first chunk smaller than the skip, then the payload. */
     @Test
     public void firstChunkSmallerThanSkip_deliversFullPayload() throws Exception {
-        // rangeBeginning=20 => numBytesToSkip=20 ; rangeEnd=119 => virtualAvailable=100
+        // rangeBeginning=20 => skip=20, rangeEnd=119 => virtualAvailable=100
         List<ByteBuffer> chunks = new ArrayList<>();
-        chunks.add(bytes(0, 10));    // 10 bytes  -> entirely skipped
-        chunks.add(bytes(10, 10));   // 10 bytes  -> finishes the 20-byte skip
-        chunks.add(bytes(100, 100)); // 100 bytes -> the in-range payload
+        chunks.add(bytes(0, 10));    // skipped
+        chunks.add(bytes(10, 10));   // finishes the skip
+        chunks.add(bytes(100, 100)); // payload
 
         InputStreamSubscriber iss = new InputStreamSubscriber();
         AdjustedRangeSubscriber ars = new AdjustedRangeSubscriber(iss, 20L, 119L);
@@ -130,17 +125,13 @@ public class AdjustedRangeSubscriberDemandTest {
         assertArrayEquals(bytes(100, 100).array(), out);
     }
 
-    /**
-     * AES/CBC (v1) case: CipherSubscriber can emit an empty ByteBuffer first. The empty buffer
-     * satisfies "chunk <= skip"; it must not be treated as completion, and demand must keep flowing
-     * so the payload still arrives.
-     */
+    /** AES/CBC case: an empty first buffer (as CipherSubscriber emits) must not complete the stream. */
     @Test
     public void emptyFirstChunk_thenPayload_deliversFullPayload() throws Exception {
         List<ByteBuffer> chunks = new ArrayList<>();
-        chunks.add(ByteBuffer.allocate(0)); // empty, as CipherSubscriber emits for CBC
-        chunks.add(bytes(0, 20));           // finishes the 20-byte skip
-        chunks.add(bytes(50, 100));         // in-range payload
+        chunks.add(ByteBuffer.allocate(0)); // empty
+        chunks.add(bytes(0, 20));           // finishes the skip
+        chunks.add(bytes(50, 100));         // payload
 
         InputStreamSubscriber iss = new InputStreamSubscriber();
         AdjustedRangeSubscriber ars = new AdjustedRangeSubscriber(iss, 20L, 119L);
@@ -151,17 +142,13 @@ public class AdjustedRangeSubscriberDemandTest {
         assertArrayEquals(bytes(50, 100).array(), out);
     }
 
-    /**
-     * Many tiny sub-skip chunks in a row (aggressive TLS/TCP fragmentation), then payload split
-     * across several chunks. Exercises repeated empty-onNext forwarding.
-     */
+    /** Many 1-byte chunks span the skip (heavy fragmentation), then a split payload. */
     @Test
     public void manyTinyChunksBeforeSkipCompletes_deliversFullPayload() throws Exception {
         List<ByteBuffer> chunks = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
-            chunks.add(bytes(i, 1)); // 20 x 1-byte chunks == the whole 20-byte skip
+            chunks.add(bytes(i, 1)); // 20 x 1 byte == the skip
         }
-        // payload 100 bytes, split
         chunks.add(bytes(100, 40));
         chunks.add(bytes(140, 60));
 
@@ -174,7 +161,7 @@ public class AdjustedRangeSubscriberDemandTest {
         assertArrayEquals(bytes(100, 100).array(), out);
     }
 
-    /** Single chunk larger than the skip: 20 skipped, remainder delivered (regression guard). */
+    /** Single chunk larger than the skip: remainder delivered. */
     @Test
     public void singleChunkLargerThanSkip_deliversRemainder() throws Exception {
         List<ByteBuffer> chunks = new ArrayList<>();
@@ -188,15 +175,12 @@ public class AdjustedRangeSubscriberDemandTest {
         assertArrayEquals(bytes(20, 100).array(), out);
     }
 
-    /**
-     * A chunk exactly equal to the remaining skip must be fully consumed (the {@code >=} boundary),
-     * with the payload in the following chunk still delivered in full.
-     */
+    /** Chunk exactly equal to the skip (the {@code >=} boundary), then the payload. */
     @Test
     public void chunkEqualToSkip_thenPayload_deliversFullPayload() throws Exception {
         List<ByteBuffer> chunks = new ArrayList<>();
-        chunks.add(bytes(0, 20));    // exactly the 20-byte skip
-        chunks.add(bytes(100, 100)); // in-range payload
+        chunks.add(bytes(0, 20));    // exactly the skip
+        chunks.add(bytes(100, 100)); // payload
 
         InputStreamSubscriber iss = new InputStreamSubscriber();
         AdjustedRangeSubscriber ars = new AdjustedRangeSubscriber(iss, 20L, 119L);
