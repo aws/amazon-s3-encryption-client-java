@@ -25,15 +25,12 @@ import org.reactivestreams.Subscription;
 import software.amazon.awssdk.utils.async.InputStreamSubscriber;
 
 /**
- * Drives the REAL production topology for issue #517:
- *
- *   BackpressurePublisher  ->  AdjustedRangeSubscriber  ->  InputStreamSubscriber (== toBlockingInputStream)
- *
- * AdjustedRangeSubscriber forwards the upstream Subscription straight to the InputStreamSubscriber,
- * so demand is driven by the blocking InputStream reader on the shared subscription -- exactly the
- * synchronous S3EncryptionClient.getObject path. The publisher honors request(n) and delivers on a
- * separate thread, mimicking async S3 delivery. Each read is bounded by a timeout so that a
- * demand-stall (the suspected failure mode of a wrong fix) surfaces as a test failure, not a hang.
+ * Exercises {@link AdjustedRangeSubscriber} through the subscriber chain used by a synchronous
+ * ranged GET: a backpressure-honoring publisher feeds the subscriber, which wraps an
+ * {@link InputStreamSubscriber} (the subscriber behind {@code toBlockingInputStream()}). Because
+ * the upstream subscription is forwarded straight to the inner subscriber, demand is driven by the
+ * blocking reader on the shared subscription. The publisher delivers on a separate thread to mimic
+ * async delivery, and each read is bounded by a timeout so a demand stall fails rather than hangs.
  */
 public class AdjustedRangeSubscriberDemandTest {
 
@@ -134,9 +131,9 @@ public class AdjustedRangeSubscriberDemandTest {
     }
 
     /**
-     * AES/CBC (v1) case from the issue: CipherSubscriber emits an empty ByteBuffer first. The empty
-     * buffer satisfies "chunk <= skip"; the fix must not treat it as completion and must keep demand
-     * flowing so the payload still arrives.
+     * AES/CBC (v1) case: CipherSubscriber can emit an empty ByteBuffer first. The empty buffer
+     * satisfies "chunk <= skip"; it must not be treated as completion, and demand must keep flowing
+     * so the payload still arrives.
      */
     @Test
     public void emptyFirstChunk_thenPayload_deliversFullPayload() throws Exception {
