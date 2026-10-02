@@ -462,10 +462,8 @@ public class S3EncryptionClient extends DelegatingS3Client {
         try {
             joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
             T result = responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet));
-            // Streaming transformers (e.g. toInputStream) hand the stream back to the caller, who is
-            // then responsible for closing it. Buffering transformers (e.g. toBytes, toFile) fully
-            // consume the stream and return a materialized result, so ownership is not transferred and
-            // the stream is closed in the finally block below to release its buffers.
+            // Transformers that need the connection left open (e.g. toInputStream) return the stream to
+            // the caller, who becomes responsible for closing it.
             callerOwnsStream = responseTransformer.needsConnectionLeftOpen();
             return result;
         } catch (CompletionException e) {
@@ -473,14 +471,14 @@ public class S3EncryptionClient extends DelegatingS3Client {
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
         } finally {
-            // Close the stream unless ownership was successfully handed to the caller. This covers the
-            // buffering case (leak fix) and also the case where transform threw before returning, so a
-            // streaming transformer's stream does not leak when the caller never received it.
+            // Unless the caller now owns the stream, close it so the underlying connection is released
+            // even if the transformer did not read the response to the end or threw.
             if (joinFutureGet != null && !callerOwnsStream) {
                 try {
                     joinFutureGet.close();
                 } catch (IOException e) {
-                    throw new S3EncryptionClientException("Unable to close response stream.", e);
+                    // Don't let a close failure mask the transformed result or the original exception.
+                    LogFactory.getLog(getClass()).debug("Unable to close GetObject response stream.", e);
                 }
             }
         }
