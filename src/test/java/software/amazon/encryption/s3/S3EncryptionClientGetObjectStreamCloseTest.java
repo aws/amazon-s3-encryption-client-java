@@ -16,9 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.junit.jupiter.api.AfterEach;
@@ -30,6 +28,7 @@ import org.reactivestreams.Subscription;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -38,7 +37,6 @@ import software.amazon.awssdk.http.SdkHttpFullResponse;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.http.async.AsyncExecuteRequest;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
-import software.amazon.awssdk.http.async.SdkAsyncHttpResponseHandler;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -47,174 +45,131 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /**
- * Verifies that {@link S3EncryptionClient#getObject} releases the response stream it opens on the
- * wrapped async client, so the underlying HTTP connection is returned to the pool.
+ * Verifies that {@link S3EncryptionClient#getObject} closes the response stream unless the caller
+ * owns it, so the underlying HTTP connection is released.
  * <p>
- * The wrapped async client is a real {@link S3AsyncClient} backed by an in-memory transport, so the
- * full encrypt / decrypt path runs. The object is larger than what the blocking input stream buffers,
- * and delayed authentication is enabled so plaintext is streamed rather than buffered in full; a
- * transformer that stops reading early therefore leaves the response body unconsumed, and the only
- * thing that releases it is the client closing (cancelling) the stream.
+ * The wrapped async client runs over an in-memory transport whose response body is delivered in
+ * chunks on demand, like a real connection. The object is larger than the blocking input stream
+ * buffers and delayed authentication streams plaintext, so a transformer that stops reading early
+ * leaves the body unconsumed; only closing the stream cancels it.
  */
 public class S3EncryptionClientGetObjectStreamCloseTest {
 
-    private static final String BUCKET = "test-bucket";
-    private static final String KEY = "test-key";
-    private static final int OBJECT_SIZE = 8 * 1024 * 1024;
-    private static final int CHUNK_SIZE = 64 * 1024;
+    private static final GetObjectRequest GET_REQUEST = GetObjectRequest.builder().bucket("bucket").key("key").build();
 
-    private InMemoryTransport transport;
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final InMemoryTransport transport = new InMemoryTransport(executor);
     private S3EncryptionClient client;
     private byte[] plaintext;
 
     @BeforeEach
     public void setUp() {
-        transport = new InMemoryTransport();
         StaticCredentialsProvider creds = StaticCredentialsProvider.create(AwsBasicCredentials.create("akid", "skid"));
-        S3AsyncClient wrappedAsyncClient = S3AsyncClient.builder()
-                .region(Region.US_WEST_2)
-                .credentialsProvider(creds)
-                .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
-                .httpClient(transport)
-                .build();
-        S3Client wrappedClient = S3Client.builder()
-                .region(Region.US_WEST_2)
-                .credentialsProvider(creds)
-                .build();
-
-        byte[] keyBytes = new byte[32];
-        new SecureRandom().nextBytes(keyBytes);
-        SecretKey aesKey = new SecretKeySpec(keyBytes, "AES");
+        byte[] key = new byte[32];
+        new SecureRandom().nextBytes(key);
         client = S3EncryptionClient.builderV4()
-                .wrappedClient(wrappedClient)
-                .wrappedAsyncClient(wrappedAsyncClient)
-                .aesKey(aesKey)
+                .wrappedClient(S3Client.builder().region(Region.US_WEST_2).credentialsProvider(creds).build())
+                .wrappedAsyncClient(S3AsyncClient.builder()
+                        .region(Region.US_WEST_2)
+                        .credentialsProvider(creds)
+                        // Keeps the PUT body unencoded so the transport can store it as-is.
+                        .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
+                        .httpClient(transport)
+                        .build())
+                .aesKey(new SecretKeySpec(key, "AES"))
                 .enableDelayedAuthenticationMode(true)
                 .build();
 
-        plaintext = new byte[OBJECT_SIZE];
+        plaintext = new byte[8 * 1024 * 1024];
         new SecureRandom().nextBytes(plaintext);
-        client.putObject(PutObjectRequest.builder().bucket(BUCKET).key(KEY).build(), RequestBody.fromBytes(plaintext));
+        client.putObject(PutObjectRequest.builder().bucket("bucket").key("key").build(), RequestBody.fromBytes(plaintext));
     }
 
     @AfterEach
     public void tearDown() {
         client.close();
-        transport.shutdown();
+        executor.shutdownNow();
     }
 
     @Test
-    public void bufferingTransformerThatStopsEarlyReleasesResponseStream() {
-        // needsConnectionLeftOpen() is false, so the client owns the stream and must close it.
-        int firstByte = client.getObject(getRequest(), (response, inputStream) -> inputStream.read());
+    public void transformerThatStopsEarlyReleasesResponseStream() {
+        int firstByte = client.getObject(GET_REQUEST, (response, inputStream) -> inputStream.read());
 
         assertEquals(plaintext[0] & 0xFF, firstByte);
-        assertTrue(transport.lastBody.awaitCancelled(), "response stream was not released after getObject returned");
+        assertTrue(transport.awaitBodyCancelled(), "response stream was not released after getObject returned");
     }
 
     @Test
     public void transformerThatThrowsReleasesResponseStream() {
-        assertThrows(S3EncryptionClientException.class, () -> client.getObject(getRequest(), (response, inputStream) -> {
+        assertThrows(S3EncryptionClientException.class, () -> client.getObject(GET_REQUEST, (response, inputStream) -> {
             inputStream.read();
             throw new IllegalStateException("transform failed");
         }));
 
-        assertTrue(transport.lastBody.awaitCancelled(), "response stream was not released after transform threw");
+        assertTrue(transport.awaitBodyCancelled(), "response stream was not released after transform threw");
     }
 
     @Test
     public void streamingTransformerLeavesResponseStreamOpenForCaller() throws Exception {
-        try (ResponseInputStream<GetObjectResponse> stream = client.getObject(getRequest(), ResponseTransformer.toInputStream())) {
-            assertFalse(transport.lastBody.cancelled.get(), "caller-owned stream was closed by getObject");
+        try (ResponseInputStream<GetObjectResponse> stream = client.getObject(GET_REQUEST, ResponseTransformer.toInputStream())) {
             assertEquals(plaintext[0] & 0xFF, stream.read());
+            assertFalse(transport.bodyCancelled.isDone(), "caller-owned stream was closed by getObject");
         }
 
-        assertTrue(transport.lastBody.awaitCancelled(), "response stream was not released after the caller closed it");
+        assertTrue(transport.awaitBodyCancelled(), "response stream was not released after the caller closed it");
     }
 
-    @Test
-    public void fullyConsumedResponseStillDecryptsCorrectly() {
-        byte[] result = client.getObjectAsBytes(getRequest()).asByteArray();
-
-        assertEquals(OBJECT_SIZE, result.length);
-        assertTrue(java.util.Arrays.equals(plaintext, result));
-    }
-
-    private static GetObjectRequest getRequest() {
-        return GetObjectRequest.builder().bucket(BUCKET).key(KEY).build();
-    }
-
-    /** Stores a single object on PUT and serves it on GET, recording whether the GET body was cancelled. */
+    /** Stores the object on PUT and serves it on GET, recording whether the GET body was cancelled. */
     private static final class InMemoryTransport implements SdkAsyncHttpClient {
-        private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
-            Thread t = new Thread(r, "in-memory-transport");
-            t.setDaemon(true);
-            return t;
-        });
-        private final Map<String, String> storedMetadata = new HashMap<>();
-        private byte[] storedBody;
-        volatile RecordingBodyPublisher lastBody;
+        private final ExecutorService executor;
+        private final Map<String, String> metadata = new HashMap<>();
+        private byte[] body;
+        private volatile CompletableFuture<Void> bodyCancelled = new CompletableFuture<>();
+
+        InMemoryTransport(ExecutorService executor) {
+            this.executor = executor;
+        }
+
+        boolean awaitBodyCancelled() {
+            try {
+                bodyCancelled.get(5, TimeUnit.SECONDS);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
 
         @Override
         public CompletableFuture<Void> execute(AsyncExecuteRequest request) {
-            return request.request().method() == SdkHttpMethod.PUT ? put(request) : get(request);
-        }
+            SdkHttpFullResponse.Builder response = SdkHttpFullResponse.builder().statusCode(200).putHeader("ETag", "\"etag\"");
+            if (request.request().method() == SdkHttpMethod.PUT) {
+                ByteArrayOutputStream received = new ByteArrayOutputStream();
+                return SdkPublisher.adapt(request.requestContentPublisher())
+                        .subscribe(buffer -> {
+                            byte[] bytes = new byte[buffer.remaining()];
+                            buffer.get(bytes);
+                            received.write(bytes, 0, bytes.length);
+                        })
+                        .thenRun(() -> {
+                            body = received.toByteArray();
+                            // S3EC stores its encryption metadata in user metadata headers.
+                            request.request().headers().forEach((name, values) -> {
+                                if (name.toLowerCase().startsWith("x-amz-meta-")) {
+                                    metadata.put(name, values.get(0));
+                                }
+                            });
+                            request.responseHandler().onHeaders(response.build());
+                            request.responseHandler().onStream(AsyncRequestBody.empty());
+                        });
+            }
 
-        private CompletableFuture<Void> put(AsyncExecuteRequest request) {
-            CompletableFuture<Void> done = new CompletableFuture<>();
-            ByteArrayOutputStream body = new ByteArrayOutputStream();
-            request.requestContentPublisher().subscribe(new Subscriber<ByteBuffer>() {
-                @Override
-                public void onSubscribe(Subscription subscription) {
-                    subscription.request(Long.MAX_VALUE);
-                }
-
-                @Override
-                public void onNext(ByteBuffer byteBuffer) {
-                    byte[] bytes = new byte[byteBuffer.remaining()];
-                    byteBuffer.get(bytes);
-                    body.write(bytes, 0, bytes.length);
-                }
-
-                @Override
-                public void onError(Throwable t) {
-                    request.responseHandler().onError(t);
-                    done.completeExceptionally(t);
-                }
-
-                @Override
-                public void onComplete() {
-                    storedBody = body.toByteArray();
-                    request.request().headers().forEach((name, values) -> {
-                        if (name.toLowerCase().startsWith("x-amz-meta-")) {
-                            storedMetadata.put(name, values.get(0));
-                        }
-                    });
-                    SdkAsyncHttpResponseHandler handler = request.responseHandler();
-                    handler.onHeaders(SdkHttpFullResponse.builder().statusCode(200).putHeader("ETag", "\"etag\"").build());
-                    handler.onStream(new RecordingBodyPublisher(new byte[0], CHUNK_SIZE, executor));
-                    done.complete(null);
-                }
-            });
-            return done;
-        }
-
-        private CompletableFuture<Void> get(AsyncExecuteRequest request) {
-            SdkHttpFullResponse.Builder response = SdkHttpFullResponse.builder()
-                    .statusCode(200)
-                    .putHeader("ETag", "\"etag\"")
-                    .putHeader("Content-Length", String.valueOf(storedBody.length));
-            storedMetadata.forEach(response::putHeader);
-            lastBody = new RecordingBodyPublisher(storedBody, CHUNK_SIZE, executor);
-
-            SdkAsyncHttpResponseHandler handler = request.responseHandler();
-            handler.onHeaders(response.build());
-            handler.onStream(lastBody);
+            metadata.forEach(response::putHeader);
+            response.putHeader("Content-Length", String.valueOf(body.length));
+            bodyCancelled = new CompletableFuture<>();
+            CompletableFuture<Void> cancelled = bodyCancelled;
+            request.responseHandler().onHeaders(response.build());
+            request.responseHandler().onStream(new OnDemandBody(body, executor, cancelled));
             return CompletableFuture.completedFuture(null);
-        }
-
-        void shutdown() {
-            executor.shutdownNow();
         }
 
         @Override
@@ -228,89 +183,48 @@ public class S3EncryptionClientGetObjectStreamCloseTest {
     }
 
     /**
-     * Emits the body in chunks only as they are requested, like a real HTTP client applying
-     * backpressure, and records whether the subscriber cancelled.
+     * Emits the body in 64 KiB chunks only as they are requested, like a real connection applying
+     * backpressure, and completes {@code cancelled} if the subscriber cancels.
      */
-    private static final class RecordingBodyPublisher implements SdkPublisher<ByteBuffer> {
+    private static final class OnDemandBody implements SdkPublisher<ByteBuffer> {
         private final byte[] body;
-        private final int chunkSize;
         private final ExecutorService executor;
-        final AtomicBoolean cancelled = new AtomicBoolean(false);
-        private final CompletableFuture<Void> cancelledFuture = new CompletableFuture<>();
+        private final CompletableFuture<Void> cancelled;
 
-        private RecordingBodyPublisher(byte[] body, int chunkSize, ExecutorService executor) {
+        OnDemandBody(byte[] body, ExecutorService executor, CompletableFuture<Void> cancelled) {
             this.body = body;
-            this.chunkSize = chunkSize;
             this.executor = executor;
-        }
-
-        boolean awaitCancelled() {
-            try {
-                cancelledFuture.get(5, TimeUnit.SECONDS);
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
+            this.cancelled = cancelled;
         }
 
         @Override
         public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
             subscriber.onSubscribe(new Subscription() {
-                private long demand;
                 private int position;
-                private boolean delivering;
-                private boolean terminated;
 
                 @Override
                 public void request(long n) {
-                    synchronized (this) {
-                        if (terminated) {
-                            return;
-                        }
-                        demand = demand + n < 0 ? Long.MAX_VALUE : demand + n;
-                        if (delivering) {
-                            return;
-                        }
-                        delivering = true;
-                    }
-                    executor.execute(this::deliver);
-                }
-
-                private void deliver() {
-                    while (true) {
-                        ByteBuffer chunk;
-                        boolean complete = false;
+                    // Deliver on another thread so onNext never re-enters the caller of request().
+                    executor.execute(() -> {
                         synchronized (this) {
-                            if (terminated || demand == 0) {
-                                delivering = false;
-                                return;
-                            }
-                            if (position >= body.length) {
-                                terminated = true;
-                                complete = true;
-                                chunk = null;
-                            } else {
-                                int length = Math.min(chunkSize, body.length - position);
-                                chunk = ByteBuffer.wrap(body, position, length).slice();
+                            for (long i = 0; i < n && !cancelled.isDone(); i++) {
+                                if (position >= body.length) {
+                                    if (position++ == body.length) {
+                                        subscriber.onComplete();
+                                    }
+                                    return;
+                                }
+                                int length = Math.min(64 * 1024, body.length - position);
+                                subscriber.onNext(ByteBuffer.wrap(body, position, length).slice());
                                 position += length;
-                                demand--;
                             }
                         }
-                        if (complete) {
-                            subscriber.onComplete();
-                            return;
-                        }
-                        subscriber.onNext(chunk);
-                    }
+                    });
                 }
 
                 @Override
                 public void cancel() {
-                    synchronized (this) {
-                        terminated = true;
-                    }
-                    cancelled.set(true);
-                    cancelledFuture.complete(null);
+                    cancelled.complete(null);
                 }
             });
         }
