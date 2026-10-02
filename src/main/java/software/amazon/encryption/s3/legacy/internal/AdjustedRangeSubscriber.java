@@ -61,11 +61,14 @@ public class AdjustedRangeSubscriber implements Subscriber<ByteBuffer> {
 
         if (numBytesToSkip != 0) {
             byte[] buf = byteBuffer.array();
-            if (numBytesToSkip > buf.length) {
-                // If we need to skip past the available data,
-                // we are returning nothing, so signal completion
+            if (numBytesToSkip >= buf.length) {
+                // This chunk is entirely consumed by the skip, so there is no in-range data yet.
+                // Downstream only requests the next element after receiving an onNext, so forward
+                // an empty buffer (mirroring CipherSubscriber) to keep demand flowing, rather than
+                // completing the stream or staying silent and stalling it.
                 numBytesToSkip -= buf.length;
-                wrappedSubscriber.onComplete();
+                wrappedSubscriber.onNext(ByteBuffer.wrap(new byte[0]));
+                return;
             } else {
                 outputBuffer = Arrays.copyOfRange(buf, numBytesToSkip, buf.length);
                 numBytesToSkip = 0;
