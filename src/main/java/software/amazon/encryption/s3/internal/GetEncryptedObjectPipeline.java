@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.logging.LogFactory;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.async.DrainingSubscriber;
 import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -153,6 +155,12 @@ public class GetEncryptedObjectPipeline {
 
         @Override
         public CompletableFuture<T> prepare() {
+            // prepare() runs once per request attempt (AsyncResponseTransformer#prepare, enforced by
+            // BaseAsyncClientHandler via IdempotentAsyncResponseHandler keyed on EXECUTION_ATTEMPT).
+            // Clearing materials is what makes onStream below take the drain path when this attempt's
+            // onResponse fails, instead of decrypting this attempt's body with the previous attempt's
+            // materials. onResponse re-resolves materials unconditionally, so this costs no extra CMM call.
+            materials = null;
             resultFuture = wrappedAsyncResponseTransformer.prepare();
             return resultFuture;
         }
@@ -173,9 +181,14 @@ public class GetEncryptedObjectPipeline {
         @Override
         public void onStream(SdkPublisher<ByteBuffer> ciphertextPublisher) {
             if (materials == null) {
-                throw new S3EncryptionClientException("Decryption materials cannot be null. " +
-                        "This may be caused by a misconfigured custom CMM implementation or " +
-                        "a suppressed exception from metadata decoding or CMM invocation due to a network failure.");
+                // Decryption setup failed in onResponse. AsyncStreamingResponseHandler#onHeaders already
+                // caught that exception and reported it via exceptionOccurred, so the caller's future is
+                // already failing and there is nothing left to report here. Throwing instead would
+                // propagate into the netty pipeline, which fails the channel via
+                // HandlerPublisher#exceptionCaught and forces it closed rather than returning it to the
+                // connection pool. Consume the body so the response completes normally.
+                drainAndRelease(ciphertextPublisher);
+                return;
             }
             long[] desiredRange = RangedGetUtils.getRange(materials.getContentRange());
             long[] cryptoRange = RangedGetUtils.getCryptoRange(materials.getContentRange());
@@ -215,6 +228,28 @@ public class GetEncryptedObjectPipeline {
                 BufferedCipherPublisher plaintextPublisher = new BufferedCipherPublisher(ciphertextPublisher,
                         getObjectResponse.contentLength(), materials, iv, messageId, _bufferSize);
                 wrappedAsyncResponseTransformer.onStream(plaintextPublisher);
+            }
+        }
+
+        /**
+         * Consumes and discards the remainder of the ciphertext stream so the response terminates
+         * normally on the failure path.
+         * <p>
+         * Draining is preferred over cancelling: cancelling closes the channel instead of returning it to
+         * the pool, and has historically raced with buffer release in the netty response publisher (see
+         * aws/aws-sdk-java-v2#2051). The cost is transferring bytes that are then discarded, so this
+         * scales with the object size: a failed GetObject on a large object still downloads the whole
+         * body before the failure is surfaced.
+         */
+        private void drainAndRelease(SdkPublisher<ByteBuffer> ciphertextPublisher) {
+            try {
+                ciphertextPublisher.subscribe(new DrainingSubscriber<ByteBuffer>());
+            } catch (RuntimeException suppressed) {
+                // Never let draining mask the original failure, but leave a trace: a failure here
+                // means the ciphertext body may not have been fully released.
+                LogFactory.getLog(getClass()).debug(
+                        "Failed to drain ciphertext publisher on the GetObject failure path; "
+                                + "in-flight buffers may not have been released", suppressed);
             }
         }
     }
