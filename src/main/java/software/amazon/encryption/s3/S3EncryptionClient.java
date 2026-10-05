@@ -457,13 +457,30 @@ public class S3EncryptionClient extends DelegatingS3Client {
                 .commitmentPolicy(_commitmentPolicy)
                 .build();
 
+        ResponseInputStream<GetObjectResponse> joinFutureGet = null;
+        boolean callerOwnsStream = false;
         try {
-            ResponseInputStream<GetObjectResponse> joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
-            return responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet));
+            joinFutureGet = pipeline.getObject(getObjectRequest, AsyncResponseTransformer.toBlockingInputStream()).join();
+            T result = responseTransformer.transform(joinFutureGet.response(), AbortableInputStream.create(joinFutureGet));
+            // Transformers that need the connection left open (e.g. toInputStream) return the stream to
+            // the caller, who becomes responsible for closing it.
+            callerOwnsStream = responseTransformer.needsConnectionLeftOpen();
+            return result;
         } catch (CompletionException e) {
             throw new S3EncryptionClientException(e.getCause().getMessage(), e.getCause());
         } catch (Exception e) {
             throw new S3EncryptionClientException("Unable to transform response.", e);
+        } finally {
+            // Unless the caller now owns the stream, close it so the underlying connection is released
+            // even if the transformer did not read the response to the end or threw.
+            if (joinFutureGet != null && !callerOwnsStream) {
+                try {
+                    joinFutureGet.close();
+                } catch (IOException e) {
+                    // Don't let a close failure mask the transformed result or the original exception.
+                    LogFactory.getLog(getClass()).debug("Unable to close GetObject response stream.", e);
+                }
+            }
         }
     }
 
