@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.0.3](https://github.com/aws/aws-s3-encryption-client-java/compare/v4.0.2...v4.0.3) (2026-10-06)
+
+### Fixes
+
+* close getObject response stream for buffering transformers ([#524](https://github.com/aws/aws-s3-encryption-client-java/issues/524)) ([af191c6](https://github.com/aws/aws-s3-encryption-client-java/commit/af191c6cfde508bb6532c0c98748e219431ec851))
+* don't signal onComplete when a chunk is fully consumed ([#523](https://github.com/aws/aws-s3-encryption-client-java/issues/523)) ([199bbb5](https://github.com/aws/aws-s3-encryption-client-java/commit/199bbb5f000ba2bf0f29c532467d9fb5569bdda7))
+* netty mem leak during failure ([#521](https://github.com/aws/aws-s3-encryption-client-java/issues/521)) ([bad1bf8](https://github.com/aws/aws-s3-encryption-client-java/commit/bad1bf82fa4e1fe50b680514786ee7a50da5f091))
+
+### Maintenance
+
+* mark 3.x as End of Support ([#520](https://github.com/aws/aws-s3-encryption-client-java/issues/520)) ([af4253f](https://github.com/aws/aws-s3-encryption-client-java/commit/af4253f6bf60fcd7c5c4dfa5a1b288beefd663d2))
+
 ## [4.0.2](https://github.com/aws/aws-s3-encryption-client-java/compare/v4.0.1...v4.0.2) (2026-08-19)
 
 ### Fixes
