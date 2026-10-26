@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 import software.amazon.encryption.s3.internal.ApiNameVersion;
 
 //= specification/s3-encryption/materials/s3-kms-keyring.md#interface
@@ -251,6 +252,17 @@ public class KmsKeyring extends S3Keyring {
                 throw new S3EncryptionClientException("Provided encryption context does not match information retrieved from S3");
             }
 
+            // The content encryption algorithm is part of the KMS-authenticated encryption context, while the
+            // algorithm suite is selected from the (unauthenticated) content metadata. The two must agree; if
+            // they do not, the content metadata does not correspond to how the object was sealed, so the data
+            // key is not released for a mismatched suite.
+            String storedContentAlgorithm = materials.encryptionContext().get(ENCRYPTION_CONTEXT_ALGORITHM_KEY);
+            if (storedContentAlgorithm != null
+                    && !storedContentAlgorithm.equals(expectedContentAlgorithm(materials.algorithmSuite()))) {
+                throw new S3EncryptionClientException("The content encryption algorithm in the KMS-authenticated "
+                        + "encryption context does not match the algorithm suite selected for decryption.");
+            }
+
             //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
             //# To attempt to decrypt a particular [encrypted data key](../structures.md#encrypted-data-key), the KmsKeyring
             //# MUST call [AWS KMS Decrypt](https://docs.aws.amazon.com/kms/latest/APIReference/API_Decrypt.html) with the configured AWS KMS client.
@@ -311,6 +323,23 @@ public class KmsKeyring extends S3Keyring {
     @Override
     protected Map<String, DecryptDataKeyStrategy> decryptDataKeyStrategies() {
         return decryptDataKeyStrategies;
+    }
+
+    // The canonical value the content-encryption algorithm (aws:x-amz-cek-alg) holds in the stored encryption
+    // context for a given selected algorithm suite. The committing GCM/CTR pair share the committing suite ID,
+    // and the non-committing GCM/CTR pair share GCM's cipher name, because a ranged get selects the CTR variant
+    // of an object that was sealed under its GCM counterpart.
+    private static String expectedContentAlgorithm(AlgorithmSuite algorithmSuite) {
+        switch (algorithmSuite) {
+            case ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY:
+            case ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY:
+                return AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString();
+            case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+            case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
+                return AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName();
+            default:
+                return algorithmSuite.cipherName();
+        }
     }
 
     public static class Builder extends S3Keyring.Builder<KmsKeyring, Builder> {

@@ -158,13 +158,24 @@ public class RsaKeyring extends RawKeyring<PartialRsaKeyPair> {
                 throw new S3EncryptionClientException("Invalid key length (" + dataKeyLengthBytes + ") in encrypted data key");
             }
 
+            // The content algorithm sealed inside the pseudo data key must match the algorithm suite selected
+            // for decryption. RSA-OAEP-SHA1 objects are only ever written with a GCM-family content suite, so
+            // the committing GCM/CTR pair maps to the committing suite ID (115) and the non-committing GCM/CTR
+            // pair maps to GCM's cipher name. Any other selected suite (e.g. CBC) does not correspond to how
+            // the data key was wrapped and is not accepted.
             byte[] expectedDataCipherAlg;
-            // For V3 committed algorithms (both GCM 115 and CTR 116), use GCM's suite ID string (115/0x0073)
-            if (materials.algorithmSuite().id() == AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.id() ||
-                    materials.algorithmSuite().id() == AlgorithmSuite.ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY.id()) {
-                expectedDataCipherAlg = AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString().getBytes(StandardCharsets.UTF_8);
-            } else {
-                expectedDataCipherAlg = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+            switch (materials.algorithmSuite()) {
+                case ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY:
+                case ALG_AES_256_CTR_HKDF_SHA512_COMMIT_KEY:
+                    expectedDataCipherAlg = AlgorithmSuite.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY.idAsString().getBytes(StandardCharsets.UTF_8);
+                    break;
+                case ALG_AES_256_GCM_IV12_TAG16_NO_KDF:
+                case ALG_AES_256_CTR_IV16_TAG16_NO_KDF:
+                    expectedDataCipherAlg = AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName().getBytes(StandardCharsets.UTF_8);
+                    break;
+                default:
+                    throw new S3EncryptionClientException("The algorithm suite selected for decryption does not match "
+                            + "the content algorithm bound to the RSA-wrapped data key. The object may be altered or corrupted");
             }
 
             int dataCipherNameLength = expectedDataCipherAlg.length;
