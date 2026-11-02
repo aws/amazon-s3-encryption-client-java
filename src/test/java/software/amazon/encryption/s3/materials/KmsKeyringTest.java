@@ -16,7 +16,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -71,8 +73,47 @@ public class KmsKeyringTest {
                 .encryptedDataKey(new byte[]{1, 2, 3})
                 .build();
 
-        assertThrows(S3EncryptionClientException.class,
+        S3EncryptionClientException exception = assertThrows(S3EncryptionClientException.class,
                 () -> keyring.onDecrypt(materials, Collections.singletonList(edk)));
+        assertTrue(exception.getMessage().contains("AES/GCM/NoPadding"));
+        assertTrue(exception.getMessage().contains("ALG_AES_256_CBC_IV16_NO_KDF"));
+    }
+
+    // A ranged get selects the CTR suite for an object sealed under GCM, so the stored GCM content
+    // algorithm must be accepted for the CTR suite.
+    @Test
+    public void kmsContextDecryptSucceedsForCtrSuiteOfGcmObject() {
+        Map<String, String> storedEncryptionContext = new HashMap<>();
+        storedEncryptionContext.put("kms_cmk_id", KMS_KEY_ID);
+        storedEncryptionContext.put("aws:x-amz-cek-alg", AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName());
+
+        KmsClient kmsClient = mock(KmsClient.class);
+        when(kmsClient.decrypt(argThat((DecryptRequest request) ->
+                storedEncryptionContext.equals(request.encryptionContext()))))
+                .thenReturn(DecryptResponse.builder()
+                        .keyId(KMS_KEY_ID)
+                        .plaintext(SdkBytes.fromByteArray(new byte[32]))
+                        .build());
+
+        KmsKeyring keyring = KmsKeyring.builder()
+                .kmsClient(kmsClient)
+                .wrappingKeyId(KMS_KEY_ID)
+                .build();
+
+        DecryptionMaterials materials = DecryptionMaterials.builder()
+                .s3Request(GetObjectRequest.builder().bucket("bucket").key("key").build())
+                .algorithmSuite(AlgorithmSuite.ALG_AES_256_CTR_IV16_TAG16_NO_KDF)
+                .encryptionContext(storedEncryptionContext)
+                .build();
+
+        EncryptedDataKey edk = EncryptedDataKey.builder()
+                .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
+                .keyProviderInfo("kms+context")
+                .encryptedDataKey(new byte[]{1, 2, 3})
+                .build();
+
+        assertArrayEquals(new byte[32],
+                keyring.onDecrypt(materials, Collections.singletonList(edk)).plaintextDataKey());
     }
 
 }

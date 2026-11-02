@@ -11,17 +11,25 @@ import com.amazonaws.services.s3.model.CryptoMode;
 import com.amazonaws.services.s3.model.EncryptedPutObjectRequest;
 import com.amazonaws.services.s3.model.EncryptionMaterialsProvider;
 import com.amazonaws.services.s3.model.KMSEncryptionMaterialsProvider;
+import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.RetryingTest;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
+import software.amazon.awssdk.services.kms.model.DecryptResponse;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.encryption.s3.CommitmentPolicy;
 import software.amazon.encryption.s3.S3EncryptionClient;
 import software.amazon.encryption.s3.S3EncryptionClientException;
+import software.amazon.encryption.s3.algorithms.AlgorithmSuite;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static software.amazon.encryption.s3.S3EncryptionClient.withAdditionalConfiguration;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.appendTestSuffix;
 import static software.amazon.encryption.s3.utils.S3EncryptionClientTestResources.deleteObject;
@@ -235,6 +246,41 @@ public class KmsDiscoveryKeyringTest {
             // expected
             assertTrue(exception.getMessage().contains("KmsDiscoveryKeyring does not support EncryptDataKey"));
         }
+    }
+
+    // The data key was wrapped for a GCM object, so the KMS-authenticated encryption context carries
+    // aws:x-amz-cek-alg = AES/GCM/NoPadding, while the decryption materials select the CBC suite.
+    @Test
+    public void kmsContextDiscoveryDecryptFailsWhenAuthenticatedCekAlgDoesNotMatchSelectedSuite() {
+        Map<String, String> storedEncryptionContext = new HashMap<>();
+        storedEncryptionContext.put("kms_cmk_id", "arn:aws:kms:us-west-2:111122223333:key/example");
+        storedEncryptionContext.put("aws:x-amz-cek-alg", AlgorithmSuite.ALG_AES_256_GCM_IV12_TAG16_NO_KDF.cipherName());
+
+        KmsClient kmsClient = mock(KmsClient.class);
+        when(kmsClient.decrypt(argThat((DecryptRequest request) ->
+                storedEncryptionContext.equals(request.encryptionContext()))))
+                .thenReturn(DecryptResponse.builder()
+                        .plaintext(SdkBytes.fromByteArray(new byte[32]))
+                        .build());
+
+        KmsDiscoveryKeyring keyring = KmsDiscoveryKeyring.builder()
+                .kmsClient(kmsClient)
+                .build();
+
+        DecryptionMaterials materials = DecryptionMaterials.builder()
+                .s3Request(GetObjectRequest.builder().bucket("bucket").key("key").build())
+                .algorithmSuite(AlgorithmSuite.ALG_AES_256_CBC_IV16_NO_KDF)
+                .encryptionContext(storedEncryptionContext)
+                .build();
+
+        EncryptedDataKey edk = EncryptedDataKey.builder()
+                .keyProviderId(S3Keyring.KEY_PROVIDER_ID)
+                .keyProviderInfo("kms+context")
+                .encryptedDataKey(new byte[]{1, 2, 3})
+                .build();
+
+        assertThrows(S3EncryptionClientException.class,
+                () -> keyring.onDecrypt(materials, Collections.singletonList(edk)));
     }
 
 }
