@@ -112,6 +112,8 @@ public class KmsDiscoveryKeyring extends S3Keyring {
         throw new S3EncryptionClientException("Provided encryption context does not match information retrieved from S3");
       }
 
+      KmsContentAlgorithm.validate(materials);
+
       DecryptRequest request = DecryptRequest.builder()
         .encryptionContext(materials.encryptionContext())
         .ciphertextBlob(SdkBytes.fromByteArray(encryptedDataKey))

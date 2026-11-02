@@ -251,6 +251,8 @@ public class KmsKeyring extends S3Keyring {
                 throw new S3EncryptionClientException("Provided encryption context does not match information retrieved from S3");
             }
 
+            KmsContentAlgorithm.validate(materials);
+
             //= specification/s3-encryption/materials/s3-kms-keyring.md#kms-context
             //# To attempt to decrypt a particular [encrypted data key](../structures.md#encrypted-data-key), the KmsKeyring
             //# MUST call [AWS KMS Decrypt](https://docs.aws.amazon.com/kms/latest/APIReference/API_Decrypt.html) with the configured AWS KMS client.
