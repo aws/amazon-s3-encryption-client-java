@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.4](https://github.com/aws/aws-s3-encryption-client-java/compare/v4.0.3...v4.0.4) (2026-11-04)
+
+### Fixes
+
+* **kms-keyring:** validate content algorithm matches selected suite on decrypt ([#527](https://github.com/aws/aws-s3-encryption-client-java/issues/527)) ([96b1c2d](https://github.com/aws/aws-s3-encryption-client-java/commit/96b1c2db3066623be004465a849f027831afd1d0))
+
 ## [4.0.3](https://github.com/aws/aws-s3-encryption-client-java/compare/v4.0.2...v4.0.3) (2026-10-06)
 
 ### Fixes
